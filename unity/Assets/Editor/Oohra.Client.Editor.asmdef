@@ -1,0 +1,18 @@
+{
+  "name": "Oohra.Client.Editor",
+  "rootNamespace": "Oohra.Client.Editor",
+  "references": [
+    "Oohra.Client"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

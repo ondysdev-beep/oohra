@@ -29,4 +29,6 @@ public sealed record SpawnRules(
     int NearPondAttempts,
     int PondRadius,
     double CampDistance,
-    double Clearance);
+    double Clearance,
+    double AvoidDistance,
+    int AvoidAttempts);

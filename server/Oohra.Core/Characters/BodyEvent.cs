@@ -30,6 +30,9 @@ public enum BodyEvent
     /// <summary>Začala horečka („hoří ti čelo“).</summary>
     FeverStarted,
 
+    /// <summary>Nemoc z kalné vody: „je ti horko a špatně od žaludku“.</summary>
+    FeltSick,
+
     Died,
 }
 

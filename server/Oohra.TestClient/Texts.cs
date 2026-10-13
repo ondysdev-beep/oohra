@@ -20,6 +20,7 @@ public static class Texts
             BodyEvent.CameTo => "Probíráš se. Hlava ti třeští.",
             BodyEvent.Crash => "Ten příval sil je pryč. Cítíš prázdnotu.",
             BodyEvent.FeverStarted => "Hoří ti čelo.",
+            BodyEvent.FeltSick => "Je ti horko a špatně od žaludku. Něco v tobě se pokazilo.",
             BodyEvent.Died => "Zemřel jsi.",
             _ => message.Event.ToString(),
         };

@@ -11,6 +11,9 @@ public enum EffectType
     Toxin,
     Neurotoxin,
     Crash,
+
+    /// <summary>Nemoc z kalné vody nebo zkaženého jídla: zánět (Infection) a z něj horečka.</summary>
+    Sickness,
 }
 
 /// <summary>Účinek, který nastane v čase At (herní minuty). Strength je síla účinku.</summary>

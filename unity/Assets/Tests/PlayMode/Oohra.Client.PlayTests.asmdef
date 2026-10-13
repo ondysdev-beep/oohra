@@ -3,14 +3,16 @@
   "rootNamespace": "Oohra.Client.Tests",
   "references": [
     "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "UnityEditor.TestRunner",
+    "Oohra.Client"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,
   "overrideReferences": true,
   "precompiledReferences": [
-    "nunit.framework.dll"
+    "nunit.framework.dll",
+    "Oohra.Core.dll"
   ],
   "autoReferenced": false,
   "defineConstraints": [

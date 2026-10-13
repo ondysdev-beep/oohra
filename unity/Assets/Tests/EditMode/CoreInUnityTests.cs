@@ -21,6 +21,7 @@ namespace Oohra.Client.Tests
             Assert.AreEqual(128, GameData.Settings.WorldWidth);
             Assert.AreEqual(70, GameData.Body.Start.Satiety);
             Assert.AreEqual(4, GameData.Movement.WalkSpeed);
+            Assert.AreEqual(9, GameData.Gathering.Inventory.StackSize);
         }
 
         // Stejná čísla jako golden data z prototypu (seed 12345, 84 × 84).
