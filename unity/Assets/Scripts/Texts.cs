@@ -24,10 +24,53 @@ namespace Oohra.Client
                     var harvest = (HarvestResult)e.Code;
                     warn = harvest != HarvestResult.Picked;
                     return For(harvest, e.Part);
-                default:
+                case EventKind.Drink:
                     var drink = (DrinkResult)e.Code;
                     warn = drink == DrinkResult.Salty || drink == DrinkResult.TooFar;
                     return For(drink);
+                case EventKind.Material:
+                    var material = (MaterialResult)e.Code;
+                    warn = material != MaterialResult.GotSticks && material != MaterialResult.GotStone;
+                    return For(material);
+                case EventKind.Fire:
+                    var fire = (FireResult)e.Code;
+                    warn = fire != FireResult.Lit && fire != FireResult.Fed && fire != FireResult.Relit && fire != FireResult.Baked;
+                    return For(fire);
+                default:
+                    warn = false;
+                    return null;
+            }
+        }
+
+        public static string For(MaterialResult result)
+        {
+            switch (result)
+            {
+                case MaterialResult.GotSticks: return "Nasbíral jsi klacky.";
+                case MaterialResult.GotStone: return "Vzal jsi kámen.";
+                case MaterialResult.TooFar: return "Je to moc daleko.";
+                case MaterialResult.NothingLeft: return "Spadlé větve jsou pryč. Zkus to zítra.";
+                case MaterialResult.InventoryFull: return "Nemáš kam to dát. Něco z batohu zahoď.";
+                default: return "Tady nic není.";
+            }
+        }
+
+        public static string For(FireResult result)
+        {
+            switch (result)
+            {
+                case FireResult.Lit: return "Oheň hoří. Je u něj teplo.";
+                case FireResult.Fed: return "Oheň se rozhořel.";
+                case FireResult.Relit: return "Oheň znovu chytil.";
+                case FireResult.Baked: return "Upekl jsi to na ohni.";
+                case FireResult.NeedMaterials: return "Na oheň potřebuješ 3 klacky a kámen.";
+                case FireResult.NoStick: return "Nemáš klacek.";
+                case FireResult.CannotBuildHere: return "Tady oheň nerozdělíš. Otoč se jinam.";
+                case FireResult.TooFar: return "Je to moc daleko.";
+                case FireResult.NoFireNear: return "Musíš být u ohně.";
+                case FireResult.CannotBake: return "Tohle se péct nedá.";
+                case FireResult.InventoryFull: return "Nemáš kam to dát. Něco z batohu zahoď.";
+                default: return result.ToString();
             }
         }
 

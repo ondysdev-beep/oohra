@@ -32,6 +32,15 @@ public sealed class ServerConfig
     /// <summary>Jak často vypsat výkon serveru do konzole (v sekundách, jen když někdo hraje). 0 = nevypisovat.</summary>
     public double StatsEverySeconds { get; set; } = 10;
 
+    /// <summary>V kolik hodin svět začíná (jen pro zkoušení, třeba 21 = hned noc). Ve hře 7.</summary>
+    public double StartHour { get; set; } = 7;
+
+    /// <summary>Kolik klacků dostane nová postava do batohu (jen pro zkoušení ohně, ve hře 0).</summary>
+    public int StartSticks { get; set; }
+
+    /// <summary>Kolik kamenů dostane nová postava do batohu (jen pro zkoušení ohně, ve hře 0).</summary>
+    public int StartStones { get; set; }
+
     public static ServerConfig Load(string path)
     {
         if (!File.Exists(path))

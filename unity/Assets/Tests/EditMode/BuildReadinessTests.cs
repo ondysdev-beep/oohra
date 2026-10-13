@@ -8,14 +8,15 @@ namespace Oohra.Client.Tests
     /// </summary>
     public class BuildReadinessTests
     {
-        /// <summary>Shader hledaný jen v kódu Unity do hry nepřibalí, proto musí být materiál soubor.</summary>
-        [Test]
-        public void LitMaterialIsAnAsset()
+        /// <summary>Shader hledaný jen v kódu Unity do hry nepřibalí, proto musí být materiály soubory.</summary>
+        [TestCase("OohraLit", "Universal Render Pipeline/Lit")]
+        [TestCase("OohraGlow", "Universal Render Pipeline/Unlit")]
+        public void MaterialIsAnAsset(string resource, string shader)
         {
-            var material = Resources.Load<Material>("OohraLit");
+            var material = Resources.Load<Material>(resource);
 
-            Assert.IsNotNull(material, "Chybí Assets/Resources/OohraLit.mat (menu Oohra → Vytvořit scénu ostrova).");
-            Assert.AreEqual("Universal Render Pipeline/Lit", material.shader.name);
+            Assert.IsNotNull(material, "Chybí Assets/Resources/" + resource + ".mat (menu Oohra → Vytvořit scénu ostrova).");
+            Assert.AreEqual(shader, material.shader.name);
             Assert.IsTrue(material.enableInstancing);
         }
     }

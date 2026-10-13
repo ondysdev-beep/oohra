@@ -14,7 +14,10 @@ namespace Oohra.Core.World
     /// <summary>Jak dopadlo sbírání klacků u stromu nebo kamene u skály.</summary>
     public enum MaterialResult
     {
-        Gathered,
+        /// <summary>Nasbíral klacky (1 nebo 2).</summary>
+        GotSticks,
+
+        GotStone,
         TooFar,
 
         /// <summary>Spadlé větve jsou pryč, dorostou zítra.</summary>
@@ -34,8 +37,11 @@ namespace Oohra.Core.World
         Relit,
         Baked,
 
-        /// <summary>Chybí klacky nebo kámen.</summary>
+        /// <summary>Na rozdělání ohně chybí klacky nebo kámen.</summary>
         NeedMaterials,
+
+        /// <summary>Přiložit: nemá klacek.</summary>
+        NoStick,
 
         /// <summary>Před postavou nejde oheň rozdělat (voda, strom, jiný oheň).</summary>
         CannotBuildHere,

@@ -23,14 +23,14 @@ public class FireTests
 
         for (var i = 0; i < 3; i++)
         {
-            Assert.Equal(MaterialResult.Gathered, materials.GatherSticks(_island, treeX, treeY, clock, inventory, rng, x, y));
+            Assert.Equal(MaterialResult.GotSticks, materials.GatherSticks(_island, treeX, treeY, clock, inventory, rng, x, y));
         }
 
         Assert.Equal(MaterialResult.NothingLeft, materials.GatherSticks(_island, treeX, treeY, clock, inventory, rng, x, y));
         Assert.InRange(inventory.Count(ItemKind.Stick), 3, 6);
 
         clock.Advance(clock.RealSecondsFor(1441));
-        Assert.Equal(MaterialResult.Gathered, materials.GatherSticks(_island, treeX, treeY, clock, inventory, rng, x, y));
+        Assert.Equal(MaterialResult.GotSticks, materials.GatherSticks(_island, treeX, treeY, clock, inventory, rng, x, y));
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public class FireTests
         var (rockX, rockY) = FindTile(TileType.Rock);
         var inventory = new Inventory(10);
 
-        Assert.Equal(MaterialResult.Gathered, Materials.TakeStone(_island, rockX, rockY, inventory, rockX + 0.5, rockY + 0.5));
-        Assert.Equal(MaterialResult.Gathered, Materials.TakeStone(_island, rockX, rockY, inventory, rockX + 0.5, rockY + 0.5));
+        Assert.Equal(MaterialResult.GotStone, Materials.TakeStone(_island, rockX, rockY, inventory, rockX + 0.5, rockY + 0.5));
+        Assert.Equal(MaterialResult.GotStone, Materials.TakeStone(_island, rockX, rockY, inventory, rockX + 0.5, rockY + 0.5));
 
         Assert.Equal(2, inventory.Count(ItemKind.Stone));
         Assert.Single(inventory.Stacks);
@@ -120,7 +120,7 @@ public class FireTests
 
         Assert.Equal(FireResult.Relit, fires.Feed(fire.Id, inventory, x, y));
         Assert.Equal(300, fire.BurnMinutes);
-        Assert.Equal(FireResult.NeedMaterials, fires.Feed(fire.Id, inventory, x, y));
+        Assert.Equal(FireResult.NoStick, fires.Feed(fire.Id, inventory, x, y));
         Assert.Equal(FireResult.TooFar, fires.Feed(fire.Id, WithMaterials(1, 0), x + 5, y));
     }
 

@@ -15,7 +15,6 @@ namespace Oohra.Client.Editor
     public static class OohraSceneSetup
     {
         private const string ScenePath = "Assets/Scenes/Ostrov.unity";
-        private const string LitMaterialPath = "Assets/Resources/" + Palette.LitResource + ".mat";
 
         private static string RepoRoot => Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
 
@@ -24,7 +23,7 @@ namespace Oohra.Client.Editor
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
 
-            EnsureLitMaterial();
+            EnsureMaterials();
             var bootstrap = new GameObject("Hra");
             bootstrap.AddComponent<IslandBootstrap>();
 
@@ -56,12 +55,19 @@ namespace Oohra.Client.Editor
         }
 
         /// <summary>
-        /// Vytvoří sdílený materiál URP/Lit jako soubor v Assets/Resources, pokud chybí.
-        /// Jen tak Unity přibalí shader do sestavené hry (Shader.Find v kódu nestačí).
+        /// Vytvoří sdílené materiály (URP/Lit a URP/Unlit pro plamen) jako soubory v Assets/Resources, pokud chybí.
+        /// Jen tak Unity přibalí shadery do sestavené hry (Shader.Find v kódu nestačí).
         /// </summary>
-        public static void EnsureLitMaterial()
+        public static void EnsureMaterials()
         {
-            if (AssetDatabase.LoadAssetAtPath<Material>(LitMaterialPath) != null)
+            EnsureMaterial(Palette.LitResource, "Universal Render Pipeline/Lit");
+            EnsureMaterial(Palette.GlowResource, "Universal Render Pipeline/Unlit");
+        }
+
+        private static void EnsureMaterial(string resource, string shader)
+        {
+            var path = "Assets/Resources/" + resource + ".mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(path) != null)
             {
                 return;
             }
@@ -71,10 +77,10 @@ namespace Oohra.Client.Editor
                 AssetDatabase.CreateFolder("Assets", "Resources");
             }
 
-            var material = new Material(Shader.Find("Universal Render Pipeline/Lit")) { enableInstancing = true };
-            AssetDatabase.CreateAsset(material, LitMaterialPath);
+            var material = new Material(Shader.Find(shader)) { enableInstancing = true };
+            AssetDatabase.CreateAsset(material, path);
             AssetDatabase.SaveAssets();
-            Debug.Log("Oohra: materiál uložen do " + LitMaterialPath);
+            Debug.Log("Oohra: materiál uložen do " + path);
         }
 
         /// <summary>
@@ -84,7 +90,7 @@ namespace Oohra.Client.Editor
         [MenuItem("Oohra/Sestavit hru pro Windows")]
         public static void BuildWindows()
         {
-            EnsureLitMaterial();
+            EnsureMaterials();
             PlayerSettings.productName = "Oohra";
             PlayerSettings.runInBackground = true;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;

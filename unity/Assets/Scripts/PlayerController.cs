@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
@@ -7,14 +9,11 @@ namespace Oohra.Client
 {
     /// <summary>
     /// Ovládání postavy: WASD (vzhledem ke kameře), kliknutí na zem (jdi tam),
-    /// kliknutí na rostlinu nebo vodu (dojdi k ní a otevři nabídku).
+    /// kliknutí na rostlinu, vodu, strom, skálu nebo oheň (dojdi k nim a otevři nabídku).
     /// Klient posílá serveru jen směr chůze. Kam se smí jít, rozhoduje server (Movement v Core).
     /// </summary>
     public class PlayerController : MonoBehaviour
     {
-        // Dosah jako v Core (gathering.json). Server ho stejně ověří, tady jen kvůli tomu, kdy přestat jít.
-        private const double PlantReach = 0.95;
-        private const double WaterReach = 1.7;
         private const double PickRadius = 0.6;
         private const double MenuCloseExtra = 1.2;
         private const float StuckSeconds = 0.8f;
@@ -26,6 +25,7 @@ namespace Oohra.Client
         private Vector2 _lastPosition;
         private Vector2 _sent;
         private float _stuckTime;
+        private HashSet<int> _treeTiles;
 
         public void Init(ClientSession session, Camera camera)
         {
@@ -69,7 +69,7 @@ namespace Oohra.Client
             CloseMenuIfWalkedAway(position);
         }
 
-        /// <summary>Kliknutí: na rostlinu nebo vodu nastaví cíl, jinak jde postava na místo.</summary>
+        /// <summary>Kliknutí: na rostlinu, vodu, strom, skálu nebo oheň nastaví cíl, jinak jde postava na místo.</summary>
         private void ReadClick()
         {
             var mouse = Mouse.current;
@@ -93,7 +93,52 @@ namespace Oohra.Client
             _moveTo = _target == null ? new Vector2((float)x, (float)y) : (Vector2?)null;
         }
 
+        /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, rostlina, strom, voda, skála.</summary>
         private InteractionTarget PickTarget(double x, double y)
+        {
+            var world = _session.Connection.World;
+            foreach (var fire in _session.Connection.Fires)
+            {
+                if (Distance(fire.TileX + 0.5, fire.TileY + 0.5, x, y) < PickRadius)
+                {
+                    return InteractionTarget.ForFire(fire.Id, fire.TileX, fire.TileY);
+                }
+            }
+
+            var plant = PickPlant(x, y);
+            if (plant != null)
+            {
+                return plant;
+            }
+
+            var tx = (int)System.Math.Floor(x);
+            var ty = (int)System.Math.Floor(y);
+            if (tx < 0 || ty < 0 || tx >= world.Width || ty >= world.Height)
+            {
+                return null;
+            }
+
+            var tile = world.TileAt(tx, ty);
+            if (TreeTiles.Contains(ty * world.Width + tx)) return InteractionTarget.ForTile(TargetKind.Tree, tx, ty);
+            if (IsWater(tile)) return InteractionTarget.ForTile(TargetKind.Water, tx, ty);
+            if (tile == TileType.Rock) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);
+            return null;
+        }
+
+        private HashSet<int> TreeTiles
+        {
+            get
+            {
+                if (_treeTiles == null)
+                {
+                    _treeTiles = new HashSet<int>(_session.Connection.World.Trees.Select(t => t.TileIndex));
+                }
+
+                return _treeTiles;
+            }
+        }
+
+        private InteractionTarget PickPlant(double x, double y)
         {
             var world = _session.Connection.World;
             var visuals = _session.Connection.PlantVisuals;
@@ -110,19 +155,7 @@ namespace Oohra.Client
                 }
             }
 
-            if (found >= 0)
-            {
-                return InteractionTarget.ForPlant(found, world.Plants[found].X, world.Plants[found].Y);
-            }
-
-            var tx = (int)System.Math.Floor(x);
-            var ty = (int)System.Math.Floor(y);
-            if (tx >= 0 && ty >= 0 && tx < world.Width && ty < world.Height && IsWater(world.TileAt(tx, ty)))
-            {
-                return InteractionTarget.ForWater(tx, ty);
-            }
-
-            return null;
+            return found >= 0 ? InteractionTarget.ForPlant(found, world.Plants[found].X, world.Plants[found].Y) : null;
         }
 
         /// <summary>WASD a šipky. „Nahoru“ je směr, kam se dívá kamera. Výsledek je směr na mapě (y dolů).</summary>
@@ -153,7 +186,7 @@ namespace Oohra.Client
         /// <summary>Jde k cíli. Když je dost blízko, otevře nabídku (jako v prototypu).</summary>
         private Vector2 DirectionToTarget(Vector2 position)
         {
-            var reach = _target.IsPlant ? PlantReach : WaterReach;
+            var reach = _target.Reach;
             var target = new Vector2((float)_target.X, (float)_target.Y);
             if (Vector2.Distance(position, target) <= reach - 0.15)
             {
@@ -212,7 +245,7 @@ namespace Oohra.Client
                 return;
             }
 
-            var reach = menu.IsPlant ? PlantReach : WaterReach;
+            var reach = menu.Reach;
             if (Vector2.Distance(position, new Vector2((float)menu.X, (float)menu.Y)) > reach + MenuCloseExtra)
             {
                 _session.Menu = null;

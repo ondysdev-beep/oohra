@@ -25,7 +25,7 @@ public class FireServerTests
 
         Assert.True(net.Pump(() => client.Inventory.Stacks.Length == 1));
         Assert.Equal(ItemKind.Stone, client.Inventory.Stacks[0].Kind);
-        Assert.Contains(client.TakeEvents(), e => e.Kind == EventKind.Material && e.Code == (byte)MaterialResult.Gathered);
+        Assert.Contains(client.TakeEvents(), e => e.Kind == EventKind.Material && e.Code == (byte)MaterialResult.GotStone);
     }
 
     [Fact]
@@ -83,6 +83,24 @@ public class FireServerTests
         a.Bake(0);
 
         Assert.True(net.Pump(() => a.Inventory.Stacks.Length == 1 && a.Inventory.Stacks[0].Cooking == Cooking.Baked));
+    }
+
+    /// <summary>Nastavení pro zkoušení: svět začne v noci a postava má materiál na oheň.</summary>
+    [Fact]
+    public void TestingConfigStartsAtNightWithFireKit()
+    {
+        using var net = new TestNetwork(configure: c =>
+        {
+            c.StartHour = 21;
+            c.StartSticks = 4;
+            c.StartStones = 1;
+        });
+
+        var client = net.Join("Ondra");
+
+        Assert.True(net.Pump(() => client.Snapshot is not null));
+        Assert.Equal(21, client.Snapshot!.TotalMinutes / 60, 1);
+        Assert.Equal(new[] { (ItemKind.Stick, 4), (ItemKind.Stone, 1) }, client.Inventory.Stacks.Select(s => (s.Kind, s.Count)));
     }
 
     private static void GiveMaterials(PlayerSession player, int sticks, int stones)

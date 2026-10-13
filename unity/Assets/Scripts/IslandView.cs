@@ -19,6 +19,10 @@ namespace Oohra.Client
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);
             BuildRuins(world, root.transform);
+
+            var fires = new GameObject("Ohně");
+            fires.transform.SetParent(root.transform);
+            fires.AddComponent<FireViews>().Init(connection, world);
             return root;
         }
 
@@ -129,11 +133,9 @@ namespace Oohra.Client
                 var hearth = Primitive(PrimitiveType.Cylinder, "Tábor kmene " + (i + 1), parent, Palette.Hex("#3a2e24"));
                 hearth.transform.position = WorldCoords.ToUnity(camp.X + 0.5, camp.Y + 0.5, 0.05f);
                 hearth.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
-
-                var fire = Primitive(PrimitiveType.Sphere, "Oheň", hearth.transform, Palette.Hex("#e8903a"));
-                fire.transform.position = WorldCoords.ToUnity(camp.X + 0.5, camp.Y + 0.5, 0.25f);
-                fire.transform.localScale = new Vector3(0.35f, 0.45f, 0.35f);
             }
+
+            // Plameny a světla táborů přidá FireViews.
         }
 
         private static void BuildRuins(WorldView world, Transform parent)

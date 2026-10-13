@@ -101,7 +101,7 @@ public sealed class Fires
 
         if (!inventory.TryRemove(ItemKind.Stick, 1))
         {
-            return FireResult.NeedMaterials;
+            return FireResult.NoStick;
         }
 
         var rules = GameData.Fire.Fire;

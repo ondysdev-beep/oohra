@@ -13,7 +13,7 @@ public sealed class TestNetwork : IDisposable
 
     private readonly List<GameConnection> _clients = [];
 
-    public TestNetwork(double timeSpeed = 1)
+    public TestNetwork(double timeSpeed = 1, Action<ServerConfig>? configure = null)
     {
         var config = new ServerConfig
         {
@@ -23,6 +23,7 @@ public sealed class TestNetwork : IDisposable
             InviteCodes = [InviteCode],
             TimeSpeed = timeSpeed,
         };
+        configure?.Invoke(config);
         Server = new GameServer(config);
         Server.Start(0);
     }
