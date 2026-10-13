@@ -10,7 +10,7 @@ namespace Oohra.Client
     /// </summary>
     public class FireViews : MonoBehaviour
     {
-        private const float LightRange = 6f;
+        private const float LightRange = 8f;
         private const float LightIntensity = 2.5f;
         private static readonly Color LightColor = new Color(1f, 0.62f, 0.3f);
 
@@ -88,7 +88,7 @@ namespace Oohra.Client
 
             var light = new GameObject("Světlo ohně").AddComponent<Light>();
             light.transform.SetParent(flame.transform);
-            light.transform.position = WorldCoords.ToUnity(x, y, 0.9f);
+            light.transform.position = WorldCoords.ToUnity(x, y, 1.3f);
             light.type = LightType.Point;
             light.color = LightColor;
             light.range = LightRange;
