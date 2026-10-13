@@ -6,6 +6,13 @@ namespace Oohra.Client
     /// <summary>Barvy a materiály šedé krabice. Barvy dlaždic jsou z prototypu (COL v part3.js).</summary>
     public static class Palette
     {
+        /// <summary>
+        /// Cesta k materiálu v Assets/Resources. Materiál musí být soubor v projektu: shader, který se
+        /// hledá jen v kódu (Shader.Find), Unity do sestavené hry nepřibalí a objekty by byly růžové.
+        /// Vytváří ho menu Oohra → Vytvořit scénu ostrova (a sestavení hry).
+        /// </summary>
+        public const string LitResource = "OohraLit";
+
         private static Material _lit;
 
         /// <summary>Sdílený materiál URP/Lit. Barvu jednotlivých objektů nastavuje SetColor.</summary>
@@ -15,8 +22,11 @@ namespace Oohra.Client
             {
                 if (_lit == null)
                 {
-                    _lit = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-                    _lit.enableInstancing = true;
+                    _lit = Resources.Load<Material>(LitResource);
+                    if (_lit == null)
+                    {
+                        throw new MissingReferenceException("Chybí materiál Assets/Resources/" + LitResource + ".mat (menu Oohra → Vytvořit scénu ostrova).");
+                    }
                 }
 
                 return _lit;

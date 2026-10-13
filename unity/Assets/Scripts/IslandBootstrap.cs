@@ -38,6 +38,40 @@ namespace Oohra.Client
             _host = PlayerPrefs.GetString(HostKey, _host);
         }
 
+        /// <summary>
+        /// Přihlášení z příkazové řádky, např. Oohra.exe -nick Petr (volitelně -server, -port, -code).
+        /// Hodí se pro spuštění dvou oken bez vyplňování a pro ověření sestavené hry.
+        /// </summary>
+        private void Start()
+        {
+            var nickname = CommandLineValue("-nick");
+            if (nickname == null)
+            {
+                return;
+            }
+
+            int port;
+            Connect(
+                CommandLineValue("-server") ?? _host,
+                int.TryParse(CommandLineValue("-port"), out port) ? port : _port,
+                CommandLineValue("-code") ?? _inviteCode,
+                nickname);
+        }
+
+        private static string CommandLineValue(string name)
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            for (var i = 0; i < args.Length - 1; i++)
+            {
+                if (args[i] == name)
+                {
+                    return args[i + 1];
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>Připojí se k serveru a přihlásí se. Volá ho tlačítko Připojit (a testy).</summary>
         public void Connect(string host, int port, string inviteCode, string nickname)
         {
@@ -100,7 +134,28 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Postaví ostrov. Když se to nepovede, ukáže chybu místo nekonečného přihlašování.</summary>
         private void BuildWorld()
+        {
+            try
+            {
+                BuildScene();
+            }
+            catch (System.Exception error)
+            {
+                Debug.LogException(error);
+                _status = "Ostrov se nepodařilo postavit: " + error.Message;
+                Disconnect();
+                return;
+            }
+
+            _worldBuilt = true;
+            _status = string.Empty;
+            _session.Say("Jsi na ostrově. Nejdřív si najdi vodu.", false);
+            Debug.Log("Oohra: ostrov postaven, hráč " + _nickname);
+        }
+
+        private void BuildScene()
         {
             IslandView.Build(_connection.World, _connection);
             _players = new GameObject("Hráči").AddComponent<PlayerViews>();
@@ -110,9 +165,6 @@ namespace Oohra.Client
             gameObject.AddComponent<PlayerController>().Init(_session, camera);
             gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun());
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);
-            _worldBuilt = true;
-            _status = string.Empty;
-            _session.Say("Jsi na ostrově. Nejdřív si najdi vodu.", false);
         }
 
         private void Disconnect()

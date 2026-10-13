@@ -44,7 +44,9 @@ unity/       klient v Unity (Fáze B šedá krabice, Fáze C napojení na server
 - Unity umí jen .NET Standard 2.1 a C# 9. Skripty v `unity/Assets` piš bez novějšího C# (žádné `namespace X;`, `required`, `[..]` kolekce, `record struct`). Typy, které Unity vytváří, nesmí mít `required` vlastnosti.
 - Knihovny pro server i Unity (Shared, Protocol, Core) cílí i na `netstandard2.1`: nepoužívej `System.Text.Json` ani API novější než .NET Standard 2.1 (např. `MaxBy`, `Math.Tau`). JSON čte Newtonsoft.Json.
 - Pravidla (pohyb, kolize, tělo) patří do Core a počítá je server. Klient posílá jen úmysly a zobrazuje stav ze serveru.
-- Menu Unity „Oohra“: Spustit server, Sestavit hru pro Windows (`unity/Build/Oohra.exe`, mimo git), Vytvořit scénu ostrova.
+- Menu Unity „Oohra“: Spustit server, Sestavit hru pro Windows (`unity/Build/Oohra.exe`, mimo git, běží v okně a i na pozadí), Vytvořit scénu ostrova.
+- Materiály a shadery musí být soubory v projektu (sdílený `Assets/Resources/OohraLit.mat`). `Shader.Find` v kódu funguje jen v editoru, sestavená hra by byla růžová. Hlídá to test `BuildReadinessTests`.
+- Sestavená hra umí přihlášení z příkazové řádky: `Oohra.exe -nick Petr` (volitelně `-server`, `-port`, `-code`).
 - Ověření Unity bez okna (`U="/c/Program Files/Unity/Hub/Editor/6000.6.5f1/Editor/Unity.exe"`):
   `"$U" -batchmode -projectPath unity -runTests -testPlatform EditMode -testResults <soubor.xml> -logFile <log>` (stejně `PlayMode`). Test PlayMode spustí skutečný server (`server/Oohra.Server/bin/Debug/net10.0`, napřed `dotnet build`) a uloží snímek do `unity/Logs/sit.png`. `WaitForEndOfFrame` a `ScreenCapture` v batch mode nefungují.
 
