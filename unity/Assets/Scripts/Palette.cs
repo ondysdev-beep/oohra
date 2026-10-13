@@ -16,8 +16,17 @@ namespace Oohra.Client
         /// <summary>Materiál URP/Unlit pro věci, které svítí samy (plamen). Ve tmě nezčernají.</summary>
         public const string GlowResource = "OohraGlow";
 
+        /// <summary>Průhledný materiál URP/Lit (koruny stromů u postavy). Průhlednost je alfa v barvě.</summary>
+        public const string FadeResource = "OohraFade";
+
         private static Material _lit;
         private static Material _glow;
+        private static Material _fade;
+
+        public static Material Fade
+        {
+            get { return Load(ref _fade, FadeResource); }
+        }
 
         /// <summary>Sdílený materiál URP/Lit. Barvu jednotlivých objektů nastavuje SetColor.</summary>
         public static Material Lit

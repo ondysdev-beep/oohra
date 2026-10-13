@@ -62,9 +62,10 @@ namespace Oohra.Client.Editor
         {
             EnsureMaterial(Palette.LitResource, "Universal Render Pipeline/Lit");
             EnsureMaterial(Palette.GlowResource, "Universal Render Pipeline/Unlit");
+            EnsureMaterial(Palette.FadeResource, "Universal Render Pipeline/Lit", transparent: true);
         }
 
-        private static void EnsureMaterial(string resource, string shader)
+        private static void EnsureMaterial(string resource, string shader, bool transparent = false)
         {
             var path = "Assets/Resources/" + resource + ".mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(path) != null)
@@ -78,9 +79,29 @@ namespace Oohra.Client.Editor
             }
 
             var material = new Material(Shader.Find(shader)) { enableInstancing = true };
+            if (transparent)
+            {
+                MakeTransparent(material);
+            }
+
             AssetDatabase.CreateAsset(material, path);
             AssetDatabase.SaveAssets();
             Debug.Log("Oohra: materiál uložen do " + path);
+        }
+
+        /// <summary>Nastaví URP/Lit na průhledný povrch (jako v inspektoru Surface Type: Transparent, Blending: Alpha).</summary>
+        private static void MakeTransparent(Material material)
+        {
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
 
         /// <summary>
