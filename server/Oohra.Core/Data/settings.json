@@ -1,0 +1,7 @@
+// Nastavení světa. Prototyp má ostrov 84 × 84, první test hry bude 128 × 128.
+{
+  "worldWidth": 128,
+  "worldHeight": 128,
+  // Kalendář: měsíců v roce (prototyp YEAR_DAYS), roční období mají po třech.
+  "monthsPerYear": 12
+}
