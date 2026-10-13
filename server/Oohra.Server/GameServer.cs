@@ -35,6 +35,7 @@ public sealed class GameServer : IDisposable
     private readonly PlantVisual[] _sentVisuals;
     private int _nextPlayerId = 1;
     private long _tick;
+    private int _sentFiresVersion;
 
     public GameServer(ServerConfig config)
     {
@@ -70,6 +71,10 @@ public sealed class GameServer : IDisposable
 
     internal PlantStates Plants { get; }
 
+    internal Fires Fires { get; } = new();
+
+    internal Materials Materials { get; } = new();
+
     /// <summary>Spustí server. Port 0 = vyber volný port (pro testy).</summary>
     public void Start(int port)
     {
@@ -86,11 +91,18 @@ public sealed class GameServer : IDisposable
     public void Tick(double realSeconds)
     {
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
+        Fires.Burn(minutes);
         foreach (var player in _byPeer.Values)
         {
             Move(player, realSeconds);
-            Physiology.Update(player.Character, Clock, minutes);
+            Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y));
             SendBodyEvents(player);
+        }
+
+        if (Fires.Version != _sentFiresVersion)
+        {
+            _sentFiresVersion = Fires.Version;
+            Broadcast(w => Messages.WriteFires(w, FireViews()));
         }
 
         _tick++;
@@ -173,6 +185,7 @@ public sealed class GameServer : IDisposable
 
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)), except: peer);
         SendTo(peer, w => Messages.WritePlantStates(w, AllPlantVisuals()));
+        SendTo(peer, w => Messages.WriteFires(w, FireViews()));
         SendInventory(player);
         SendSelfState(player);
         Log?.Invoke($"{player.Nickname} přišel (hráčů ve hře: {_byPeer.Count}).");
@@ -253,7 +266,52 @@ public sealed class GameServer : IDisposable
             case MessageType.Reborn:
                 Reborn(player);
                 break;
+            case MessageType.GatherSticks:
+            case MessageType.TakeStone:
+                GatherMaterial(player, type, Messages.ReadTileAction(reader));
+                break;
+            case MessageType.LightFire:
+                FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, player.Facing));
+                break;
+            case MessageType.FeedFire:
+                var fireId = Messages.ReadFeedFire(reader);
+                FireAction(player, () => Fires.Feed(fireId, player.Inventory, player.X, player.Y));
+                break;
+            case MessageType.Bake:
+                var stackIndex = Messages.ReadStackAction(reader);
+                FireAction(player, () => Fires.Bake(Island, player.Inventory, stackIndex, player.X, player.Y));
+                break;
         }
+    }
+
+    private void GatherMaterial(PlayerSession player, MessageType type, (int TileX, int TileY) tile)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = type == MessageType.GatherSticks
+            ? Materials.GatherSticks(Island, tile.TileX, tile.TileY, Clock, player.Inventory, _rng, player.X, player.Y)
+            : Materials.TakeStone(Island, tile.TileX, tile.TileY, player.Inventory, player.X, player.Y);
+        SendEvent(player, new GameEvent(EventKind.Material, (byte)result, default, []));
+        if (result == MaterialResult.Gathered)
+        {
+            SendInventory(player);
+        }
+    }
+
+    /// <summary>Oheň: rozdělat, přiložit nebo péct. Seznam ohňů se ostatním pošle v příštím ticku.</summary>
+    private void FireAction(PlayerSession player, Func<FireResult> action)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = action();
+        SendEvent(player, new GameEvent(EventKind.Fire, (byte)result, default, []));
+        SendInventory(player);
     }
 
     private static void SetInput(PlayerSession player, (float DirX, float DirY) input)
@@ -299,16 +357,15 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        var item = inventory.Stacks[index].Item;
-        var secret = Island.SpeciesSecrets[item.SpeciesId];
+        var item = inventory.Stacks[index].Item.Plant;
         switch (action)
         {
-            case MessageType.Eat:
+            case MessageType.Eat when item is not null:
                 inventory.TakeOne(index);
-                Eating.Eat(player.Character, item, secret, Clock);
+                Eating.Eat(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock);
                 break;
-            case MessageType.Taste:
-                Eating.Taste(player.Character, item, secret, Clock);
+            case MessageType.Taste when item is not null:
+                Eating.Taste(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock);
                 break;
             case MessageType.Drop:
                 inventory.Drop(index);
@@ -395,7 +452,8 @@ public sealed class GameServer : IDisposable
             c.Symptoms().ToArray(),
             c.Traits.Generation,
             c.IsDead,
-            c.DeathCause);
+            c.DeathCause,
+            Fires.WarmsAt(Island, player.X, player.Y));
         SendTo(player.Peer, w => Messages.WriteSelfState(w, state));
     }
 
@@ -406,9 +464,7 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        var stacks = player.Inventory.Stacks
-            .Select(s => new StackView(s.Item.SpeciesId, s.Item.Part, s.Item.Ripeness, s.Item.Cooking, s.Count))
-            .ToArray();
+        var stacks = player.Inventory.Stacks.Select(StackViewOf).ToArray();
         var view = new InventoryView(player.Inventory.Capacity, stacks);
         SendTo(player.Peer, w => Messages.WriteInventory(w, view));
     }
@@ -447,6 +503,19 @@ public sealed class GameServer : IDisposable
         return Island.Plants
             .Select(p => new PlantStateChange(p.Id, WorldViews.PlantVisual(Island, Plants, p, Clock)))
             .ToList();
+    }
+
+    private static StackView StackViewOf(ItemStack stack)
+    {
+        var plant = stack.Item.Plant;
+        return plant is null
+            ? new StackView(stack.Item.Kind, 0, default, default, default, stack.Count)
+            : new StackView(stack.Item.Kind, plant.SpeciesId, plant.Part, plant.Ripeness, plant.Cooking, stack.Count);
+    }
+
+    private FireView[] FireViews()
+    {
+        return Fires.All.Select(f => new FireView(f.Id, f.TileX, f.TileY, f.Burning)).ToArray();
     }
 
     private static PlayerInfo InfoOf(PlayerSession player)

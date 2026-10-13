@@ -1,6 +1,7 @@
 using System.Linq;
 using Oohra.Core;
 using Oohra.Core.Characters;
+using Oohra.Core.Items;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
 using Oohra.Protocol;
@@ -142,6 +143,9 @@ namespace Oohra.Client
         /// <summary>Popis věci v batohu, jak ji vidí hráč (prototyp describe).</summary>
         public static string Describe(StackView stack)
         {
+            if (stack.Kind == ItemKind.Stick) return "Klacek";
+            if (stack.Kind == ItemKind.Stone) return "Kámen";
+
             var name = stack.Part == PlantPart.Leaf ? "List" : stack.Part == PlantPart.Root ? "Kořen" : "Plod";
             if (stack.Part == PlantPart.Fruit)
             {

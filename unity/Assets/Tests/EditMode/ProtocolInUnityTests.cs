@@ -4,6 +4,7 @@ using LiteNetLib.Utils;
 using NUnit.Framework;
 using Oohra.Core;
 using Oohra.Core.Characters;
+using Oohra.Core.Items;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
 using Oohra.Protocol;
@@ -56,7 +57,7 @@ namespace Oohra.Client.Tests
         [Test]
         public void BodyStateSurvivesTheWire()
         {
-            var state = new SelfState(50, 60, 70, 40, 90, new[] { Symptom.Fever, Symptom.Tremor }, 2, false, null);
+            var state = new SelfState(50, 60, 70, 40, 90, new[] { Symptom.Fever, Symptom.Tremor }, 2, false, null, true);
             var writer = new NetDataWriter();
             Messages.WriteSelfState(writer, state);
             var reader = new NetDataReader(writer.CopyData());
@@ -68,12 +69,13 @@ namespace Oohra.Client.Tests
             Assert.AreEqual(state.Symptoms, copy.Symptoms);
             Assert.AreEqual(2, copy.Generation);
             Assert.IsNull(copy.DeathCause);
+            Assert.IsTrue(copy.NearFire);
         }
 
         [Test]
         public void InventorySurvivesTheWire()
         {
-            var inventory = new InventoryView(10, new[] { new StackView(3, PlantPart.Fruit, Ripeness.Overripe, Cooking.Baked, 4) });
+            var inventory = new InventoryView(10, new[] { new StackView(ItemKind.Plant, 3, PlantPart.Fruit, Ripeness.Overripe, Cooking.Baked, 4), new StackView(ItemKind.Stick, 0, PlantPart.Leaf, Ripeness.Unripe, Cooking.Raw, 5) });
             var writer = new NetDataWriter();
             Messages.WriteInventory(writer, inventory);
             var reader = new NetDataReader(writer.CopyData());
@@ -82,7 +84,7 @@ namespace Oohra.Client.Tests
             var copy = Messages.ReadInventory(reader);
 
             Assert.AreEqual(10, copy.Capacity);
-            Assert.AreEqual(inventory.Stacks[0], copy.Stacks[0]);
+            Assert.AreEqual(inventory.Stacks, copy.Stacks);
         }
     }
 }

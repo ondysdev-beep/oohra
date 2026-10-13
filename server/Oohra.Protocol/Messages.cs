@@ -1,6 +1,7 @@
 using LiteNetLib.Utils;
 using Oohra.Core;
 using Oohra.Core.Characters;
+using Oohra.Core.Items;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
 
@@ -68,9 +69,14 @@ public sealed record SelfState(
     Symptom[] Symptoms,
     int Generation,
     bool Dead,
-    DeathCause? DeathCause);
+    DeathCause? DeathCause,
+    bool NearFire);
 
-public readonly record struct StackView(int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count);
+/// <summary>Hromádka v batohu. U materiálu (klacek, kámen) se údaje o rostlině nepoužívají.</summary>
+public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count);
+
+/// <summary>Oheň na ostrově (hoří, nebo z něj zbyl popel).</summary>
+public readonly record struct FireView(int Id, int TileX, int TileY, bool Burning);
 
 public sealed record InventoryView(int Capacity, StackView[] Stacks);
 
@@ -136,7 +142,7 @@ public static class Messages
         return (r.GetInt(), r.GetInt());
     }
 
-    /// <summary>Akce s věcí v batohu: Eat, Taste nebo Drop.</summary>
+    /// <summary>Akce s věcí v batohu: Eat, Taste, Drop nebo Bake.</summary>
     public static void WriteStackAction(NetDataWriter w, MessageType type, int stackIndex)
     {
         w.Put((byte)type);
@@ -151,6 +157,36 @@ public static class Messages
     public static void WriteReborn(NetDataWriter w)
     {
         w.Put((byte)MessageType.Reborn);
+    }
+
+    /// <summary>Akce s dlaždicí: GatherSticks (strom) nebo TakeStone (skála).</summary>
+    public static void WriteTileAction(NetDataWriter w, MessageType type, int tileX, int tileY)
+    {
+        w.Put((byte)type);
+        w.Put(tileX);
+        w.Put(tileY);
+    }
+
+    public static (int TileX, int TileY) ReadTileAction(NetDataReader r)
+    {
+        return (r.GetInt(), r.GetInt());
+    }
+
+    /// <summary>Rozdělat oheň na dlaždici, kam se postava dívá.</summary>
+    public static void WriteLightFire(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.LightFire);
+    }
+
+    public static void WriteFeedFire(NetDataWriter w, int fireId)
+    {
+        w.Put((byte)MessageType.FeedFire);
+        w.Put(fireId);
+    }
+
+    public static int ReadFeedFire(NetDataReader r)
+    {
+        return r.GetInt();
     }
 
     // ---------- server → klient ----------
@@ -301,6 +337,7 @@ public static class Messages
         w.Put(s.Generation);
         w.Put(s.Dead);
         w.Put(s.DeathCause.HasValue ? (byte)s.DeathCause.Value : byte.MaxValue);
+        w.Put(s.NearFire);
     }
 
     public static SelfState ReadSelfState(NetDataReader r)
@@ -310,8 +347,9 @@ public static class Messages
         var generation = r.GetInt();
         var dead = r.GetBool();
         var cause = r.GetByte();
+        var nearFire = r.GetBool();
         return new SelfState(bars[0], bars[1], bars[2], bars[3], bars[4], symptoms, generation, dead,
-            cause == byte.MaxValue ? null : (DeathCause)cause);
+            cause == byte.MaxValue ? null : (DeathCause)cause, nearFire);
     }
 
     public static void WriteInventory(NetDataWriter w, InventoryView inventory)
@@ -321,6 +359,7 @@ public static class Messages
         w.Put(inventory.Stacks.Length);
         foreach (var s in inventory.Stacks)
         {
+            w.Put((byte)s.Kind);
             w.Put(s.SpeciesId);
             w.Put((byte)s.Part);
             w.Put((byte)s.Ripeness);
@@ -332,7 +371,7 @@ public static class Messages
     public static InventoryView ReadInventory(NetDataReader r)
     {
         var capacity = r.GetInt();
-        var stacks = ReadList(r, () => new StackView(r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt()));
+        var stacks = ReadList(r, () => new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt()));
         return new InventoryView(capacity, stacks);
     }
 
@@ -368,6 +407,25 @@ public static class Messages
     public static PlantStateChange[] ReadPlantStates(NetDataReader r)
     {
         return ReadList(r, () => new PlantStateChange(r.GetInt(), (PlantVisual)r.GetByte()));
+    }
+
+    /// <summary>Všechny ohně na ostrově. Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteFires(NetDataWriter w, IReadOnlyList<FireView> fires)
+    {
+        w.Put((byte)MessageType.Fires);
+        w.Put(fires.Count);
+        foreach (var f in fires)
+        {
+            w.Put(f.Id);
+            w.Put(f.TileX);
+            w.Put(f.TileY);
+            w.Put(f.Burning);
+        }
+    }
+
+    public static FireView[] ReadFires(NetDataReader r)
+    {
+        return ReadList(r, () => new FireView(r.GetInt(), r.GetInt(), r.GetInt(), r.GetBool()));
     }
 
     private static T[] ReadList<T>(NetDataReader r, Func<T> read)
