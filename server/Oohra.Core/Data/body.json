@@ -1,0 +1,156 @@
+// Tělo postavy: potřeby, otravy, příznaky. Přepsáno z prototype/src/part2.js a part4.js.
+// Časy jsou v herních minutách (den má 1440). Ukazatele (sytost, voda, ...) jsou 0 až 100.
+{
+  // Stav nové postavy.
+  "start": { "satiety": 70, "hydration": 75, "energy": 90, "warmth": 55, "health": 100 },
+
+  // Za kolik minut klesne ukazatel ze 100 na 0 (bez dalších vlivů).
+  "needs": {
+    "satietyEmptyMinutes": 3600,
+    "hydrationEmptyMinutes": 1728,
+    "energyEmptyMinutes": 2200,
+    // Žízeň roste, když je postavě horko, má horečku nebo průjem.
+    "hotWarmthAbove": 78,
+    "hotThirstMultiplier": 1.4,
+    "feverThirstAbove": 30,
+    "feverThirstMultiplier": 1.3,
+    "diarrheaThirstMultiplier": 3,
+    // Povzbuzení zpomalí únavu.
+    "stimulantEnergyDrainMultiplier": 0.5
+  },
+
+  // Teplo těla se blíží cíli: základ + generace + (teplota okolí - pohodlí) × vliv.
+  "warmth": {
+    "base": 50,
+    "comfortAmbient": 12,
+    "ambientFactor": 2,
+    "approachPerMinute": 0.004,
+    // Teplota okolí podle ročního období (jaro, léto, podzim, zima), ve dne o trochu víc.
+    "seasonAmbient": [10, 22, 8, -4],
+    "daylightSwing": 8
+  },
+
+  // Horečka se blíží cíli z toxinu a zánětu.
+  "fever": {
+    "toxinAbove": 25,
+    "toxinFactor": 1.3,
+    "infectionFactor": 0.7,
+    "approachPerMinute": 0.012,
+    // Hláška „Hoří ti čelo“ nad touto hodnotou, znovu až po poklesu pod resetBelow.
+    "noticeAbove": 30,
+    "resetBelow": 10
+  },
+
+  // Samovolné uzdravování.
+  "recovery": {
+    "toxinPerMinute": 0.03,
+    "infectionPerMinute": 0.02,
+    "healthPerMinute": 0.012,
+    // Zdraví se vrací jen v dobrém stavu.
+    "healMinSatiety": 40,
+    "healMinHydration": 40,
+    "healMaxFever": 10,
+    "healMaxToxin": 30,
+    "healMinWarmth": 25
+  },
+
+  // Úbytek zdraví za minutu.
+  "damage": {
+    "thirstPerMinute": 0.08,
+    "hungerPerMinute": 0.03,
+    "coldBelow": 18,
+    "coldPerMinute": 0.03,
+    "coldScale": 9,
+    "feverAbove": 80,
+    "feverPerMinute": 0.03,
+    "toxinAbove": 70,
+    "toxinFactor": 0.0012,
+    // Polovina „viny“ za úbytek zdraví se každý den zapomene (pro příčinu smrti).
+    "blameHalfLifeMinutes": 1440
+  },
+
+  // Ochrana první otravy: zdravou postavu otrava nesrazí pod healthFloor.
+  // V dotazníku: „méně ochrany než v prototypu“, ladí se tady.
+  "firstPoisonProtection": {
+    "healthFloor": 10,
+    "minHealthToProtect": 70,
+    "episodeToxinAbove": 25,
+    "episodeEndToxinBelow": 5,
+    "episodeEndFeverBelow": 10
+  },
+
+  // Jídlo: kolik je sníst a ochutnat a jak výživa plní sytost.
+  "eating": {
+    "eatDose": 1,
+    "tasteDose": 0.1,
+    "nutritionToSatiety": 38
+  },
+
+  // Co se po jídle naplánuje. Zpoždění = delayMin + náhoda × delayRange (minuty).
+  "effects": {
+    "vomit": { "minIrritant": 0.12, "chanceFactor": 1.4, "delayMin": 30, "delayRange": 210, "minStrength": 0.15, "maxStrength": 1 },
+    "diarrhea": { "minIrritant": 0.45, "chance": 0.6, "delayMin": 60, "delayRange": 240, "minStrength": 0.3, "maxStrength": 1 },
+    "toxin": { "minDose": 0.02, "delayMin": 60, "delayRange": 240, "factor": 35 },
+    "neurotoxin": { "minDose": 0.1, "delayMin": 90, "delayRange": 270 },
+    "stimulant": { "minDose": 0.1, "durationFactor": 135, "energyFactor": 22, "crashDelayMin": 110, "crashDelayRange": 60 },
+    "medicine": { "minDose": 0.05, "feverFactor": 35, "toxinFactor": 10, "infectionFactor": 20 }
+  },
+
+  // Co se stane, když naplánovaný účinek nastane.
+  "outcomes": {
+    "vomitSatietyFactor": 18,
+    "vomitSatietyBase": 4,
+    "vomitHydration": 10,
+    "diarrheaMinutesFactor": 240,
+    "heavyFeelingAbove": 20,
+    "tremorMinutesFactor": 240,
+    "faintAbove": 0.55,
+    "faintMinutesFactor": 140,
+    "faintDamageFactor": 10,
+    "severeNeuroAbove": 1.1,
+    "severeNeuroDamage": 35,
+    "crashEnergyFactor": 16,
+    "crashEnergyBase": 6
+  },
+
+  // Instinkt Nových: hořkost je zastaví a polknou jen část.
+  "instinct": {
+    "fromGeneration": 2,
+    "worryAbove": 0.28,
+    "neurotoxinWeight": 0.8,
+    "irritantAbove": 0.45,
+    "irritantWeight": 0.4,
+    "baseChance": 0.35,
+    "chancePerGeneration": 0.12,
+    "maxChance": 0.9,
+    "doseKept": 0.45
+  },
+
+  // Chuť při ochutnání: nápovědy podle složení. Šance rostou s generací.
+  "taste": {
+    "sweetAbove": 0.5,
+    "blandAbove": 0.2,
+    "burnsAbove": 0.5,
+    "irritatesAbove": 0.2,
+    "veryBitterAbove": 0.4,
+    "veryBitterChance": 0.85,
+    "veryBitterChancePerGeneration": 0.03,
+    "veryBitterMaxChance": 0.98,
+    "bitterAbove": 0.2,
+    "sharpnessBase": 0.5,
+    "sharpnessPerGeneration": 0.12,
+    "irritatesBonus": 0.2,
+    "sharpnessMaxChance": 0.95,
+    "soapyAbove": 0.4,
+    "soapyChance": 0.3,
+    "freshAbove": 0.4,
+    "herbalAbove": 0.4
+  },
+
+  // Kdy se ukazují příznaky ve stavu těla.
+  "symptoms": {
+    "heavyBodyToxinAbove": 25,
+    "feverAbove": 30,
+    "inflammationAbove": 20
+  }
+}

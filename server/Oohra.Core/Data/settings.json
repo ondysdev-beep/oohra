@@ -3,5 +3,11 @@
   "worldWidth": 128,
   "worldHeight": 128,
   // Kalendář: měsíců v roce (prototyp YEAR_DAYS), roční období mají po třech.
-  "monthsPerYear": 12
+  "monthsPerYear": 12,
+  // Kolikrát za sekundu server počítá svět.
+  "ticksPerSecond": 30,
+  // Den a noc: 90 reálných minut na herní den.
+  "dayLengthSeconds": 5400,
+  // Kalendář: jeden herní měsíc trvá 9 reálných hodin, rok (12 měsíců) tedy 4,5 dne.
+  "monthLengthSeconds": 32400
 }
