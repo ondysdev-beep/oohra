@@ -147,20 +147,34 @@ namespace Oohra.Client
         }
 
         /// <summary>Zeď, na kterou hráč kliknul (do 35 cm od její osy).</summary>
+        /// <summary>
+        /// Stavba pod kurzorem (do 35 cm od její osy). Dveře mají přednost: leží v otvoru zdi s otvorem
+        /// a klik doprostřed otvoru míří na ně.
+        /// </summary>
         private InteractionTarget PickStructure(double x, double y)
         {
+            InteractionTarget found = null;
             foreach (var structure in _session.Connection.Structures)
             {
-                var half = StructureViews.WallLength / 2;
+                if (structure.Kind == BuildKind.Campfire)
+                {
+                    continue;
+                }
+
+                var half = (structure.Kind == BuildKind.Door ? StructureViews.OpeningWidth : StructureViews.WallLength) / 2;
                 var dx = System.Math.Cos(structure.Angle) * half;
                 var dy = System.Math.Sin(structure.Angle) * half;
                 if (DistanceToSegment(x, y, structure.X - dx, structure.Y - dy, structure.X + dx, structure.Y + dy) < 0.35)
                 {
-                    return InteractionTarget.ForStructure(structure.Id, structure.X, structure.Y);
+                    found = InteractionTarget.ForStructure(structure.Id, structure.X, structure.Y);
+                    if (structure.Kind == BuildKind.Door)
+                    {
+                        return found;
+                    }
                 }
             }
 
-            return null;
+            return found;
         }
 
         private static double DistanceToSegment(double px, double py, double x1, double y1, double x2, double y2)

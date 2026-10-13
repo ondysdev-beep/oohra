@@ -11,5 +11,11 @@ namespace Oohra.Core.World
 
         /// <summary>Oheň (ohniště): klacky a kámen.</summary>
         Campfire = 1,
+
+        /// <summary>Zeď s otvorem na dveře: stejně dlouhá jako zeď, blokují jen sloupky po krajích.</summary>
+        DoorFrame = 2,
+
+        /// <summary>Dveře: vsadí se do otvoru ve zdi. Pohyb neblokují (otevřou se), ale uzavřou úkryt.</summary>
+        Door = 3,
     }
 }

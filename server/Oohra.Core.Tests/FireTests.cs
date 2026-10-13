@@ -124,14 +124,14 @@ public class FireTests
         Assert.Equal(FireResult.TooFar, fires.Feed(fire.Id, WithMaterials(1, 0), x + 5, y));
     }
 
-    /// <summary>Oheň se staví v režimu stavby nejdál 1,2 m od postavy, kamkoli (nejen doprostřed dlaždice).</summary>
+    /// <summary>Oheň se staví v režimu stavby nejdál 3,5 m od postavy, kamkoli (nejen doprostřed dlaždice).</summary>
     [Fact]
     public void FireIsPlacedFreelyWithinReach()
     {
         var (x, y) = SpotWithFreeEast();
         var fires = new Fires();
 
-        Assert.Equal(FireResult.TooFar, fires.Light(_island, WithMaterials(3, 1), x, y, x + 1.3, y));
+        Assert.Equal(FireResult.TooFar, fires.Light(_island, WithMaterials(3, 1), x, y, x + 3.6, y));
         Assert.Equal(FireResult.Lit, fires.Light(_island, WithMaterials(3, 1), x, y, x + 0.83, y + 0.27));
 
         Assert.Equal((x + 0.83, y + 0.27), (fires.All[0].X, fires.All[0].Y));

@@ -149,6 +149,20 @@ namespace Oohra.Client
         }
 
         /// <summary>Oheň z nabídky podle čísla (null, když už není).</summary>
+        /// <summary>Druh stavby, u které je otevřená nabídka (zeď, zeď s otvorem, dveře).</summary>
+        public BuildKind MenuStructureKind()
+        {
+            foreach (var structure in Connection.Structures)
+            {
+                if (Menu != null && structure.Id == Menu.Id)
+                {
+                    return structure.Kind;
+                }
+            }
+
+            return BuildKind.StickWall;
+        }
+
         public FireView? MenuFire()
         {
             if (Menu == null || Menu.Kind != TargetKind.Fire)

@@ -45,6 +45,9 @@ namespace Oohra.Core.World
 
         /// <summary>Rozebrat: taková stavba už není.</summary>
         NotFound,
+
+        /// <summary>Dveře: poblíž není zeď s volným otvorem.</summary>
+        NoDoorway,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>

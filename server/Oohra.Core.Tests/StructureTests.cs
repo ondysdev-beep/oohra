@@ -30,7 +30,7 @@ public class StructureTests
         var (x, y) = OpenSpot(island);
 
         Assert.Equal(BuildResult.NeedMaterials, Build(island, Sticks(1), x, y, x + 1, y, 0));
-        Assert.Equal(BuildResult.TooFar, Build(island, Sticks(2), x, y, x + 1.25, y, 0));
+        Assert.Equal(BuildResult.TooFar, Build(island, Sticks(2), x, y, x + 3.6, y, 0));
         Assert.Empty(island.Structures.All);
     }
 
@@ -49,10 +49,10 @@ public class StructureTests
         var inventory = Sticks(5);
         inventory.TryAdd(Item.Stone);
         fires.Light(island, inventory, x, y, x + 1, y);
-        Assert.Equal(BuildResult.CannotBuildHere, island.Structures.Build(island, fires, inventory, x, y, x + 1, y, Math.PI / 2, []));
+        Assert.Equal(BuildResult.CannotBuildHere, island.Structures.Build(island, fires, inventory, x, y, BuildKind.StickWall, x + 1, y, Math.PI / 2, []));
 
         Assert.Equal(BuildResult.CannotBuildHere,
-            island.Structures.Build(island, new Fires(), Sticks(2), x, y, x, y + 1, 0, [new Position(x, y + 1.2)]));
+            island.Structures.Build(island, new Fires(), Sticks(2), x, y, BuildKind.StickWall, x, y + 1, 0, [new Position(x, y + 1.2)]));
         Assert.Empty(island.Structures.All);
     }
 
@@ -153,6 +153,78 @@ public class StructureTests
         Assert.True(inside.Health >= outside.Health);
     }
 
+    /// <summary>Zeď s otvorem blokuje jen sloupky po krajích, otvorem se projde.</summary>
+    [Fact]
+    public void DoorFrameBlocksOnlyPosts()
+    {
+        var island = NewIsland();
+        var (x, y) = OpenSpot(island);
+        Assert.Equal(BuildResult.Built, Build(island, Sticks(2), x, y, x + 1, y, Math.PI / 2, BuildKind.DoorFrame));
+
+        Assert.True(Movement.CanStand(island, x + 1, y, 0.28));
+        Assert.False(Movement.CanStand(island, x + 1, y + 0.45, 0.28));
+
+        var (ax, ay) = (x, y);
+        for (var i = 0; i < 40; i++)
+        {
+            (ax, ay) = Movement.Step(island, ax, ay, 1, 0, 0.05);
+        }
+
+        Assert.True(ax > x + 1.5, $"Postava neprošla otvorem, zůstala na x = {ax:0.00}.");
+    }
+
+    [Fact]
+    public void DoorGoesIntoNearestFreeDoorway()
+    {
+        var island = NewIsland();
+        var (x, y) = OpenSpot(island);
+        Assert.Equal(BuildResult.NoDoorway, Build(island, Sticks(2), x, y, x + 1, y, 0, BuildKind.Door));
+
+        Build(island, Sticks(2), x, y, x + 1, y, Math.PI / 2, BuildKind.DoorFrame);
+        var frame = island.Structures.All.Single();
+        var inventory = Sticks(4);
+
+        Assert.Equal(BuildResult.Built, Build(island, inventory, x, y, x + 1.3, y + 0.2, 0, BuildKind.Door));
+
+        var door = island.Structures.DoorIn(frame.Id)!;
+        Assert.Equal((frame.X, frame.Y, frame.Angle), (door.X, door.Y, door.Angle));
+        Assert.Equal(2, inventory.Count(ItemKind.Stick));
+        Assert.Equal(BuildResult.NoDoorway, Build(island, inventory, x, y, x + 1, y, 0, BuildKind.Door));
+
+        // Dveře neblokují: otvorem se dál projde.
+        Assert.True(Movement.CanStand(island, x + 1, y, 0.28));
+    }
+
+    /// <summary>Úkryt s otvorem bez dveří není úkryt. Když se do otvoru vsadí dveře, je.</summary>
+    [Fact]
+    public void DoorClosesShelter()
+    {
+        var island = NewIsland();
+        island.Structures.Place(30.5 - 0.5, 30.5, Math.PI / 2);
+        island.Structures.Place(30.5, 30.5 + 0.5, 0);
+        island.Structures.Place(30.5, 30.5 - 0.5, 0);
+        var frame = island.Structures.Place(BuildKind.DoorFrame, 30.5 + 0.5, 30.5, Math.PI / 2);
+        Assert.False(Shelter.IsSheltered(island, 30.5, 30.5));
+
+        island.Structures.Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id);
+        Assert.True(Shelter.IsSheltered(island, 30.5, 30.5));
+    }
+
+    [Fact]
+    public void RemovingDoorFrameRemovesDoor()
+    {
+        var island = NewIsland();
+        var (x, y) = OpenSpot(island);
+        var frame = island.Structures.Place(BuildKind.DoorFrame, x + 1, y, Math.PI / 2);
+        island.Structures.Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id);
+        var inventory = Sticks(0);
+
+        Assert.Equal(BuildResult.Removed, island.Structures.Remove(frame.Id, inventory, x, y));
+
+        Assert.Empty(island.Structures.All);
+        Assert.Equal(2, inventory.Count(ItemKind.Stick));
+    }
+
     [Fact]
     public void SegmentGeometry()
     {
@@ -163,9 +235,10 @@ public class StructureTests
         Assert.Null(Geometry.RayHitsSegment(0, 0, 1, 0, 2, 0.5, 2, 1));
     }
 
-    private static BuildResult Build(Island island, Inventory inventory, double px, double py, double x, double y, double angle)
+    private static BuildResult Build(
+        Island island, Inventory inventory, double px, double py, double x, double y, double angle, BuildKind kind = BuildKind.StickWall)
     {
-        return island.Structures.Build(island, new Fires(), inventory, px, py, x, y, angle, [new Position(px, py)]);
+        return island.Structures.Build(island, new Fires(), inventory, px, py, kind, x, y, angle, [new Position(px, py)]);
     }
 
     /// <summary>Čtverec ze 4 zdí se stranou size kolem bodu (cx, cy). Zdi jsou 1 m dlouhé, větší čtverec má mezery.</summary>

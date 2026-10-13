@@ -3,16 +3,23 @@ using Oohra.Core.Items;
 
 namespace Oohra.Core.World;
 
-/// <summary>Stavba hráče s přesnou polohou (střed) a úhlem v radiánech (0 = na východ, roste po směru hodin).</summary>
+/// <summary>Úsečka v rovině mapy (část stavby, která blokuje nebo uzavírá úkryt).</summary>
+public readonly record struct Segment(double X1, double Y1, double X2, double Y2);
+
+/// <summary>
+/// Stavba hráče s přesnou polohou (střed) a úhlem v radiánech (0 = na východ, roste po směru hodin).
+/// Dveře si pamatují, ve které zdi s otvorem jsou (FrameId).
+/// </summary>
 public sealed class Structure
 {
-    public Structure(int id, BuildKind kind, double x, double y, double angle)
+    public Structure(int id, BuildKind kind, double x, double y, double angle, int frameId = 0)
     {
         Id = id;
         Kind = kind;
         X = x;
         Y = y;
         Angle = angle;
+        FrameId = frameId;
     }
 
     public int Id { get; }
@@ -25,7 +32,10 @@ public sealed class Structure
 
     public double Angle { get; }
 
-    /// <summary>Konce zdi (úsečka ve středu její tloušťky).</summary>
+    /// <summary>Dveře: číslo zdi s otvorem, ve které jsou. Jinak 0.</summary>
+    public int FrameId { get; }
+
+    /// <summary>Konce celé stavby (zeď, zeď s otvorem i dveře leží na stejné úsečce dlouhé jako zeď).</summary>
     public (double X1, double Y1, double X2, double Y2) Ends
     {
         get { return WallEnds(X, Y, Angle); }
@@ -38,12 +48,67 @@ public sealed class Structure
         var dy = Math.Sin(angle) * half;
         return (x - dx, y - dy, x + dx, y + dy);
     }
+
+    /// <summary>Co blokuje pohyb: zeď celá, zeď s otvorem jen sloupky, dveře nic (otevřou se).</summary>
+    public IEnumerable<Segment> CollisionSegments()
+    {
+        switch (Kind)
+        {
+            case BuildKind.StickWall:
+                return [Full()];
+            case BuildKind.DoorFrame:
+                return Posts();
+            default:
+                return [];
+        }
+    }
+
+    /// <summary>Co uzavírá úkryt: zeď celá, zeď s otvorem jen sloupky, dveře otvor.</summary>
+    public IEnumerable<Segment> ShelterSegments()
+    {
+        switch (Kind)
+        {
+            case BuildKind.StickWall:
+                return [Full()];
+            case BuildKind.DoorFrame:
+                return Posts();
+            case BuildKind.Door:
+                return [Opening()];
+            default:
+                return [];
+        }
+    }
+
+    private Segment Full()
+    {
+        var (x1, y1, x2, y2) = Ends;
+        return new Segment(x1, y1, x2, y2);
+    }
+
+    /// <summary>Dva sloupky zdi s otvorem (po krajích, mezi nimi otvor).</summary>
+    private Segment[] Posts()
+    {
+        var (x1, y1, x2, y2) = Ends;
+        var post = (GameData.Building.Wall.Length - GameData.Building.DoorFrame.OpeningWidth) / 2;
+        var dx = Math.Cos(Angle) * post;
+        var dy = Math.Sin(Angle) * post;
+        return [new Segment(x1, y1, x1 + dx, y1 + dy), new Segment(x2 - dx, y2 - dy, x2, y2)];
+    }
+
+    /// <summary>Otvor ve zdi (kde jsou dveře).</summary>
+    private Segment Opening()
+    {
+        var half = GameData.Building.DoorFrame.OpeningWidth / 2;
+        var dx = Math.Cos(Angle) * half;
+        var dy = Math.Sin(Angle) * half;
+        return new Segment(X - dx, Y - dy, X + dx, Y + dy);
+    }
 }
 
 /// <summary>
-/// Stavby hráčů (zatím zdi z klacků). Na rozdíl od prototypu nejsou vázané na dlaždice: zeď je tenká příčka
-/// s libovolnou polohou a úhlem a blokuje jen tam, kde opravdu stojí. Pro rychlé hledání si každou
-/// stavbu pamatuje u dlaždic, přes které vede.
+/// Stavby hráčů: zdi, zdi s otvorem a dveře. Na rozdíl od prototypu nejsou vázané na dlaždice: mají libovolnou
+/// polohu a úhel a blokují jen tam, kde opravdu stojí. Pro rychlé hledání si každou stavbu pamatuje
+/// u dlaždic, přes které vede.
 /// </summary>
 public sealed class Structures
 {
@@ -61,10 +126,22 @@ public sealed class Structures
         return _byId.TryGetValue(id, out var structure) ? structure : null;
     }
 
-    /// <summary>Postaví zeď bez materiálu a kontrol (pro testy a později pro načtení uloženého světa).</summary>
+    /// <summary>Dveře v dané zdi s otvorem, nebo null.</summary>
+    public Structure? DoorIn(int frameId)
+    {
+        return _byId.Values.FirstOrDefault(s => s.Kind == BuildKind.Door && s.FrameId == frameId);
+    }
+
+    /// <summary>Postaví zeď bez materiálu a kontrol (pro testy).</summary>
     public Structure Place(double x, double y, double angle)
     {
-        var structure = new Structure(_nextId++, BuildKind.StickWall, x, y, angle);
+        return Place(BuildKind.StickWall, x, y, angle);
+    }
+
+    /// <summary>Postaví stavbu bez materiálu a kontrol (pro testy a později pro načtení uloženého světa).</summary>
+    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0)
+    {
+        var structure = new Structure(_nextId++, kind, x, y, angle, frameId);
         _byId[structure.Id] = structure;
         foreach (var tile in TilesOf(structure))
         {
@@ -82,15 +159,15 @@ public sealed class Structures
     }
 
     /// <summary>
-    /// Postaví zeď z klacků se středem (x, y) a úhlem angle. Nejdál placeReach od postavy, jen na suché zemi,
-    /// ne přes kmen stromu, oheň ani hráče (players: polohy všech hráčů včetně stavitele).
+    /// Postaví stavbu se středem (x, y) a úhlem angle, nejdál placeReach od postavy.
+    /// Zeď a zeď s otvorem: jen na suché zemi, ne přes kmen stromu, oheň ani hráče (players: polohy všech hráčů).
+    /// Dveře: vsadí se do nejbližší volné zdi s otvorem (jejich poloha a úhel se převezmou od ní).
     /// </summary>
     public BuildResult Build(
         Island island, Fires fires, Inventory inventory, double playerX, double playerY,
-        double x, double y, double angle, IEnumerable<Position> players)
+        BuildKind kind, double x, double y, double angle, IEnumerable<Position> players)
     {
-        var rules = GameData.Building.Wall;
-        if (inventory.Count(ItemKind.Stick) < rules.SticksCost)
+        if (inventory.Count(ItemKind.Stick) < SticksCost(kind))
         {
             return BuildResult.NeedMaterials;
         }
@@ -100,17 +177,30 @@ public sealed class Structures
             return BuildResult.TooFar;
         }
 
-        if (!WallFits(island, fires, x, y, angle, players))
+        if (kind == BuildKind.Door)
+        {
+            var frame = FreeDoorway(x, y);
+            if (frame is null)
+            {
+                return BuildResult.NoDoorway;
+            }
+
+            inventory.TryRemove(ItemKind.Stick, SticksCost(kind));
+            Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id);
+            return BuildResult.Built;
+        }
+
+        if (kind is not (BuildKind.StickWall or BuildKind.DoorFrame) || !WallFits(island, fires, x, y, angle, players))
         {
             return BuildResult.CannotBuildHere;
         }
 
-        inventory.TryRemove(ItemKind.Stick, rules.SticksCost);
-        Place(x, y, angle);
+        inventory.TryRemove(ItemKind.Stick, SticksCost(kind));
+        Place(kind, x, y, angle);
         return BuildResult.Built;
     }
 
-    /// <summary>Rozebere stavbu. Část klacků se vrátí do batohu (když se tam vejdou).</summary>
+    /// <summary>Rozebere stavbu (zeď s otvorem i s dveřmi). Část klacků se vrátí do batohu (když se tam vejdou).</summary>
     public BuildResult Remove(int id, Inventory inventory, double playerX, double playerY)
     {
         var structure = Find(id);
@@ -119,38 +209,33 @@ public sealed class Structures
             return BuildResult.NotFound;
         }
 
-        var rules = GameData.Building.Wall;
         var (x1, y1, x2, y2) = structure.Ends;
-        if (Geometry.DistanceToSegment(playerX, playerY, x1, y1, x2, y2) > rules.RemoveReach)
+        if (Geometry.DistanceToSegment(playerX, playerY, x1, y1, x2, y2) > GameData.Building.Wall.RemoveReach)
         {
             return BuildResult.TooFar;
         }
 
-        _byId.Remove(id);
-        foreach (var tile in TilesOf(structure))
+        if (structure.Kind == BuildKind.DoorFrame && DoorIn(structure.Id) is { } door)
         {
-            _byTile[tile].Remove(structure);
+            Take(door, inventory);
         }
 
-        Version++;
-        for (var i = 0; i < rules.SticksBack; i++)
-        {
-            inventory.TryAdd(Item.Stick);
-        }
-
+        Take(structure, inventory);
         return BuildResult.Removed;
     }
 
-    /// <summary>Kruh (postava, oheň) o daném poloměru se překrývá s některou zdí.</summary>
+    /// <summary>Kruh (postava, oheň) o daném poloměru se překrývá s něčím, co blokuje pohyb.</summary>
     public bool Blocks(double x, double y, double radius)
     {
         var reach = radius + GameData.Building.Wall.Thickness / 2;
         foreach (var structure in Near(x, y, reach))
         {
-            var (x1, y1, x2, y2) = structure.Ends;
-            if (Geometry.DistanceToSegment(x, y, x1, y1, x2, y2) < reach)
+            foreach (var s in structure.CollisionSegments())
             {
-                return true;
+                if (Geometry.DistanceToSegment(x, y, s.X1, s.Y1, s.X2, s.Y2) < reach)
+                {
+                    return true;
+                }
             }
         }
 
@@ -185,6 +270,56 @@ public sealed class Structures
         }
     }
 
+    public static int SticksCost(BuildKind kind)
+    {
+        var rules = GameData.Building;
+        switch (kind)
+        {
+            case BuildKind.DoorFrame: return rules.DoorFrame.SticksCost;
+            case BuildKind.Door: return rules.Door.SticksCost;
+            default: return rules.Wall.SticksCost;
+        }
+    }
+
+    private static int SticksBack(BuildKind kind)
+    {
+        var rules = GameData.Building;
+        switch (kind)
+        {
+            case BuildKind.DoorFrame: return rules.DoorFrame.SticksBack;
+            case BuildKind.Door: return rules.Door.SticksBack;
+            default: return rules.Wall.SticksBack;
+        }
+    }
+
+    /// <summary>Nejbližší zeď s otvorem bez dveří, jejíž střed je do snapDistance od bodu.</summary>
+    private Structure? FreeDoorway(double x, double y)
+    {
+        var snap = GameData.Building.Door.SnapDistance;
+        return Near(x, y, snap)
+            .Where(s => s.Kind == BuildKind.DoorFrame && DoorIn(s.Id) is null)
+            .Select(s => (Frame: s, Distance: Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y))))
+            .Where(f => f.Distance <= snap)
+            .OrderBy(f => f.Distance)
+            .Select(f => f.Frame)
+            .FirstOrDefault();
+    }
+
+    private void Take(Structure structure, Inventory inventory)
+    {
+        _byId.Remove(structure.Id);
+        foreach (var tile in TilesOf(structure))
+        {
+            _byTile[tile].Remove(structure);
+        }
+
+        Version++;
+        for (var i = 0; i < SticksBack(structure.Kind); i++)
+        {
+            inventory.TryAdd(Item.Stick);
+        }
+    }
+
     private bool WallFits(Island island, Fires fires, double x, double y, double angle, IEnumerable<Position> players)
     {
         var (x1, y1, x2, y2) = Structure.WallEnds(x, y, angle);
@@ -204,7 +339,7 @@ public sealed class Structures
         return !players.Any(p => Geometry.DistanceToSegment(p.X, p.Y, x1, y1, x2, y2) < playerClearance);
     }
 
-    /// <summary>Dlaždice, přes které stavba vede (obdélník kolem zdi i s tloušťkou).</summary>
+    /// <summary>Dlaždice, přes které stavba vede (obdélník kolem celé délky i s tloušťkou).</summary>
     private static IEnumerable<(int X, int Y)> TilesOf(Structure structure)
     {
         var (x1, y1, x2, y2) = structure.Ends;

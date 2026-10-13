@@ -316,16 +316,14 @@ public sealed class GameServer : IDisposable
     /// <summary>Režim stavby: zeď jde do staveb, oheň mezi ohně. Kam a pod jakým úhlem, určil hráč.</summary>
     private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle) place)
     {
-        switch (place.Kind)
+        if (place.Kind == BuildKind.Campfire)
         {
-            case BuildKind.StickWall:
-                BuildAction(player, () => Island.Structures.Build(
-                    Island, Fires, player.Inventory, player.X, player.Y, place.X, place.Y, place.Angle, PlayerPositions()));
-                break;
-            case BuildKind.Campfire:
-                FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, place.X, place.Y));
-                break;
+            FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, place.X, place.Y));
+            return;
         }
+
+        BuildAction(player, () => Island.Structures.Build(
+            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, PlayerPositions()));
     }
 
     /// <summary>Stavba: postavit nebo rozebrat. Seznam staveb se všem pošle v příštím ticku.</summary>
