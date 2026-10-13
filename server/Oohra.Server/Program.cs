@@ -22,16 +22,23 @@ Console.CancelKeyPress += (_, e) =>
 };
 
 // Hlavní smyčka: pevný počet ticků za sekundu (settings.json, 30).
+// Každých StatsEverySeconds vypíše výkon (jak dlouho trvá tick, kolik dat odchází).
 var tickSeconds = 1.0 / GameData.Settings.TicksPerSecond;
+var stats = new ServerStats();
 var clock = Stopwatch.StartNew();
 var next = 0.0;
+var nextReport = config.StatsEverySeconds;
 while (running)
 {
+    var workStart = clock.Elapsed;
     server.Poll();
     var now = clock.Elapsed.TotalSeconds;
-    if (now >= next)
+    var ticked = now >= next;
+    if (ticked)
     {
+        var tickStart = clock.Elapsed;
         server.Tick(tickSeconds);
+        stats.AddTick((clock.Elapsed - tickStart).TotalMilliseconds);
         next += tickSeconds;
         if (now - next > 1)
         {
@@ -39,7 +46,20 @@ while (running)
             next = now;
         }
     }
-    else
+
+    stats.AddBusy((clock.Elapsed - workStart).TotalMilliseconds);
+    if (config.StatsEverySeconds > 0 && now >= nextReport)
+    {
+        var report = stats.Report(now, server.OnlinePlayers, server.BytesSent, tickSeconds * 1000);
+        if (server.OnlinePlayers > 0)
+        {
+            Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {report}");
+        }
+
+        nextReport = now + config.StatsEverySeconds;
+    }
+
+    if (!ticked)
     {
         Thread.Sleep(1);
     }

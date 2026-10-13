@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Oohra.Server", "Oohra.Serve
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Oohra.Server.Tests", "Oohra.Server.Tests\Oohra.Server.Tests.csproj", "{E33BC375-BA75-407C-AE85-504DBA2CFD7C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Oohra.Bots", "Oohra.Bots\Oohra.Bots.csproj", "{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -111,6 +113,18 @@ Global
 		{E33BC375-BA75-407C-AE85-504DBA2CFD7C}.Release|x64.Build.0 = Release|Any CPU
 		{E33BC375-BA75-407C-AE85-504DBA2CFD7C}.Release|x86.ActiveCfg = Release|Any CPU
 		{E33BC375-BA75-407C-AE85-504DBA2CFD7C}.Release|x86.Build.0 = Release|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Debug|x64.Build.0 = Debug|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Debug|x86.Build.0 = Debug|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Release|x64.ActiveCfg = Release|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Release|x64.Build.0 = Release|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Release|x86.ActiveCfg = Release|Any CPU
+		{47B4E87C-C173-4D59-BD7A-B283B1BF8C01}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

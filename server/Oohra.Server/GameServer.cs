@@ -51,7 +51,7 @@ public sealed class GameServer : IDisposable
         listener.ConnectionRequestEvent += OnConnectionRequest;
         listener.PeerDisconnectedEvent += (peer, info) => OnDisconnected(peer);
         listener.NetworkReceiveEvent += (peer, reader, channel, method) => OnReceive(peer, reader);
-        _net = new NetManager(listener) { AutoRecycle = true };
+        _net = new NetManager(listener) { AutoRecycle = true, EnableStatistics = true };
     }
 
     /// <summary>Zpráva do konzole serveru (kdo přišel, kdo odešel).</summary>
@@ -60,6 +60,9 @@ public sealed class GameServer : IDisposable
     public int Port => _net.LocalPort;
 
     public int OnlinePlayers => _byPeer.Count;
+
+    /// <summary>Kolik bajtů server celkem odeslal (pro měření zátěže).</summary>
+    public long BytesSent => _net.Statistics.BytesSent;
 
     internal Island Island { get; }
 

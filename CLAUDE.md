@@ -19,6 +19,7 @@ server/      C# řešení (Oohra.sln)
   Oohra.Server/          autoritativní server (server.json: port, seed, kódy pozvánek), spuštění dotnet run --project Oohra.Server
   Oohra.Server.Tests/    testy serveru a klientů přes skutečnou síť (localhost)
   Oohra.TestClient/      konzolový klient bez sítě (textová mapa a příkazy)
+  Oohra.Bots/            zátěžový test: roboti jako hráči (jen Protocol), dotnet run --project Oohra.Bots -port 9050 -count 20 -seconds 60. Výkon vypisuje server (statsEverySeconds)
 unity/       klient v Unity (Fáze B šedá krabice, Fáze C napojení na server)
 ```
 

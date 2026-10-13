@@ -8,5 +8,7 @@
   "inviteCodes": [ "OOHRA-TEST" ],
   "maxPlayers": 20,
   // Zrychlení herního času jen pro zkoušení (1 = normální čas, den 90 minut).
-  "timeSpeed": 1
+  "timeSpeed": 1,
+  // Jak často vypsat výkon serveru (sekundy, jen když někdo hraje). 0 = nevypisovat.
+  "statsEverySeconds": 10
 }

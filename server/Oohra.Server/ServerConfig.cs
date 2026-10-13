@@ -29,6 +29,9 @@ public sealed class ServerConfig
     /// <summary>Kontrola plodů a vykopaných rostlin každých N ticků.</summary>
     public int PlantStatesEveryTicks { get; set; } = 30;
 
+    /// <summary>Jak často vypsat výkon serveru do konzole (v sekundách, jen když někdo hraje). 0 = nevypisovat.</summary>
+    public double StatsEverySeconds { get; set; } = 10;
+
     public static ServerConfig Load(string path)
     {
         if (!File.Exists(path))

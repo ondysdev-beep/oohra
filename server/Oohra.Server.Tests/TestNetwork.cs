@@ -29,6 +29,9 @@ public sealed class TestNetwork : IDisposable
 
     public GameServer Server { get; }
 
+    /// <summary>Jak dlouho trvaly ticky serveru (ms), pro zátěžové testy.</summary>
+    public List<double> TickMilliseconds { get; } = [];
+
     /// <summary>Připojí klienta a počká na výsledek přihlášení.</summary>
     public GameConnection Join(string nickname, string inviteCode = InviteCode)
     {
@@ -46,7 +49,9 @@ public sealed class TestNetwork : IDisposable
         while (watch.ElapsedMilliseconds < timeoutMs)
         {
             Server.Poll();
+            var tickStart = watch.Elapsed;
             Server.Tick(1.0 / 30);
+            TickMilliseconds.Add((watch.Elapsed - tickStart).TotalMilliseconds);
             foreach (var client in _clients)
             {
                 client.Poll();
