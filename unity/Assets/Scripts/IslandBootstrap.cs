@@ -166,6 +166,7 @@ namespace Oohra.Client
             gameObject.AddComponent<PlayerController>().Init(_session, camera);
             gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun());
             gameObject.AddComponent<BuildMode>().Init(_session, camera);
+            new GameObject("Kruh výběru").AddComponent<SelectionRing>().Init(_session);
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);
         }
 
