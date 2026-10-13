@@ -101,6 +101,23 @@ public class MovementTests
         }
     }
 
+    /// <summary>
+    /// Na ostrově se seedem 1 (84 × 84) se první hráč na serveru dřív narodil na písku mezi stromy a mořem
+    /// a nemohl odejít. Místo narození teď musí mít kolem sebe dost volného místa.
+    /// </summary>
+    [Fact]
+    public void SpawnIsNeverEnclosed()
+    {
+        var island = IslandGenerator.Build(1, 84, 84);
+        Assert.True(SpawnPoint.OpenTiles(island, 68, 59, 40) < 40, "Uzavřené místo z chyby už není uzavřené, test je potřeba upravit.");
+
+        for (var seed = 1; seed <= 300; seed++)
+        {
+            var spawn = SpawnPoint.PickWild(island, new Mulberry32(seed), firstLife: seed % 2 == 0);
+            Assert.True(SpawnPoint.OpenTiles(island, (int)spawn.X, (int)spawn.Y, 40) >= 40, $"Seed {seed}: {spawn}");
+        }
+    }
+
     [Fact]
     public void SpawnIsAwayFromCamps()
     {
