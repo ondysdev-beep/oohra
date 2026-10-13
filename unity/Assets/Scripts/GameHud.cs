@@ -1,4 +1,5 @@
 using System.Linq;
+using Oohra.Core.Items;
 using Oohra.Core.Plants;
 using Oohra.Protocol;
 using UnityEngine;
@@ -253,12 +254,14 @@ namespace Oohra.Client
             for (var i = 0; i < inventory.Stacks.Length; i++)
             {
                 var stack = inventory.Stacks[i];
-                DrawBar(new Rect(x, y + 6, 18, 18), 1f, Palette.Leaf(connection.World.Species[stack.SpeciesId]));
+                var plant = stack.Kind == ItemKind.Plant;
+                DrawBar(new Rect(x, y + 6, 18, 18), 1f, plant ? Palette.Leaf(connection.World.Species[stack.SpeciesId]) : Palette.Material(stack.Kind));
                 GUI.Label(new Rect(x + 26, y + 6, 250, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
 
                 var buttons = new Rect(x + 290, y + 2, 84, 26);
-                if (Button(ref buttons, "Ochutnat")) connection.Taste(i);
-                if (Button(ref buttons, "Sníst")) connection.Eat(i);
+                if (plant && Button(ref buttons, "Ochutnat")) connection.Taste(i);
+                if (plant && Button(ref buttons, "Sníst")) connection.Eat(i);
+                if (!plant) buttons.x += 2 * (buttons.width + 8);
                 if (Button(ref buttons, "Zahodit")) connection.Drop(i);
                 y += rowHeight;
             }

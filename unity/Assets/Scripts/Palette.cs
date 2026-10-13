@@ -58,6 +58,12 @@ namespace Oohra.Client
             renderer.SetPropertyBlock(block);
         }
 
+        /// <summary>Barva materiálu v batohu a ve světě.</summary>
+        public static Color Material(Oohra.Core.Items.ItemKind kind)
+        {
+            return kind == Oohra.Core.Items.ItemKind.Stick ? Hex("#8a6a42") : Hex("#9a948a");
+        }
+
         /// <summary>Barva listů druhu rostliny.</summary>
         public static Color Leaf(Oohra.Protocol.SpeciesView species)
         {

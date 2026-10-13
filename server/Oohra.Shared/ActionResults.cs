@@ -10,6 +10,46 @@ namespace Oohra.Core.World
         NoFruit,
         InventoryFull,
     }
+
+    /// <summary>Jak dopadlo sbírání klacků u stromu nebo kamene u skály.</summary>
+    public enum MaterialResult
+    {
+        Gathered,
+        TooFar,
+
+        /// <summary>Spadlé větve jsou pryč, dorostou zítra.</summary>
+        NothingLeft,
+
+        InventoryFull,
+
+        /// <summary>Tady není strom (skála).</summary>
+        WrongPlace,
+    }
+
+    /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>
+    public enum FireResult
+    {
+        Lit,
+        Fed,
+        Relit,
+        Baked,
+
+        /// <summary>Chybí klacky nebo kámen.</summary>
+        NeedMaterials,
+
+        /// <summary>Před postavou nejde oheň rozdělat (voda, strom, jiný oheň).</summary>
+        CannotBuildHere,
+
+        TooFar,
+
+        /// <summary>Pečení: žádný hořící oheň poblíž.</summary>
+        NoFireNear,
+
+        /// <summary>Pečení: tohle se péct nedá (není to jídlo, nebo už je upečené).</summary>
+        CannotBake,
+
+        InventoryFull,
+    }
 }
 
 namespace Oohra.Core.Characters

@@ -1,3 +1,4 @@
+using Oohra.Core.Items;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
 using Oohra.Protocol;
@@ -110,9 +111,12 @@ public sealed class Bot : IDisposable
             return;
         }
 
-        if (Connection.Inventory.Stacks.Length > 0 && _random.NextDouble() < 0.3)
+        var food = Enumerable.Range(0, Connection.Inventory.Stacks.Length)
+            .Where(i => Connection.Inventory.Stacks[i].Kind == ItemKind.Plant)
+            .ToList();
+        if (food.Count > 0 && _random.NextDouble() < 0.3)
         {
-            Connection.Eat(_random.Next(Connection.Inventory.Stacks.Length));
+            Connection.Eat(food[_random.Next(food.Count)]);
             Meals++;
             return;
         }

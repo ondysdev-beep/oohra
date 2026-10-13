@@ -1,0 +1,29 @@
+// Oheň a materiál na něj. Přepsáno z makeFire, nabídky stromu, skály a ohně a z physiology
+// v prototypu (part5.js, part4.js). Časy jsou v herních minutách (den má 1440), vzdálenosti v dlaždicích.
+{
+  // Klacky ze stromu: několikrát za den, pokaždé 1 klacek a s danou šancí ještě jeden.
+  "sticks": {
+    "pickingsPerTree": 3,
+    "refreshMinutes": 1440,
+    "extraStickChance": 0.5
+  },
+  // Jak blízko musí postava být.
+  "reach": {
+    "tree": 1.5,
+    "rock": 1.3,
+    "fire": 1.3
+  },
+  "fire": {
+    // Na oheň: klacky a kámen. Rozdělá se na volné dlaždici před postavou.
+    "sticksCost": 3,
+    "stonesCost": 1,
+    "burnMinutes": 720,
+    // Přiložený klacek přidá čas, vyhaslý oheň (popel) jedním klackem znovu chytí.
+    "feedMinutes": 300,
+    "relightMinutes": 300,
+    // V tomto okruhu oheň hřeje (cíl tepla těla + warmthBonus) a dá se u něj péct.
+    "warmthRadius": 2.6,
+    "warmthBonus": 28,
+    "cookRadius": 2.4
+  }
+}

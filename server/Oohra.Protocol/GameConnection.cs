@@ -50,6 +50,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Vzhled každé rostliny (plody, vykopaná). Index = číslo rostliny.</summary>
     public PlantVisual[] PlantVisuals { get; private set; } = [];
 
+    /// <summary>Ohně na ostrově (i vyhaslé, z nich zbyl popel).</summary>
+    public FireView[] Fires { get; private set; } = [];
+
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
     public void Connect(string host, int port, string inviteCode, string nickname)
@@ -113,6 +116,36 @@ public sealed class GameConnection : IDisposable
     public void Reborn()
     {
         Send(Messages.WriteReborn);
+    }
+
+    /// <summary>Nasbírat klacky u stromu na dlaždici.</summary>
+    public void GatherSticks(int tileX, int tileY)
+    {
+        Send(w => Messages.WriteTileAction(w, MessageType.GatherSticks, tileX, tileY));
+    }
+
+    /// <summary>Vzít kámen ze skály na dlaždici.</summary>
+    public void TakeStone(int tileX, int tileY)
+    {
+        Send(w => Messages.WriteTileAction(w, MessageType.TakeStone, tileX, tileY));
+    }
+
+    /// <summary>Rozdělat oheň před sebou (klacky a kámen z batohu).</summary>
+    public void LightFire()
+    {
+        Send(Messages.WriteLightFire);
+    }
+
+    /// <summary>Přiložit klacek do ohně (vyhaslý znovu zapálit).</summary>
+    public void FeedFire(int fireId)
+    {
+        Send(w => Messages.WriteFeedFire(w, fireId));
+    }
+
+    /// <summary>Upéct jeden kus z hromádky u ohně.</summary>
+    public void Bake(int stackIndex)
+    {
+        Send(w => Messages.WriteStackAction(w, MessageType.Bake, stackIndex));
     }
 
     /// <summary>Vlastní poloha podle posledního snímku od serveru.</summary>
@@ -200,6 +233,9 @@ public sealed class GameConnection : IDisposable
                     }
                 }
 
+                break;
+            case MessageType.Fires:
+                Fires = Messages.ReadFires(reader);
                 break;
         }
     }

@@ -5,12 +5,11 @@ using Oohra.Core.Plants;
 namespace Oohra.Core.Items;
 
 /// <summary>Hromádka stejných věcí v batohu.</summary>
-public sealed record ItemStack(PlantItem Item, int Count);
+public sealed record ItemStack(Item Item, int Count);
 
 /// <summary>
-/// Batoh (prototyp S.inv a addItem v part2.js). Stejné věci se skládají na hromádku,
+/// Batoh (prototyp S.inv, addItem, count a takeKind v part2.js). Stejné věci se skládají na hromádku,
 /// každá hromádka zabere jedno místo. Počet míst závisí na generaci.
-/// Zatím jen části rostlin, klacky, kameny a nástroje přijdou později.
 /// </summary>
 public sealed class Inventory
 {
@@ -40,7 +39,7 @@ public sealed class Inventory
     public IReadOnlyList<ItemStack> Stacks => _stacks;
 
     /// <summary>Přidá věc. Vrací false, když je batoh plný.</summary>
-    public bool TryAdd(PlantItem item)
+    public bool TryAdd(Item item)
     {
         var stackSize = GameData.Gathering.Inventory.StackSize;
         for (var i = 0; i < _stacks.Count; i++)
@@ -61,8 +60,14 @@ public sealed class Inventory
         return true;
     }
 
+    /// <summary>Přidá část rostliny.</summary>
+    public bool TryAdd(PlantItem plant)
+    {
+        return TryAdd(Item.Of(plant));
+    }
+
     /// <summary>Vezme jeden kus z hromádky (třeba k snědení).</summary>
-    public PlantItem? TakeOne(int stackIndex)
+    public Item? TakeOne(int stackIndex)
     {
         if (stackIndex < 0 || stackIndex >= _stacks.Count)
         {
@@ -80,6 +85,42 @@ public sealed class Inventory
         }
 
         return stack.Item;
+    }
+
+    /// <summary>Kolik kusů daného druhu je v batohu (třeba klacků).</summary>
+    public int Count(ItemKind kind)
+    {
+        return _stacks.Where(s => s.Item.Kind == kind).Sum(s => s.Count);
+    }
+
+    /// <summary>Odebere počet kusů daného druhu. Když jich tolik není, neodebere nic a vrátí false.</summary>
+    public bool TryRemove(ItemKind kind, int count)
+    {
+        if (Count(kind) < count)
+        {
+            return false;
+        }
+
+        for (var i = _stacks.Count - 1; i >= 0 && count > 0; i--)
+        {
+            if (_stacks[i].Item.Kind != kind)
+            {
+                continue;
+            }
+
+            var taken = Math.Min(count, _stacks[i].Count);
+            count -= taken;
+            if (taken == _stacks[i].Count)
+            {
+                _stacks.RemoveAt(i);
+            }
+            else
+            {
+                _stacks[i] = _stacks[i] with { Count = _stacks[i].Count - taken };
+            }
+        }
+
+        return true;
     }
 
     /// <summary>Zahodí celou hromádku.</summary>

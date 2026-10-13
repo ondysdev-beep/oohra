@@ -6,12 +6,15 @@ namespace Oohra.Core.Characters;
 /// <summary>
 /// Co se děje s tělem v čase (prototyp physiology a runEvents v part4.js):
 /// teplo, hlad, žízeň, únava, horečka, uzdravování, poškození a naplánované účinky jídla.
-/// Oheň, přístřešek, spánek a zranění zatím nejsou (přijdou ve Fázi D).
+/// Oheň hřeje (nearFire). Přístřešek, spánek a zranění zatím nejsou (přijdou ve Fázi D).
 /// </summary>
 public static class Physiology
 {
-    /// <summary>Posune tělo o daný počet herních minut. Čas na hodinách už musí být posunutý.</summary>
-    public static void Update(Character c, GameClock clock, double minutes)
+    /// <summary>
+    /// Posune tělo o daný počet herních minut. Čas na hodinách už musí být posunutý.
+    /// nearFire: postava je u hořícího ohně (Fires.WarmsAt), teplo těla se pak blíží vyšší hodnotě.
+    /// </summary>
+    public static void Update(Character c, GameClock clock, double minutes, bool nearFire = false)
     {
         if (c.IsDead)
         {
@@ -20,7 +23,7 @@ public static class Physiology
 
         var rules = GameData.Body;
         RunDueEffects(c, clock.TotalMinutes);
-        UpdateWarmth(c, clock, minutes, rules.Warmth);
+        UpdateWarmth(c, clock, minutes, nearFire, rules.Warmth);
         UpdateNeeds(c, minutes, rules.Needs);
         UpdateRecoveryAndFever(c, clock.TotalMinutes, minutes, rules);
         UpdatePoisonProtection(c, rules.FirstPoisonProtection);
@@ -39,14 +42,14 @@ public static class Physiology
     /// Nechá uběhnout daný počet herních minut po krocích (výchozí krok 1 minuta).
     /// Pro zkoušení v konzoli a v testech. Server bude místo toho volat Update každý tick.
     /// </summary>
-    public static void Run(Character c, GameClock clock, double minutes, double stepMinutes = 1)
+    public static void Run(Character c, GameClock clock, double minutes, double stepMinutes = 1, bool nearFire = false)
     {
         var remaining = minutes;
         while (remaining > 0 && !c.IsDead)
         {
             var step = Math.Min(stepMinutes, remaining);
             clock.Advance(clock.RealSecondsFor(step));
-            Update(c, clock, step);
+            Update(c, clock, step, nearFire);
             remaining -= step;
         }
     }
@@ -57,10 +60,11 @@ public static class Physiology
         return rules.SeasonAmbient[(int)clock.Season] + rules.DaylightSwing * (clock.Daylight - 0.5);
     }
 
-    private static void UpdateWarmth(Character c, GameClock clock, double minutes, WarmthRules rules)
+    private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, WarmthRules rules)
     {
         var ambient = AmbientTemperature(clock, rules);
-        var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor, 0, 100);
+        var fire = nearFire ? GameData.Fire.Fire.WarmthBonus : 0;
+        var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor + fire, 0, 100);
         c.Warmth += (target - c.Warmth) * Math.Min(1, rules.ApproachPerMinute * minutes);
     }
 

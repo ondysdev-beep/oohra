@@ -29,9 +29,9 @@ public class GatheringTests
         Assert.Equal(HarvestResult.Picked, Harvest(plant, PlantPart.Leaf, states, inventory, clock));
 
         var stack = Assert.Single(inventory.Stacks);
-        Assert.Equal(PlantPart.Leaf, stack.Item.Part);
-        Assert.Equal(plant.SpeciesId, stack.Item.SpeciesId);
-        Assert.Equal(plant.Tile, stack.Item.Soil);
+        Assert.Equal(PlantPart.Leaf, stack.Item.Plant!.Part);
+        Assert.Equal(plant.SpeciesId, stack.Item.Plant!.SpeciesId);
+        Assert.Equal(plant.Tile, stack.Item.Plant!.Soil);
         Assert.Equal(2, stack.Count);
     }
 
@@ -122,10 +122,10 @@ public class GatheringTests
         inventory.TryAdd(Item(PlantPart.Leaf));
         inventory.TryAdd(Item(PlantPart.Root));
 
-        Assert.Equal(PlantPart.Leaf, inventory.TakeOne(0)!.Part);
+        Assert.Equal(PlantPart.Leaf, inventory.TakeOne(0)!.Plant!.Part);
         Assert.Equal(1, inventory.Stacks[0].Count);
         inventory.Drop(0);
-        Assert.Equal(PlantPart.Root, Assert.Single(inventory.Stacks).Item.Part);
+        Assert.Equal(PlantPart.Root, Assert.Single(inventory.Stacks).Item.Plant!.Part);
         Assert.Null(inventory.TakeOne(5));
     }
 
