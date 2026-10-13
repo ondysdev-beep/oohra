@@ -25,23 +25,23 @@ public readonly record struct RuinView(float X, float Y);
 /// <summary>Mapa ostrova, jak ji vidí hráč. Posílá se jednou po přihlášení.</summary>
 public sealed class WorldView
 {
-    public required int Width { get; init; }
+    public int Width { get; init; }
 
-    public required int Height { get; init; }
+    public int Height { get; init; }
 
-    public required TileType[] Tiles { get; init; }
+    public TileType[] Tiles { get; init; } = [];
 
-    public required bool[] Shore { get; init; }
+    public bool[] Shore { get; init; } = [];
 
-    public required TreeView[] Trees { get; init; }
+    public TreeView[] Trees { get; init; } = [];
 
-    public required PlantView[] Plants { get; init; }
+    public PlantView[] Plants { get; init; } = [];
 
-    public required SpeciesView[] Species { get; init; }
+    public SpeciesView[] Species { get; init; } = [];
 
-    public required CampView[] Camps { get; init; }
+    public CampView[] Camps { get; init; } = [];
 
-    public required RuinView[] Ruins { get; init; }
+    public RuinView[] Ruins { get; init; } = [];
 
     public TileType TileAt(int x, int y)
     {

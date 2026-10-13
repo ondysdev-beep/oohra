@@ -1,13 +1,14 @@
 using System.Linq;
 using Oohra.Core.Plants;
+using Oohra.Protocol;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Oohra.Client
 {
     /// <summary>
-    /// Rozhraní šedé krabice (Unity OnGUI): čas, pruhy těla, příznaky, hlášky,
-    /// nabídka u rostliny a vody, batoh a okno smrti. Klávesy: B batoh, Esc zavřít, F1 až F3 rychlost času.
+    /// Rozhraní šedé krabice (Unity OnGUI): čas, pruhy těla, příznaky, hlášky, jmenovky hráčů,
+    /// nabídka u rostliny a vody, batoh a okno smrti. Data posílá server. Klávesy: B batoh, Esc zavřít.
     /// </summary>
     public class GameHud : MonoBehaviour
     {
@@ -16,10 +17,13 @@ namespace Oohra.Client
 
         private static readonly Color Ochre = new Color(0.86f, 0.64f, 0.25f);
 
-        private GameState _state;
+        private ClientSession _session;
+        private PlayerViews _players;
+        private Camera _camera;
         private GUIStyle _label;
         private GUIStyle _title;
         private GUIStyle _warn;
+        private GUIStyle _name;
         private Rect _menuRect;
         private Rect _backpackRect;
         private Rect _deathRect;
@@ -28,40 +32,39 @@ namespace Oohra.Client
         /// <summary>Myš je nad rozhraním: kliknutí nemá posílat postavu na zem pod ním.</summary>
         public static bool MouseOverHud { get; private set; }
 
-        public void Init(GameState state)
+        public void Init(ClientSession session, PlayerViews players, Camera camera)
         {
-            _state = state;
+            _session = session;
+            _players = players;
+            _camera = camera;
         }
 
         private void Update()
         {
             var keyboard = Keyboard.current;
-            if (_state == null || keyboard == null || _state.Character.IsDead)
+            if (_session == null || keyboard == null || _session.Dead)
             {
                 return;
             }
 
-            if (keyboard.bKey.wasPressedThisFrame) _state.BackpackOpen = !_state.BackpackOpen;
+            if (keyboard.bKey.wasPressedThisFrame) _session.BackpackOpen = !_session.BackpackOpen;
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
-                _state.BackpackOpen = false;
-                _state.Menu = null;
+                _session.BackpackOpen = false;
+                _session.Menu = null;
             }
-
-            if (keyboard.f1Key.wasPressedThisFrame) _state.TimeSpeed = 1f;
-            if (keyboard.f2Key.wasPressedThisFrame) _state.TimeSpeed = 10f;
-            if (keyboard.f3Key.wasPressedThisFrame) _state.TimeSpeed = 60f;
         }
 
         private void OnGUI()
         {
-            if (_state == null)
+            if (_session == null || _session.Connection.Self == null)
             {
                 return;
             }
 
             CreateStyles();
             var scale = Mathf.Clamp(Screen.height / BaseHeight, 1f, 2f);
+            DrawNames(scale);
             GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
             var width = Screen.width / scale;
             var height = Screen.height / scale;
@@ -73,11 +76,11 @@ namespace Oohra.Client
             bottom = DrawMenu(width, bottom);
             DrawLog(bottom);
 
-            if (_state.Character.IsDead)
+            if (_session.Dead)
             {
                 DrawDeath(width, height);
             }
-            else if (_state.BackpackOpen)
+            else if (_session.BackpackOpen)
             {
                 DrawBackpack(width, height);
             }
@@ -90,33 +93,60 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Jména hráčů nad hlavou (kreslí se v obrazovkových bodech, bez zvětšení).</summary>
+        private void DrawNames(float scale)
+        {
+            GUI.matrix = Matrix4x4.identity;
+            var connection = _session.Connection;
+            foreach (var id in _players.PlayerIds)
+            {
+                PlayerInfo info;
+                var position = _players.WorldPositionOf(id);
+                if (!position.HasValue || !connection.Players.TryGetValue(id, out info))
+                {
+                    continue;
+                }
+
+                var screen = _camera.WorldToScreenPoint(position.Value + Vector3.up * 0.9f);
+                if (screen.z < 0)
+                {
+                    continue;
+                }
+
+                var rect = new Rect(screen.x - 80, Screen.height - screen.y - 12, 160, 22);
+                GUI.Label(rect, info.Nickname, _name);
+            }
+        }
+
         private void DrawInfo()
         {
-            var clock = _state.Clock;
-            var c = _state.Character;
+            var clock = _session.Clock;
+            var self = _session.Connection.Self;
             var hour = (int)clock.Hour;
             var minute = (int)((clock.Hour - hour) * 60);
-            var speed = _state.TimeSpeed > 1 ? $" · čas ×{_state.TimeSpeed:0}" : string.Empty;
-            var text = $"Den {clock.Day + 1}, {hour:00}:{minute:00} · {Texts.SeasonName(clock.Season)}, {clock.MonthOfYear + 1}. měsíc{speed}\n"
-                + (c.Traits.IsAncient ? "Pradávný" : $"Nový · generace {c.Traits.Generation + 1}");
-            GUI.Box(new Rect(12, 12, 380, 48), text, _label);
+            var players = _session.Connection.Players.Count;
+            var text = $"Den {clock.Day + 1}, {hour:00}:{minute:00} · {Texts.SeasonName(clock.Season)}, {clock.MonthOfYear + 1}. měsíc\n"
+                + (self.Generation == 0 ? "Pradávný" : $"Nový · generace {self.Generation + 1}")
+                + $" · hráčů na ostrově: {players}";
+            GUI.Box(new Rect(12, 12, 420, 48), text, _label);
             GUI.Label(new Rect(12, 64, 600, 20),
-                "WASD / klik = chůze · klik na rostlinu nebo vodu · B batoh · Q, E kamera · F1–F3 rychlost času", _label);
+                "WASD / klik = chůze · klik na rostlinu nebo vodu · B batoh · Q, E kamera", _label);
         }
 
         private void DrawBackpackButton(float width)
         {
+            var inventory = _session.Connection.Inventory;
             _backpackButtonRect = new Rect(width - 132, 12, 120, 34);
-            if (GUI.Button(_backpackButtonRect, $"Batoh (B) {_state.Inventory.Stacks.Count}/{_state.Inventory.Capacity}"))
+            if (GUI.Button(_backpackButtonRect, $"Batoh (B) {inventory.Stacks.Length}/{inventory.Capacity}"))
             {
-                _state.BackpackOpen = !_state.BackpackOpen;
+                _session.BackpackOpen = !_session.BackpackOpen;
             }
         }
 
         /// <summary>Pět pruhů a příznaky dole uprostřed. Vrací horní okraj (pro další prvky nad nimi).</summary>
         private float DrawBody(float width, float height)
         {
-            var c = _state.Character;
+            var self = _session.Connection.Self;
             var panelWidth = Mathf.Min(760, width - 24);
             var x = (width - panelWidth) / 2;
             var y = height - 74;
@@ -124,22 +154,21 @@ namespace Oohra.Client
 
             var bars = new[]
             {
-                ("SYTOST", c.Satiety, new Color(0.79f, 0.54f, 0.23f)),
-                ("VODA", c.Hydration, new Color(0.29f, 0.56f, 0.66f)),
-                ("SÍLA", c.Energy, new Color(0.60f, 0.66f, 0.29f)),
-                ("TEPLO", c.Warmth, new Color(0.83f, 0.42f, 0.23f)),
-                ("ZDRAVÍ", c.Health, new Color(0.69f, 0.29f, 0.29f)),
+                ("SYTOST", self.Satiety, new Color(0.79f, 0.54f, 0.23f)),
+                ("VODA", self.Hydration, new Color(0.29f, 0.56f, 0.66f)),
+                ("SÍLA", self.Energy, new Color(0.60f, 0.66f, 0.29f)),
+                ("TEPLO", self.Warmth, new Color(0.83f, 0.42f, 0.23f)),
+                ("ZDRAVÍ", self.Health, new Color(0.69f, 0.29f, 0.29f)),
             };
             var barWidth = (panelWidth - 20 - 4 * 10) / 5;
             for (var i = 0; i < bars.Length; i++)
             {
                 var bx = x + 10 + i * (barWidth + 10);
                 GUI.Label(new Rect(bx, y + 4, barWidth, 18), bars[i].Item1, _label);
-                DrawBar(new Rect(bx, y + 22, barWidth, 7), (float)bars[i].Item2 / 100f, bars[i].Item3);
+                DrawBar(new Rect(bx, y + 22, barWidth, 7), bars[i].Item2 / 100f, bars[i].Item3);
             }
 
-            var symptoms = c.Symptoms();
-            var symptomText = symptoms.Count == 0 ? string.Empty : "PŘÍZNAKY  " + string.Join(" · ", symptoms.Select(Texts.For));
+            var symptomText = self.Symptoms.Length == 0 ? string.Empty : "PŘÍZNAKY  " + string.Join(" · ", self.Symptoms.Select(Texts.For));
             GUI.Label(new Rect(x + 10, y + 36, panelWidth - 20, 22), symptomText, _warn);
             return y - 6;
         }
@@ -147,8 +176,8 @@ namespace Oohra.Client
         /// <summary>Nabídka u rostliny nebo vody, nad pruhy.</summary>
         private float DrawMenu(float width, float bottom)
         {
-            var target = _state.Menu;
-            if (target == null || _state.Paused)
+            var target = _session.Menu;
+            if (target == null || _session.Dead)
             {
                 return bottom;
             }
@@ -161,29 +190,30 @@ namespace Oohra.Client
             if (target.IsPlant)
             {
                 GUI.Label(new Rect(_menuRect.x + 10, y + 4, 400, 20), "ROSTLINA", _title);
-                if (Button(ref buttonRect, "Utrhnout list")) _state.Harvest(target.Plant, PlantPart.Leaf);
-                if (Oohra.Core.World.Gathering.FruitStage(_state.Island, _state.PlantStates, target.Plant, _state.Clock).HasValue
-                    && Button(ref buttonRect, "Utrhnout plod"))
-                {
-                    _state.Harvest(target.Plant, PlantPart.Fruit);
-                }
-
-                if (_state.Menu != null && Button(ref buttonRect, "Vykopat kořen")) _state.Harvest(target.Plant, PlantPart.Root);
+                if (Button(ref buttonRect, "Utrhnout list")) _session.Harvest(PlantPart.Leaf);
+                if (HasFruit(target.PlantId) && Button(ref buttonRect, "Utrhnout plod")) _session.Harvest(PlantPart.Fruit);
+                if (_session.Menu != null && Button(ref buttonRect, "Vykopat kořen")) _session.Harvest(PlantPart.Root);
             }
             else
             {
-                var tile = _state.Island.TileAt(target.TileX, target.TileY);
+                var tile = _session.Connection.World.TileAt(target.TileX, target.TileY);
                 GUI.Label(new Rect(_menuRect.x + 10, y + 4, 400, 20), Texts.WaterName(tile).ToUpper(), _title);
-                if (Button(ref buttonRect, "Napít se")) _state.Drink(target.TileX, target.TileY);
+                if (Button(ref buttonRect, "Napít se")) _session.Drink();
             }
 
             return y - 6;
         }
 
+        private bool HasFruit(int plantId)
+        {
+            var visual = _session.Connection.PlantVisuals[plantId];
+            return visual == PlantVisual.UnripeFruit || visual == PlantVisual.RipeFruit || visual == PlantVisual.OverripeFruit;
+        }
+
         /// <summary>Posledních pár hlášek nad nabídkou, staré mizí.</summary>
         private void DrawLog(float bottom)
         {
-            var lines = _state.Log.Where(l => Time.unscaledTime - l.ShownAt < LogSeconds).ToList();
+            var lines = _session.Log.Where(l => Time.unscaledTime - l.ShownAt < LogSeconds).ToList();
             var y = bottom - lines.Count * 26;
             foreach (var line in lines)
             {
@@ -196,9 +226,10 @@ namespace Oohra.Client
 
         private void DrawBackpack(float width, float height)
         {
-            var inventory = _state.Inventory;
+            var connection = _session.Connection;
+            var inventory = connection.Inventory;
             var rowHeight = 34f;
-            var panelHeight = Mathf.Min(height - 40, 90 + Mathf.Max(1, inventory.Stacks.Count) * rowHeight);
+            var panelHeight = Mathf.Min(height - 40, 90 + Mathf.Max(1, inventory.Stacks.Length) * rowHeight);
             _backpackRect = new Rect((width - 600) / 2, (height - panelHeight) / 2, 600, panelHeight);
             GUI.Box(_backpackRect, GUIContent.none);
             GUI.Box(_backpackRect, GUIContent.none);
@@ -206,61 +237,52 @@ namespace Oohra.Client
             var x = _backpackRect.x + 14;
             var y = _backpackRect.y + 10;
             GUI.Label(new Rect(x, y, 300, 24), "BATOH", _title);
-            GUI.Label(new Rect(x + 90, y + 2, 300, 22), $"{inventory.Stacks.Count} z {inventory.Capacity} míst · hra stojí", _label);
+            GUI.Label(new Rect(x + 90, y + 2, 300, 22), $"{inventory.Stacks.Length} z {inventory.Capacity} míst", _label);
             if (GUI.Button(new Rect(_backpackRect.xMax - 94, y, 80, 26), "Zavřít"))
             {
-                _state.BackpackOpen = false;
+                _session.BackpackOpen = false;
             }
 
             y += 36;
-            if (inventory.Stacks.Count == 0)
+            if (inventory.Stacks.Length == 0)
             {
                 GUI.Label(new Rect(x, y, 560, 22), "Batoh je prázdný. Klikni na rostlinu a utrhni list, plod nebo vykopej kořen.", _label);
                 return;
             }
 
-            for (var i = 0; i < inventory.Stacks.Count; i++)
+            for (var i = 0; i < inventory.Stacks.Length; i++)
             {
                 var stack = inventory.Stacks[i];
-                var species = _state.Island.Species[stack.Item.SpeciesId];
-                DrawBar(new Rect(x, y + 6, 18, 18), 1f, Palette.Hsl(species.Hue, species.Saturation, species.Lightness));
-                GUI.Label(new Rect(x + 26, y + 6, 250, 22), $"{Texts.Describe(stack.Item)}  ×{stack.Count}", _label);
+                DrawBar(new Rect(x, y + 6, 18, 18), 1f, Palette.Leaf(connection.World.Species[stack.SpeciesId]));
+                GUI.Label(new Rect(x + 26, y + 6, 250, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
 
                 var buttons = new Rect(x + 290, y + 2, 84, 26);
-                var taste = Button(ref buttons, "Ochutnat");
-                var eat = Button(ref buttons, "Sníst");
-                var drop = Button(ref buttons, "Zahodit");
-                if (taste || eat || drop)
-                {
-                    // Po akci se batoh změní, proto kreslení ukončíme a dokreslí se v dalším snímku.
-                    if (taste) _state.Taste(i);
-                    if (eat) _state.Eat(i);
-                    if (drop) _state.Drop(i);
-                    break;
-                }
-
+                if (Button(ref buttons, "Ochutnat")) connection.Taste(i);
+                if (Button(ref buttons, "Sníst")) connection.Eat(i);
+                if (Button(ref buttons, "Zahodit")) connection.Drop(i);
                 y += rowHeight;
             }
         }
 
         private void DrawDeath(float width, float height)
         {
-            var c = _state.Character;
+            var self = _session.Connection.Self;
             _deathRect = new Rect((width - 520) / 2, (height - 190) / 2, 520, 190);
             GUI.Box(_deathRect, GUIContent.none);
             GUI.Box(_deathRect, GUIContent.none);
 
             var x = _deathRect.x + 16;
             var y = _deathRect.y + 14;
+            var next = System.Math.Min(6, System.Math.Max(1, self.Generation + 1));
             GUI.Label(new Rect(x, y, 480, 26), "ZEMŘEL JSI", _title);
-            GUI.Label(new Rect(x, y + 30, 488, 22), c.DeathCause.HasValue ? Texts.For(c.DeathCause.Value) : "Zemřel jsi.", _warn);
+            GUI.Label(new Rect(x, y + 30, 488, 22), self.DeathCause.HasValue ? Texts.For(self.DeathCause.Value) : "Zemřel jsi.", _warn);
             GUI.Label(new Rect(x, y + 58, 488, 44),
                 "Přišel jsi o věci u sebe a o všechno, co tvoje postava věděla.\n"
-                + $"Narodíš se jako Nový, generace {Oohra.Core.Characters.GenerationTraits.NextAfterDeath(c.Traits.Generation) + 1}. Status Pradávného je navždy pryč.",
+                + $"Narodíš se jako Nový, generace {next + 1}. Status Pradávného je navždy pryč.",
                 _label);
             if (GUI.Button(new Rect(x, y + 120, 200, 34), "Narodit se znovu"))
             {
-                _state.Reborn();
+                _session.Reborn();
             }
         }
 
@@ -294,7 +316,7 @@ namespace Oohra.Client
             _title.normal.textColor = Ochre;
             _warn = new GUIStyle(_label);
             _warn.normal.textColor = new Color(0.95f, 0.7f, 0.62f);
-            GUI.skin.box.normal.textColor = _label.normal.textColor;
+            _name = new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = false };
         }
     }
 }

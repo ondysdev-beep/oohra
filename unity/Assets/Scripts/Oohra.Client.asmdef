@@ -9,9 +9,9 @@
   "allowUnsafeCode": false,
   "overrideReferences": true,
   "precompiledReferences": [
-    "Oohra.Core.dll",
     "Oohra.Shared.dll",
-    "Newtonsoft.Json.dll"
+    "Oohra.Protocol.dll",
+    "LiteNetLib.dll"
   ],
   "autoReferenced": true,
   "defineConstraints": [],

@@ -1,70 +1,193 @@
-using Oohra.Core.Data;
-using Oohra.Core.World;
+using Oohra.Protocol;
 using UnityEngine;
 
 namespace Oohra.Client
 {
     /// <summary>
-    /// Spouští šedou krabici: vygeneruje ostrov z Oohra.Core, postaví scénu, narodí postavu
-    /// a každý snímek posune herní čas a tělo. Pravidla jsou v Core, Unity jen zobrazuje a čte vstup.
+    /// Spouští hru: ukáže přihlášení (server, kód pozvánky, přezdívka), připojí se k serveru,
+    /// a když server pošle mapu, postaví ostrov, hráče, kameru a rozhraní.
+    /// Pravidla počítá server. Klient nemá Oohra.Core, a tedy ani skryté složení rostlin.
     /// </summary>
     public class IslandBootstrap : MonoBehaviour
     {
-        [Tooltip("Seed světa. Stejný seed dá stejný ostrov jako TestClient.")]
-        [SerializeField] private int _seed = 1;
+        private const float ConnectTimeoutSeconds = 6f;
+        private const string NicknameKey = "oohra.nickname";
+        private const string HostKey = "oohra.host";
 
-        [Tooltip("0 = velikost z nastavení (settings.json).")]
-        [SerializeField] private int _size = 0;
+        [SerializeField] private string _host = "127.0.0.1";
+        [SerializeField] private int _port = ProtocolInfo.DefaultPort;
+        [SerializeField] private string _inviteCode = "OOHRA-TEST";
+        [SerializeField] private string _nickname = string.Empty;
 
-        [Tooltip("0 = Pradávný, 1 a víc = Nový.")]
-        [SerializeField] private int _generation = 0;
+        private GameConnection _connection;
+        private ClientSession _session;
+        private PlayerViews _players;
+        private CameraRig _cameraRig;
+        private string _status = string.Empty;
+        private float _connectStarted;
+        private bool _worldBuilt;
+        private GUIStyle _label;
+        private GUIStyle _title;
 
-        private GameState _state;
-
-        /// <summary>Stav hry (pro testy a ladění).</summary>
-        public GameState State => _state;
+        /// <summary>Hra po přihlášení (pro testy a ladění), jinak null.</summary>
+        public ClientSession Session => _worldBuilt ? _session : null;
 
         private void Awake()
         {
-            var size = _size > 0 ? _size : GameData.Settings.WorldWidth;
-            var island = IslandGenerator.Build(_seed, size, size);
-            _state = new GameState(island, _seed, _generation);
-            IslandView.Build(_state);
+            _nickname = PlayerPrefs.GetString(NicknameKey, _nickname);
+            _host = PlayerPrefs.GetString(HostKey, _host);
+        }
 
-            var camera = Camera.main;
-            var player = CreatePlayer();
-            var controller = player.AddComponent<PlayerController>();
-            _state.Player = controller;
-            controller.Init(_state, camera);
-            camera.gameObject.AddComponent<CameraRig>().Init(player.transform);
+        /// <summary>Připojí se k serveru a přihlásí se. Volá ho tlačítko Připojit (a testy).</summary>
+        public void Connect(string host, int port, string inviteCode, string nickname)
+        {
+            Disconnect();
+            _host = host;
+            _port = port;
+            _inviteCode = inviteCode;
+            _nickname = nickname;
+            PlayerPrefs.SetString(NicknameKey, nickname);
+            PlayerPrefs.SetString(HostKey, host);
 
-            gameObject.AddComponent<DayNightLight>().Init(_state.Clock, FindSun());
-            gameObject.AddComponent<GameHud>().Init(_state);
-            _state.Say("Jsi první člověk na tomhle ostrově. Nejdřív si najdi vodu.", false);
+            _connection = new GameConnection();
+            _connection.Connect(host, port, inviteCode, nickname);
+            _session = new ClientSession(_connection);
+            _connectStarted = Time.unscaledTime;
+            _status = "Připojuji se k serveru…";
         }
 
         private void Update()
         {
-            _state.Tick(Time.deltaTime);
+            if (_session == null)
+            {
+                return;
+            }
+
+            _session.Update();
+            if (!_worldBuilt)
+            {
+                CheckLogin();
+                return;
+            }
+
+            if (_cameraRig == null && _players.Self != null)
+            {
+                _cameraRig = Camera.main.gameObject.AddComponent<CameraRig>();
+                _cameraRig.Init(_players.Self);
+            }
+
+            if (_connection.Disconnected)
+            {
+                _status = "Spojení se serverem se přerušilo.";
+            }
         }
 
-        private GameObject CreatePlayer()
+        private void CheckLogin()
         {
-            var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            player.name = "Postava";
-            player.transform.localScale = new Vector3(0.55f, 0.6f, 0.55f);
-            Destroy(player.GetComponent<Collider>());
-            Palette.SetColor(player, _generation == 0 ? Palette.Hex("#8a6a45") : Palette.Hex("#c5a97e"));
+            if (_connection.LoginError.Length > 0)
+            {
+                _status = _connection.LoginError;
+                Disconnect();
+            }
+            else if (_connection.LoggedIn && _connection.World != null && _connection.Self != null)
+            {
+                BuildWorld();
+            }
+            else if (_connection.Disconnected || Time.unscaledTime - _connectStarted > ConnectTimeoutSeconds)
+            {
+                _status = "Server neodpovídá. Běží? (V Unity: menu Oohra → Spustit server.)";
+                Disconnect();
+            }
+        }
 
-            // Nos ukazuje, kam se postava dívá.
-            var nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            nose.name = "Směr";
-            nose.transform.SetParent(player.transform);
-            nose.transform.localPosition = new Vector3(0f, 0.5f, 0.5f);
-            nose.transform.localScale = new Vector3(0.3f, 0.15f, 0.4f);
-            Destroy(nose.GetComponent<Collider>());
-            Palette.SetColor(nose, Palette.Hex("#dba23f"));
-            return player;
+        private void BuildWorld()
+        {
+            IslandView.Build(_connection.World, _connection);
+            _players = new GameObject("Hráči").AddComponent<PlayerViews>();
+            _players.Init(_connection);
+
+            var camera = Camera.main;
+            gameObject.AddComponent<PlayerController>().Init(_session, camera);
+            gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun());
+            gameObject.AddComponent<GameHud>().Init(_session, _players, camera);
+            _worldBuilt = true;
+            _status = string.Empty;
+            _session.Say("Jsi na ostrově. Nejdřív si najdi vodu.", false);
+        }
+
+        private void Disconnect()
+        {
+            if (_connection != null)
+            {
+                _connection.Dispose();
+            }
+
+            _connection = null;
+            _session = null;
+        }
+
+        private void OnDestroy()
+        {
+            Disconnect();
+        }
+
+        /// <summary>Přihlašovací okno, dokud hra neběží. Po přerušení spojení ukáže hlášku.</summary>
+        private void OnGUI()
+        {
+            CreateStyles();
+            if (_worldBuilt)
+            {
+                if (_connection != null && _connection.Disconnected)
+                {
+                    GUI.Box(new Rect(Screen.width / 2f - 200, 100, 400, 40), _status, _title);
+                }
+
+                return;
+            }
+
+            var rect = new Rect(Screen.width / 2f - 210, Screen.height / 2f - 150, 420, 300);
+            GUI.Box(rect, GUIContent.none);
+            GUI.Box(rect, GUIContent.none);
+            var x = rect.x + 20;
+            var y = rect.y + 16;
+            GUI.Label(new Rect(x, y, 380, 30), "OOHRA", _title);
+            y += 40;
+            _host = Field(x, ref y, "Server", _host);
+            var port = Field(x, ref y, "Port", _port.ToString());
+            int.TryParse(port, out _port);
+            _inviteCode = Field(x, ref y, "Kód pozvánky", _inviteCode);
+            _nickname = Field(x, ref y, "Přezdívka", _nickname);
+
+            var connecting = _session != null;
+            GUI.enabled = !connecting && _nickname.Trim().Length >= 2;
+            if (GUI.Button(new Rect(x, y + 6, 160, 34), connecting ? "Připojuji…" : "Připojit"))
+            {
+                Connect(_host.Trim(), _port, _inviteCode.Trim(), _nickname.Trim());
+            }
+
+            GUI.enabled = true;
+            GUI.Label(new Rect(x, y + 46, 380, 44), _status, _label);
+        }
+
+        private string Field(float x, ref float y, string label, string value)
+        {
+            GUI.Label(new Rect(x, y, 120, 24), label, _label);
+            var result = GUI.TextField(new Rect(x + 120, y, 250, 24), value ?? string.Empty, 32);
+            y += 32;
+            return result;
+        }
+
+        private void CreateStyles()
+        {
+            if (_label != null)
+            {
+                return;
+            }
+
+            _label = new GUIStyle(GUI.skin.label) { fontSize = 15, wordWrap = true };
+            _label.normal.textColor = new Color(0.94f, 0.9f, 0.82f);
+            _title = new GUIStyle(_label) { fontSize = 22, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            _title.normal.textColor = new Color(0.86f, 0.64f, 0.25f);
         }
 
         private static Light FindSun()

@@ -3,7 +3,7 @@
   <!--
     Knihovna se překládá dvakrát:
     net10.0        pro server, testy a TestClient,
-    netstandard2.1 pro Unity (Unity umí jen .NET Standard 2.1 a C# 9, proto nový C# překládáme my).
+    netstandard2.1 kvůli kontrole, že Core jde přeložit i pro starší .NET (do Unity se ale nedává, viz níže).
   -->
   <PropertyGroup>
     <TargetFrameworks>net10.0;netstandard2.1</TargetFrameworks>
@@ -24,17 +24,18 @@
     <EmbeddedResource Include="Data\*.json" />
   </ItemGroup>
 
-  <!-- JSON čte Newtonsoft.Json. Unity ho má jako oficiální balíček (com.unity.nuget.newtonsoft-json). -->
+  <!-- JSON čte Newtonsoft.Json. -->
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Oohra.Shared\Oohra.Shared.csproj" />
   </ItemGroup>
 
-  <!-- Verze pro Unity se po sestavení zkopíruje do Unity projektu. Newtonsoft si Unity bere ze svého balíčku. -->
-  <Target Name="CopyToUnity" AfterTargets="Build" Condition="'$(TargetFramework)' == 'netstandard2.1' And Exists('$(MSBuildProjectDirectory)\..\..\unity\Assets')">
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildProjectDirectory)\..\..\unity\Assets\Plugins\Oohra" SkipUnchangedFiles="true" />
-  </Target>
+  <!--
+    Do Unity se Core NEKOPÍRUJE: jsou v něm skrytá data (složení rostlin) a klient je nesmí mít.
+    Unity dostává jen Oohra.Shared a Oohra.Protocol. Verze netstandard2.1 zůstává pro případné nástroje.
+  -->
 
 </Project>
