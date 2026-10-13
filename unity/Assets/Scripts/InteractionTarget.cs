@@ -10,10 +10,10 @@ namespace Oohra.Client
         Tree,
         Rock,
         Fire,
-        Wall,
+        Structure,
     }
 
-    /// <summary>Na co hráč kliknul: rostlina nebo oheň (číslo), nebo dlaždice (voda, strom, skála, zeď).</summary>
+    /// <summary>Na co hráč kliknul: rostlina, oheň nebo stavba (číslo), nebo dlaždice (voda, strom, skála).</summary>
     public sealed class InteractionTarget
     {
         private InteractionTarget(TargetKind kind, int id, int tileX, int tileY, double x, double y)
@@ -30,7 +30,7 @@ namespace Oohra.Client
 
         public bool IsPlant => Kind == TargetKind.Plant;
 
-        /// <summary>Číslo rostliny nebo ohně.</summary>
+        /// <summary>Číslo rostliny, ohně nebo stavby.</summary>
         public int Id { get; }
 
         public int PlantId => Id;
@@ -59,7 +59,7 @@ namespace Oohra.Client
                     case TargetKind.Plant: return 0.95;
                     case TargetKind.Water: return 1.7;
                     case TargetKind.Tree: return 1.5;
-                    case TargetKind.Wall: return 1.6;
+                    case TargetKind.Structure: return 1.6;
                     default: return 1.3;
                 }
             }
@@ -70,12 +70,18 @@ namespace Oohra.Client
             return new InteractionTarget(TargetKind.Plant, plantId, 0, 0, x, y);
         }
 
-        public static InteractionTarget ForFire(int fireId, int tileX, int tileY)
+        public static InteractionTarget ForFire(int fireId, double x, double y)
         {
-            return new InteractionTarget(TargetKind.Fire, fireId, tileX, tileY, tileX + 0.5, tileY + 0.5);
+            return new InteractionTarget(TargetKind.Fire, fireId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
         }
 
-        /// <summary>Dlaždice: voda, strom, skála nebo zeď.</summary>
+        /// <summary>Stavba (zeď) podle čísla. (x, y) je její střed.</summary>
+        public static InteractionTarget ForStructure(int structureId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Structure, structureId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
+        }
+
+        /// <summary>Dlaždice: voda, strom nebo skála.</summary>
         public static InteractionTarget ForTile(TargetKind kind, int tileX, int tileY)
         {
             return new InteractionTarget(kind, -1, tileX, tileY, tileX + 0.5, tileY + 0.5);

@@ -52,10 +52,10 @@ namespace Oohra.Client
             {
                 case BuildResult.Built: return "Postavil jsi zeď z klacků.";
                 case BuildResult.Removed: return "Rozebral jsi zeď. Klacek zůstal.";
-                case BuildResult.NeedSticks: return "Na zeď potřebuješ 2 klacky.";
-                case BuildResult.CannotBuildHere: return "Tady stavět nejde. Otoč se jinam.";
+                case BuildResult.NeedMaterials: return "Na zeď potřebuješ 2 klacky.";
+                case BuildResult.CannotBuildHere: return "Tady stavět nejde (voda, strom, oheň nebo tam někdo stojí).";
                 case BuildResult.TooFar: return "Je to moc daleko.";
-                case BuildResult.NoWall: return "Tady žádná zeď není.";
+                case BuildResult.NotFound: return "Ta stavba už tu není.";
                 default: return result.ToString();
             }
         }
@@ -83,7 +83,7 @@ namespace Oohra.Client
                 case FireResult.Baked: return "Upekl jsi to na ohni.";
                 case FireResult.NeedMaterials: return "Na oheň potřebuješ 3 klacky a kámen.";
                 case FireResult.NoStick: return "Nemáš klacek.";
-                case FireResult.CannotBuildHere: return "Tady oheň nerozdělíš. Otoč se jinam.";
+                case FireResult.CannotBuildHere: return "Tady oheň nerozdělíš (voda, strom, zeď nebo jiný oheň).";
                 case FireResult.TooFar: return "Je to moc daleko.";
                 case FireResult.NoFireNear: return "Musíš být u ohně.";
                 case FireResult.CannotBake: return "Tohle se péct nedá.";

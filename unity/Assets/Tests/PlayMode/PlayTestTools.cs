@@ -40,6 +40,25 @@ namespace Oohra.Client.Tests
             }
         }
 
+        /// <summary>
+        /// Režim stavby: zkusí postavit vybranou stavbu 1 m od postavy na všechny čtyři strany, dokud se nepovede.
+        /// </summary>
+        public static IEnumerator PlaceAround(ClientSession session, BuildMode buildMode, System.Func<bool> placed)
+        {
+            yield return WaitFor(() => session.Connection.SelfSnapshot() != null, 5f, "Chybí poloha postavy.");
+            var offsets = new[] { new Vector2(1, 0), new Vector2(0, 1), new Vector2(-1, 0), new Vector2(0, -1) };
+            foreach (var offset in offsets)
+            {
+                var self = session.Connection.SelfSnapshot().Value;
+                buildMode.PlaceAt(self.X + offset.x, self.Y + offset.y);
+                yield return new WaitForSecondsRealtime(0.7f);
+                if (placed())
+                {
+                    yield break;
+                }
+            }
+        }
+
         public static IEnumerator WaitFor(System.Func<bool> condition, float seconds, string message)
         {
             var until = Time.realtimeSinceStartup + seconds;

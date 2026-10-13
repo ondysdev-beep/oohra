@@ -54,6 +54,13 @@ namespace Oohra.Client
             return cache;
         }
 
+        /// <summary>Obarví objekt průhledně (alfa v barvě), např. náhled stavby.</summary>
+        public static void SetFade(GameObject go, Color color)
+        {
+            SetColor(go, color);
+            go.GetComponent<Renderer>().sharedMaterial = Fade;
+        }
+
         /// <summary>Obarví objekt materiálem, který svítí sám (nezávisle na světle).</summary>
         public static void SetGlow(GameObject go, Color color)
         {

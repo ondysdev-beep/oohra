@@ -4,7 +4,7 @@ using Oohra.Protocol;
 
 namespace Oohra.Server.Tests;
 
-/// <summary>Zdi a úkryt přes síť.</summary>
+/// <summary>Režim stavby přes síť: zdi s libovolným úhlem a úkryt.</summary>
 public class WallServerTests
 {
     [Fact]
@@ -14,16 +14,16 @@ public class WallServerTests
         var a = net.Join("Ondra");
         var b = net.Join("Petr");
         var player = net.Server.FindPlayer("Ondra")!;
-        var (x, y) = StandWithFreeEast(net, player);
+        var (x, y) = StandInOpen(net, player);
 
-        a.BuildWall();
+        a.Place(BuildKind.StickWall, x + 1, y, 0.3f);
 
-        var wall = net.Server.Island.Index(x + 1, y);
-        Assert.True(net.Pump(() => b.Walls.Contains(wall)));
+        Assert.True(net.Pump(() => b.Structures.Length == 1));
+        Assert.Equal((x + 1, y, 0.3f), (b.Structures[0].X, b.Structures[0].Y, b.Structures[0].Angle));
         Assert.True(net.Pump(() => a.Inventory.Stacks.Length == 0));
 
-        a.RemoveWall(x + 1, y);
-        Assert.True(net.Pump(() => b.Walls.Length == 0));
+        a.RemoveStructure(b.Structures[0].Id);
+        Assert.True(net.Pump(() => b.Structures.Length == 0));
         Assert.True(net.Pump(() => a.Inventory.Stacks.Length == 1 && a.Inventory.Stacks[0].Kind == ItemKind.Stick));
     }
 
@@ -35,14 +35,14 @@ public class WallServerTests
         net.Join("Petr");
         var builder = net.Server.FindPlayer("Ondra")!;
         var other = net.Server.FindPlayer("Petr")!;
-        var (x, y) = StandWithFreeEast(net, builder);
-        other.X = x + 1.5;
-        other.Y = y + 0.5;
+        var (x, y) = StandInOpen(net, builder);
+        other.X = x + 1;
+        other.Y = y;
 
-        a.BuildWall();
+        a.Place(BuildKind.StickWall, x + 1, y, (float)(Math.PI / 2));
 
         Assert.True(net.Pump(() => a.TakeEvents().Any(e => e.Kind == EventKind.Build && e.Code == (byte)BuildResult.CannotBuildHere)));
-        Assert.Empty(net.Server.Island.Walls.Tiles);
+        Assert.Empty(net.Server.Island.Structures.All);
     }
 
     [Fact]
@@ -51,35 +51,34 @@ public class WallServerTests
         using var net = new TestNetwork();
         var client = net.Join("Ondra");
         var player = net.Server.FindPlayer("Ondra")!;
-        var (x, y) = StandWithFreeEast(net, player);
+        var (x, y) = StandInOpen(net, player);
         Assert.True(net.Pump(() => client.Self is { Sheltered: false }));
 
-        var walls = net.Server.Island.Walls;
-        walls.Place(net.Server.Island.Index(x + 1, y));
-        walls.Place(net.Server.Island.Index(x - 1, y));
-        walls.Place(net.Server.Island.Index(x, y + 1));
-        walls.Place(net.Server.Island.Index(x, y - 1));
+        var structures = net.Server.Island.Structures;
+        structures.Place(x + 0.5, y, Math.PI / 2);
+        structures.Place(x - 0.5, y, Math.PI / 2);
+        structures.Place(x, y + 0.5, 0);
+        structures.Place(x, y - 0.5, 0);
 
-        Assert.True(net.Pump(() => client.Self!.Sheltered && client.Walls.Length == 4));
+        Assert.True(net.Pump(() => client.Self!.Sheltered && client.Structures.Length == 4));
     }
 
-    /// <summary>Postaví hráče na trávu, východně od které je volno, a otočí ho na východ. Vrací jeho dlaždici.</summary>
-    private static (int X, int Y) StandWithFreeEast(TestNetwork net, PlayerSession player)
+    /// <summary>Postaví hráče doprostřed trávy, kolem které je ve čtverci 5 × 5 volno. Vrací jeho polohu.</summary>
+    private static (float X, float Y) StandInOpen(TestNetwork net, PlayerSession player)
     {
         var island = net.Server.Island;
         for (var i = 0; i < island.Tiles.Length; i++)
         {
             var (x, y) = (i % island.Width, i / island.Width);
-            if (island.Tiles[i] == TileType.Grass && !Movement.IsBlocked(island, x, y) && !Movement.IsBlocked(island, x + 1, y)
-                && Movement.CanStand(island, x + 0.5, y + 0.5, 0.28))
+            if (island.Tiles[i] == TileType.Grass
+                && Enumerable.Range(-2, 5).All(dy => Enumerable.Range(-2, 5).All(dx => !Movement.IsBlocked(island, x + dx, y + dy))))
             {
                 player.X = x + 0.5;
                 player.Y = y + 0.5;
-                player.Facing = 0;
-                return (x, y);
+                return (x + 0.5f, y + 0.5f);
             }
         }
 
-        throw new InvalidOperationException("Na ostrově není volná tráva.");
+        throw new InvalidOperationException("Na ostrově není volné místo.");
     }
 }

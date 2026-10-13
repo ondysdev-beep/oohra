@@ -3,52 +3,46 @@ using Oohra.Core.Data;
 namespace Oohra.Core.World;
 
 /// <summary>
-/// Úkryt (prototyp sheltered v part4.js): postava je v prostoru uzavřeném zdmi, který má nejvýš
-/// maxTiles dlaždic. Počítá se krokem nahoru, dolů, doleva a doprava. Stromy a voda se jako stěna
-/// nepočítají, jen zdi. Kdo dojde na okraj mapy, v úkrytu není.
+/// Úkryt: postava je v prostoru uzavřeném zdmi. Z postavy se vyšlou paprsky do všech stran
+/// (rays v building.json) a každý musí do maxDistance narazit na zeď. Stromy a voda se jako stěna
+/// nepočítají, jen zdi (jako v prototypu sheltered, jen bez dlaždic, protože zdi mají libovolný úhel).
+/// Mezeru užší, než je rozestup paprsků, úkryt nepozná. Postava jí stejně neprojde.
 /// </summary>
 public static class Shelter
 {
-    private static readonly (int Dx, int Dy)[] Neighbours = [(1, 0), (-1, 0), (0, 1), (0, -1)];
-
     public static bool IsSheltered(Island island, double x, double y)
     {
-        var maxTiles = GameData.Building.Shelter.MaxTiles;
-        var start = new GridPoint((int)Math.Floor(x), (int)Math.Floor(y));
-        if (!island.InBounds(start.X, start.Y))
+        var rules = GameData.Building.Shelter;
+        var walls = island.Structures.Near(x, y, rules.MaxDistance).ToList();
+        if (walls.Count == 0)
         {
             return false;
         }
 
-        var seen = new HashSet<int> { island.Index(start.X, start.Y) };
-        var stack = new Stack<GridPoint>();
-        stack.Push(start);
-        var visited = 0;
-        while (stack.Count > 0)
+        for (var i = 0; i < rules.Rays; i++)
         {
-            var tile = stack.Pop();
-            if (++visited > maxTiles)
+            var angle = 2 * Math.PI * i / rules.Rays;
+            if (!RayHitsWall(walls, x, y, Math.Cos(angle), Math.Sin(angle), rules.MaxDistance))
             {
                 return false;
-            }
-
-            foreach (var (dx, dy) in Neighbours)
-            {
-                var nx = tile.X + dx;
-                var ny = tile.Y + dy;
-                if (!island.InBounds(nx, ny))
-                {
-                    return false;
-                }
-
-                var index = island.Index(nx, ny);
-                if (!island.Walls.Has(index) && seen.Add(index))
-                {
-                    stack.Push(new GridPoint(nx, ny));
-                }
             }
         }
 
         return true;
+    }
+
+    private static bool RayHitsWall(List<Structure> walls, double x, double y, double dx, double dy, double maxDistance)
+    {
+        foreach (var wall in walls)
+        {
+            var (x1, y1, x2, y2) = wall.Ends;
+            var hit = Geometry.RayHitsSegment(x, y, dx, dy, x1, y1, x2, y2);
+            if (hit is { } distance && distance <= maxDistance)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

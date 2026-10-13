@@ -77,7 +77,10 @@ public sealed record SelfState(
 public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count);
 
 /// <summary>Oheň na ostrově (hoří, nebo z něj zbyl popel).</summary>
-public readonly record struct FireView(int Id, int TileX, int TileY, bool Burning);
+public readonly record struct FireView(int Id, float X, float Y, bool Burning);
+
+/// <summary>Stavba hráče (zeď): střed a úhel v radiánech (0 = na východ, y mapy roste na jih).</summary>
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle);
 
 public sealed record InventoryView(int Capacity, StackView[] Stacks);
 
@@ -160,7 +163,7 @@ public static class Messages
         w.Put((byte)MessageType.Reborn);
     }
 
-    /// <summary>Akce s dlaždicí: GatherSticks (strom), TakeStone (skála) nebo RemoveWall (zeď).</summary>
+    /// <summary>Akce s dlaždicí: GatherSticks (strom) nebo TakeStone (skála).</summary>
     public static void WriteTileAction(NetDataWriter w, MessageType type, int tileX, int tileY)
     {
         w.Put((byte)type);
@@ -171,12 +174,6 @@ public static class Messages
     public static (int TileX, int TileY) ReadTileAction(NetDataReader r)
     {
         return (r.GetInt(), r.GetInt());
-    }
-
-    /// <summary>Rozdělat oheň na dlaždici, kam se postava dívá.</summary>
-    public static void WriteLightFire(NetDataWriter w)
-    {
-        w.Put((byte)MessageType.LightFire);
     }
 
     public static void WriteFeedFire(NetDataWriter w, int fireId)
@@ -190,10 +187,31 @@ public static class Messages
         return r.GetInt();
     }
 
-    /// <summary>Postavit zeď na dlaždici, kam se postava dívá.</summary>
-    public static void WriteBuildWall(NetDataWriter w)
+    /// <summary>Režim stavby: postavit stavbu (zeď, oheň) se středem (x, y) a úhlem v radiánech.</summary>
+    public static void WritePlace(NetDataWriter w, BuildKind kind, float x, float y, float angle)
     {
-        w.Put((byte)MessageType.BuildWall);
+        w.Put((byte)MessageType.Place);
+        w.Put((byte)kind);
+        w.Put(x);
+        w.Put(y);
+        w.Put(angle);
+    }
+
+    public static (BuildKind Kind, float X, float Y, float Angle) ReadPlace(NetDataReader r)
+    {
+        return ((BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat());
+    }
+
+    /// <summary>Rozebrat stavbu podle čísla.</summary>
+    public static void WriteRemoveStructure(NetDataWriter w, int structureId)
+    {
+        w.Put((byte)MessageType.RemoveStructure);
+        w.Put(structureId);
+    }
+
+    public static int ReadRemoveStructure(NetDataReader r)
+    {
+        return r.GetInt();
     }
 
     // ---------- server → klient ----------
@@ -426,31 +444,35 @@ public static class Messages
         foreach (var f in fires)
         {
             w.Put(f.Id);
-            w.Put(f.TileX);
-            w.Put(f.TileY);
+            w.Put(f.X);
+            w.Put(f.Y);
             w.Put(f.Burning);
         }
     }
 
     public static FireView[] ReadFires(NetDataReader r)
     {
-        return ReadList(r, () => new FireView(r.GetInt(), r.GetInt(), r.GetInt(), r.GetBool()));
+        return ReadList(r, () => new FireView(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetBool()));
     }
 
-    /// <summary>Všechny zdi (čísla dlaždic). Posílá se po přihlášení a pak při každé změně.</summary>
-    public static void WriteWalls(NetDataWriter w, IReadOnlyCollection<int> tiles)
+    /// <summary>Všechny stavby hráčů. Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteStructures(NetDataWriter w, IReadOnlyList<StructureView> structures)
     {
-        w.Put((byte)MessageType.Walls);
-        w.Put(tiles.Count);
-        foreach (var tile in tiles)
+        w.Put((byte)MessageType.Structures);
+        w.Put(structures.Count);
+        foreach (var s in structures)
         {
-            w.Put(tile);
+            w.Put(s.Id);
+            w.Put((byte)s.Kind);
+            w.Put(s.X);
+            w.Put(s.Y);
+            w.Put(s.Angle);
         }
     }
 
-    public static int[] ReadWalls(NetDataReader r)
+    public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, r.GetInt);
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat()));
     }
 
     private static T[] ReadList<T>(NetDataReader r, Func<T> read)

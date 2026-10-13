@@ -68,9 +68,9 @@ namespace Oohra.Client
             if (!_flames.TryGetValue(fire.Id, out flame))
             {
                 var hearth = IslandView.Primitive(PrimitiveType.Cylinder, "Oheň " + fire.Id, transform, Palette.Hex("#4a4038"));
-                hearth.transform.position = WorldCoords.ToUnity(fire.TileX + 0.5, fire.TileY + 0.5, 0.04f);
+                hearth.transform.position = WorldCoords.ToUnity(fire.X, fire.Y, 0.04f);
                 hearth.transform.localScale = new Vector3(0.7f, 0.04f, 0.7f);
-                flame = CreateFlame(transform, fire.TileX + 0.5, fire.TileY + 0.5);
+                flame = CreateFlame(transform, fire.X, fire.Y);
                 _flames[fire.Id] = flame;
             }
 

@@ -1,6 +1,7 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
 using Oohra.Core.Plants;
+using Oohra.Core.World;
 
 namespace Oohra.Protocol;
 
@@ -53,8 +54,8 @@ public sealed class GameConnection : IDisposable
     /// <summary>Ohně na ostrově (i vyhaslé, z nich zbyl popel).</summary>
     public FireView[] Fires { get; private set; } = [];
 
-    /// <summary>Dlaždice se zdí (y * šířka + x).</summary>
-    public int[] Walls { get; private set; } = [];
+    /// <summary>Stavby hráčů (zdi).</summary>
+    public StructureView[] Structures { get; private set; } = [];
 
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
@@ -133,28 +134,22 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteTileAction(w, MessageType.TakeStone, tileX, tileY));
     }
 
-    /// <summary>Rozdělat oheň před sebou (klacky a kámen z batohu).</summary>
-    public void LightFire()
-    {
-        Send(Messages.WriteLightFire);
-    }
-
     /// <summary>Přiložit klacek do ohně (vyhaslý znovu zapálit).</summary>
     public void FeedFire(int fireId)
     {
         Send(w => Messages.WriteFeedFire(w, fireId));
     }
 
-    /// <summary>Postavit zeď z klacků před sebou.</summary>
-    public void BuildWall()
+    /// <summary>Režim stavby: postavit stavbu (zeď, oheň) se středem (x, y) a úhlem v radiánech.</summary>
+    public void Place(BuildKind kind, float x, float y, float angle)
     {
-        Send(Messages.WriteBuildWall);
+        Send(w => Messages.WritePlace(w, kind, x, y, angle));
     }
 
-    /// <summary>Rozebrat zeď na dlaždici (vrátí se klacek).</summary>
-    public void RemoveWall(int tileX, int tileY)
+    /// <summary>Rozebrat stavbu (u zdi se vrátí klacek).</summary>
+    public void RemoveStructure(int structureId)
     {
-        Send(w => Messages.WriteTileAction(w, MessageType.RemoveWall, tileX, tileY));
+        Send(w => Messages.WriteRemoveStructure(w, structureId));
     }
 
     /// <summary>Upéct jeden kus z hromádky u ohně.</summary>
@@ -252,8 +247,8 @@ public sealed class GameConnection : IDisposable
             case MessageType.Fires:
                 Fires = Messages.ReadFires(reader);
                 break;
-            case MessageType.Walls:
-                Walls = Messages.ReadWalls(reader);
+            case MessageType.Structures:
+                Structures = Messages.ReadStructures(reader);
                 break;
         }
     }

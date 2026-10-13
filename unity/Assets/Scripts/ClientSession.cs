@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
+using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
 
@@ -115,24 +116,18 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Rozdělat oheň na dlaždici, kam se postava dívá.</summary>
-        public void LightFire()
+        /// <summary>Režim stavby: postavit stavbu se středem (x, y) a úhlem v radiánech. Rozhodne server.</summary>
+        public void Place(BuildKind kind, double x, double y, float angle)
         {
-            Connection.LightFire();
+            Connection.Place(kind, (float)x, (float)y, angle);
         }
 
-        /// <summary>Postavit zeď na dlaždici, kam se postava dívá (2 klacky).</summary>
-        public void BuildWall()
+        /// <summary>Rozebrat stavbu, u které je otevřená nabídka.</summary>
+        public void RemoveStructure()
         {
-            Connection.BuildWall();
-        }
-
-        /// <summary>Rozebrat zeď, u které je otevřená nabídka.</summary>
-        public void RemoveWall()
-        {
-            if (Menu != null && Menu.Kind == TargetKind.Wall)
+            if (Menu != null && Menu.Kind == TargetKind.Structure)
             {
-                Connection.RemoveWall(Menu.TileX, Menu.TileY);
+                Connection.RemoveStructure(Menu.Id);
                 Menu = null;
             }
         }

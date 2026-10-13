@@ -4,26 +4,22 @@ using Oohra.Core.Plants;
 
 namespace Oohra.Core.World;
 
-/// <summary>Oheň ve světě. Stojí uprostřed dlaždice. Když dohoří, zůstane popel a dá se znovu zapálit.</summary>
+/// <summary>Oheň ve světě s přesnou polohou. Když dohoří, zůstane popel a dá se znovu zapálit.</summary>
 public sealed class Fire
 {
-    public Fire(int id, int tileX, int tileY, double burnMinutes)
+    public Fire(int id, double x, double y, double burnMinutes)
     {
         Id = id;
-        TileX = tileX;
-        TileY = tileY;
+        X = x;
+        Y = y;
         BurnMinutes = burnMinutes;
     }
 
     public int Id { get; }
 
-    public int TileX { get; }
+    public double X { get; }
 
-    public int TileY { get; }
-
-    public double X => TileX + 0.5;
-
-    public double Y => TileY + 0.5;
+    public double Y { get; }
 
     /// <summary>Kolik herních minut ještě bude hořet.</summary>
     public double BurnMinutes { get; set; }
@@ -68,8 +64,11 @@ public sealed class Fires
         }
     }
 
-    /// <summary>Rozdělá oheň z klacků a kamene na volné dlaždici, kam se postava dívá.</summary>
-    public FireResult Light(Island island, Inventory inventory, double playerX, double playerY, double facing)
+    /// <summary>
+    /// Rozdělá oheň z klacků a kamene na místě (x, y) z režimu stavby: nejdál placeReach od postavy,
+    /// na suché zemi, ne na kmeni stromu, jiném ohni ani zdi.
+    /// </summary>
+    public FireResult Light(Island island, Inventory inventory, double playerX, double playerY, double x, double y)
     {
         var rules = GameData.Fire.Fire;
         if (inventory.Count(ItemKind.Stick) < rules.SticksCost || inventory.Count(ItemKind.Stone) < rules.StonesCost)
@@ -77,15 +76,23 @@ public sealed class Fires
             return FireResult.NeedMaterials;
         }
 
-        var (tileX, tileY) = FacingTile(playerX, playerY, facing);
-        if (Movement.IsBlocked(island, tileX, tileY) || _fires.Exists(f => f.TileX == tileX && f.TileY == tileY))
+        if (!Placement.InReach(playerX, playerY, x, y))
+        {
+            return FireResult.TooFar;
+        }
+
+        var footprint = rules.FootprintRadius;
+        if (!Placement.OnDryLand(island, x, y)
+            || !Placement.ClearOfTrunks(island, x, y, x, y, footprint)
+            || _fires.Exists(f => Distance(f.X, f.Y, x, y) < 2 * footprint)
+            || island.Structures.Blocks(x, y, footprint))
         {
             return FireResult.CannotBuildHere;
         }
 
         inventory.TryRemove(ItemKind.Stick, rules.SticksCost);
         inventory.TryRemove(ItemKind.Stone, rules.StonesCost);
-        _fires.Add(new Fire(_nextId++, tileX, tileY, rules.BurnMinutes));
+        _fires.Add(new Fire(_nextId++, x, y, rules.BurnMinutes));
         Version++;
         return FireResult.Lit;
     }
@@ -166,16 +173,6 @@ public sealed class Fires
         }
 
         return FireResult.Baked;
-    }
-
-    /// <summary>Dlaždice, kam se postava dívá (prototyp facingTile): sousední ve směru, který převažuje.</summary>
-    public static (int X, int Y) FacingTile(double playerX, double playerY, double facing)
-    {
-        var fx = Math.Cos(facing);
-        var fy = Math.Sin(facing);
-        var x = (int)Math.Floor(playerX);
-        var y = (int)Math.Floor(playerY);
-        return Math.Abs(fx) > Math.Abs(fy) ? (x + (fx > 0 ? 1 : -1), y) : (x, y + (fy > 0 ? 1 : -1));
     }
 
     private static double Distance(double ax, double ay, double bx, double by)

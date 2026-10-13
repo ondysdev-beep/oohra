@@ -36,7 +36,7 @@ public sealed class GameServer : IDisposable
     private int _nextPlayerId = 1;
     private long _tick;
     private int _sentFiresVersion;
-    private int _sentWallsVersion;
+    private int _sentStructuresVersion;
 
     public GameServer(ServerConfig config)
     {
@@ -106,10 +106,10 @@ public sealed class GameServer : IDisposable
             Broadcast(w => Messages.WriteFires(w, FireViews()));
         }
 
-        if (Island.Walls.Version != _sentWallsVersion)
+        if (Island.Structures.Version != _sentStructuresVersion)
         {
-            _sentWallsVersion = Island.Walls.Version;
-            Broadcast(w => Messages.WriteWalls(w, Island.Walls.Tiles));
+            _sentStructuresVersion = Island.Structures.Version;
+            Broadcast(w => Messages.WriteStructures(w, StructureViews()));
         }
 
         _tick++;
@@ -193,7 +193,7 @@ public sealed class GameServer : IDisposable
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)), except: peer);
         SendTo(peer, w => Messages.WritePlantStates(w, AllPlantVisuals()));
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
-        SendTo(peer, w => Messages.WriteWalls(w, Island.Walls.Tiles));
+        SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
         SendInventory(player);
         SendSelfState(player);
         Log?.Invoke($"{player.Nickname} přišel (hráčů ve hře: {_byPeer.Count}).");
@@ -295,9 +295,6 @@ public sealed class GameServer : IDisposable
             case MessageType.TakeStone:
                 GatherMaterial(player, type, Messages.ReadTileAction(reader));
                 break;
-            case MessageType.LightFire:
-                FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, player.Facing));
-                break;
             case MessageType.FeedFire:
                 var fireId = Messages.ReadFeedFire(reader);
                 FireAction(player, () => Fires.Feed(fireId, player.Inventory, player.X, player.Y));
@@ -306,17 +303,32 @@ public sealed class GameServer : IDisposable
                 var stackIndex = Messages.ReadStackAction(reader);
                 FireAction(player, () => Fires.Bake(Island, player.Inventory, stackIndex, player.X, player.Y));
                 break;
-            case MessageType.BuildWall:
-                BuildAction(player, () => Island.Walls.Build(Island, Fires, player.Inventory, player.X, player.Y, player.Facing, PlayerPositions()));
+            case MessageType.Place:
+                Place(player, Messages.ReadPlace(reader));
                 break;
-            case MessageType.RemoveWall:
-                var (wallX, wallY) = Messages.ReadTileAction(reader);
-                BuildAction(player, () => Island.Walls.Remove(Island, wallX, wallY, player.Inventory, player.X, player.Y));
+            case MessageType.RemoveStructure:
+                var structureId = Messages.ReadRemoveStructure(reader);
+                BuildAction(player, () => Island.Structures.Remove(structureId, player.Inventory, player.X, player.Y));
                 break;
         }
     }
 
-    /// <summary>Zeď: postavit nebo rozebrat. Seznam zdí se všem pošle v příštím ticku.</summary>
+    /// <summary>Režim stavby: zeď jde do staveb, oheň mezi ohně. Kam a pod jakým úhlem, určil hráč.</summary>
+    private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle) place)
+    {
+        switch (place.Kind)
+        {
+            case BuildKind.StickWall:
+                BuildAction(player, () => Island.Structures.Build(
+                    Island, Fires, player.Inventory, player.X, player.Y, place.X, place.Y, place.Angle, PlayerPositions()));
+                break;
+            case BuildKind.Campfire:
+                FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, place.X, place.Y));
+                break;
+        }
+    }
+
+    /// <summary>Stavba: postavit nebo rozebrat. Seznam staveb se všem pošle v příštím ticku.</summary>
     private void BuildAction(PlayerSession player, Func<BuildResult> action)
     {
         if (player.Character.IsDead)
@@ -567,7 +579,12 @@ public sealed class GameServer : IDisposable
 
     private FireView[] FireViews()
     {
-        return Fires.All.Select(f => new FireView(f.Id, f.TileX, f.TileY, f.Burning)).ToArray();
+        return Fires.All.Select(f => new FireView(f.Id, (float)f.X, (float)f.Y, f.Burning)).ToArray();
+    }
+
+    private StructureView[] StructureViews()
+    {
+        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle)).ToArray();
     }
 
     private static PlayerInfo InfoOf(PlayerSession player)
