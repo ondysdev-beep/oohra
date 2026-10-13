@@ -1,0 +1,476 @@
+using System.Runtime.CompilerServices;
+using LiteNetLib;
+using LiteNetLib.Utils;
+using Oohra.Core.Characters;
+using Oohra.Core.Data;
+using Oohra.Core.Items;
+using Oohra.Core.Plants;
+using Oohra.Core.Rng;
+using Oohra.Core.Time;
+using Oohra.Core.World;
+using Oohra.Protocol;
+
+[assembly: InternalsVisibleTo("Oohra.Server.Tests")]
+
+namespace Oohra.Server;
+
+/// <summary>
+/// Autoritativní server: drží svět, čas a všechny postavy. Klienti posílají jen úmysly
+/// (jdi, utrhni, sněz), server rozhodne podle pravidel z Oohra.Core a pošle výsledek.
+/// Skrytá data (složení rostlin) server nikdy neposílá.
+/// Použití: Start, potom pořád dokola Poll (příjem zpráv) a Tick (krok simulace).
+/// </summary>
+public sealed class GameServer : IDisposable
+{
+    private const int MinNicknameLength = 2;
+    private const int MaxNicknameLength = 16;
+
+    private readonly ServerConfig _config;
+    private readonly WorldView _worldView;
+    private readonly NetManager _net;
+    private readonly NetDataWriter _writer = new();
+    private readonly Dictionary<int, PlayerSession> _byPeer = [];
+    private readonly Dictionary<string, PlayerSession> _byNickname = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Mulberry32 _rng;
+    private readonly PlantVisual[] _sentVisuals;
+    private int _nextPlayerId = 1;
+    private long _tick;
+
+    public GameServer(ServerConfig config)
+    {
+        _config = config;
+        var size = config.WorldSize > 0 ? config.WorldSize : GameData.Settings.WorldWidth;
+        Island = IslandGenerator.Build(config.Seed, size, size);
+        Clock = GameClock.FromSettings();
+        Plants = new PlantStates();
+        _worldView = WorldViews.From(Island);
+        _rng = new Mulberry32(config.Seed ^ 0x5E4E);
+        _sentVisuals = new PlantVisual[Island.Plants.Count];
+
+        var listener = new EventBasedNetListener();
+        listener.ConnectionRequestEvent += OnConnectionRequest;
+        listener.PeerDisconnectedEvent += (peer, info) => OnDisconnected(peer);
+        listener.NetworkReceiveEvent += (peer, reader, channel, method) => OnReceive(peer, reader);
+        _net = new NetManager(listener) { AutoRecycle = true };
+    }
+
+    /// <summary>Zpráva do konzole serveru (kdo přišel, kdo odešel).</summary>
+    public Action<string>? Log { get; set; }
+
+    public int Port => _net.LocalPort;
+
+    public int OnlinePlayers => _byPeer.Count;
+
+    internal Island Island { get; }
+
+    internal GameClock Clock { get; }
+
+    internal PlantStates Plants { get; }
+
+    /// <summary>Spustí server. Port 0 = vyber volný port (pro testy).</summary>
+    public void Start(int port)
+    {
+        _net.Start(port);
+    }
+
+    /// <summary>Přijme zprávy od klientů a zpracuje je.</summary>
+    public void Poll()
+    {
+        _net.PollEvents();
+    }
+
+    /// <summary>Jeden krok simulace: čas, pohyb, tělo, a pravidelné zprávy klientům.</summary>
+    public void Tick(double realSeconds)
+    {
+        var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
+        foreach (var player in _byPeer.Values)
+        {
+            Move(player, realSeconds);
+            Physiology.Update(player.Character, Clock, minutes);
+            SendBodyEvents(player);
+        }
+
+        _tick++;
+        if (_tick % _config.SnapshotEveryTicks == 0)
+        {
+            BroadcastSnapshot();
+        }
+
+        if (_tick % _config.SelfStateEveryTicks == 0)
+        {
+            foreach (var player in _byPeer.Values)
+            {
+                SendSelfState(player);
+            }
+        }
+
+        if (_tick % _config.PlantStatesEveryTicks == 0)
+        {
+            BroadcastPlantChanges();
+        }
+    }
+
+    public void Dispose()
+    {
+        _net.Stop();
+    }
+
+    internal PlayerSession? FindPlayer(string nickname)
+    {
+        return _byNickname.TryGetValue(nickname, out var player) ? player : null;
+    }
+
+    // ---------- spojení a přihlášení ----------
+
+    private void OnConnectionRequest(ConnectionRequest request)
+    {
+        if (_net.ConnectedPeersCount >= _config.MaxPlayers)
+        {
+            request.Reject();
+            return;
+        }
+
+        request.AcceptIfKey(ProtocolInfo.ConnectionKey);
+    }
+
+    private void OnDisconnected(NetPeer peer)
+    {
+        if (!_byPeer.Remove(peer.Id, out var player))
+        {
+            return;
+        }
+
+        player.Peer = null;
+        player.InputX = player.InputY = 0;
+        Broadcast(w => Messages.WritePlayerLeft(w, player.Id));
+        Log?.Invoke($"{player.Nickname} odešel.");
+    }
+
+    private void HandleLogin(NetPeer peer, NetDataReader reader)
+    {
+        var (version, inviteCode, rawNickname) = Messages.ReadLogin(reader);
+        var nickname = rawNickname.Trim();
+        var error = LoginError(version, inviteCode, nickname);
+        if (error is not null)
+        {
+            SendTo(peer, w => Messages.WriteLoginResult(w, new LoginResult(false, error, -1)));
+            return;
+        }
+
+        var player = FindPlayer(nickname) ?? CreatePlayer(nickname);
+        player.Peer = peer;
+        _byPeer[peer.Id] = player;
+
+        SendTo(peer, w => Messages.WriteLoginResult(w, new LoginResult(true, string.Empty, player.Id)));
+        SendTo(peer, w => Messages.WriteWorld(w, _worldView));
+        foreach (var other in _byPeer.Values)
+        {
+            SendTo(peer, w => Messages.WritePlayerJoined(w, InfoOf(other)));
+        }
+
+        Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)), except: peer);
+        SendTo(peer, w => Messages.WritePlantStates(w, AllPlantVisuals()));
+        SendInventory(player);
+        SendSelfState(player);
+        Log?.Invoke($"{player.Nickname} přišel (hráčů ve hře: {_byPeer.Count}).");
+    }
+
+    private string? LoginError(int version, string inviteCode, string nickname)
+    {
+        if (version != ProtocolInfo.Version)
+        {
+            return "Máš jinou verzi hry než server.";
+        }
+
+        if (!_config.InviteCodes.Contains(inviteCode.Trim(), StringComparer.OrdinalIgnoreCase))
+        {
+            return "Neplatný kód pozvánky.";
+        }
+
+        if (nickname.Length < MinNicknameLength || nickname.Length > MaxNicknameLength
+            || !nickname.All(ch => char.IsLetterOrDigit(ch) || ch is ' ' or '-' or '_'))
+        {
+            return $"Přezdívka musí mít {MinNicknameLength} až {MaxNicknameLength} písmen nebo číslic.";
+        }
+
+        if (FindPlayer(nickname) is { Online: true })
+        {
+            return "Hráč s touto přezdívkou už je ve hře.";
+        }
+
+        return null;
+    }
+
+    /// <summary>Nový hráč: první život je Pradávný, narodí se v divočině u vody.</summary>
+    private PlayerSession CreatePlayer(string nickname)
+    {
+        var character = new Character(0, new Mulberry32(_rng.NextInt(int.MaxValue)));
+        var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: true);
+        var player = new PlayerSession(_nextPlayerId++, nickname, character, Inventory.For(character.Traits), spawn.X, spawn.Y);
+        _byNickname[nickname] = player;
+        return player;
+    }
+
+    // ---------- úmysly hráčů ----------
+
+    private void OnReceive(NetPeer peer, NetDataReader reader)
+    {
+        var type = (MessageType)reader.GetByte();
+        if (type == MessageType.Login)
+        {
+            if (!_byPeer.ContainsKey(peer.Id))
+            {
+                HandleLogin(peer, reader);
+            }
+
+            return;
+        }
+
+        if (!_byPeer.TryGetValue(peer.Id, out var player))
+        {
+            return;
+        }
+
+        switch (type)
+        {
+            case MessageType.Input:
+                SetInput(player, Messages.ReadInput(reader));
+                break;
+            case MessageType.Harvest:
+                Harvest(player, Messages.ReadHarvest(reader));
+                break;
+            case MessageType.Drink:
+                Drink(player, Messages.ReadDrink(reader));
+                break;
+            case MessageType.Eat:
+            case MessageType.Taste:
+            case MessageType.Drop:
+                UseStack(player, type, Messages.ReadStackAction(reader));
+                break;
+            case MessageType.Reborn:
+                Reborn(player);
+                break;
+        }
+    }
+
+    private static void SetInput(PlayerSession player, (float DirX, float DirY) input)
+    {
+        var length = Math.Sqrt(input.DirX * input.DirX + input.DirY * input.DirY);
+        player.InputX = length > 0.01 ? input.DirX / length : 0;
+        player.InputY = length > 0.01 ? input.DirY / length : 0;
+    }
+
+    private void Harvest(PlayerSession player, (int PlantId, PlantPart Part) request)
+    {
+        if (player.Character.IsDead || request.PlantId < 0 || request.PlantId >= Island.Plants.Count)
+        {
+            return;
+        }
+
+        var result = Gathering.Harvest(Island, Plants, Island.Plants[request.PlantId], request.Part, Clock, player.Inventory, player.X, player.Y);
+        SendEvent(player, new GameEvent(EventKind.Harvest, (byte)result, request.Part, []));
+        if (result == HarvestResult.Picked)
+        {
+            SendInventory(player);
+            BroadcastPlantChanges();
+        }
+    }
+
+    private void Drink(PlayerSession player, (int TileX, int TileY) request)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = Drinking.Drink(player.Character, Island, request.TileX, request.TileY, player.X, player.Y, Clock);
+        SendEvent(player, new GameEvent(EventKind.Drink, (byte)result, default, []));
+        SendSelfState(player);
+    }
+
+    private void UseStack(PlayerSession player, MessageType action, int index)
+    {
+        var inventory = player.Inventory;
+        if (player.Character.IsDead || index < 0 || index >= inventory.Stacks.Count)
+        {
+            return;
+        }
+
+        var item = inventory.Stacks[index].Item;
+        var secret = Island.SpeciesSecrets[item.SpeciesId];
+        switch (action)
+        {
+            case MessageType.Eat:
+                inventory.TakeOne(index);
+                Eating.Eat(player.Character, item, secret, Clock);
+                break;
+            case MessageType.Taste:
+                Eating.Taste(player.Character, item, secret, Clock);
+                break;
+            case MessageType.Drop:
+                inventory.Drop(index);
+                break;
+        }
+
+        SendInventory(player);
+        SendBodyEvents(player);
+        SendSelfState(player);
+    }
+
+    /// <summary>Po smrti: Nový o generaci výš, jinde na ostrově, s prázdným batohem.</summary>
+    private void Reborn(PlayerSession player)
+    {
+        if (!player.Character.IsDead)
+        {
+            return;
+        }
+
+        var generation = GenerationTraits.NextAfterDeath(player.Character.Traits.Generation);
+        var deathPlace = new Position(player.X, player.Y);
+        player.Lives++;
+        player.Character = new Character(generation, new Mulberry32(_rng.NextInt(int.MaxValue)));
+        player.Inventory = Inventory.For(player.Character.Traits);
+        var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: false, avoid: deathPlace);
+        player.X = spawn.X;
+        player.Y = spawn.Y;
+        player.InputX = player.InputY = 0;
+
+        Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)));
+        SendInventory(player);
+        SendSelfState(player);
+    }
+
+    // ---------- simulace ----------
+
+    private void Move(PlayerSession player, double realSeconds)
+    {
+        var c = player.Character;
+        if (c.IsDead || c.FaintMinutes > 0 || (player.InputX == 0 && player.InputY == 0))
+        {
+            return;
+        }
+
+        var distance = Movement.Distance(Island, c, player.X, player.Y, realSeconds);
+        var (x, y) = Movement.Step(Island, player.X, player.Y, player.InputX, player.InputY, distance);
+        player.X = x;
+        player.Y = y;
+        player.Facing = Math.Atan2(player.InputY, player.InputX);
+    }
+
+    // ---------- zprávy klientům ----------
+
+    private void SendBodyEvents(PlayerSession player)
+    {
+        foreach (var message in player.Character.TakeMessages())
+        {
+            SendEvent(player, new GameEvent(EventKind.Body, (byte)message.Event, default, message.Notes?.ToArray() ?? []));
+        }
+    }
+
+    private void SendEvent(PlayerSession player, GameEvent gameEvent)
+    {
+        if (player.Peer is not null)
+        {
+            SendTo(player.Peer, w => Messages.WriteEvent(w, gameEvent));
+        }
+    }
+
+    private void SendSelfState(PlayerSession player)
+    {
+        if (player.Peer is null)
+        {
+            return;
+        }
+
+        var c = player.Character;
+        var state = new SelfState(
+            (float)c.Satiety,
+            (float)c.Hydration,
+            (float)c.Energy,
+            (float)c.Warmth,
+            (float)c.Health,
+            c.Symptoms().ToArray(),
+            c.Traits.Generation,
+            c.IsDead,
+            c.DeathCause);
+        SendTo(player.Peer, w => Messages.WriteSelfState(w, state));
+    }
+
+    private void SendInventory(PlayerSession player)
+    {
+        if (player.Peer is null)
+        {
+            return;
+        }
+
+        var stacks = player.Inventory.Stacks
+            .Select(s => new StackView(s.Item.SpeciesId, s.Item.Part, s.Item.Ripeness, s.Item.Cooking, s.Count))
+            .ToArray();
+        var view = new InventoryView(player.Inventory.Capacity, stacks);
+        SendTo(player.Peer, w => Messages.WriteInventory(w, view));
+    }
+
+    private void BroadcastSnapshot()
+    {
+        var players = _byPeer.Values
+            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead))
+            .ToArray();
+        var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players);
+        Broadcast(w => Messages.WriteSnapshot(w, snapshot), DeliveryMethod.Sequenced);
+    }
+
+    /// <summary>Pošle všem rostliny, které od minula změnily vzhled (plody, vykopání, dorostení).</summary>
+    private void BroadcastPlantChanges()
+    {
+        var changes = new List<PlantStateChange>();
+        foreach (var plant in Island.Plants)
+        {
+            var visual = WorldViews.PlantVisual(Island, Plants, plant, Clock);
+            if (visual != _sentVisuals[plant.Id])
+            {
+                _sentVisuals[plant.Id] = visual;
+                changes.Add(new PlantStateChange(plant.Id, visual));
+            }
+        }
+
+        if (changes.Count > 0)
+        {
+            Broadcast(w => Messages.WritePlantStates(w, changes));
+        }
+    }
+
+    private List<PlantStateChange> AllPlantVisuals()
+    {
+        return Island.Plants
+            .Select(p => new PlantStateChange(p.Id, WorldViews.PlantVisual(Island, Plants, p, Clock)))
+            .ToList();
+    }
+
+    private static PlayerInfo InfoOf(PlayerSession player)
+    {
+        return new PlayerInfo(player.Id, player.Nickname, player.Character.Traits.Generation);
+    }
+
+    private void SendTo(NetPeer peer, Action<NetDataWriter> write, DeliveryMethod method = DeliveryMethod.ReliableOrdered)
+    {
+        _writer.Reset();
+        write(_writer);
+        peer.Send(_writer, method);
+    }
+
+    private void Broadcast(Action<NetDataWriter> write, DeliveryMethod method = DeliveryMethod.ReliableOrdered, NetPeer? except = null)
+    {
+        foreach (var player in _byPeer.Values)
+        {
+            if (player.Peer is not null && player.Peer != except)
+            {
+                SendTo(player.Peer, write, method);
+            }
+        }
+    }
+
+    private void Broadcast(Action<NetDataWriter> write, NetPeer except)
+    {
+        Broadcast(write, DeliveryMethod.ReliableOrdered, except);
+    }
+}

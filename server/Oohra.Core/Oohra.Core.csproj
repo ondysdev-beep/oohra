@@ -28,6 +28,9 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Oohra.Shared\Oohra.Shared.csproj" />
+  </ItemGroup>
 
   <!-- Verze pro Unity se po sestavení zkopíruje do Unity projektu. Newtonsoft si Unity bere ze svého balíčku. -->
   <Target Name="CopyToUnity" AfterTargets="Build" Condition="'$(TargetFramework)' == 'netstandard2.1' And Exists('$(MSBuildProjectDirectory)\..\..\unity\Assets')">

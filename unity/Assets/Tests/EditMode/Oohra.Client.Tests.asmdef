@@ -14,6 +14,7 @@
   "precompiledReferences": [
     "nunit.framework.dll",
     "Oohra.Core.dll",
+    "Oohra.Shared.dll",
     "Newtonsoft.Json.dll"
   ],
   "autoReferenced": false,
