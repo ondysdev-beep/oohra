@@ -31,4 +31,5 @@ public sealed record SpawnRules(
     double CampDistance,
     double Clearance,
     double AvoidDistance,
-    int AvoidAttempts);
+    int AvoidAttempts,
+    int MinOpenTiles);

@@ -9,7 +9,8 @@ namespace Oohra.Client
 {
     /// <summary>
     /// Rozhraní šedé krabice (Unity OnGUI): čas, pruhy těla, příznaky, hlášky, jmenovky hráčů,
-    /// nabídka u rostliny a vody, batoh a okno smrti. Data posílá server. Klávesy: B batoh, Esc zavřít.
+    /// nabídka u rostliny, vody, stromu, skály a ohně, batoh a okno smrti. Data posílá server.
+    /// Klávesy: B batoh, F rozdělat oheň, Esc zavřít.
     /// </summary>
     public class GameHud : MonoBehaviour
     {
@@ -29,6 +30,7 @@ namespace Oohra.Client
         private Rect _backpackRect;
         private Rect _deathRect;
         private Rect _backpackButtonRect;
+        private Rect _fireButtonRect;
 
         /// <summary>Myš je nad rozhraním: kliknutí nemá posílat postavu na zem pod ním.</summary>
         public static bool MouseOverHud { get; private set; }
@@ -49,6 +51,7 @@ namespace Oohra.Client
             }
 
             if (keyboard.bKey.wasPressedThisFrame) _session.BackpackOpen = !_session.BackpackOpen;
+            if (keyboard.fKey.wasPressedThisFrame) _session.LightFire();
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
                 _session.BackpackOpen = false;
@@ -72,7 +75,7 @@ namespace Oohra.Client
 
             _menuRect = _backpackRect = _deathRect = Rect.zero;
             DrawInfo();
-            DrawBackpackButton(width);
+            DrawButtons(width);
             var bottom = DrawBody(width, height);
             bottom = DrawMenu(width, bottom);
             DrawLog(bottom);
@@ -90,7 +93,7 @@ namespace Oohra.Client
             if (Event.current.type == EventType.Repaint)
             {
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
-                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse);
+                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _fireButtonRect.Contains(mouse);
             }
         }
 
@@ -129,18 +132,26 @@ namespace Oohra.Client
             var text = $"Den {clock.Day + 1}, {hour:00}:{minute:00} · {Texts.SeasonName(clock.Season)}, {clock.MonthOfYear + 1}. měsíc\n"
                 + (self.Generation == 0 ? "Pradávný" : $"Nový · generace {self.Generation + 1}")
                 + $" · hráčů na ostrově: {players}";
-            GUI.Box(new Rect(12, 12, 420, 48), text, _label);
-            GUI.Label(new Rect(12, 64, 600, 20),
-                "WASD / klik = chůze · klik na rostlinu nebo vodu · B batoh · Q, E kamera", _label);
+            text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty);
+            GUI.Box(new Rect(12, 12, 420, 68), text, _label);
+            GUI.Label(new Rect(12, 84, 760, 20),
+                "WASD / klik = chůze · klik na rostlinu, vodu, strom, skálu, oheň · F oheň · B batoh · Q, E kamera", _label);
         }
 
-        private void DrawBackpackButton(float width)
+        /// <summary>Vpravo nahoře: batoh a rozdělání ohně (3 klacky a kámen, na dlaždici před postavou).</summary>
+        private void DrawButtons(float width)
         {
             var inventory = _session.Connection.Inventory;
             _backpackButtonRect = new Rect(width - 132, 12, 120, 34);
             if (GUI.Button(_backpackButtonRect, $"Batoh (B) {inventory.Stacks.Length}/{inventory.Capacity}"))
             {
                 _session.BackpackOpen = !_session.BackpackOpen;
+            }
+
+            _fireButtonRect = new Rect(width - 264, 12, 120, 34);
+            if (GUI.Button(_fireButtonRect, new GUIContent("Oheň (F)", "3 klacky a kámen. Oheň vznikne tam, kam se díváš.")))
+            {
+                _session.LightFire();
             }
         }
 
@@ -188,21 +199,49 @@ namespace Oohra.Client
             GUI.Box(_menuRect, GUIContent.none);
             var buttonRect = new Rect(_menuRect.x + 10, y + 26, 120, 28);
 
-            if (target.IsPlant)
+            var titleRect = new Rect(_menuRect.x + 10, y + 4, 400, 20);
+            switch (target.Kind)
             {
-                GUI.Label(new Rect(_menuRect.x + 10, y + 4, 400, 20), "ROSTLINA", _title);
-                if (Button(ref buttonRect, "Utrhnout list")) _session.Harvest(PlantPart.Leaf);
-                if (HasFruit(target.PlantId) && Button(ref buttonRect, "Utrhnout plod")) _session.Harvest(PlantPart.Fruit);
-                if (_session.Menu != null && Button(ref buttonRect, "Vykopat kořen")) _session.Harvest(PlantPart.Root);
-            }
-            else
-            {
-                var tile = _session.Connection.World.TileAt(target.TileX, target.TileY);
-                GUI.Label(new Rect(_menuRect.x + 10, y + 4, 400, 20), Texts.WaterName(tile).ToUpper(), _title);
-                if (Button(ref buttonRect, "Napít se")) _session.Drink();
+                case TargetKind.Plant:
+                    GUI.Label(titleRect, "ROSTLINA", _title);
+                    if (Button(ref buttonRect, "Utrhnout list")) _session.Harvest(PlantPart.Leaf);
+                    if (HasFruit(target.PlantId) && Button(ref buttonRect, "Utrhnout plod")) _session.Harvest(PlantPart.Fruit);
+                    if (_session.Menu != null && Button(ref buttonRect, "Vykopat kořen")) _session.Harvest(PlantPart.Root);
+                    break;
+                case TargetKind.Water:
+                    var tile = _session.Connection.World.TileAt(target.TileX, target.TileY);
+                    GUI.Label(titleRect, Texts.WaterName(tile).ToUpper(), _title);
+                    if (Button(ref buttonRect, "Napít se")) _session.Drink();
+                    break;
+                case TargetKind.Tree:
+                    GUI.Label(titleRect, "STROM", _title);
+                    if (Button(ref buttonRect, "Nasbírat klacky")) _session.GatherMaterial();
+                    break;
+                case TargetKind.Rock:
+                    GUI.Label(titleRect, "SKÁLA", _title);
+                    if (Button(ref buttonRect, "Vzít kámen")) _session.GatherMaterial();
+                    break;
+                case TargetKind.Fire:
+                    DrawFireMenu(titleRect, ref buttonRect);
+                    break;
             }
 
             return y - 6;
+        }
+
+        /// <summary>U ohně: přiložit (vyhaslý znovu zapálit) a batoh na pečení.</summary>
+        private void DrawFireMenu(Rect titleRect, ref Rect buttonRect)
+        {
+            var fire = _session.MenuFire();
+            if (fire == null)
+            {
+                _session.Menu = null;
+                return;
+            }
+
+            GUI.Label(titleRect, fire.Value.Burning ? "OHEŇ" : "POPEL", _title);
+            if (Button(ref buttonRect, fire.Value.Burning ? "Přiložit klacek" : "Zapálit znovu")) _session.FeedFire();
+            if (fire.Value.Burning && Button(ref buttonRect, "Péct (batoh)")) _session.BackpackOpen = true;
         }
 
         private bool HasFruit(int plantId)
@@ -231,7 +270,7 @@ namespace Oohra.Client
             var inventory = connection.Inventory;
             var rowHeight = 34f;
             var panelHeight = Mathf.Min(height - 40, 90 + Mathf.Max(1, inventory.Stacks.Length) * rowHeight);
-            _backpackRect = new Rect((width - 600) / 2, (height - panelHeight) / 2, 600, panelHeight);
+            _backpackRect = new Rect((width - 660) / 2, (height - panelHeight) / 2, 660, panelHeight);
             GUI.Box(_backpackRect, GUIContent.none);
             GUI.Box(_backpackRect, GUIContent.none);
 
@@ -256,12 +295,14 @@ namespace Oohra.Client
                 var stack = inventory.Stacks[i];
                 var plant = stack.Kind == ItemKind.Plant;
                 DrawBar(new Rect(x, y + 6, 18, 18), 1f, plant ? Palette.Leaf(connection.World.Species[stack.SpeciesId]) : Palette.Material(stack.Kind));
-                GUI.Label(new Rect(x + 26, y + 6, 250, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
+                GUI.Label(new Rect(x + 26, y + 6, 240, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
 
-                var buttons = new Rect(x + 290, y + 2, 84, 26);
+                var buttons = new Rect(x + 270, y + 2, 84, 26);
+                var canBake = plant && stack.Cooking == Cooking.Raw && connection.Self.NearFire;
                 if (plant && Button(ref buttons, "Ochutnat")) connection.Taste(i);
                 if (plant && Button(ref buttons, "Sníst")) connection.Eat(i);
-                if (!plant) buttons.x += 2 * (buttons.width + 8);
+                if (canBake && Button(ref buttons, "Upéct")) _session.Bake(i);
+                buttons.x = x + 270 + 3 * (buttons.width + 8);
                 if (Button(ref buttons, "Zahodit")) connection.Drop(i);
                 y += rowHeight;
             }

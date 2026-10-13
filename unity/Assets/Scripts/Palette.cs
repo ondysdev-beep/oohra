@@ -13,24 +13,43 @@ namespace Oohra.Client
         /// </summary>
         public const string LitResource = "OohraLit";
 
+        /// <summary>Materiál URP/Unlit pro věci, které svítí samy (plamen). Ve tmě nezčernají.</summary>
+        public const string GlowResource = "OohraGlow";
+
         private static Material _lit;
+        private static Material _glow;
 
         /// <summary>Sdílený materiál URP/Lit. Barvu jednotlivých objektů nastavuje SetColor.</summary>
         public static Material Lit
         {
-            get
-            {
-                if (_lit == null)
-                {
-                    _lit = Resources.Load<Material>(LitResource);
-                    if (_lit == null)
-                    {
-                        throw new MissingReferenceException("Chybí materiál Assets/Resources/" + LitResource + ".mat (menu Oohra → Vytvořit scénu ostrova).");
-                    }
-                }
+            get { return Load(ref _lit, LitResource); }
+        }
 
-                return _lit;
+        /// <summary>Sdílený materiál URP/Unlit (plamen ohně). Barvu nastavuje SetGlow.</summary>
+        public static Material Glow
+        {
+            get { return Load(ref _glow, GlowResource); }
+        }
+
+        private static Material Load(ref Material cache, string resource)
+        {
+            if (cache == null)
+            {
+                cache = Resources.Load<Material>(resource);
+                if (cache == null)
+                {
+                    throw new MissingReferenceException("Chybí materiál Assets/Resources/" + resource + ".mat (menu Oohra → Vytvořit scénu ostrova).");
+                }
             }
+
+            return cache;
+        }
+
+        /// <summary>Obarví objekt materiálem, který svítí sám (nezávisle na světle).</summary>
+        public static void SetGlow(GameObject go, Color color)
+        {
+            SetColor(go, color);
+            go.GetComponent<Renderer>().sharedMaterial = Glow;
         }
 
         public static Color Tile(TileType tile, bool shore)

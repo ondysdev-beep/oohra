@@ -9,6 +9,10 @@
   "maxPlayers": 20,
   // Zrychlení herního času jen pro zkoušení (1 = normální čas, den 90 minut).
   "timeSpeed": 1,
+  // Jen pro zkoušení: v kolik hodin svět začíná (21 = hned noc) a materiál na oheň do začátku.
+  "startHour": 7,
+  "startSticks": 0,
+  "startStones": 0,
   // Jak často vypsat výkon serveru (sekundy, jen když někdo hraje). 0 = nevypisovat.
   "statsEverySeconds": 10
 }

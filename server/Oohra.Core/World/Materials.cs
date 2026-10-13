@@ -45,7 +45,7 @@ public sealed class Materials
             inventory.TryAdd(Item.Stick);
         }
 
-        return MaterialResult.Gathered;
+        return MaterialResult.GotSticks;
     }
 
     /// <summary>Vezme kámen ze skály na dlaždici (tileX, tileY).</summary>
@@ -61,7 +61,7 @@ public sealed class Materials
             return MaterialResult.TooFar;
         }
 
-        return inventory.TryAdd(Item.Stone) ? MaterialResult.Gathered : MaterialResult.InventoryFull;
+        return inventory.TryAdd(Item.Stone) ? MaterialResult.GotStone : MaterialResult.InventoryFull;
     }
 
     /// <summary>Stav stromu. Po prvním sběru se za den větve obnoví (prototyp c.c a c.r).</summary>

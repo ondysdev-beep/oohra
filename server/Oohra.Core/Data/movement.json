@@ -34,6 +34,9 @@
     "clearance": 0.3,
     // Po smrti se nenarodíš blíž než avoidDistance od místa smrti (prvních avoidAttempts pokusů).
     "avoidDistance": 22,
-    "avoidAttempts": 700
+    "avoidAttempts": 700,
+    // Z místa narození musí jít dojít aspoň na tolik volných dlaždic (ne uvěznit mezi stromy a vodou).
+    // Prototyp tohle nehlídal.
+    "minOpenTiles": 40
   }
 }

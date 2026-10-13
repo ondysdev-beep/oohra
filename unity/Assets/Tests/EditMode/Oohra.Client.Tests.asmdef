@@ -3,7 +3,8 @@
   "rootNamespace": "Oohra.Client.Tests",
   "references": [
     "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "UnityEditor.TestRunner",
+    "Oohra.Client"
   ],
   "includePlatforms": [
     "Editor"

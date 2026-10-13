@@ -41,11 +41,44 @@ public static class SpawnPoint
                 continue;
             }
 
+            if (OpenTiles(island, x, y, rules.MinOpenTiles) < rules.MinOpenTiles)
+            {
+                continue;
+            }
+
             return new Position(x + 0.5, y + 0.5);
         }
 
         return new Position(island.Width / 2.0, island.Height / 2.0);
     }
+
+    /// <summary>
+    /// Na kolik volných dlaždic se dá z dlaždice (x, y) dojít krokem nahoru, dolů, doleva a doprava.
+    /// Počítá jen do limitu (víc není potřeba vědět).
+    /// </summary>
+    public static int OpenTiles(Island island, int x, int y, int limit)
+    {
+        var seen = new HashSet<int> { island.Index(x, y) };
+        var queue = new Queue<GridPoint>();
+        queue.Enqueue(new GridPoint(x, y));
+        while (queue.Count > 0 && seen.Count < limit)
+        {
+            var tile = queue.Dequeue();
+            foreach (var (dx, dy) in Neighbours)
+            {
+                var nx = tile.X + dx;
+                var ny = tile.Y + dy;
+                if (!Movement.IsBlocked(island, nx, ny) && seen.Add(island.Index(nx, ny)))
+                {
+                    queue.Enqueue(new GridPoint(nx, ny));
+                }
+            }
+        }
+
+        return seen.Count;
+    }
+
+    private static readonly (int Dx, int Dy)[] Neighbours = [(1, 0), (-1, 0), (0, 1), (0, -1)];
 
     private static bool AwayFromCamps(Island island, double x, double y, double distance)
     {

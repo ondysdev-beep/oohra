@@ -2,11 +2,17 @@ using UnityEngine;
 
 namespace Oohra.Client
 {
-    /// <summary>Slunce podle herních hodin: ráno vychází, v noci je tma (čas posílá server).</summary>
+    /// <summary>
+    /// Slunce podle herních hodin: ráno vychází, v noci je tma a jen slabé modravé světlo (čas posílá server).
+    /// Ve tmě je vidět hlavně kolem ohňů (FireViews).
+    /// </summary>
     public class DayNightLight : MonoBehaviour
     {
         [SerializeField] private float _dayIntensity = 1.2f;
-        [SerializeField] private float _nightIntensity = 0.08f;
+        [SerializeField] private float _nightIntensity = 0.02f;
+        [SerializeField] private float _nightAmbient = 0.08f;
+
+        private static readonly Color NightColor = new Color(0.55f, 0.65f, 1f);
 
         private ClientClock _clock;
         private Light _sun;
@@ -29,7 +35,8 @@ namespace Oohra.Client
             _sun.transform.rotation = Quaternion.Euler(angle, -30f, 0f);
             var daylight = (float)_clock.Daylight;
             _sun.intensity = Mathf.Lerp(_nightIntensity, _dayIntensity, daylight);
-            RenderSettings.ambientIntensity = Mathf.Lerp(0.25f, 1f, daylight);
+            RenderSettings.ambientIntensity = Mathf.Lerp(_nightAmbient, 1f, daylight);
+            _sun.color = Color.Lerp(NightColor, Color.white, daylight);
         }
     }
 }

@@ -42,7 +42,7 @@ public sealed class GameServer : IDisposable
         _config = config;
         var size = config.WorldSize > 0 ? config.WorldSize : GameData.Settings.WorldWidth;
         Island = IslandGenerator.Build(config.Seed, size, size);
-        Clock = GameClock.FromSettings();
+        Clock = GameClock.FromSettings(config.StartHour * 60);
         Plants = new PlantStates();
         _worldView = WorldViews.From(Island);
         _rng = new Mulberry32(config.Seed ^ 0x5E4E);
@@ -222,9 +222,26 @@ public sealed class GameServer : IDisposable
     {
         var character = new Character(0, new Mulberry32(_rng.NextInt(int.MaxValue)));
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: true);
-        var player = new PlayerSession(_nextPlayerId++, nickname, character, Inventory.For(character.Traits), spawn.X, spawn.Y);
+        var player = new PlayerSession(_nextPlayerId++, nickname, character, NewInventory(character), spawn.X, spawn.Y);
         _byNickname[nickname] = player;
         return player;
+    }
+
+    /// <summary>Prázdný batoh, při zkoušení (startSticks, startStones v server.json) s materiálem na oheň.</summary>
+    private Inventory NewInventory(Character character)
+    {
+        var inventory = Inventory.For(character.Traits);
+        for (var i = 0; i < _config.StartSticks; i++)
+        {
+            inventory.TryAdd(Item.Stick);
+        }
+
+        for (var i = 0; i < _config.StartStones; i++)
+        {
+            inventory.TryAdd(Item.Stone);
+        }
+
+        return inventory;
     }
 
     // ---------- úmysly hráčů ----------
@@ -295,7 +312,7 @@ public sealed class GameServer : IDisposable
             ? Materials.GatherSticks(Island, tile.TileX, tile.TileY, Clock, player.Inventory, _rng, player.X, player.Y)
             : Materials.TakeStone(Island, tile.TileX, tile.TileY, player.Inventory, player.X, player.Y);
         SendEvent(player, new GameEvent(EventKind.Material, (byte)result, default, []));
-        if (result == MaterialResult.Gathered)
+        if (result is MaterialResult.GotSticks or MaterialResult.GotStone)
         {
             SendInventory(player);
         }
@@ -389,7 +406,7 @@ public sealed class GameServer : IDisposable
         var deathPlace = new Position(player.X, player.Y);
         player.Lives++;
         player.Character = new Character(generation, new Mulberry32(_rng.NextInt(int.MaxValue)));
-        player.Inventory = Inventory.For(player.Character.Traits);
+        player.Inventory = NewInventory(player.Character);
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: false, avoid: deathPlace);
         player.X = spawn.X;
         player.Y = spawn.Y;

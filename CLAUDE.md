@@ -16,7 +16,7 @@ server/      C# řešení (Oohra.sln)
   Oohra.Core/            pravidla hry bez sítě a bez grafiky, i se skrytými daty (složka Secret)
   Oohra.Core.Tests/      xUnit testy, golden/ obsahuje data z prototypu
   Oohra.Protocol/        zprávy klient–server (LiteNetLib, ruční zápis přes NetDataWriter) a síťový klient GameConnection. NESMÍ odkazovat na Oohra.Core
-  Oohra.Server/          autoritativní server (server.json: port, seed, kódy pozvánek), spuštění dotnet run --project Oohra.Server
+  Oohra.Server/          autoritativní server (server.json: port, seed, kódy pozvánek; pro zkoušení timeSpeed, startHour, startSticks, startStones), spuštění dotnet run --project Oohra.Server
   Oohra.Server.Tests/    testy serveru a klientů přes skutečnou síť (localhost)
   Oohra.TestClient/      konzolový klient bez sítě (textová mapa a příkazy)
   Oohra.Bots/            zátěžový test: roboti jako hráči (jen Protocol), dotnet run --project Oohra.Bots -port 9050 -count 20 -seconds 60. Výkon vypisuje server (statsEverySeconds)
@@ -46,10 +46,10 @@ unity/       klient v Unity (Fáze B šedá krabice, Fáze C napojení na server
 - Knihovny pro server i Unity (Shared, Protocol, Core) cílí i na `netstandard2.1`: nepoužívej `System.Text.Json` ani API novější než .NET Standard 2.1 (např. `MaxBy`, `Math.Tau`). JSON čte Newtonsoft.Json.
 - Pravidla (pohyb, kolize, tělo) patří do Core a počítá je server. Klient posílá jen úmysly a zobrazuje stav ze serveru.
 - Menu Unity „Oohra“: Spustit server, Sestavit hru pro Windows (`unity/Build/Oohra.exe`, mimo git, běží v okně a i na pozadí), Vytvořit scénu ostrova.
-- Materiály a shadery musí být soubory v projektu (sdílený `Assets/Resources/OohraLit.mat`). `Shader.Find` v kódu funguje jen v editoru, sestavená hra by byla růžová. Hlídá to test `BuildReadinessTests`.
+- Materiály a shadery musí být soubory v projektu (sdílené `Assets/Resources/OohraLit.mat` a `OohraGlow.mat` pro věci, které svítí samy; vytváří je `OohraSceneSetup.EnsureMaterials`). `Shader.Find` v kódu funguje jen v editoru, sestavená hra by byla růžová. Hlídá to test `BuildReadinessTests`.
 - Sestavená hra umí přihlášení z příkazové řádky: `Oohra.exe -nick Petr` (volitelně `-server`, `-port`, `-code`).
 - Ověření Unity bez okna (`U="/c/Program Files/Unity/Hub/Editor/6000.6.5f1/Editor/Unity.exe"`):
-  `"$U" -batchmode -projectPath unity -runTests -testPlatform EditMode -testResults <soubor.xml> -logFile <log>` (stejně `PlayMode`). Test PlayMode spustí skutečný server (`server/Oohra.Server/bin/Debug/net10.0`, napřed `dotnet build`) a uloží snímek do `unity/Logs/sit.png`. `WaitForEndOfFrame` a `ScreenCapture` v batch mode nefungují.
+  `"$U" -batchmode -projectPath unity -runTests -testPlatform EditMode -testResults <soubor.xml> -logFile <log>` (stejně `PlayMode`). Test PlayMode spustí skutečný server (`server/Oohra.Server/bin/Debug/net10.0`, napřed `dotnet build`) a uloží snímky do `unity/Logs` (`sit.png`, `noc.png`). Pomůcky jsou v `PlayTestTools`. `WaitForEndOfFrame` a `ScreenCapture` v batch mode nefungují.
 
 ## Pracovní postup
 - Každý úkol na vlastní větvi `feature/...`, na konci commit a push větve. Potom Claude větev sloučí do `main` (`git merge --no-ff`), na `main` ověří `dotnet build` a `dotnet test` a pushne `main`. Příkazy `git checkout main`, `git merge --no-ff ...` a `git push origin main` spouštěj každý zvlášť (tak jsou povolené v `.claude/settings.local.json`). Přímé commity do `main` se nedělají.

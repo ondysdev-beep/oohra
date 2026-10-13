@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using Oohra.Core.Items;
 using Oohra.Core.Plants;
 using Oohra.Protocol;
 using UnityEngine;
@@ -86,10 +88,67 @@ namespace Oohra.Client
 
         public void Drink()
         {
-            if (Menu != null && !Menu.IsPlant)
+            if (Menu != null && Menu.Kind == TargetKind.Water)
             {
                 Connection.Drink(Menu.TileX, Menu.TileY);
             }
+        }
+
+        /// <summary>U stromu nasbírat klacky, u skály vzít kámen.</summary>
+        public void GatherMaterial()
+        {
+            if (Menu == null)
+            {
+                return;
+            }
+
+            if (Menu.Kind == TargetKind.Tree) Connection.GatherSticks(Menu.TileX, Menu.TileY);
+            if (Menu.Kind == TargetKind.Rock) Connection.TakeStone(Menu.TileX, Menu.TileY);
+        }
+
+        /// <summary>Přiložit klacek do ohně, u kterého je otevřená nabídka (vyhaslý znovu zapálit).</summary>
+        public void FeedFire()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Fire)
+            {
+                Connection.FeedFire(Menu.Id);
+            }
+        }
+
+        /// <summary>Rozdělat oheň na dlaždici, kam se postava dívá.</summary>
+        public void LightFire()
+        {
+            Connection.LightFire();
+        }
+
+        public void Bake(int stackIndex)
+        {
+            Connection.Bake(stackIndex);
+        }
+
+        /// <summary>Kolik kusů daného materiálu je v batohu.</summary>
+        public int Count(ItemKind kind)
+        {
+            return Connection.Inventory.Stacks.Where(s => s.Kind == kind).Sum(s => s.Count);
+        }
+
+        /// <summary>Oheň z nabídky podle čísla (null, když už není).</summary>
+        public FireView? MenuFire()
+        {
+            if (Menu == null || Menu.Kind != TargetKind.Fire)
+            {
+                return null;
+            }
+
+            foreach (var fire in Connection.Fires)
+            {
+                if (fire.Id == Menu.Id)
+                {
+                    return fire;
+                }
+            }
+
+            return null;
         }
 
         public void Reborn()
