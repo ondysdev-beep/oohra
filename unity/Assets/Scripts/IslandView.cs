@@ -85,10 +85,10 @@ namespace Oohra.Client
                 var y = tree.TileIndex / world.Width + 0.5;
                 var size = 0.8f + tree.Variant * 0.4f;
 
-                // Kmen má stejnou tloušťku jako kolize na serveru (treeTrunkRadius 0,15 v movement.json).
+                // Kmen má stejnou tloušťku jako kolize na serveru (treeTrunkRadius 0,12 v movement.json).
                 var trunk = Primitive(PrimitiveType.Cylinder, "Kmen", trees, trunkColor);
                 trunk.transform.position = WorldCoords.ToUnity(x, y, 0.35f * size);
-                trunk.transform.localScale = new Vector3(0.3f, 0.35f * size, 0.3f);
+                trunk.transform.localScale = new Vector3(0.24f, 0.35f * size, 0.24f);
 
                 var color = crownColors[tree.Variant > 0.5f ? 0 : 1];
                 var crown = Primitive(PrimitiveType.Sphere, "Koruna", trees, color);
