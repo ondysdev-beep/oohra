@@ -6,7 +6,7 @@
   "radius": 0.28,
   // Strom blokuje jen kmen uprostřed dlaždice (kruh o tomto poloměru). Pod korunou se dá projít.
   // Prototyp blokoval celou dlaždici se stromem. Rostliny neblokují nic.
-  "treeTrunkRadius": 0.15,
+  "treeTrunkRadius": 0.12,
   // Násobek rychlosti podle dlaždice. Ostatní dlaždice mají 1.
   "terrainSpeed": {
     "Bog": 0.72,

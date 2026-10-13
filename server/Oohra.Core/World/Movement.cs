@@ -109,9 +109,14 @@ public static class Movement
         return Math.Clamp(m * c.Traits.SpeedMultiplier, rules.MinMultiplier, rules.MaxMultiplier);
     }
 
+    /// <summary>Úhly (ve stupních), o které se postava zkusí odklonit, když jí něco stojí přímo v cestě.</summary>
+    private static readonly double[] SteerDegrees = [15, -15, 30, -30, 45, -45, 60, -60];
+
     /// <summary>
-    /// Posune postavu směrem (dirX, dirY) o vzdálenost. Osy se zkoušejí zvlášť,
-    /// takže postava podél překážky klouže, místo aby se zastavila.
+    /// Posune postavu směrem (dirX, dirY) o vzdálenost.
+    /// Když je cesta přímo blokovaná, zkusí se mírně odklonit (obejde kmen, projde mezi stromy).
+    /// Když ani to nejde, osy se zkoušejí zvlášť a postava podél překážky klouže (jako v prototypu).
+    /// Kolmo do zdi nebo vody se postava zastaví.
     /// </summary>
     public static (double X, double Y) Step(Island island, double x, double y, double dirX, double dirY, double distance)
     {
@@ -122,8 +127,26 @@ public static class Movement
         }
 
         var radius = GameData.Movement.Radius;
-        var dx = dirX / length * distance;
-        var dy = dirY / length * distance;
+        var ux = dirX / length;
+        var uy = dirY / length;
+        foreach (var degrees in SteerDegrees.Prepend(0))
+        {
+            var angle = degrees * Math.PI / 180;
+            var sx = ux * Math.Cos(angle) - uy * Math.Sin(angle);
+            var sy = ux * Math.Sin(angle) + uy * Math.Cos(angle);
+            if (CanStand(island, x + sx * distance, y + sy * distance, radius))
+            {
+                return (x + sx * distance, y + sy * distance);
+            }
+        }
+
+        if (TrunkSlide(island, x, y, ux, uy, radius) is var (tx, ty) && CanStand(island, x + tx * distance, y + ty * distance, radius))
+        {
+            return (x + tx * distance, y + ty * distance);
+        }
+
+        var dx = ux * distance;
+        var dy = uy * distance;
         if (CanStand(island, x + dx, y, radius))
         {
             x += dx;
@@ -135,6 +158,49 @@ public static class Movement
         }
 
         return (x, y);
+    }
+
+    /// <summary>
+    /// Směr podél obvodu kmene, o který postava zrovna opírá (aby kmen obešla i při čelním nárazu).
+    /// Null, když žádný kmen v cestě není.
+    /// </summary>
+    private static (double X, double Y)? TrunkSlide(Island island, double x, double y, double ux, double uy, double radius)
+    {
+        var reach = radius + GameData.Movement.TreeTrunkRadius + 0.05;
+        var tx = Floor(x);
+        var ty = Floor(y);
+        for (var yy = ty - 1; yy <= ty + 1; yy++)
+        {
+            for (var xx = tx - 1; xx <= tx + 1; xx++)
+            {
+                if (!island.InBounds(xx, yy) || !island.HasTree(island.Index(xx, yy)))
+                {
+                    continue;
+                }
+
+                // n: od středu kmene k postavě. Když postava jde proti kmeni (u · n < 0), jde se po tečně.
+                var nx = x - (xx + 0.5);
+                var ny = y - (yy + 0.5);
+                var d = Math.Sqrt(nx * nx + ny * ny);
+                if (d > reach || d <= 0)
+                {
+                    continue;
+                }
+
+                nx /= d;
+                ny /= d;
+                if (ux * nx + uy * ny >= 0)
+                {
+                    continue;
+                }
+
+                // Tečna na tu stranu, kam postava míří víc. Při úplně čelním nárazu vždy stejná strana.
+                var side = nx * uy - ny * ux >= 0 ? 1 : -1;
+                return (-ny * side, nx * side);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Kolik dlaždic postava ujde za danou dobu (sekundy reálného času).</summary>

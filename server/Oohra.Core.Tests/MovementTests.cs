@@ -33,14 +33,64 @@ public class MovementTests
         Assert.True(Movement.CanStand(_island, tx + 0.5, ty + 0.05, 0.28));
         Assert.True(Movement.CanStand(_island, tx + 0.05, ty + 0.5, 0.28));
 
-        // Chůze na východ přímo na kmen: postava vejde na dlaždici stromu a zastaví se o kmen.
+        // Chůze na východ přímo na kmen: postava ho obejde a pokračuje dál.
         var (x, y) = (tx - 0.5, ty + 0.5);
-        for (var i = 0; i < 40; i++)
+        for (var i = 0; i < 60; i++)
+        {
+            (x, y) = Movement.Step(_island, x, y, 1, 0, 0.05);
+            Assert.True(Movement.CanStand(_island, x, y, 0.28));
+        }
+
+        Assert.True(x > tx + 1, $"Postava se zasekla o kmen na x = {x:0.00}.");
+    }
+
+    /// <summary>Mezi dvěma stromy vedle sebe se dá projít, i když postava nemíří přesně doprostřed mezery.</summary>
+    [Theory]
+    [InlineData(0.85)]
+    [InlineData(1.0)]
+    [InlineData(1.15)]
+    public void WalksBetweenNeighbouringTrees(double offset)
+    {
+        var (tx, ty) = TreePairOnDryLand();
+        var (x, y) = (tx - 1.5, ty + offset);
+
+        for (var i = 0; i < 80; i++)
         {
             (x, y) = Movement.Step(_island, x, y, 1, 0, 0.05);
         }
 
-        Assert.InRange(x, tx, tx + 0.5 - 0.43 + 1e-9);
+        Assert.True(x > tx + 1.5, $"Postava se mezi stromy zasekla na x = {x:0.00}, y = {y:0.00}.");
+    }
+
+    /// <summary>Dva stromy nad sebou (tx, ty) a (tx, ty + 1), okolo sucho a žádné další stromy.</summary>
+    private static (int X, int Y) TreePairOnDryLand()
+    {
+        foreach (var tree in _island.Trees)
+        {
+            int tx = (int)tree.X, ty = (int)tree.Y;
+            if (!_island.InBounds(tx + 2, ty + 2) || !_island.InBounds(tx - 2, ty - 1) || !_island.HasTree(_island.Index(tx, ty + 1)))
+            {
+                continue;
+            }
+
+            var clear = true;
+            for (var y = ty - 1; y <= ty + 2; y++)
+            {
+                for (var x = tx - 2; x <= tx + 2; x++)
+                {
+                    var tile = _island.TileAt(x, y);
+                    var isPair = x == tx && (y == ty || y == ty + 1);
+                    clear &= tile != TileType.Sea && tile != TileType.Pond && (isPair || !_island.HasTree(_island.Index(x, y)));
+                }
+            }
+
+            if (clear)
+            {
+                return (tx, ty);
+            }
+        }
+
+        throw new InvalidOperationException("Na ostrově nejsou dva osamělé stromy nad sebou.");
     }
 
     /// <summary>Rostliny nepřekáží: postava jimi projde.</summary>
