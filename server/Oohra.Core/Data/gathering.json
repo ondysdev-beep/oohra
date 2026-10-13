@@ -1,0 +1,42 @@
+// Sběr rostlin, batoh a pití. Přepsáno z pluck, addItem a drinkKind v prototypu (part2.js, part5.js).
+// Časy jsou v herních minutách (den má 1440).
+{
+  // Za jak dlouho jde z rostliny znovu trhat. Vykopáním kořene rostlina zmizí na rootMinutes.
+  "regrow": {
+    "leafMinutes": 700,
+    "fruitMinutes": 1440,
+    "rootMinutes": 5760
+  },
+  // Batoh: základní počet míst, Noví mají každé dvě generace jedno místo navíc (nejvýš 3).
+  "inventory": {
+    "baseSlots": 10,
+    "maxBonusSlots": 3,
+    "generationsPerBonusSlot": 2,
+    "stackSize": 9
+  },
+  // Jak blízko musí postava být (v dlaždicích).
+  "reach": {
+    "plant": 0.95,
+    "water": 1.7
+  },
+  // Pití přímo u zdroje.
+  "water": {
+    "cleanHydration": 40,
+    "muddyHydration": 30,
+    // Noví od instinctFromGeneration se kalné vody štítí a napijí se jen trochu, ale riskují méně.
+    "instinctFromGeneration": 2,
+    "muddyHydrationInstinct": 14,
+    "sicknessChance": 0.55,
+    "sicknessChanceInstinct": 0.25,
+    "sicknessDelayMin": 120,
+    "sicknessDelayRange": 380,
+    "sicknessStrengthMin": 25,
+    "sicknessStrengthRange": 20,
+    "diarrheaChance": 0.4,
+    "diarrheaDelayMin": 90,
+    "diarrheaDelayRange": 250,
+    "diarrheaStrength": 0.4,
+    // Mořská voda žízeň zhorší.
+    "saltyHydration": -8
+  }
+}

@@ -31,6 +31,9 @@
     "nearPondAttempts": 600,
     "pondRadius": 12,
     "campDistance": 8,
-    "clearance": 0.3
+    "clearance": 0.3,
+    // Po smrti se nenarodíš blíž než avoidDistance od místa smrti (prvních avoidAttempts pokusů).
+    "avoidDistance": 22,
+    "avoidAttempts": 700
   }
 }

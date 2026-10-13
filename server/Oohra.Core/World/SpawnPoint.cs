@@ -8,9 +8,9 @@ public static class SpawnPoint
 {
     /// <summary>
     /// Náhodné místo v divočině: nejdřív na písku, později i na trávě, daleko od táborů.
-    /// V prvním životě navíc blízko jezírka, aby byla voda na dosah.
+    /// V prvním životě navíc blízko jezírka, aby byla voda na dosah. Po smrti dál od místa smrti (avoid).
     /// </summary>
-    public static Position PickWild(Island island, Mulberry32 rng, bool firstLife)
+    public static Position PickWild(Island island, Mulberry32 rng, bool firstLife, Position? avoid = null)
     {
         var rules = GameData.Movement.Spawn;
         for (var n = 0; n < rules.Attempts; n++)
@@ -32,6 +32,11 @@ public static class SpawnPoint
             }
 
             if (!AwayFromCamps(island, x + 0.5, y + 0.5, rules.CampDistance))
+            {
+                continue;
+            }
+
+            if (avoid is { } a && n < rules.AvoidAttempts && Math.Sqrt(Math.Pow(x - a.X, 2) + Math.Pow(y - a.Y, 2)) < rules.AvoidDistance)
             {
                 continue;
             }

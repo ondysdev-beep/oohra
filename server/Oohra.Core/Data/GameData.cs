@@ -35,7 +35,12 @@ public static class GameData
     private static readonly Lazy<MovementRules> _movement =
         new(() => Load<MovementRules>("movement.json"));
 
+    private static readonly Lazy<GatheringRules> _gathering =
+        new(() => Load<GatheringRules>("gathering.json"));
+
     public static IReadOnlyList<Archetype> Archetypes => _archetypes.Value;
+
+    public static GatheringRules Gathering => _gathering.Value;
 
     public static MovementRules Movement => _movement.Value;
 

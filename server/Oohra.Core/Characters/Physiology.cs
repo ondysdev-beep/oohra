@@ -232,6 +232,10 @@ public static class Physiology
                     c.Energy = Math.Max(0, c.Energy - rules.CrashEnergyFactor * effect.Strength - rules.CrashEnergyBase);
                     c.Report(now, BodyEvent.Crash);
                     break;
+                case EffectType.Sickness:
+                    c.Infection = Math.Max(c.Infection, effect.Strength);
+                    c.Report(now, BodyEvent.FeltSick);
+                    break;
             }
         }
     }

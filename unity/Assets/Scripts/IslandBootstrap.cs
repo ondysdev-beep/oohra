@@ -1,7 +1,4 @@
-using Oohra.Core.Characters;
 using Oohra.Core.Data;
-using Oohra.Core.Rng;
-using Oohra.Core.Time;
 using Oohra.Core.World;
 using UnityEngine;
 
@@ -22,32 +19,33 @@ namespace Oohra.Client
         [Tooltip("0 = Pradávný, 1 a víc = Nový.")]
         [SerializeField] private int _generation = 0;
 
-        private GameClock _clock;
-        private Character _character;
+        private GameState _state;
+
+        /// <summary>Stav hry (pro testy a ladění).</summary>
+        public GameState State => _state;
 
         private void Awake()
         {
             var size = _size > 0 ? _size : GameData.Settings.WorldWidth;
             var island = IslandGenerator.Build(_seed, size, size);
-            IslandView.Build(island);
-
-            _clock = GameClock.FromSettings();
-            _character = new Character(_generation, new Mulberry32(_seed ^ 0x0B0D ^ _generation));
-            var spawn = SpawnPoint.PickWild(island, new Mulberry32(_seed ^ 0x5BA7), firstLife: true);
+            _state = new GameState(island, _seed, _generation);
+            IslandView.Build(_state);
 
             var camera = Camera.main;
             var player = CreatePlayer();
-            player.GetComponent<PlayerController>().Init(island, _character, spawn, camera);
+            var controller = player.AddComponent<PlayerController>();
+            _state.Player = controller;
+            controller.Init(_state, camera);
             camera.gameObject.AddComponent<CameraRig>().Init(player.transform);
 
-            gameObject.AddComponent<DayNightLight>().Init(_clock, FindSun());
-            gameObject.AddComponent<DebugHud>().Init(_clock, _character);
+            gameObject.AddComponent<DayNightLight>().Init(_state.Clock, FindSun());
+            gameObject.AddComponent<GameHud>().Init(_state);
+            _state.Say("Jsi první člověk na tomhle ostrově. Nejdřív si najdi vodu.", false);
         }
 
         private void Update()
         {
-            var minutes = _clock.Advance(Time.deltaTime);
-            Physiology.Update(_character, _clock, minutes);
+            _state.Tick(Time.deltaTime);
         }
 
         private GameObject CreatePlayer()
@@ -66,8 +64,6 @@ namespace Oohra.Client
             nose.transform.localScale = new Vector3(0.3f, 0.15f, 0.4f);
             Destroy(nose.GetComponent<Collider>());
             Palette.SetColor(nose, Palette.Hex("#dba23f"));
-
-            player.AddComponent<PlayerController>();
             return player;
         }
 

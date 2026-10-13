@@ -16,6 +16,12 @@ public sealed record GenerationTraits(
 {
     public bool IsAncient => Generation == 0;
 
+    /// <summary>Generace po smrti: vždy Nový, o jednu výš, nejvýš strop (prototyp nextGen).</summary>
+    public static int NextAfterDeath(int generation)
+    {
+        return Math.Min(GameData.Generations.Cap, Math.Max(1, generation + 1));
+    }
+
     public static GenerationTraits For(int generation)
     {
         var rules = GameData.Generations;

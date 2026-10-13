@@ -17,6 +17,8 @@ unity/*.sln
 unity/*.slnx
 unity/.vs/
 unity/.vscode/
+# Dočasná scéna, kterou si vytvoří Unity testy (normálně ji po sobě smažou)
+unity/Assets/InitTestScene*.unity*
 # Systém
 .DS_Store
 Thumbs.db

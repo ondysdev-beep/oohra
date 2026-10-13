@@ -9,13 +9,14 @@ namespace Oohra.Client
     /// </summary>
     public static class IslandView
     {
-        public static GameObject Build(Island island)
+        public static GameObject Build(GameState state)
         {
+            var island = state.Island;
             var root = new GameObject("Ostrov (vygenerovaný)");
             BuildSea(island, root.transform);
             BuildGround(island, root.transform);
             BuildTrees(island, root.transform);
-            BuildPlants(island, root.transform);
+            BuildPlants(state, root.transform);
             BuildCamps(island, root.transform);
             BuildRuins(island, root.transform);
             return root;
@@ -85,21 +86,38 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Rostliny: tvar podle druhu (koule, kapsle, kostka, válec), barva listů podle druhu.</summary>
-        private static void BuildPlants(Island island, Transform parent)
+        /// <summary>
+        /// Rostliny: tvar podle druhu (koule, kapsle, kostka, válec), barva listů podle druhu.
+        /// Každá má schovaný plod, který PlantViews ukáže, když rostlina plodí.
+        /// </summary>
+        private static void BuildPlants(GameState state, Transform parent)
         {
-            var plants = new GameObject("Rostliny").transform;
-            plants.SetParent(parent);
+            var island = state.Island;
+            var root = new GameObject("Rostliny");
+            root.transform.SetParent(parent);
             var shapes = new[] { PrimitiveType.Sphere, PrimitiveType.Capsule, PrimitiveType.Cube, PrimitiveType.Cylinder };
+            var plants = new GameObject[island.Plants.Count];
+            var fruits = new GameObject[island.Plants.Count];
 
-            foreach (var plant in island.Plants)
+            for (var i = 0; i < island.Plants.Count; i++)
             {
+                var plant = island.Plants[i];
                 var species = island.Species[plant.SpeciesId];
                 var color = Palette.Hsl(species.Hue, species.Saturation, species.Lightness);
-                var go = Primitive(shapes[species.Shape], "Rostlina " + plant.Id, plants, color);
+                var go = Primitive(shapes[species.Shape], "Rostlina " + plant.Id, root.transform, color);
                 go.transform.position = WorldCoords.ToUnity(plant.X, plant.Y, 0.18f);
                 go.transform.localScale = Vector3.one * 0.32f;
+
+                var fruit = Primitive(PrimitiveType.Sphere, "Plod", go.transform, color);
+                fruit.transform.position = WorldCoords.ToUnity(plant.X + 0.12, plant.Y, 0.42f);
+                fruit.transform.localScale = Vector3.one * 0.45f;
+                fruit.SetActive(false);
+
+                plants[i] = go;
+                fruits[i] = fruit;
             }
+
+            root.AddComponent<PlantViews>().Init(state, plants, fruits);
         }
 
         private static void BuildCamps(Island island, Transform parent)
