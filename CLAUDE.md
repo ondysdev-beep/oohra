@@ -12,11 +12,14 @@ Vývojář je hobby programátor začátečník v C# a Unity. Vysvětluj stručn
 docs/        dokumenty
 prototype/   prototyp v JS (jen čtení, zdroj pravidel). src/ jsou zdrojové části, oohra.html je sestavený prototyp
 server/      C# řešení (Oohra.sln)
-  Oohra.Core/            pravidla hry bez sítě a bez grafiky
+  Oohra.Shared/          viditelné typy pro server i klienta (dlaždice, části rostlin, kódy hlášek), jmenné prostory Oohra.Core.*
+  Oohra.Core/            pravidla hry bez sítě a bez grafiky, i se skrytými daty (složka Secret)
   Oohra.Core.Tests/      xUnit testy, golden/ obsahuje data z prototypu
-  Oohra.TestClient/      konzolový klient (textová mapa a příkazy)
-  (později Oohra.Server, Oohra.Protocol)
-unity/       klient v Unity (Fáze B, šedá krabice)
+  Oohra.Protocol/        zprávy klient–server (LiteNetLib, ruční zápis přes NetDataWriter) a síťový klient GameConnection. NESMÍ odkazovat na Oohra.Core
+  Oohra.Server/          autoritativní server (server.json: port, seed, kódy pozvánek), spuštění dotnet run --project Oohra.Server
+  Oohra.Server.Tests/    testy serveru a klientů přes skutečnou síť (localhost)
+  Oohra.TestClient/      konzolový klient bez sítě (textová mapa a příkazy)
+unity/       klient v Unity (Fáze B šedá krabice, Fáze C napojení na server)
 ```
 
 ## Rozhodnutí (z dotazníků)

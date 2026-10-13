@@ -1,0 +1,12 @@
+// Nastavení serveru Oohra. Komentáře jsou povolené.
+{
+  "port": 9050,
+  "seed": 1,
+  // 0 = velikost ostrova podle settings.json (128).
+  "worldSize": 0,
+  // Kódy pozvánek pro testery. Kdo nemá kód, nepřihlásí se.
+  "inviteCodes": [ "OOHRA-TEST" ],
+  "maxPlayers": 20,
+  // Zrychlení herního času jen pro zkoušení (1 = normální čas, den 90 minut).
+  "timeSpeed": 1
+}

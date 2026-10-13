@@ -5,17 +5,6 @@ using Oohra.Core.Time;
 
 namespace Oohra.Core.World;
 
-/// <summary>Jak sběr dopadl. Klient si k tomu přiřadí text.</summary>
-public enum HarvestResult
-{
-    Picked,
-    TooFar,
-    PlantGone,
-    NoLeavesLeft,
-    NoFruit,
-    InventoryFull,
-}
-
 /// <summary>
 /// Sběr rostlin (prototyp pluck v part5.js): list doroste za necelý půlden, plody za den,
 /// vykopáním kořene rostlina na několik dní zmizí.

@@ -10,6 +10,7 @@
   "overrideReferences": true,
   "precompiledReferences": [
     "Oohra.Core.dll",
+    "Oohra.Shared.dll",
     "Newtonsoft.Json.dll"
   ],
   "autoReferenced": true,

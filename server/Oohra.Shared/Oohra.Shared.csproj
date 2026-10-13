@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Viditelné typy, které sdílí server i klient (druhy dlaždic, části rostlin, kódy hlášek).
+    Žádná skrytá data. Jmenné prostory zůstaly Oohra.Core.*, aby se nemusel měnit ostatní kód.
+    Překládá se i pro Unity (netstandard2.1), stejně jako Oohra.Core.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net10.0;netstandard2.1</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <EnableSourceLink>false</EnableSourceLink>
+  </PropertyGroup>
+
+  <Target Name="CopyToUnity" AfterTargets="Build" Condition="'$(TargetFramework)' == 'netstandard2.1' And Exists('$(MSBuildProjectDirectory)\..\..\unity\Assets')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildProjectDirectory)\..\..\unity\Assets\Plugins\Oohra" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

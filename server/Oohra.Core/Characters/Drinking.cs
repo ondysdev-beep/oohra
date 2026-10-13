@@ -4,20 +4,6 @@ using Oohra.Core.World;
 
 namespace Oohra.Core.Characters;
 
-/// <summary>Jak pití dopadlo. Klient si k tomu přiřadí text.</summary>
-public enum DrinkResult
-{
-    Clean,
-    Muddy,
-
-    /// <summary>Kalná voda: instinkt Nových, napil se jen trochu.</summary>
-    MuddySip,
-
-    Salty,
-    NotWater,
-    TooFar,
-}
-
 /// <summary>
 /// Pití přímo u zdroje (prototyp drinkKind v part5.js): jezírko je čisté, bažina kalná
 /// (může z ní být nemoc), moře slané (žízeň zhorší). Nádoby a převařování přijdou později.

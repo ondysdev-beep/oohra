@@ -12,7 +12,8 @@
   "overrideReferences": true,
   "precompiledReferences": [
     "nunit.framework.dll",
-    "Oohra.Core.dll"
+    "Oohra.Core.dll",
+    "Oohra.Shared.dll"
   ],
   "autoReferenced": false,
   "defineConstraints": [
