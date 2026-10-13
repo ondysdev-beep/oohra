@@ -50,6 +50,7 @@ namespace Oohra.Client
                 _moveTo = null;
                 _target = null;
                 _session.Menu = null;
+                _session.Selected = null;
             }
             else if (_target != null)
             {
@@ -90,6 +91,7 @@ namespace Oohra.Client
             _session.Menu = null;
             _stuckTime = 0;
             _target = PickTarget(x, y);
+            _session.Selected = _target;
             _moveTo = _target == null ? new Vector2((float)x, (float)y) : (Vector2?)null;
         }
 
@@ -280,6 +282,7 @@ namespace Oohra.Client
             if (Vector2.Distance(position, new Vector2((float)menu.X, (float)menu.Y)) > reach + MenuCloseExtra)
             {
                 _session.Menu = null;
+                _session.Selected = null;
             }
         }
 

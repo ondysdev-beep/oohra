@@ -58,6 +58,7 @@ namespace Oohra.Client
             {
                 _session.BackpackOpen = false;
                 _session.Menu = null;
+                _session.Selected = null;
             }
         }
 
@@ -274,6 +275,7 @@ namespace Oohra.Client
             if (fire == null)
             {
                 _session.Menu = null;
+                _session.Selected = null;
                 return;
             }
 

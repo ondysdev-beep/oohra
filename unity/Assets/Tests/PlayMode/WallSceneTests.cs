@@ -64,10 +64,16 @@ namespace Oohra.Client.Tests
 
             var wall = session.Connection.Structures[0];
             session.Menu = InteractionTarget.ForStructure(wall.Id, wall.X, wall.Y);
+            var ring = Object.FindAnyObjectByType<SelectionRing>();
+            session.Selected = session.Menu;
+            yield return null;
+            Assert.IsTrue(ring.Visible, "Pod vybranou zdí není kruh.");
+            yield return SaveScreenshot("vyber.png");
             session.RemoveStructure();
 
             yield return WaitFor(() => walls.Count == session.Connection.Structures.Length && session.Connection.Structures.All(s => s.Id != wall.Id), 3f, "Zeď po rozebrání nezmizela.");
             yield return WaitFor(() => session.Count(Oohra.Core.Items.ItemKind.Stick) >= 1, 3f, "Rozebraná zeď nevrátila klacek.");
+            Assert.IsFalse(ring.Visible, "Kruh zůstal po rozebrané zdi.");
         }
     }
 }

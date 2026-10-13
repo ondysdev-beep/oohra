@@ -51,6 +51,9 @@ namespace Oohra.Client
         /// <summary>Nabídka u rostliny nebo vody, když k ní postava došla.</summary>
         public InteractionTarget Menu { get; set; }
 
+        /// <summary>Vybraná věc (pod ní je kruh): na co hráč kliknul, dokud nejde jinam.</summary>
+        public InteractionTarget Selected { get; set; }
+
         public bool Dead => Connection.Self != null && Connection.Self.Dead;
 
         /// <summary>Zpracuje zprávy od serveru. Volat každý snímek.</summary>
@@ -83,6 +86,7 @@ namespace Oohra.Client
                 if (part == PlantPart.Root)
                 {
                     Menu = null;
+                    Selected = null;
                 }
             }
         }
@@ -129,6 +133,7 @@ namespace Oohra.Client
             {
                 Connection.RemoveStructure(Menu.Id);
                 Menu = null;
+                Selected = null;
             }
         }
 
@@ -166,6 +171,7 @@ namespace Oohra.Client
         {
             Connection.Reborn();
             Menu = null;
+            Selected = null;
             _log.Clear();
             Say("Probouzíš se na neznámém místě. Nic nevíš.", false);
         }
