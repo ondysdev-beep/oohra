@@ -157,11 +157,12 @@ namespace Oohra.Client
 
         private void BuildScene()
         {
-            IslandView.Build(_connection.World, _connection);
+            var island = IslandView.Build(_connection.World, _connection);
             _players = new GameObject("Hráči").AddComponent<PlayerViews>();
             _players.Init(_connection);
 
             var camera = Camera.main;
+            island.GetComponentInChildren<TreeCrowns>().Follow(_players, camera);
             gameObject.AddComponent<PlayerController>().Init(_session, camera);
             gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun());
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);

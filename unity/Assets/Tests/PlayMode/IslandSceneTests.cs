@@ -70,5 +70,35 @@ namespace Oohra.Client.Tests
 
             yield return SaveScreenshot("sit.png");
         }
+
+        /// <summary>Postava dojde ke stromu a jeho koruna zprůhlední, aby postava byla vidět.</summary>
+        [UnityTest]
+        public IEnumerator CrownsFadeNearPlayer()
+        {
+            var bootstrap = Object.FindAnyObjectByType<IslandBootstrap>();
+            bootstrap.Connect("127.0.0.1", TestPort, Invite, "Ondra");
+            yield return WaitFor(() => bootstrap.Session != null, 15f, "Unity se nepřipojilo k serveru.");
+            var connection = bootstrap.Session.Connection;
+            var crowns = Object.FindAnyObjectByType<TreeCrowns>();
+            yield return WaitFor(() => connection.SelfSnapshot() != null, 5f, "Chybí poloha postavy.");
+
+            var until = Time.realtimeSinceStartup + 8f;
+            while (crowns.FadedCount == 0 && Time.realtimeSinceStartup < until)
+            {
+                var self = connection.SelfSnapshot().Value;
+                var tree = connection.World.Trees
+                    .Select(t => new Vector2(t.TileIndex % connection.World.Width + 0.5f, t.TileIndex / connection.World.Width + 0.5f))
+                    .OrderBy(t => Vector2.Distance(t, new Vector2(self.X, self.Y)))
+                    .First();
+                var direction = (tree - new Vector2(self.X, self.Y)).normalized;
+                connection.SendInput(direction.x, direction.y);
+                yield return null;
+            }
+
+            connection.SendInput(0, 0);
+            Assert.Greater(crowns.FadedCount, 0, "U stromu se žádná koruna nezprůhlednila.");
+            yield return new WaitForSecondsRealtime(0.5f);
+            yield return SaveScreenshot("koruny.png");
+        }
     }
 }

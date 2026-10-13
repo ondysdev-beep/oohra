@@ -6,6 +6,7 @@ namespace Oohra.Core.Data;
 public sealed record MovementRules(
     double WalkSpeed,
     double Radius,
+    double TreeTrunkRadius,
     Dictionary<TileType, double> TerrainSpeed,
     BodySpeedRules Body,
     SpawnRules Spawn);

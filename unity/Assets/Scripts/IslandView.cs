@@ -74,6 +74,8 @@ namespace Oohra.Client
         {
             var trees = new GameObject("Stromy").transform;
             trees.SetParent(parent);
+            var crowns = trees.gameObject.AddComponent<TreeCrowns>();
+            crowns.Init(world.Width);
             var trunkColor = Palette.Hex("#5a4331");
             var crownColors = new[] { Palette.Hex("#4e7d3a"), Palette.Hex("#3d6b30") };
 
@@ -82,13 +84,17 @@ namespace Oohra.Client
                 var x = tree.TileIndex % world.Width + 0.5;
                 var y = tree.TileIndex / world.Width + 0.5;
                 var size = 0.8f + tree.Variant * 0.4f;
+
+                // Kmen má stejnou tloušťku jako kolize na serveru (treeTrunkRadius 0,15 v movement.json).
                 var trunk = Primitive(PrimitiveType.Cylinder, "Kmen", trees, trunkColor);
                 trunk.transform.position = WorldCoords.ToUnity(x, y, 0.35f * size);
-                trunk.transform.localScale = new Vector3(0.15f, 0.35f * size, 0.15f);
+                trunk.transform.localScale = new Vector3(0.3f, 0.35f * size, 0.3f);
 
-                var crown = Primitive(PrimitiveType.Sphere, "Koruna", trees, crownColors[tree.Variant > 0.5f ? 0 : 1]);
+                var color = crownColors[tree.Variant > 0.5f ? 0 : 1];
+                var crown = Primitive(PrimitiveType.Sphere, "Koruna", trees, color);
                 crown.transform.position = WorldCoords.ToUnity(x, y, 0.9f * size);
                 crown.transform.localScale = Vector3.one * 0.85f * size;
+                crowns.Add(tree.TileIndex, crown, color);
             }
         }
 

@@ -22,6 +22,61 @@ public class MovementTests
         Assert.True(Movement.IsBlocked(_island, pond % _island.Width, pond / _island.Width));
     }
 
+    /// <summary>Strom blokuje jen kmen: na okraj jeho dlaždice se vejdeš, skrz střed ne.</summary>
+    [Fact]
+    public void TreeBlocksOnlyTrunk()
+    {
+        var tree = _island.Trees.First(t => AloneOnDryLand((int)t.X, (int)t.Y));
+        int tx = (int)tree.X, ty = (int)tree.Y;
+
+        Assert.False(Movement.CanStand(_island, tx + 0.5, ty + 0.5, 0.28));
+        Assert.True(Movement.CanStand(_island, tx + 0.5, ty + 0.05, 0.28));
+        Assert.True(Movement.CanStand(_island, tx + 0.05, ty + 0.5, 0.28));
+
+        // Chůze na východ přímo na kmen: postava vejde na dlaždici stromu a zastaví se o kmen.
+        var (x, y) = (tx - 0.5, ty + 0.5);
+        for (var i = 0; i < 40; i++)
+        {
+            (x, y) = Movement.Step(_island, x, y, 1, 0, 0.05);
+        }
+
+        Assert.InRange(x, tx, tx + 0.5 - 0.43 + 1e-9);
+    }
+
+    /// <summary>Rostliny nepřekáží: postava jimi projde.</summary>
+    [Fact]
+    public void PlantsDoNotBlock()
+    {
+        var plant = _island.Plants.First(p => Enumerable.Range(0, 21).All(i => Movement.CanStand(_island, p.X - 1 + i * 0.1, p.Y, 0.28)));
+        var (x, y) = (plant.X - 1, plant.Y);
+
+        for (var i = 0; i < 20; i++)
+        {
+            (x, y) = Movement.Step(_island, x, y, 1, 0, 0.1);
+        }
+
+        Assert.True(x > plant.X + 0.9);
+        Assert.Equal(plant.Y, y);
+    }
+
+    /// <summary>Strom na suchu, kolem kterého nejsou jiné stromy ani voda (pro test kmene).</summary>
+    private static bool AloneOnDryLand(int tx, int ty)
+    {
+        for (var y = ty - 1; y <= ty + 1; y++)
+        {
+            for (var x = tx - 1; x <= tx + 1; x++)
+            {
+                var tile = _island.TileAt(x, y);
+                if (tile == TileType.Sea || tile == TileType.Pond || ((x, y) != (tx, ty) && _island.HasTree(_island.Index(x, y))))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     [Fact]
     public void CampIsWalkable()
     {
