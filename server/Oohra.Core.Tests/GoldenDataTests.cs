@@ -6,8 +6,6 @@ public class GoldenDataTests
     [Fact]
     public void GoldenWorldFileIsAvailable()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "golden", "golden_world.json");
-
-        Assert.True(File.Exists(path), $"Chybí soubor {path}");
+        Assert.True(File.Exists(GoldenData.FilePath), $"Chybí soubor {GoldenData.FilePath}");
     }
 }
