@@ -3,18 +3,39 @@ using Oohra.Core;
 using Oohra.Core.Characters;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
+using Oohra.Protocol;
 
 namespace Oohra.Client
 {
-    /// <summary>České texty k výsledkům pravidel (hlášky z prototypu). Core posílá jen kódy.</summary>
+    /// <summary>České texty ke zprávám od serveru (hlášky z prototypu). Server posílá jen kódy.</summary>
     public static class Texts
     {
-        public static string For(BodyMessage message)
+        /// <summary>Text hlášky ze serveru, nebo null, když se nemá ukazovat.</summary>
+        public static string For(GameEvent e, out bool warn)
         {
-            switch (message.Event)
+            switch (e.Kind)
+            {
+                case EventKind.Body:
+                    var bodyEvent = (BodyEvent)e.Code;
+                    warn = bodyEvent != BodyEvent.Ate && bodyEvent != BodyEvent.Tasted && bodyEvent != BodyEvent.CameTo;
+                    return bodyEvent == BodyEvent.Died ? null : For(bodyEvent, e.Notes);
+                case EventKind.Harvest:
+                    var harvest = (HarvestResult)e.Code;
+                    warn = harvest != HarvestResult.Picked;
+                    return For(harvest, e.Part);
+                default:
+                    var drink = (DrinkResult)e.Code;
+                    warn = drink == DrinkResult.Salty || drink == DrinkResult.TooFar;
+                    return For(drink);
+            }
+        }
+
+        public static string For(BodyEvent bodyEvent, TasteNote[] notes)
+        {
+            switch (bodyEvent)
             {
                 case BodyEvent.Ate: return "Snědl jsi to.";
-                case BodyEvent.Tasted: return "Ochutnal jsi. " + string.Join(" ", message.Notes.Select(For));
+                case BodyEvent.Tasted: return "Ochutnal jsi. " + string.Join(" ", notes.Select(For));
                 case BodyEvent.BitternessStopped: return "Hořkost tě zastaví. Polkl jsi jen část.";
                 case BodyEvent.Vomited: return "Žaludek se ti zvedá. Vyzvracíš se.";
                 case BodyEvent.Diarrhea: return "Břicho se ti svírá křečemi.";
@@ -25,14 +46,8 @@ namespace Oohra.Client
                 case BodyEvent.Crash: return "Ten příval sil je pryč. Cítíš prázdnotu.";
                 case BodyEvent.FeverStarted: return "Hoří ti čelo.";
                 case BodyEvent.FeltSick: return "Je ti horko a špatně od žaludku. Něco v tobě se pokazilo.";
-                case BodyEvent.Died: return "Zemřel jsi.";
-                default: return message.Event.ToString();
+                default: return "Zemřel jsi.";
             }
-        }
-
-        public static bool IsWarning(BodyEvent bodyEvent)
-        {
-            return bodyEvent != BodyEvent.Ate && bodyEvent != BodyEvent.Tasted && bodyEvent != BodyEvent.CameTo;
         }
 
         public static string For(TasteNote note)
@@ -125,16 +140,16 @@ namespace Oohra.Client
         }
 
         /// <summary>Popis věci v batohu, jak ji vidí hráč (prototyp describe).</summary>
-        public static string Describe(PlantItem item)
+        public static string Describe(StackView stack)
         {
-            var name = item.Part == PlantPart.Leaf ? "List" : item.Part == PlantPart.Root ? "Kořen" : "Plod";
-            if (item.Part == PlantPart.Fruit)
+            var name = stack.Part == PlantPart.Leaf ? "List" : stack.Part == PlantPart.Root ? "Kořen" : "Plod";
+            if (stack.Part == PlantPart.Fruit)
             {
-                name += item.Ripeness == Ripeness.Unripe ? " · zelený" : item.Ripeness == Ripeness.Overripe ? " · scvrklý, tmavý" : " · zralý";
+                name += stack.Ripeness == Ripeness.Unripe ? " · zelený" : stack.Ripeness == Ripeness.Overripe ? " · scvrklý, tmavý" : " · zralý";
             }
 
-            if (item.Cooking == Cooking.Baked) name += " · upečený";
-            if (item.Cooking == Cooking.Boiled) name += " · uvařený";
+            if (stack.Cooking == Cooking.Baked) name += " · upečený";
+            if (stack.Cooking == Cooking.Boiled) name += " · uvařený";
             return name;
         }
 

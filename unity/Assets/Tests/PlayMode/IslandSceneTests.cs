@@ -1,118 +1,106 @@
 using System.Collections;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
-using Oohra.Core.Plants;
-using Oohra.Core.World;
+using Oohra.Protocol;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using Debug = UnityEngine.Debug;
 
 namespace Oohra.Client.Tests
 {
     /// <summary>
-    /// Spustí scénu ostrova a vyzkouší hru tak, jak ji hraje hráč (bez myši): sběr, jídlo, pití, smrt.
-    /// Test selže i tehdy, když se v konzoli objeví chyba. Snímky ukládá do unity/Logs (do gitu se nenahrávají).
+    /// Celá cesta: spustí skutečný server (Oohra.Server z server/, musí být sestavený přes dotnet build),
+    /// Unity se k němu připojí, postaví ostrov, přidá se druhý hráč a oba se vidí.
+    /// Snímky ukládá do unity/Logs (do gitu se nenahrávají).
     /// </summary>
     public class IslandSceneTests
     {
-        private GameState _state;
+        private const int TestPort = 9177;
+        private const string Invite = "UNITY-TEST";
+
+        private Process _server;
+        private GameConnection _second;
 
         [UnitySetUp]
-        public IEnumerator LoadIsland()
+        public IEnumerator StartServer()
         {
+            var repo = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+            var serverDll = Path.Combine(repo, "server", "Oohra.Server", "bin", "Debug", "net10.0", "Oohra.Server.dll");
+            Assert.IsTrue(File.Exists(serverDll), "Server není sestavený. Spusť dotnet build ve složce server.");
+
+            var config = Path.Combine(Application.temporaryCachePath, "server-test.json");
+            File.WriteAllText(config, "{ \"port\": " + TestPort + ", \"seed\": 1, \"worldSize\": 84, \"inviteCodes\": [\"" + Invite + "\"] }");
+            _server = Process.Start(new ProcessStartInfo("dotnet", "\"" + serverDll + "\" \"" + config + "\"")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            });
+
             SceneManager.LoadScene("Ostrov");
-            yield return null;
-            yield return null;
-            _state = Object.FindAnyObjectByType<IslandBootstrap>().State;
+            yield return new WaitForSecondsRealtime(2f);
         }
 
-        [UnityTest]
-        public IEnumerator IslandSceneStartsWithoutErrors()
+        [UnityTearDown]
+        public IEnumerator StopServer()
         {
-            for (var i = 0; i < 30; i++)
+            _second?.Dispose();
+            if (_server != null && !_server.HasExited)
             {
-                yield return null;
+                _server.Kill();
             }
 
-            Assert.IsNotNull(GameObject.Find("Postava"), "Postava ve scéně chybí.");
-            Assert.IsNotNull(GameObject.Find("Ostrov (vygenerovaný)"), "Ostrov ve scéně chybí.");
-            yield return SaveScreenshot("ostrov.png");
-        }
-
-        [UnityTest]
-        public IEnumerator PickEatAndDrink()
-        {
-            var plant = _state.Island.Plants.First(p => p.Tile == TileType.Grass);
-            _state.Player.Respawn(_state.Character, new Position(plant.X, plant.Y));
-
-            _state.Harvest(plant, PlantPart.Root);
-            var other = _state.Island.Plants.First(p => p.Tile == TileType.Grass && p.SpeciesId != plant.SpeciesId);
-            _state.Player.Respawn(_state.Character, new Position(other.X, other.Y));
-            _state.Harvest(other, PlantPart.Leaf);
-            Assert.AreEqual(2, _state.Inventory.Stacks.Count);
-            Assert.IsTrue(_state.PlantStates.IsGone(plant.Id, _state.Clock.TotalMinutes));
-
-            _state.BackpackOpen = true;
             yield return null;
-            yield return SaveScreenshot("batoh.png");
-
-            _state.Taste(0);
-            _state.Eat(0);
-            _state.BackpackOpen = false;
-            Assert.IsTrue(_state.Log.Any(l => l.Text.StartsWith("Ochutnal jsi")));
-            Assert.IsTrue(_state.Log.Any(l => l.Text == "Snědl jsi to."));
-
-            var thirstBefore = DrinkNearPond();
-            Assert.Greater(_state.Character.Hydration, thirstBefore);
-            Assert.IsTrue(_state.Log.Any(l => l.Text == "Čistá, studená voda."));
         }
 
         [UnityTest]
-        public IEnumerator DeathAndRebirthAsNextGeneration()
+        public IEnumerator ConnectsAndSeesSecondPlayer()
         {
-            _state.Inventory.TryAdd(new PlantItem(0, PlantPart.Leaf, Ripeness.Ripe, Oohra.Core.Season.Spring, TileType.Grass));
-            _state.Character.Hydration = 0;
-            _state.Character.Health = 0.05;
-            _state.TimeSpeed = 60;
-            for (var i = 0; i < 300 && !_state.Character.IsDead; i++)
+            var bootstrap = Object.FindAnyObjectByType<IslandBootstrap>();
+            bootstrap.Connect("127.0.0.1", TestPort, Invite, "Ondra");
+            yield return WaitFor(() => bootstrap.Session != null, 15f, "Unity se nepřipojilo k serveru.");
+
+            var session = bootstrap.Session;
+            Assert.AreEqual(84 * 84, session.Connection.World.Tiles.Length);
+            yield return WaitFor(() => GameObject.Find("Postava") != null, 5f, "Vlastní postava se neobjevila.");
+
+            _second = new GameConnection();
+            _second.Connect("127.0.0.1", TestPort, Invite, "Petr");
+            yield return WaitFor(() =>
             {
-                yield return null;
-            }
+                _second.Poll();
+                return session.Connection.Players.Values.Any(p => p.Nickname == "Petr");
+            }, 10f, "Druhý hráč se neobjevil.");
+            yield return WaitFor(() =>
+            {
+                _second.Poll();
+                return session.Connection.Snapshot.Players.Length == 2;
+            }, 5f, "Ve snímku nejsou oba hráči.");
 
-            Assert.IsTrue(_state.Character.IsDead);
-            Assert.AreEqual(Oohra.Core.Characters.DeathCause.Thirst, _state.Character.DeathCause);
-            Assert.IsTrue(_state.Paused);
-            yield return SaveScreenshot("smrt.png");
+            var start = session.Connection.SelfSnapshot().Value;
+            session.Connection.SendInput(0, 1);
+            yield return new WaitForSecondsRealtime(1f);
+            session.Connection.SendInput(0, 0);
+            var moved = session.Connection.SelfSnapshot().Value;
+            Assert.AreNotEqual(start.Y, moved.Y, "Server postavou nepohnul.");
 
-            _state.Reborn();
-            Assert.IsFalse(_state.Character.IsDead);
-            Assert.AreEqual(1, _state.Character.Traits.Generation);
-            Assert.AreEqual(0, _state.Inventory.Stacks.Count);
+            yield return SaveScreenshot("sit.png");
         }
 
-        /// <summary>Postaví postavu na souš vedle jezírka a napije se. Vrací žízeň před pitím.</summary>
-        private double DrinkNearPond()
+        private static IEnumerator WaitFor(System.Func<bool> condition, float seconds, string message)
         {
-            var island = _state.Island;
-            for (var y = 1; y < island.Height - 1; y++)
+            var until = Time.realtimeSinceStartup + seconds;
+            while (!condition())
             {
-                for (var x = 1; x < island.Width - 1; x++)
+                if (Time.realtimeSinceStartup > until)
                 {
-                    if (island.TileAt(x, y) != TileType.Pond || !Movement.IsWalkable(island, x + 0.5, y + 1.5, 0.28))
-                    {
-                        continue;
-                    }
-
-                    _state.Player.Respawn(_state.Character, new Position(x + 0.5, y + 1.5));
-                    _state.Character.Hydration = 20;
-                    _state.Drink(x, y);
-                    return 20;
+                    Assert.Fail(message);
                 }
-            }
 
-            Assert.Fail("Na ostrově není jezírko s průchozím břehem.");
-            return 0;
+                yield return null;
+            }
         }
 
         /// <summary>

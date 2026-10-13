@@ -1,18 +1,17 @@
-using Oohra.Core.Time;
 using UnityEngine;
 
 namespace Oohra.Client
 {
-    /// <summary>Slunce podle herních hodin: ráno vychází, v noci je tma (světlo z GameClock.Daylight).</summary>
+    /// <summary>Slunce podle herních hodin: ráno vychází, v noci je tma (čas posílá server).</summary>
     public class DayNightLight : MonoBehaviour
     {
         [SerializeField] private float _dayIntensity = 1.2f;
         [SerializeField] private float _nightIntensity = 0.08f;
 
-        private GameClock _clock;
+        private ClientClock _clock;
         private Light _sun;
 
-        public void Init(GameClock clock, Light sun)
+        public void Init(ClientClock clock, Light sun)
         {
             _clock = clock;
             _sun = sun;

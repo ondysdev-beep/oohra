@@ -48,6 +48,12 @@ namespace Oohra.Client
             renderer.SetPropertyBlock(block);
         }
 
+        /// <summary>Barva listů druhu rostliny.</summary>
+        public static Color Leaf(Oohra.Protocol.SpeciesView species)
+        {
+            return Hsl(species.Hue, species.Saturation, species.Lightness);
+        }
+
         /// <summary>Barva z HSL (odstín 0 až 360, sytost a světlost 0 až 100), jak ji používá prototyp.</summary>
         public static Color Hsl(double hue, double saturation, double lightness)
         {
