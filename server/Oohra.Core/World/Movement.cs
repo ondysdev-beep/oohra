@@ -11,7 +11,7 @@ namespace Oohra.Core.World;
 public static class Movement
 {
     /// <summary>
-    /// Obsazená dlaždice: mimo mapu, moře, jezírko, strom. Na ní nejde stavět ani rozdělat oheň a nikdo se tam nenarodí.
+    /// Obsazená dlaždice: mimo mapu, moře, jezírko, zeď, strom. Na ní nejde stavět ani rozdělat oheň a nikdo se tam nenarodí.
     /// Pro chůzi platí CanStand: strom tam blokuje jen svůj kmen.
     /// </summary>
     public static bool IsBlocked(Island island, int tx, int ty)
@@ -32,7 +32,7 @@ public static class Movement
             && !HitsTrunk(island, x, y, radius);
     }
 
-    /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko.</summary>
+    /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko, zeď.</summary>
     private static bool IsImpassable(Island island, int tx, int ty)
     {
         if (!island.InBounds(tx, ty))
@@ -41,7 +41,7 @@ public static class Movement
         }
 
         var tile = island.TileAt(tx, ty);
-        return tile == TileType.Sea || tile == TileType.Pond;
+        return tile == TileType.Sea || tile == TileType.Pond || island.Walls.Has(island.Index(tx, ty));
     }
 
     /// <summary>Postava by se překrývala s kmenem stromu (kmen stojí uprostřed své dlaždice).</summary>

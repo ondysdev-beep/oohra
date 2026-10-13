@@ -1,0 +1,17 @@
+// Stavby: zeď z klacků a úkryt. Přepsáno z buildWall, sheltered a physiology v prototypu (part5.js, part4.js).
+// Vzdálenosti v dlaždicích.
+{
+  "wall": {
+    // Zeď stojí na dlaždici před postavou. Rozebráním se vrátí část klacků.
+    "sticksCost": 2,
+    "sticksBack": 1,
+    // Jak blízko musí postava být, aby zeď rozebrala.
+    "reach": 1.6
+  },
+  "shelter": {
+    // Úkryt: prostor uzavřený zdmi, nejvýš tolik dlaždic (jinak je to jen ohrada).
+    "maxTiles": 36,
+    // O kolik se v úkrytu zvedne cíl tepla těla (oheň dává 28).
+    "warmthBonus": 14
+  }
+}

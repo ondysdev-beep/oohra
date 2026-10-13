@@ -162,7 +162,7 @@ namespace Oohra.Client
             _players.Init(_connection);
 
             var camera = Camera.main;
-            island.GetComponentInChildren<TreeCrowns>().Follow(_players, camera);
+            island.GetComponentInChildren<SeeThrough>().Follow(_players, camera);
             gameObject.AddComponent<PlayerController>().Init(_session, camera);
             gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun());
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);

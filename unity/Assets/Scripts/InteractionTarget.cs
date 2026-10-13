@@ -10,9 +10,10 @@ namespace Oohra.Client
         Tree,
         Rock,
         Fire,
+        Wall,
     }
 
-    /// <summary>Na co hráč kliknul: rostlina nebo oheň (číslo), nebo dlaždice (voda, strom, skála).</summary>
+    /// <summary>Na co hráč kliknul: rostlina nebo oheň (číslo), nebo dlaždice (voda, strom, skála, zeď).</summary>
     public sealed class InteractionTarget
     {
         private InteractionTarget(TargetKind kind, int id, int tileX, int tileY, double x, double y)
@@ -46,7 +47,7 @@ namespace Oohra.Client
         public Vector3 Position => WorldCoords.ToUnity(X, Y);
 
         /// <summary>
-        /// Jak blízko musí postava dojít (jako v Core: gathering.json a fire.json).
+        /// Jak blízko musí postava dojít (jako v Core: gathering.json, fire.json a building.json).
         /// Server dosah stejně ověří, tady jen kvůli tomu, kdy přestat jít a otevřít nabídku.
         /// </summary>
         public double Reach
@@ -58,6 +59,7 @@ namespace Oohra.Client
                     case TargetKind.Plant: return 0.95;
                     case TargetKind.Water: return 1.7;
                     case TargetKind.Tree: return 1.5;
+                    case TargetKind.Wall: return 1.6;
                     default: return 1.3;
                 }
             }
@@ -73,7 +75,7 @@ namespace Oohra.Client
             return new InteractionTarget(TargetKind.Fire, fireId, tileX, tileY, tileX + 0.5, tileY + 0.5);
         }
 
-        /// <summary>Dlaždice: voda, strom nebo skála.</summary>
+        /// <summary>Dlaždice: voda, strom, skála nebo zeď.</summary>
         public static InteractionTarget ForTile(TargetKind kind, int tileX, int tileY)
         {
             return new InteractionTarget(kind, -1, tileX, tileY, tileX + 0.5, tileY + 0.5);

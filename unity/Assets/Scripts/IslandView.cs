@@ -13,9 +13,11 @@ namespace Oohra.Client
         public static GameObject Build(WorldView world, GameConnection connection)
         {
             var root = new GameObject("Ostrov (vygenerovaný)");
+            var seeThrough = root.AddComponent<SeeThrough>();
+            seeThrough.Init(world.Width);
             BuildSea(world, root.transform);
             BuildGround(world, root.transform);
-            BuildTrees(world, root.transform);
+            BuildTrees(world, root.transform, seeThrough);
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);
             BuildRuins(world, root.transform);
@@ -23,6 +25,10 @@ namespace Oohra.Client
             var fires = new GameObject("Ohně");
             fires.transform.SetParent(root.transform);
             fires.AddComponent<FireViews>().Init(connection, world);
+
+            var walls = new GameObject("Zdi");
+            walls.transform.SetParent(root.transform);
+            walls.AddComponent<WallViews>().Init(connection, world, seeThrough);
             return root;
         }
 
@@ -70,12 +76,10 @@ namespace Oohra.Client
             Palette.SetColor(sea, Palette.Tile(TileType.Sea, false));
         }
 
-        private static void BuildTrees(WorldView world, Transform parent)
+        private static void BuildTrees(WorldView world, Transform parent, SeeThrough crowns)
         {
             var trees = new GameObject("Stromy").transform;
             trees.SetParent(parent);
-            var crowns = trees.gameObject.AddComponent<TreeCrowns>();
-            crowns.Init(world.Width);
             var trunkColor = Palette.Hex("#5a4331");
             var crownColors = new[] { Palette.Hex("#4e7d3a"), Palette.Hex("#3d6b30") };
 

@@ -77,6 +77,9 @@ public sealed class Island
     /// <summary>SKRYTÁ DATA: složení druhů. Nikdy neposílat klientovi.</summary>
     public IReadOnlyList<SpeciesSecret> SpeciesSecrets { get; }
 
+    /// <summary>Zdi postavené hráči. Na rozdíl od zbytku ostrova se mění během hry.</summary>
+    public Walls Walls { get; } = new();
+
     public int Index(int x, int y)
     {
         return y * Width + x;

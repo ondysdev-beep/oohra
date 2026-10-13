@@ -93,7 +93,7 @@ namespace Oohra.Client
             _moveTo = _target == null ? new Vector2((float)x, (float)y) : (Vector2?)null;
         }
 
-        /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, rostlina, strom, voda, skála.</summary>
+        /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, rostlina, strom, zeď, voda, skála.</summary>
         private InteractionTarget PickTarget(double x, double y)
         {
             var world = _session.Connection.World;
@@ -120,6 +120,7 @@ namespace Oohra.Client
 
             var tile = world.TileAt(tx, ty);
             if (TreeTiles.Contains(ty * world.Width + tx)) return InteractionTarget.ForTile(TargetKind.Tree, tx, ty);
+            if (System.Array.IndexOf(_session.Connection.Walls, ty * world.Width + tx) >= 0) return InteractionTarget.ForTile(TargetKind.Wall, tx, ty);
             if (IsWater(tile)) return InteractionTarget.ForTile(TargetKind.Water, tx, ty);
             if (tile == TileType.Rock) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);
             return null;

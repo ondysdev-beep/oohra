@@ -36,6 +36,7 @@ public sealed class GameServer : IDisposable
     private int _nextPlayerId = 1;
     private long _tick;
     private int _sentFiresVersion;
+    private int _sentWallsVersion;
 
     public GameServer(ServerConfig config)
     {
@@ -95,7 +96,7 @@ public sealed class GameServer : IDisposable
         foreach (var player in _byPeer.Values)
         {
             Move(player, realSeconds);
-            Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y));
+            Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
             SendBodyEvents(player);
         }
 
@@ -103,6 +104,12 @@ public sealed class GameServer : IDisposable
         {
             _sentFiresVersion = Fires.Version;
             Broadcast(w => Messages.WriteFires(w, FireViews()));
+        }
+
+        if (Island.Walls.Version != _sentWallsVersion)
+        {
+            _sentWallsVersion = Island.Walls.Version;
+            Broadcast(w => Messages.WriteWalls(w, Island.Walls.Tiles));
         }
 
         _tick++;
@@ -186,6 +193,7 @@ public sealed class GameServer : IDisposable
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)), except: peer);
         SendTo(peer, w => Messages.WritePlantStates(w, AllPlantVisuals()));
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
+        SendTo(peer, w => Messages.WriteWalls(w, Island.Walls.Tiles));
         SendInventory(player);
         SendSelfState(player);
         Log?.Invoke($"{player.Nickname} přišel (hráčů ve hře: {_byPeer.Count}).");
@@ -298,7 +306,33 @@ public sealed class GameServer : IDisposable
                 var stackIndex = Messages.ReadStackAction(reader);
                 FireAction(player, () => Fires.Bake(Island, player.Inventory, stackIndex, player.X, player.Y));
                 break;
+            case MessageType.BuildWall:
+                BuildAction(player, () => Island.Walls.Build(Island, Fires, player.Inventory, player.X, player.Y, player.Facing, PlayerPositions()));
+                break;
+            case MessageType.RemoveWall:
+                var (wallX, wallY) = Messages.ReadTileAction(reader);
+                BuildAction(player, () => Island.Walls.Remove(Island, wallX, wallY, player.Inventory, player.X, player.Y));
+                break;
         }
+    }
+
+    /// <summary>Zeď: postavit nebo rozebrat. Seznam zdí se všem pošle v příštím ticku.</summary>
+    private void BuildAction(PlayerSession player, Func<BuildResult> action)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = action();
+        SendEvent(player, new GameEvent(EventKind.Build, (byte)result, default, []));
+        SendInventory(player);
+    }
+
+    /// <summary>Kde stojí hráči ve hře (zeď se nesmí postavit na nikoho z nich).</summary>
+    private List<Position> PlayerPositions()
+    {
+        return _byPeer.Values.Select(p => new Position(p.X, p.Y)).ToList();
     }
 
     private void GatherMaterial(PlayerSession player, MessageType type, (int TileX, int TileY) tile)
@@ -470,7 +504,8 @@ public sealed class GameServer : IDisposable
             c.Traits.Generation,
             c.IsDead,
             c.DeathCause,
-            Fires.WarmsAt(Island, player.X, player.Y));
+            Fires.WarmsAt(Island, player.X, player.Y),
+            Shelter.IsSheltered(Island, player.X, player.Y));
         SendTo(player.Peer, w => Messages.WriteSelfState(w, state));
     }
 

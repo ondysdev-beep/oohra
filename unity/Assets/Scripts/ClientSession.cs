@@ -121,6 +121,22 @@ namespace Oohra.Client
             Connection.LightFire();
         }
 
+        /// <summary>Postavit zeď na dlaždici, kam se postava dívá (2 klacky).</summary>
+        public void BuildWall()
+        {
+            Connection.BuildWall();
+        }
+
+        /// <summary>Rozebrat zeď, u které je otevřená nabídka.</summary>
+        public void RemoveWall()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Wall)
+            {
+                Connection.RemoveWall(Menu.TileX, Menu.TileY);
+                Menu = null;
+            }
+        }
+
         public void Bake(int stackIndex)
         {
             Connection.Bake(stackIndex);
