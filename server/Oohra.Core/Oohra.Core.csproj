@@ -10,8 +10,13 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <!-- Nezapisovat do DLL číslo git commitu, jinak by se DLL v Unity měnila s každým commitem. -->
+    <!--
+      Nezapisovat do DLL ani do ladicích informací číslo git commitu (verze a SourceLink),
+      jinak by se DLL v Unity měnila s každým commitem, i když se kód nezmění.
+    -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <EnableSourceLink>false</EnableSourceLink>
   </PropertyGroup>
 
   <!-- Datové soubory hry se zabalí do knihovny (načítá je GameData). -->
