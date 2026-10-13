@@ -36,7 +36,8 @@ unity/       klient (Fáze B)
 - Malé, čitelné metody. Žádná předčasná obecnost.
 
 ## Pracovní postup
-- Každý úkol na vlastní větvi `feature/...`, na konci commit a push. Vývojář sám vytvoří pull request a sloučí ho na GitHubu. Do `main` se nepíše přímo (kromě prvního commitu).
+- Každý úkol na vlastní větvi `feature/...`, na konci commit a push větve. Potom Claude větev sloučí do `main` (`git merge --no-ff`), na `main` ověří `dotnet build` a `dotnet test` a pushne `main`. Příkazy `git checkout main`, `git merge --no-ff ...` a `git push origin main` spouštěj každý zvlášť (tak jsou povolené v `.claude/settings.local.json`). Přímé commity do `main` se nedělají.
+- Repozitář: `github.com/ondysdev-beep/oohra`. Nástroj `gh` není nainstalovaný, pull requesty se nedělají.
 - Commit zprávy česky, stručně.
 - Na začátku sezení vývojář řekne, co chce dělat, ty navrhneš plán na hodinu.
 - Po každé změně spusť `dotnet build` a `dotnet test` a oprav chyby, než ohlásíš hotovo.
