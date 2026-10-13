@@ -26,4 +26,23 @@ public sealed class Mulberry32
             return (uint)(t ^ (int)((uint)t >> 14)) / 4294967296.0;
         }
     }
+
+    /// <summary>Celé číslo 0 až max - 1, jako Math.floor(r() * max) v prototypu.</summary>
+    public int NextInt(int max)
+    {
+        return (int)Math.Floor(NextDouble() * max);
+    }
+
+    /// <summary>Zamíchaná kopie seznamu, jako shuffle(a, r) v prototypu.</summary>
+    public T[] Shuffle<T>(IReadOnlyList<T> items)
+    {
+        var result = items.ToArray();
+        for (var i = result.Length - 1; i > 0; i--)
+        {
+            var j = NextInt(i + 1);
+            (result[i], result[j]) = (result[j], result[i]);
+        }
+
+        return result;
+    }
 }

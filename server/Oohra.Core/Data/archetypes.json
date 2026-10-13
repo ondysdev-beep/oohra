@@ -1,0 +1,112 @@
+// Archetypy rostlin: skryté složení. Přepsáno z ARCH v prototype/src/part1.js.
+// Pořadí archetypů se nesmí měnit, generátor druhů na něj odkazuje číslem.
+// Každý vektor má 6 čísel: výživa, dráždivost, toxin (hromadí se), nervový jed, povzbuzení, léčivo.
+//   home            dlaždice, kde se druh daří (při rozmisťování má váhu 4 místo 1)
+//   rabbit          králíci ho okusují (stopa pro hráče)
+//   parts           složení listu, kořene a plodu (plod jen u některých)
+//   cook            násobek složení po upečení
+//   unripeIrritant  dráždivost přidaná nezralému plodu (když chybí, platí 0,4)
+//   seasonal        násobek složení části podle ročního období (jaro, léto, podzim, zima)
+[
+  {
+    // 0: bezpečný sladký plod
+    "home": ["Grass", "Forest"],
+    "rabbit": true,
+    "parts": {
+      "leaf": [0.12, 0.1, 0, 0, 0, 0],
+      "root": [0.08, 0, 0, 0, 0, 0],
+      "fruit": [0.75, 0, 0, 0, 0, 0]
+    },
+    "cook": [1.05, 0.3, 0.4, 1, 0.6, 0.6]
+  },
+  {
+    // 1: výživný kořen, syrový jedovatý, upečením toxin skoro zmizí
+    "home": ["Grass", "Sand"],
+    "parts": {
+      "leaf": [0.05, 0, 0.5, 0, 0, 0],
+      "root": [0.9, 0, 0.8, 0, 0, 0]
+    },
+    "cook": [1.1, 1, 0.04, 1, 1, 1]
+  },
+  {
+    // 2: pálivý list, léčivý kořen
+    "home": ["Forest", "Bog"],
+    "parts": {
+      "leaf": [0.08, 0.9, 0, 0, 0, 0],
+      "root": [0.1, 0.15, 0, 0, 0, 0.8],
+      "fruit": [0.18, 0.15, 0, 0, 0, 0]
+    },
+    "cook": [1, 0.3, 1, 1, 1, 0.7]
+  },
+  {
+    // 3: list jedlý na jaře, s rokem čím dál jedovatější
+    "home": ["Grass"],
+    "rabbit": true,
+    "parts": {
+      "leaf": [0.6, 0, 0.05, 0, 0, 0],
+      "root": [0.35, 0, 0, 0, 0, 0]
+    },
+    "cook": [1, 1, 0.5, 1, 1, 1],
+    "seasonal": {
+      "part": "leaf",
+      "multipliers": [
+        [1.2, 1, 1, 1, 1, 1],
+        [1, 1, 4, 1, 1, 1],
+        [0.7, 1, 10, 1, 1, 1],
+        [0.3, 1, 20, 1, 1, 1]
+      ]
+    }
+  },
+  {
+    // 4: povzbuzující list
+    "home": ["Grass", "Sand"],
+    "rabbit": true,
+    "parts": {
+      "leaf": [0.05, 0, 0.12, 0, 0.8, 0],
+      "root": [0, 0, 0.35, 0, 0.25, 0],
+      "fruit": [0.15, 0, 0, 0, 0.1, 0]
+    },
+    "cook": [1, 1, 0.6, 1, 0.5, 1]
+  },
+  {
+    // 5: mírná, bezpečná rostlina
+    "home": ["Sand", "Grass"],
+    "rabbit": true,
+    "parts": {
+      "leaf": [0.3, 0, 0, 0, 0, 0],
+      "root": [0.25, 0, 0, 0, 0, 0],
+      "fruit": [0.3, 0, 0, 0, 0, 0]
+    },
+    "cook": [1.2, 1, 1, 1, 1, 1]
+  },
+  {
+    // 6: lákavý plod s nervovým jedem
+    "home": ["Forest", "Bog"],
+    "unripeIrritant": 0,
+    "parts": {
+      "leaf": [0.05, 0, 0, 0.3, 0, 0],
+      "root": [0.2, 0, 0.2, 0.45, 0, 0],
+      "fruit": [0.65, 0, 0, 0.85, 0, 0]
+    },
+    "cook": [1, 1, 1, 0.9, 1, 1]
+  },
+  {
+    // 7: dráždivý kořen, upečením dráždivost zmizí, na podzim a v zimě výživnější
+    "home": ["Grass", "Forest"],
+    "parts": {
+      "leaf": [0.12, 0.35, 0, 0, 0, 0],
+      "root": [0.8, 0.55, 0, 0, 0, 0],
+      "fruit": [0.4, 0.2, 0, 0, 0, 0]
+    },
+    "cook": [1.15, 0.04, 1, 1, 1, 1],
+    "seasonal": {
+      "part": "root",
+      "multipliers": [
+        [1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1],
+        [1.15, 1, 1, 1, 1, 1],
+        [1.2, 1, 1, 1, 1, 1]
+      ]
+    }
+  }
+]
