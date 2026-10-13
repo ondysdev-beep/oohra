@@ -1,2 +1,2 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Textové soubory mají vždy konce řádků LF (i na Windows), aby se build Oohra.Core.dll neměnil podle větve.
+* text=auto eol=lf
