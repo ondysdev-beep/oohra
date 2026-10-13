@@ -1,0 +1,20 @@
+// Pradávní a Noví (návrh 8.4). Přepsáno z funkce G() v prototype/src/part2.js.
+// Pradávný (generace 0) má pevné hodnoty. Nový generace g má: 1 + perGeneration × g.
+{
+  // Od této generace se hodnoty už nemění (strop).
+  "cap": 6,
+  "ancient": {
+    "toxinMultiplier": 0.6,
+    "healMultiplier": 1.05,
+    "energyDrainMultiplier": 1,
+    "coldBonus": 7
+  },
+  "newPerGeneration": {
+    "toxinMultiplier": 0.04,
+    "healMultiplier": 0.04,
+    "energyDrainMultiplier": -0.03,
+    // Teplota těla Nových klesá o 1,3 za generaci, nejvýš do coldGenerationCap generací.
+    "coldBonus": -1.3
+  },
+  "coldGenerationCap": 4
+}

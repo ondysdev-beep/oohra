@@ -18,6 +18,9 @@
   // Vaření v nádobě navíc k násobkům cook z archetypu.
   "boiledIrritant": 0.45,
   "boiledToxin": 0.75,
+  // Plodnost během roku: měsíce od začátku plození, kdy končí fáze nezralý, zralý a přezrálý plod.
+  // Potom až do dalšího roku plody nejsou.
+  "fruitStageEndMonths": [2, 4, 6],
   // Šlechtění: každá úroveň ubere toxin a nervový jed a přidá výživu.
   "breedingToxinPerLevel": 0.12,
   "breedingNeurotoxinPerLevel": 0.1,

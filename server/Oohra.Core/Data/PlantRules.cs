@@ -19,6 +19,8 @@ public sealed class PlantRules
 
     public required double BoiledToxin { get; init; }
 
+    public required double[] FruitStageEndMonths { get; init; }
+
     public required double BreedingToxinPerLevel { get; init; }
 
     public required double BreedingNeurotoxinPerLevel { get; init; }
