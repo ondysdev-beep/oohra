@@ -1,0 +1,163 @@
+<title>Oohra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Alfa+Slab+One&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: full-screen top-down canvas. HUD floats over it: top bar (name, clock, generation, panels), bottom stack (log, context menu, speech pad, craft and talk rows, body meters). Panels open as sheets and pause the game. */
+:root{
+  --ground:#17120f;
+  --panel:#221a15;
+  --panel-2:#2e251d;
+  --line:#463829;
+  --bone:#efe5d2;
+  --bone-dim:#b6a78f;
+  --ochre:#dba23f;
+  --ember:#d65a31;
+  --moss:#86a35c;
+  --sea:#58939f;
+  --font-display:'Alfa Slab One','Rockwell','Georgia',serif;
+  --font-body:'Alegreya Sans','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--ground);color:var(--bone);font:16px/1.35 var(--font-body);overflow:hidden;-webkit-user-select:none;user-select:none}
+#game{position:relative;width:100%;height:100%;overflow:hidden;background:var(--ground)}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.hud{position:absolute;left:16px;right:16px;pointer-events:none;z-index:2}
+.hud button,.hud .chip{pointer-events:auto}
+#top{top:12px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:baseline;gap:8px;pointer-events:none}
+.word{font-family:var(--font-display);font-size:26px;letter-spacing:.06em;color:var(--ochre);text-shadow:0 2px 0 rgba(0,0,0,.45)}
+.ver{font:600 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim)}
+.chip{background:rgba(23,18,15,.84);border:1px solid var(--line);padding:6px 10px;border-radius:3px;backdrop-filter:blur(4px)}
+.clock{font:600 13px var(--font-mono);letter-spacing:.03em;font-variant-numeric:tabular-nums}
+.gen{display:flex;align-items:center;gap:8px;padding:3px 10px 3px 4px;font:600 12px var(--font-mono);letter-spacing:.04em}
+.gen canvas{width:34px;height:34px;display:block}
+.gen small{display:block;color:var(--bone-dim);font:500 10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
+.topbtns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{font:700 15px var(--font-body);color:var(--bone);background:var(--panel-2);border:1px solid var(--line);padding:8px 12px;border-radius:3px;cursor:pointer;min-height:40px;line-height:1.1}
+.btn:hover:not(:disabled){border-color:var(--ochre)}
+.btn:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+.btn.primary{background:var(--ochre);color:#1d140a;border-color:var(--ochre)}
+.btn.danger{border-color:var(--ember);color:#f3c2b0}
+.kb{font:500 10px var(--font-mono);opacity:.6;margin-left:6px;padding:0 3px;border:1px solid currentColor;border-radius:2px}
+#mini{position:absolute;left:16px;top:72px;z-index:2;width:132px;height:132px;border:1px solid var(--line);background:#0e0b09;image-rendering:pixelated;pointer-events:none;opacity:.92}
+@media (max-width:760px){#mini{display:none}}
+@media (min-width:900px){#bottom{max-width:880px;margin-inline:auto}}
+.btn.on{border-color:var(--ochre);background:#3a2c18}
+.btn:disabled{opacity:.38;cursor:default}
+.btn small{display:block;font:500 11px var(--font-mono);opacity:.75;margin-top:3px}
+.btn.sm{min-height:34px;padding:6px 10px;font-size:14px}
+#bottom{bottom:12px;display:flex;flex-direction:column;gap:6px;align-items:stretch}
+#log{display:flex;flex-direction:column;gap:4px;align-items:flex-start;pointer-events:none}
+#log div{background:rgba(23,18,15,.82);border-left:3px solid var(--bone-dim);padding:4px 10px;font-size:15px;max-width:min(520px,100%);border-radius:0 3px 3px 0}
+#log div.warn{border-left-color:var(--ember)}
+#log div.good{border-left-color:var(--moss)}
+#log div.note{border-left-color:var(--ochre)}
+#menu{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+#menu .mt{font:600 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim);flex-basis:100%}
+#speech{display:flex;flex-direction:column;gap:6px}
+#speech .syl{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+#speech .syl button{padding:6px 2px;font:600 13px var(--font-mono);min-height:38px}
+#speech .syl button small{display:inline;margin-left:3px;opacity:.55;font-size:10px}
+#speech .word-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#speech .cur{flex:1 1 120px;min-height:38px;display:flex;align-items:center;padding:0 10px;background:var(--ground);border:1px solid var(--line);border-radius:3px;font:600 15px var(--font-mono);letter-spacing:.04em}
+.barrow{display:flex;flex-wrap:wrap;gap:5px;align-items:stretch}
+.barrow .btn{padding:6px 9px;min-height:36px;font-size:14px}
+.res{font:600 12px var(--font-mono);color:var(--bone-dim);align-self:center;padding:0 4px}
+#body{display:flex;flex-direction:column;gap:6px}
+.meters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.meter .lab{font:600 10px var(--font-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--bone-dim)}
+.meter .bar{height:6px;background:#3a2f26;margin-top:3px}
+.meter .bar i{display:block;height:100%;width:var(--v,50%);background:var(--c,var(--moss));transition:width .25s}
+#symptoms{font-size:15px;color:var(--bone);display:flex;flex-wrap:wrap;gap:2px 10px}
+#symptoms b{color:var(--ochre);font:600 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;align-self:center}
+#symptoms .bad{color:#f1b49f}
+#veil{position:absolute;inset:0;background:#050403;z-index:3;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:20px;color:var(--bone-dim)}
+#veil[hidden]{display:none}
+#banner{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:4;max-width:min(440px,calc(100% - 32px));background:rgba(23,18,15,.94);border:1px solid var(--ochre);padding:10px 16px;text-align:center;pointer-events:none;animation:ban .35s ease-out}
+#banner[hidden]{display:none}
+#banner b{display:block;font-family:var(--font-display);font-weight:400;font-size:19px;color:var(--ochre);letter-spacing:.03em}
+#banner span{font-size:15px;color:var(--bone)}
+@keyframes ban{from{opacity:0;transform:translate(-50%,-8px)}to{opacity:1;transform:translate(-50%,0)}}
+#dream{position:absolute;inset:0;z-index:6;background:#07060a;display:flex;align-items:stretch;justify-content:center}
+#dream[hidden]{display:none}
+#dream canvas{width:100%;height:100%;display:block}
+#dream .btn{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%)}
+#sheet{position:absolute;inset:0;z-index:5;background:rgba(10,8,6,.78);display:flex;align-items:center;justify-content:center;padding:16px;-webkit-user-select:text;user-select:text}
+#sheet[hidden]{display:none}
+.card{width:min(620px,100%);max-height:100%;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:20px;display:flex;flex-direction:column;gap:14px;touch-action:pan-y}
+.card h2{margin:0;font-family:var(--font-display);font-weight:400;font-size:24px;letter-spacing:.03em;color:var(--ochre);text-wrap:balance}
+.card p{margin:0;max-width:62ch;color:var(--bone)}
+.card .dim{color:var(--bone-dim);font-size:15px}
+.card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:62ch}
+.card .acts{display:flex;flex-wrap:wrap;gap:6px}
+.card .head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.row{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.row .ic{width:38px;height:38px;flex:none}
+.row .desc{flex:1 1 150px;min-width:0}
+.row .desc small{display:block;color:var(--bone-dim)}
+.row .acts{flex:1 1 100%}
+.empty{color:var(--bone-dim);padding:10px 0}
+label.f{display:flex;flex-direction:column;gap:4px;font:600 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim)}
+input,textarea,select{font:500 16px var(--font-body);color:var(--bone);background:var(--ground);border:1px solid var(--line);border-radius:3px;padding:8px 10px;width:100%;box-sizing:border-box;-webkit-user-select:text;user-select:text}
+input[type=checkbox]{width:auto}
+.glyphs{display:flex;gap:6px;flex-wrap:wrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips .btn{min-height:34px;padding:5px 10px;font-size:14px}
+.sylrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;max-width:340px}
+.sylrow .btn{padding:6px 2px;font:600 13px var(--font-mono);min-height:36px}
+.grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:1px;width:min(288px,100%);aspect-ratio:1;background:var(--line);touch-action:none;-webkit-user-select:none;user-select:none}
+.grid12 div{background:var(--ground)}
+.grid12 div.on{background:var(--ochre)}
+.kbd{font:600 12px var(--font-mono);color:var(--ochre)}
+.sw{display:inline-block;vertical-align:middle}
+.sk{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center}
+.sk .pips{display:flex;gap:3px}
+.sk .pips i{width:14px;height:6px;background:#3a2f26}
+.sk .pips i.on{background:var(--moss)}
+.tag{display:inline-block;font:600 12px var(--font-mono);padding:2px 7px;border:1px solid var(--line);border-radius:3px;margin:2px 4px 2px 0}
+.tag.read{border-style:dashed;color:var(--bone-dim)}
+@media (max-width:520px){
+  .word{font-size:22px}
+  .ver{display:none}
+  .btn{padding:8px 10px}
+  .barrow .btn small{display:none}
+  .meters{gap:8px}
+  .card{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){.meter .bar i{transition:none}#banner{animation:none}}
+</style>
+
+<div id="game">
+  <canvas id="view"></canvas>
+  <div class="hud" id="top">
+    <div class="brand"><span class="word">OOHRA</span><span class="ver">0.6 prototyp</span></div>
+    <div class="chip clock" id="clock">Jaro</div>
+    <div class="chip gen" id="genchip"><canvas id="portrait" width="68" height="68"></canvas><span id="gentxt"></span></div>
+    <div class="topbtns">
+      <button class="btn" data-open="pack" id="bPack">Batoh</button>
+      <button class="btn" data-open="notebook">Zápisník</button>
+      <button class="btn" data-open="settings">Svět</button>
+    </div>
+  </div>
+  <div id="banner" hidden></div>
+  <div class="hud" id="bottom">
+    <div id="log" aria-live="polite"></div>
+    <div id="menu" class="chip" hidden></div>
+    <div id="speech" class="chip" hidden></div>
+    <div id="bar" class="barrow"></div>
+    <div id="bar2" class="barrow"></div>
+    <div id="body" class="chip">
+      <div class="meters" id="meters"></div>
+      <div id="symptoms"></div>
+    </div>
+  </div>
+  <div id="veil" hidden></div>
+  <div id="dream" hidden><canvas id="dreamCv"></canvas><button class="btn primary" id="dreamSkip">Probudit se</button></div>
+  <div id="sheet" hidden><div class="card" id="card"></div></div>
+</div>
+
+<script>
