@@ -24,7 +24,12 @@ public static class GameData
     private static readonly Lazy<GameSettings> _settings =
         new(() => Load<GameSettings>("settings.json"));
 
+    private static readonly Lazy<PlantRules> _plantRules =
+        new(() => Load<PlantRules>("plant_rules.json"));
+
     public static IReadOnlyList<Archetype> Archetypes => _archetypes.Value;
+
+    public static PlantRules PlantRules => _plantRules.Value;
 
     public static GameSettings Settings => _settings.Value;
 

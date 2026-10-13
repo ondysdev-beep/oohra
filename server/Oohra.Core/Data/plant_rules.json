@@ -1,0 +1,25 @@
+// Pravidla, jak se mění složení rostliny podle půdy, zralosti, vaření a šlechtění.
+// Přepsáno z funkce comp a SOIL v prototypu (part1.js, part2.js).
+// Vektory mají 6 čísel: výživa, dráždivost, toxin, nervový jed, povzbuzení, léčivo.
+{
+  // Násobek složení podle půdy, kde rostlina rostla. Tráva nemění nic.
+  "soil": {
+    "Bog": [1, 1.1, 1.35, 1.2, 1, 1],
+    "Rock": [0.7, 1, 1, 1, 1, 1],
+    "Forest": [1.1, 1, 1, 1, 1, 1],
+    "Sand": [0.85, 1, 1, 1, 1, 1]
+  },
+  // Nezralý plod: méně výživy a víc dráždivosti (archetyp může mít vlastní unripeIrritant).
+  "unripeNutrition": 0.45,
+  "defaultUnripeIrritant": 0.4,
+  // Přezrálý (scvrklý) plod.
+  "overripeNutrition": 0.7,
+  "overripeIrritant": 0.2,
+  // Vaření v nádobě navíc k násobkům cook z archetypu.
+  "boiledIrritant": 0.45,
+  "boiledToxin": 0.75,
+  // Šlechtění: každá úroveň ubere toxin a nervový jed a přidá výživu.
+  "breedingToxinPerLevel": 0.12,
+  "breedingNeurotoxinPerLevel": 0.1,
+  "breedingNutritionPerLevel": 0.06
+}

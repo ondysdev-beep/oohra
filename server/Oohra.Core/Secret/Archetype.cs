@@ -9,9 +9,6 @@ namespace Oohra.Core.Secret;
 /// <summary>Archetyp rostliny: skryté složení a kde roste. Načítá se z Data/archetypes.json.</summary>
 public sealed class Archetype
 {
-    /// <summary>Výchozí dráždivost přidaná nezralému plodu (v prototypu 0,4).</summary>
-    public const double DefaultUnripeIrritant = 0.4;
-
     public required IReadOnlyList<TileType> Home { get; init; }
 
     /// <summary>Králíci tuto rostlinu okusují.</summary>
@@ -22,6 +19,7 @@ public sealed class Archetype
     /// <summary>Násobek složení po upečení.</summary>
     public required double[] Cook { get; init; }
 
+    /// <summary>Dráždivost přidaná nezralému plodu. Když chybí, platí PlantRules.DefaultUnripeIrritant.</summary>
     public double? UnripeIrritant { get; init; }
 
     public SeasonalMultipliers? Seasonal { get; init; }
@@ -32,6 +30,26 @@ public sealed class Archetype
     public bool GrowsOn(TileType tile)
     {
         return Home.Contains(tile);
+    }
+
+    /// <summary>Základní složení části. Část, kterou archetyp nemá (plod), má samé nuly.</summary>
+    public double[] BaseFor(PlantPart part)
+    {
+        var values = part switch
+        {
+            PlantPart.Leaf => Parts.Leaf,
+            PlantPart.Root => Parts.Root,
+            PlantPart.Fruit => Parts.Fruit,
+            _ => throw new ArgumentOutOfRangeException(nameof(part)),
+        };
+
+        return values is null ? new double[6] : (double[])values.Clone();
+    }
+
+    /// <summary>Násobek podle ročního období, nebo null, když se část během roku nemění.</summary>
+    public double[]? SeasonalFor(PlantPart part, Season season)
+    {
+        return Seasonal is not null && Seasonal.Part == part ? Seasonal.Multipliers[(int)season] : null;
     }
 }
 

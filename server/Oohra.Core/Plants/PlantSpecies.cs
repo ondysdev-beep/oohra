@@ -8,8 +8,8 @@ public sealed class PlantSpecies
 {
     public required int Id { get; init; }
 
-    /// <summary>Barva listů (odstín 0 až 360, sytost a světlost v procentech).</summary>
-    public required double Hue { get; init; }
+    /// <summary>Barva listů (odstín 0 až 360, sytost a světlost v procentech). Odstín se v nové epoše posune.</summary>
+    public required double Hue { get; set; }
 
     public required double Saturation { get; init; }
 
@@ -21,6 +21,6 @@ public sealed class PlantSpecies
     /// <summary>Tvar rostliny 0 až 3 (jak ji kreslit).</summary>
     public required int Shape { get; init; }
 
-    /// <summary>Měsíc v roce, kdy začíná plodit.</summary>
-    public required int StartMonth { get; init; }
+    /// <summary>Měsíc v roce, kdy začíná plodit. V nové epoše se může posunout o měsíc.</summary>
+    public required int StartMonth { get; set; }
 }
