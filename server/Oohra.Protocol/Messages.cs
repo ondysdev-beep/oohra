@@ -79,7 +79,7 @@ public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart 
 /// <summary>Oheň na ostrově (hoří, nebo z něj zbyl popel).</summary>
 public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 
-/// <summary>Stavba hráče (zeď): střed a úhel v radiánech (0 = na východ, y mapy roste na jih).</summary>
+/// <summary>Stavba hráče (zeď, zeď s otvorem, dveře): střed a úhel v radiánech (0 = na východ, y mapy roste na jih).</summary>
 public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle);
 
 public sealed record InventoryView(int Capacity, StackView[] Stacks);

@@ -28,6 +28,24 @@ public class WallServerTests
     }
 
     [Fact]
+    public void DoorGoesIntoDoorFrameForEveryone()
+    {
+        using var net = new TestNetwork(configure: c => c.StartSticks = 4);
+        var a = net.Join("Ondra");
+        var b = net.Join("Petr");
+        var player = net.Server.FindPlayer("Ondra")!;
+        var (x, y) = StandInOpen(net, player);
+
+        a.Place(BuildKind.DoorFrame, x + 2, y, (float)(Math.PI / 2));
+        Assert.True(net.Pump(() => b.Structures.Length == 1));
+        a.Place(BuildKind.Door, x + 2.2f, y + 0.1f, 0);
+
+        Assert.True(net.Pump(() => b.Structures.Length == 2));
+        var door = b.Structures.Single(s => s.Kind == BuildKind.Door);
+        Assert.Equal((x + 2, y), (door.X, door.Y));
+    }
+
+    [Fact]
     public void NoWallOnAnotherPlayer()
     {
         using var net = new TestNetwork(configure: c => c.StartSticks = 2);

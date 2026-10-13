@@ -5,7 +5,8 @@ namespace Oohra.Core.World;
 /// <summary>
 /// Úkryt: postava je v prostoru uzavřeném zdmi. Z postavy se vyšlou paprsky do všech stran
 /// (rays v building.json) a každý musí do maxDistance narazit na zeď. Stromy a voda se jako stěna
-/// nepočítají, jen zdi (jako v prototypu sheltered, jen bez dlaždic, protože zdi mají libovolný úhel).
+/// nepočítají, jen zdi, sloupky zdi s otvorem a dveře (jako v prototypu sheltered, jen bez dlaždic,
+/// protože zdi mají libovolný úhel). Otvor bez dveří úkryt neuzavře.
 /// Mezeru užší, než je rozestup paprsků, úkryt nepozná. Postava jí stejně neprojde.
 /// </summary>
 public static class Shelter
@@ -35,11 +36,13 @@ public static class Shelter
     {
         foreach (var wall in walls)
         {
-            var (x1, y1, x2, y2) = wall.Ends;
-            var hit = Geometry.RayHitsSegment(x, y, dx, dy, x1, y1, x2, y2);
-            if (hit is { } distance && distance <= maxDistance)
+            foreach (var s in wall.ShelterSegments())
             {
-                return true;
+                var hit = Geometry.RayHitsSegment(x, y, dx, dy, s.X1, s.Y1, s.X2, s.Y2);
+                if (hit is { } distance && distance <= maxDistance)
+                {
+                    return true;
+                }
             }
         }
 

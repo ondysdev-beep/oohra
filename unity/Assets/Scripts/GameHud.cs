@@ -167,7 +167,7 @@ namespace Oohra.Client
         private void DrawBuildPanel(float width)
         {
             var options = BuildMode.Catalog;
-            _buildPanelRect = new Rect(width - 344, 56, 332, 84 + options.Length * 32);
+            _buildPanelRect = new Rect(width - 364, 56, 352, 122 + options.Length * 32);
             GUI.Box(_buildPanelRect, GUIContent.none);
             GUI.Box(_buildPanelRect, GUIContent.none);
             var x = _buildPanelRect.x + 10;
@@ -179,7 +179,7 @@ namespace Oohra.Client
                 var option = options[i];
                 var selected = option.Kind == _buildMode.Selected;
                 var text = $"{i + 1}  {option.Name} ({option.Cost})" + (selected ? "  ◄" : string.Empty);
-                if (GUI.Button(new Rect(x, y, 312, 28), text))
+                if (GUI.Button(new Rect(x, y, 332, 28), text))
                 {
                     _buildMode.Open(option.Kind);
                 }
@@ -187,7 +187,13 @@ namespace Oohra.Client
                 y += 32;
             }
 
-            GUI.Label(new Rect(x, y + 2, 312, 40), "Q, E otočit · levé tlačítko postavit (do 1,2 m)\npravé tlačítko nebo Esc konec", _label);
+            var mode = _buildMode.Modular ? "MODULÁRNĚ (zdi se napojují, Q, E po 90°)" : "VOLNĚ (Q, E plynule otáčí)";
+            if (GUI.Button(new Rect(x, y + 2, 332, 28), "R  " + mode))
+            {
+                _buildMode.Modular = !_buildMode.Modular;
+            }
+
+            GUI.Label(new Rect(x, y + 36, 332, 44), "levé tlačítko postavit (do 3,5 m)\npravé tlačítko nebo Esc konec", _label);
         }
 
         /// <summary>Pět pruhů a příznaky dole uprostřed. Vrací horní okraj (pro další prvky nad nimi).</summary>
@@ -260,7 +266,7 @@ namespace Oohra.Client
                     DrawFireMenu(titleRect, ref buttonRect);
                     break;
                 case TargetKind.Structure:
-                    GUI.Label(titleRect, "ZEĎ", _title);
+                    GUI.Label(titleRect, StructureViews.NameOf(_session.MenuStructureKind()).ToUpper(), _title);
                     if (Button(ref buttonRect, "Rozebrat")) _session.RemoveStructure();
                     break;
             }

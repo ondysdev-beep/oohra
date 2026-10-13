@@ -1,22 +1,34 @@
-// Stavby z režimu stavby (zeď z klacků a další) a úkryt.
+// Stavby z režimu stavby (zeď z klacků, zeď s otvorem, dveře) a úkryt.
 // Vychází z buildWall a sheltered v prototypu (part5.js, part4.js), ale stavby nejsou vázané na dlaždice:
 // mají přesnou polohu a úhel. Vzdálenosti v metrech (1 dlaždice = 1 m).
 {
-  // Jak daleko od sebe smí postava stavět (střed stavby od středu postavy).
-  "placeReach": 1.2,
+  // Jak daleko od sebe smí postava stavět (střed stavby od středu postavy). Dál, ať je na stavbu vidět.
+  "placeReach": 3.5,
   "wall": {
-    // Příčka z klacků: délka a tloušťka stěny.
+    // Příčka z klacků: délka a tloušťka stěny. Stejné rozměry má i zeď s otvorem.
     "length": 1.0,
     "thickness": 0.1,
     "sticksCost": 2,
     // Rozebráním se vrátí část klacků.
     "sticksBack": 1,
-    // Jak blízko musí postava být, aby zeď rozebrala.
+    // Jak blízko musí postava být, aby stavbu rozebrala.
     "removeReach": 1.6
   },
+  "doorFrame": {
+    // Zeď s otvorem: otvor uprostřed, po krajích sloupky (zbytek délky zdi). Otvorem se dá projít.
+    "openingWidth": 0.8,
+    "sticksCost": 2,
+    "sticksBack": 1
+  },
+  "door": {
+    // Dveře se vsadí do nejbližšího volného otvoru, když je jeho střed do snapDistance od místa stavby.
+    "snapDistance": 0.7,
+    "sticksCost": 2,
+    "sticksBack": 1
+  },
   "shelter": {
-    // Úkryt: z postavy se vyšle tolik paprsků do všech stran. Když každý do maxDistance narazí na zeď,
-    // postava je v úkrytu (prostor uzavřený zdmi, nejvýš asi 6 × 6 m).
+    // Úkryt: z postavy se vyšle tolik paprsků do všech stran. Když každý do maxDistance narazí na zeď
+    // (nebo zavřené dveře), postava je v úkrytu (prostor uzavřený zdmi, nejvýš asi 6 × 6 m).
     "rays": 24,
     "maxDistance": 3.5,
     // O kolik se v úkrytu zvedne cíl tepla těla (oheň dává 28).

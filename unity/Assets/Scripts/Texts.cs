@@ -50,12 +50,13 @@ namespace Oohra.Client
         {
             switch (result)
             {
-                case BuildResult.Built: return "Postavil jsi zeď z klacků.";
-                case BuildResult.Removed: return "Rozebral jsi zeď. Klacek zůstal.";
-                case BuildResult.NeedMaterials: return "Na zeď potřebuješ 2 klacky.";
+                case BuildResult.Built: return "Postaveno.";
+                case BuildResult.Removed: return "Rozebráno. Část klacků ti zůstala.";
+                case BuildResult.NeedMaterials: return "Na tu stavbu nemáš dost klacků.";
                 case BuildResult.CannotBuildHere: return "Tady stavět nejde (voda, strom, oheň nebo tam někdo stojí).";
                 case BuildResult.TooFar: return "Je to moc daleko.";
                 case BuildResult.NotFound: return "Ta stavba už tu není.";
+                case BuildResult.NoDoorway: return "Dveře patří do zdi s otvorem. Miř na otvor.";
                 default: return result.ToString();
             }
         }
