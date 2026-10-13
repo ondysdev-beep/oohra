@@ -53,6 +53,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Ohně na ostrově (i vyhaslé, z nich zbyl popel).</summary>
     public FireView[] Fires { get; private set; } = [];
 
+    /// <summary>Dlaždice se zdí (y * šířka + x).</summary>
+    public int[] Walls { get; private set; } = [];
+
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
     public void Connect(string host, int port, string inviteCode, string nickname)
@@ -140,6 +143,18 @@ public sealed class GameConnection : IDisposable
     public void FeedFire(int fireId)
     {
         Send(w => Messages.WriteFeedFire(w, fireId));
+    }
+
+    /// <summary>Postavit zeď z klacků před sebou.</summary>
+    public void BuildWall()
+    {
+        Send(Messages.WriteBuildWall);
+    }
+
+    /// <summary>Rozebrat zeď na dlaždici (vrátí se klacek).</summary>
+    public void RemoveWall(int tileX, int tileY)
+    {
+        Send(w => Messages.WriteTileAction(w, MessageType.RemoveWall, tileX, tileY));
     }
 
     /// <summary>Upéct jeden kus z hromádky u ohně.</summary>
@@ -236,6 +251,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Fires:
                 Fires = Messages.ReadFires(reader);
+                break;
+            case MessageType.Walls:
+                Walls = Messages.ReadWalls(reader);
                 break;
         }
     }

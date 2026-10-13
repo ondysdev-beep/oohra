@@ -79,7 +79,7 @@ namespace Oohra.Client.Tests
             bootstrap.Connect("127.0.0.1", TestPort, Invite, "Ondra");
             yield return WaitFor(() => bootstrap.Session != null, 15f, "Unity se nepřipojilo k serveru.");
             var connection = bootstrap.Session.Connection;
-            var crowns = Object.FindAnyObjectByType<TreeCrowns>();
+            var crowns = Object.FindAnyObjectByType<SeeThrough>();
             yield return WaitFor(() => connection.SelfSnapshot() != null, 5f, "Chybí poloha postavy.");
 
             var until = Time.realtimeSinceStartup + 8f;

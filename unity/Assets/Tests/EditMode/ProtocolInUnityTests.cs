@@ -57,7 +57,7 @@ namespace Oohra.Client.Tests
         [Test]
         public void BodyStateSurvivesTheWire()
         {
-            var state = new SelfState(50, 60, 70, 40, 90, new[] { Symptom.Fever, Symptom.Tremor }, 2, false, null, true);
+            var state = new SelfState(50, 60, 70, 40, 90, new[] { Symptom.Fever, Symptom.Tremor }, 2, false, null, true, true);
             var writer = new NetDataWriter();
             Messages.WriteSelfState(writer, state);
             var reader = new NetDataReader(writer.CopyData());
@@ -70,6 +70,7 @@ namespace Oohra.Client.Tests
             Assert.AreEqual(2, copy.Generation);
             Assert.IsNull(copy.DeathCause);
             Assert.IsTrue(copy.NearFire);
+            Assert.IsTrue(copy.Sheltered);
         }
 
         [Test]

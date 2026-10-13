@@ -17,6 +17,15 @@ namespace Oohra.Client.Tests
         }
 
         [Test]
+        public void EveryBuildResultHasText()
+        {
+            foreach (BuildResult result in Enum.GetValues(typeof(BuildResult)))
+            {
+                Assert.AreNotEqual(result.ToString(), Texts.For(result));
+            }
+        }
+
+        [Test]
         public void EveryFireResultHasText()
         {
             foreach (FireResult result in Enum.GetValues(typeof(FireResult)))

@@ -36,9 +36,27 @@ namespace Oohra.Client
                     var fire = (FireResult)e.Code;
                     warn = fire != FireResult.Lit && fire != FireResult.Fed && fire != FireResult.Relit && fire != FireResult.Baked;
                     return For(fire);
+                case EventKind.Build:
+                    var build = (BuildResult)e.Code;
+                    warn = build != BuildResult.Built && build != BuildResult.Removed;
+                    return For(build);
                 default:
                     warn = false;
                     return null;
+            }
+        }
+
+        public static string For(BuildResult result)
+        {
+            switch (result)
+            {
+                case BuildResult.Built: return "Postavil jsi zeď z klacků.";
+                case BuildResult.Removed: return "Rozebral jsi zeď. Klacek zůstal.";
+                case BuildResult.NeedSticks: return "Na zeď potřebuješ 2 klacky.";
+                case BuildResult.CannotBuildHere: return "Tady stavět nejde. Otoč se jinam.";
+                case BuildResult.TooFar: return "Je to moc daleko.";
+                case BuildResult.NoWall: return "Tady žádná zeď není.";
+                default: return result.ToString();
             }
         }
 

@@ -10,7 +10,7 @@ namespace Oohra.Client
     /// <summary>
     /// Rozhraní šedé krabice (Unity OnGUI): čas, pruhy těla, příznaky, hlášky, jmenovky hráčů,
     /// nabídka u rostliny, vody, stromu, skály a ohně, batoh a okno smrti. Data posílá server.
-    /// Klávesy: B batoh, F rozdělat oheň, Esc zavřít.
+    /// Klávesy: B batoh, F rozdělat oheň, G postavit zeď, Esc zavřít.
     /// </summary>
     public class GameHud : MonoBehaviour
     {
@@ -31,6 +31,7 @@ namespace Oohra.Client
         private Rect _deathRect;
         private Rect _backpackButtonRect;
         private Rect _fireButtonRect;
+        private Rect _wallButtonRect;
 
         /// <summary>Myš je nad rozhraním: kliknutí nemá posílat postavu na zem pod ním.</summary>
         public static bool MouseOverHud { get; private set; }
@@ -52,6 +53,7 @@ namespace Oohra.Client
 
             if (keyboard.bKey.wasPressedThisFrame) _session.BackpackOpen = !_session.BackpackOpen;
             if (keyboard.fKey.wasPressedThisFrame) _session.LightFire();
+            if (keyboard.gKey.wasPressedThisFrame) _session.BuildWall();
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
                 _session.BackpackOpen = false;
@@ -93,7 +95,7 @@ namespace Oohra.Client
             if (Event.current.type == EventType.Repaint)
             {
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
-                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _fireButtonRect.Contains(mouse);
+                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _fireButtonRect.Contains(mouse) || _wallButtonRect.Contains(mouse);
             }
         }
 
@@ -132,10 +134,10 @@ namespace Oohra.Client
             var text = $"Den {clock.Day + 1}, {hour:00}:{minute:00} · {Texts.SeasonName(clock.Season)}, {clock.MonthOfYear + 1}. měsíc\n"
                 + (self.Generation == 0 ? "Pradávný" : $"Nový · generace {self.Generation + 1}")
                 + $" · hráčů na ostrově: {players}";
-            text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty);
+            text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 760, 20),
-                "WASD / klik = chůze · klik na rostlinu, vodu, strom, skálu, oheň · F oheň · B batoh · Q, E kamera", _label);
+                "WASD / klik = chůze · klik na rostlinu, vodu, strom, skálu, oheň, zeď · F oheň · G zeď · B batoh · Q, E kamera", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a rozdělání ohně (3 klacky a kámen, na dlaždici před postavou).</summary>
@@ -149,9 +151,15 @@ namespace Oohra.Client
             }
 
             _fireButtonRect = new Rect(width - 264, 12, 120, 34);
-            if (GUI.Button(_fireButtonRect, new GUIContent("Oheň (F)", "3 klacky a kámen. Oheň vznikne tam, kam se díváš.")))
+            if (GUI.Button(_fireButtonRect, "Oheň (F)"))
             {
                 _session.LightFire();
+            }
+
+            _wallButtonRect = new Rect(width - 396, 12, 120, 34);
+            if (GUI.Button(_wallButtonRect, "Zeď (G)"))
+            {
+                _session.BuildWall();
             }
         }
 
@@ -223,6 +231,10 @@ namespace Oohra.Client
                     break;
                 case TargetKind.Fire:
                     DrawFireMenu(titleRect, ref buttonRect);
+                    break;
+                case TargetKind.Wall:
+                    GUI.Label(titleRect, "ZEĎ", _title);
+                    if (Button(ref buttonRect, "Rozebrat")) _session.RemoveWall();
                     break;
             }
 

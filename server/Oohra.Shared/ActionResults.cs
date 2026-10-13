@@ -29,6 +29,22 @@ namespace Oohra.Core.World
         WrongPlace,
     }
 
+    /// <summary>Jak dopadla stavba nebo rozebrání zdi.</summary>
+    public enum BuildResult
+    {
+        Built,
+        Removed,
+        NeedSticks,
+
+        /// <summary>Před postavou nejde stavět (voda, strom, oheň, jiná zeď, stojí tam hráč).</summary>
+        CannotBuildHere,
+
+        TooFar,
+
+        /// <summary>Rozebrat: tady žádná zeď není.</summary>
+        NoWall,
+    }
+
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>
     public enum FireResult
     {

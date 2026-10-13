@@ -70,7 +70,8 @@ public sealed record SelfState(
     int Generation,
     bool Dead,
     DeathCause? DeathCause,
-    bool NearFire);
+    bool NearFire,
+    bool Sheltered);
 
 /// <summary>Hromádka v batohu. U materiálu (klacek, kámen) se údaje o rostlině nepoužívají.</summary>
 public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count);
@@ -159,7 +160,7 @@ public static class Messages
         w.Put((byte)MessageType.Reborn);
     }
 
-    /// <summary>Akce s dlaždicí: GatherSticks (strom) nebo TakeStone (skála).</summary>
+    /// <summary>Akce s dlaždicí: GatherSticks (strom), TakeStone (skála) nebo RemoveWall (zeď).</summary>
     public static void WriteTileAction(NetDataWriter w, MessageType type, int tileX, int tileY)
     {
         w.Put((byte)type);
@@ -187,6 +188,12 @@ public static class Messages
     public static int ReadFeedFire(NetDataReader r)
     {
         return r.GetInt();
+    }
+
+    /// <summary>Postavit zeď na dlaždici, kam se postava dívá.</summary>
+    public static void WriteBuildWall(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.BuildWall);
     }
 
     // ---------- server → klient ----------
@@ -338,6 +345,7 @@ public static class Messages
         w.Put(s.Dead);
         w.Put(s.DeathCause.HasValue ? (byte)s.DeathCause.Value : byte.MaxValue);
         w.Put(s.NearFire);
+        w.Put(s.Sheltered);
     }
 
     public static SelfState ReadSelfState(NetDataReader r)
@@ -348,8 +356,9 @@ public static class Messages
         var dead = r.GetBool();
         var cause = r.GetByte();
         var nearFire = r.GetBool();
+        var sheltered = r.GetBool();
         return new SelfState(bars[0], bars[1], bars[2], bars[3], bars[4], symptoms, generation, dead,
-            cause == byte.MaxValue ? null : (DeathCause)cause, nearFire);
+            cause == byte.MaxValue ? null : (DeathCause)cause, nearFire, sheltered);
     }
 
     public static void WriteInventory(NetDataWriter w, InventoryView inventory)
@@ -426,6 +435,22 @@ public static class Messages
     public static FireView[] ReadFires(NetDataReader r)
     {
         return ReadList(r, () => new FireView(r.GetInt(), r.GetInt(), r.GetInt(), r.GetBool()));
+    }
+
+    /// <summary>Všechny zdi (čísla dlaždic). Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteWalls(NetDataWriter w, IReadOnlyCollection<int> tiles)
+    {
+        w.Put((byte)MessageType.Walls);
+        w.Put(tiles.Count);
+        foreach (var tile in tiles)
+        {
+            w.Put(tile);
+        }
+    }
+
+    public static int[] ReadWalls(NetDataReader r)
+    {
+        return ReadList(r, r.GetInt);
     }
 
     private static T[] ReadList<T>(NetDataReader r, Func<T> read)

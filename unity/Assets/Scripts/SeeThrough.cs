@@ -4,11 +4,11 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Koruny stromů blízko vlastní postavy (hlavně mezi postavou a kamerou) plynule zprůhlední,
-    /// aby hráč viděl, kde stojí. Když postava odejde, koruny zase zneprůhlední.
-    /// Kolize s kmenem počítá server (Movement v Core), tohle je jen vzhled.
+    /// Koruny stromů a zdi blízko vlastní postavy (hlavně mezi postavou a kamerou) plynule zprůhlední,
+    /// aby hráč viděl, kde stojí. Když postava odejde, zase zneprůhlední. Na každé dlaždici je nejvýš jedna věc.
+    /// Kolize počítá server (Movement v Core), tohle je jen vzhled.
     /// </summary>
-    public class TreeCrowns : MonoBehaviour
+    public class SeeThrough : MonoBehaviour
     {
         private const float FadeRadius = 2.3f;
         private const float TowardCamera = 1.2f;
@@ -28,6 +28,7 @@ namespace Oohra.Client
             public Color Color;
             public float Alpha = 1f;
             public bool Near;
+            public bool OnlyInFront;
         }
 
         public void Init(int worldWidth)
@@ -35,9 +36,24 @@ namespace Oohra.Client
             _width = worldWidth;
         }
 
-        public void Add(int tileIndex, GameObject crown, Color color)
+        /// <summary>
+        /// Přidá věc na dlaždici. onlyInFront: zprůhlední jen mezi postavou a kamerou (zdi, ať je vidět,
+        /// co hráč postavil), jinak v celém okolí postavy (koruny).
+        /// </summary>
+        public void Add(int tileIndex, GameObject crown, Color color, bool onlyInFront = false)
         {
-            _crowns[tileIndex] = new Crown { Renderer = crown.GetComponent<Renderer>(), Color = color };
+            _crowns[tileIndex] = new Crown { Renderer = crown.GetComponent<Renderer>(), Color = color, OnlyInFront = onlyInFront };
+        }
+
+        /// <summary>Věc na dlaždici zmizela (rozebraná zeď).</summary>
+        public void Remove(int tileIndex)
+        {
+            Crown crown;
+            if (_crowns.TryGetValue(tileIndex, out crown))
+            {
+                _fading.Remove(crown);
+                _crowns.Remove(tileIndex);
+            }
         }
 
         /// <summary>Začne sledovat vlastní postavu (volá se, až existují hráči a kamera).</summary>
@@ -60,7 +76,7 @@ namespace Oohra.Client
                 return;
             }
 
-            MarkNear(FadeCenter());
+            MarkNear(FadeCenter(), ToCamera());
             for (var i = _fading.Count - 1; i >= 0; i--)
             {
                 var crown = _fading[i];
@@ -77,12 +93,18 @@ namespace Oohra.Client
         /// <summary>Střed oblasti: postava, posunutá kousek ke kameře (tam koruny postavu zakrývají).</summary>
         private Vector3 FadeCenter()
         {
-            var toCamera = _camera.transform.position - _players.Self.position;
-            toCamera.y = 0;
-            return _players.Self.position + toCamera.normalized * TowardCamera;
+            return _players.Self.position + ToCamera() * TowardCamera;
         }
 
-        private void MarkNear(Vector3 center)
+        /// <summary>Směr od postavy ke kameře po zemi (jednotkový).</summary>
+        private Vector3 ToCamera()
+        {
+            var toCamera = _camera.transform.position - _players.Self.position;
+            toCamera.y = 0;
+            return toCamera.normalized;
+        }
+
+        private void MarkNear(Vector3 center, Vector3 toCamera)
         {
             foreach (var crown in _fading)
             {
@@ -104,7 +126,7 @@ namespace Oohra.Client
 
                     var dx = x + 0.5f - center.x;
                     var dy = y + 0.5f + center.z;
-                    if (dx * dx + dy * dy > FadeRadius * FadeRadius)
+                    if (dx * dx + dy * dy > FadeRadius * FadeRadius || (crown.OnlyInFront && !InFront(x, y, toCamera)))
                     {
                         continue;
                     }
@@ -117,6 +139,16 @@ namespace Oohra.Client
                     crown.Near = true;
                 }
             }
+        }
+
+        /// <summary>Dlaždice leží mezi postavou a kamerou (ne vedle ani za postavou).</summary>
+        private bool InFront(int x, int y, Vector3 toCamera)
+        {
+            var player = _players.Self.position;
+            var offset = new Vector3(x + 0.5f - player.x, 0f, -(y + 0.5f) - player.z);
+            var along = Vector3.Dot(offset, toCamera);
+            var aside = (offset - toCamera * along).magnitude;
+            return along > 0.3f && aside < 1.2f;
         }
 
         /// <summary>Průhledná koruna má průhledný materiál, úplně neprůhledná zase obyčejný (kvůli stínům a pořadí kreslení).</summary>
