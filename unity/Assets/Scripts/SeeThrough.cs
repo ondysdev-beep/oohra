@@ -4,43 +4,52 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Koruny stromů a stavby blízko vlastní postavy (hlavně mezi postavou a kamerou) plynule zprůhlední,
-    /// aby hráč viděl, kde stojí. Když postava odejde, zase zneprůhlední.
-    /// Kolize počítá server (Movement v Core), tohle je jen vzhled.
+    /// Věci, které zakrývají vlastní postavu před kamerou (koruny stromů, stavby), plynule zprůhlední.
+    /// Když postavu přestanou zakrývat, zase zneprůhlední. Kolize počítá server, tohle je jen vzhled.
+    /// <para>
+    /// Jak se pozná zakrytí: paprsky z kamery na postavu (od nohou po hlavu) stoupají od postavy ke kameře
+    /// pod úhlem sklonu kamery. Věc zakrývá, když leží ve směru ke kameře a v její vzdálenosti
+    /// paprsky procházejí výškou, ve které věc je (od spodku po vršek). Funguje pro každý sklon i otočení kamery.
+    /// </para>
     /// </summary>
     public class SeeThrough : MonoBehaviour
     {
-        private const float FadeRadius = 2.6f;
-
-        // Výška, ve které koruny postavu zakrývají (střed koruny, v metrech).
-        private const float CoverHeight = 3.2f;
         private const float FadedAlpha = 0.28f;
         private const float FadeSpeed = 5f;
+
+        // Část postavy, která má být vidět (od nohou po hlavu), a rezerva do stran.
+        private const float FeetHeight = 0.2f;
+        private const float SideClearance = 0.5f;
+
+        // Nejdál, kde se zakrývající věci hledají (při nízkém sklonu kamery).
+        private const float MaxSearch = 18f;
 
         private readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>();
         private readonly Dictionary<Vector2Int, List<Entry>> _grid = new Dictionary<Vector2Int, List<Entry>>();
         private readonly List<Entry> _fading = new List<Entry>();
+        private float _tallest;
         private PlayerViews _players;
         private Camera _camera;
 
-        /// <summary>Jedna věc, která umí zprůhlednět: renderer, barva, poloha na mapě a současná průhlednost.</summary>
+        /// <summary>Jedna věc, která umí zprůhlednět: kde je, jak je široká a v jaké výšce.</summary>
         private sealed class Entry
         {
             public Renderer Renderer;
             public Color Color;
             public Vector2 Position;
             public Vector2Int Cell;
+            public float Radius;
+            public float Bottom;
+            public float Top;
             public float Alpha = 1f;
             public bool Near;
-            public bool OnlyInFront;
         }
 
         /// <summary>
-        /// Přidá věc pod klíčem (strom: číslo dlaždice, stavba: záporné číslo stavby) s polohou na mapě (x, y).
-        /// onlyInFront: zprůhlední jen mezi postavou a kamerou (stavby, ať je vidět, co hráč postavil),
-        /// jinak v celém okolí postavy (koruny).
+        /// Přidá věc pod klíčem (strom: číslo dlaždice, stavba: záporné číslo stavby). (x, y) je střed na mapě,
+        /// radius polovina šířky, bottom a top výška spodku a vršku v metrech.
         /// </summary>
-        public void Add(int key, GameObject go, Color color, double x, double y, bool onlyInFront = false)
+        public void Add(int key, GameObject go, Color color, double x, double y, float radius, float bottom, float top)
         {
             Remove(key);
             var entry = new Entry
@@ -49,9 +58,12 @@ namespace Oohra.Client
                 Color = color,
                 Position = new Vector2((float)x, (float)y),
                 Cell = new Vector2Int(Mathf.FloorToInt((float)x), Mathf.FloorToInt((float)y)),
-                OnlyInFront = onlyInFront,
+                Radius = radius,
+                Bottom = bottom,
+                Top = top,
             };
             _entries[key] = entry;
+            _tallest = Mathf.Max(_tallest, top);
             List<Entry> cell;
             if (!_grid.TryGetValue(entry.Cell, out cell))
             {
@@ -94,7 +106,7 @@ namespace Oohra.Client
                 return;
             }
 
-            MarkNear(FadeCenter(), ToCamera());
+            MarkCovering();
             for (var i = _fading.Count - 1; i >= 0; i--)
             {
                 var entry = _fading[i];
@@ -108,38 +120,25 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Střed oblasti: postava, posunutá ke kameře (tam koruny postavu zakrývají).</summary>
-        private Vector2 FadeCenter()
-        {
-            // Čím níž je kamera skloněná, tím dál ke kameře stojí koruny, které postavu zakrývají.
-            var pitch = Mathf.Clamp(_camera.transform.eulerAngles.x, 15f, 89f) * Mathf.Deg2Rad;
-            return PlayerOnMap() + ToCamera() * (CoverHeight / Mathf.Tan(pitch));
-        }
-
-        /// <summary>Poloha postavy na mapě (x, y; y roste na jih).</summary>
-        private Vector2 PlayerOnMap()
-        {
-            var position = _players.Self.position;
-            return new Vector2(position.x, -position.z);
-        }
-
-        /// <summary>Směr od postavy ke kameře na mapě (jednotkový).</summary>
-        private Vector2 ToCamera()
-        {
-            var toCamera = _camera.transform.position - _players.Self.position;
-            return new Vector2(toCamera.x, -toCamera.z).normalized;
-        }
-
-        private void MarkNear(Vector2 center, Vector2 toCamera)
+        private void MarkCovering()
         {
             foreach (var entry in _fading)
             {
                 entry.Near = false;
             }
 
-            var r = Mathf.CeilToInt(FadeRadius) + 1;
-            var cx = Mathf.FloorToInt(center.x);
-            var cy = Mathf.FloorToInt(center.y);
+            var player = new Vector2(_players.Self.position.x, -_players.Self.position.z);
+            var toCameraUnity = _camera.transform.position - _players.Self.position;
+            var toCamera = new Vector2(toCameraUnity.x, -toCameraUnity.z);
+            var horizontal = toCamera.magnitude;
+            toCamera = horizontal > 0.001f ? toCamera / horizontal : Vector2.up;
+
+            // Jak rychle paprsky ke kameře stoupají (výška na metr vodorovně).
+            var rise = horizontal > 0.001f ? toCameraUnity.y / horizontal : 1000f;
+            var reach = Mathf.Min(MaxSearch, Mathf.Max(0f, _tallest - FeetHeight) / Mathf.Max(rise, 0.05f) + 3f);
+            var r = Mathf.CeilToInt(reach);
+            var cx = Mathf.FloorToInt(player.x);
+            var cy = Mathf.FloorToInt(player.y);
             for (var y = cy - r; y <= cy + r; y++)
             {
                 for (var x = cx - r; x <= cx + r; x++)
@@ -152,8 +151,7 @@ namespace Oohra.Client
 
                     foreach (var entry in cell)
                     {
-                        if ((entry.Position - center).sqrMagnitude > FadeRadius * FadeRadius
-                            || (entry.OnlyInFront && !InFront(entry.Position, toCamera)))
+                        if (!Covers(entry.Position, entry.Radius, entry.Bottom, entry.Top, player, toCamera, rise))
                         {
                             continue;
                         }
@@ -169,13 +167,38 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Věc leží mezi postavou a kamerou (ne vedle ani za postavou).</summary>
-        private bool InFront(Vector2 position, Vector2 toCamera)
+        /// <summary>
+        /// Věc (střed na mapě, polovina šířky, výška spodku a vršku) leží mezi kamerou a postavou tak,
+        /// že zakrývá aspoň část postavy. toCamera: směr od postavy ke kameře na mapě (jednotkový),
+        /// rise: o kolik metrů paprsek ke kameře stoupne na metr vodorovně.
+        /// </summary>
+        public static bool Covers(Vector2 position, float radius, float bottom, float top, Vector2 player, Vector2 toCamera, float rise)
         {
-            var offset = position - PlayerOnMap();
+            var offset = position - player;
             var along = Vector2.Dot(offset, toCamera);
             var aside = (offset - toCamera * along).magnitude;
-            return along > 0.3f && aside < 1.2f;
+            if (aside > radius + SideClearance)
+            {
+                return false;
+            }
+
+            // Věc u země (stavba) musí stát před postavou. Koruna nad hlavou zakrývá i přímo nad postavou.
+            if (bottom < PlayerViews.BodyHeight && along < 0.2f)
+            {
+                return false;
+            }
+
+            var near = Mathf.Max(0f, along - radius);
+            var far = along + radius;
+            if (far <= 0f)
+            {
+                return false;
+            }
+
+            // Paprsky od nohou a od hlavy: ve vzdálenosti věci musí aspoň jeden projít její výškou.
+            var lowest = FeetHeight + near * rise;
+            var highest = PlayerViews.BodyHeight + far * rise;
+            return lowest <= top && highest >= bottom;
         }
 
         /// <summary>Průhledná věc má průhledný materiál, úplně neprůhledná zase obyčejný (kvůli stínům a pořadí kreslení).</summary>

@@ -81,7 +81,7 @@ namespace Oohra.Client
         {
             var wall = IslandView.Primitive(PrimitiveType.Cube, "Zeď " + structure.Id, transform, WallColor);
             PlaceWall(wall.transform, structure.X, structure.Y, structure.Angle);
-            _seeThrough.Add(-structure.Id, wall, WallColor, structure.X, structure.Y, onlyInFront: true);
+            _seeThrough.Add(-structure.Id, wall, WallColor, structure.X, structure.Y, WallLength / 2, 0f, WallHeight);
             return wall;
         }
     }

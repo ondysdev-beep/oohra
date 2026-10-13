@@ -100,9 +100,11 @@ namespace Oohra.Client
 
                 var color = crownColors[tree.Variant > 0.5f ? 0 : 1];
                 var crown = Primitive(PrimitiveType.Sphere, "Koruna", trees, color);
-                crown.transform.position = WorldCoords.ToUnity(x, y, (TrunkHeight + CrownSize / 2 - 0.4f) * size);
+                var crownCenter = (TrunkHeight + CrownSize / 2 - 0.4f) * size;
+                var crownRadius = CrownSize / 2 * size;
+                crown.transform.position = WorldCoords.ToUnity(x, y, crownCenter);
                 crown.transform.localScale = Vector3.one * CrownSize * size;
-                crowns.Add(tree.TileIndex, crown, color, x, y);
+                crowns.Add(tree.TileIndex, crown, color, x, y, crownRadius, crownCenter - crownRadius, crownCenter + crownRadius);
             }
         }
 
