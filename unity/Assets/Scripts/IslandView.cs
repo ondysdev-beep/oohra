@@ -10,6 +10,10 @@ namespace Oohra.Client
     /// </summary>
     public static class IslandView
     {
+        // Výška kmene a průměr koruny průměrného stromu v metrech (1 dlaždice = 1 metr).
+        public const float TrunkHeight = 2.8f;
+        public const float CrownSize = 2.6f;
+
         public static GameObject Build(WorldView world, GameConnection connection)
         {
             var root = new GameObject("Ostrov (vygenerovaný)");
@@ -87,17 +91,18 @@ namespace Oohra.Client
             {
                 var x = tree.TileIndex % world.Width + 0.5;
                 var y = tree.TileIndex / world.Width + 0.5;
+                // 1 dlaždice = 1 metr. Strom je vysoký asi 5 až 7 m, koruna začíná nad hlavou postavy (1,8 m).
                 var size = 0.8f + tree.Variant * 0.4f;
 
                 // Kmen má stejnou tloušťku jako kolize na serveru (treeTrunkRadius 0,12 v movement.json).
                 var trunk = Primitive(PrimitiveType.Cylinder, "Kmen", trees, trunkColor);
-                trunk.transform.position = WorldCoords.ToUnity(x, y, 0.35f * size);
-                trunk.transform.localScale = new Vector3(0.24f, 0.35f * size, 0.24f);
+                trunk.transform.position = WorldCoords.ToUnity(x, y, TrunkHeight / 2 * size);
+                trunk.transform.localScale = new Vector3(0.24f, TrunkHeight / 2 * size, 0.24f);
 
                 var color = crownColors[tree.Variant > 0.5f ? 0 : 1];
                 var crown = Primitive(PrimitiveType.Sphere, "Koruna", trees, color);
-                crown.transform.position = WorldCoords.ToUnity(x, y, 0.9f * size);
-                crown.transform.localScale = Vector3.one * 0.85f * size;
+                crown.transform.position = WorldCoords.ToUnity(x, y, (TrunkHeight + CrownSize / 2 - 0.4f) * size);
+                crown.transform.localScale = Vector3.one * CrownSize * size;
                 crowns.Add(tree.TileIndex, crown, color);
             }
         }

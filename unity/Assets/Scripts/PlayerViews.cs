@@ -12,6 +12,10 @@ namespace Oohra.Client
     {
         private const float Smoothing = 15f;
 
+        // 1 dlaždice = 1 metr. Postava je vysoká 1,8 m a široká jako kolize na serveru (radius 0,28 v movement.json).
+        public const float BodyHeight = 1.8f;
+        private const float BodyRadius = 0.28f;
+
         private readonly Dictionary<int, GameObject> _views = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, int> _shownGeneration = new Dictionary<int, int>();
         private GameConnection _connection;
@@ -46,7 +50,7 @@ namespace Oohra.Client
             {
                 seen.Add(player.Id);
                 var view = ViewFor(player.Id);
-                var target = WorldCoords.ToUnity(player.X, player.Y, player.Dead ? 0.25f : 0.6f);
+                var target = WorldCoords.ToUnity(player.X, player.Y, player.Dead ? BodyRadius : BodyHeight / 2);
                 view.transform.position = Vector3.Lerp(view.transform.position, target, 1 - Mathf.Exp(-Smoothing * Time.deltaTime));
                 // Úhel na mapě (y dolů) převedený na otočení v Unity (z nahoru).
                 var facing = Quaternion.Euler(0f, 90f + player.Facing * Mathf.Rad2Deg, 0f);
@@ -75,7 +79,7 @@ namespace Oohra.Client
             view = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             view.name = id == _connection.PlayerId ? "Postava" : "Hráč " + id;
             view.transform.SetParent(transform);
-            view.transform.localScale = new Vector3(0.55f, 0.6f, 0.55f);
+            view.transform.localScale = new Vector3(BodyRadius * 2, BodyHeight / 2, BodyRadius * 2);
             Destroy(view.GetComponent<Collider>());
 
             // Nos ukazuje, kam se postava dívá.

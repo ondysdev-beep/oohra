@@ -10,8 +10,9 @@ namespace Oohra.Client
     /// </summary>
     public class SeeThrough : MonoBehaviour
     {
-        private const float FadeRadius = 2.3f;
-        private const float TowardCamera = 1.2f;
+        private const float FadeRadius = 2.6f;
+        // Výška, ve které koruny postavu zakrývají (střed koruny, v metrech).
+        private const float CoverHeight = 3.2f;
         private const float FadedAlpha = 0.28f;
         private const float FadeSpeed = 5f;
 
@@ -93,7 +94,9 @@ namespace Oohra.Client
         /// <summary>Střed oblasti: postava, posunutá kousek ke kameře (tam koruny postavu zakrývají).</summary>
         private Vector3 FadeCenter()
         {
-            return _players.Self.position + ToCamera() * TowardCamera;
+            // Čím níž je kamera skloněná, tím dál ke kameře stojí koruny, které postavu zakrývají.
+            var pitch = Mathf.Clamp(_camera.transform.eulerAngles.x, 15f, 89f) * Mathf.Deg2Rad;
+            return _players.Self.position + ToCamera() * (CoverHeight / Mathf.Tan(pitch));
         }
 
         /// <summary>Směr od postavy ke kameře po zemi (jednotkový).</summary>

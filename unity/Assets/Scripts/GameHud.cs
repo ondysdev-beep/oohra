@@ -113,7 +113,7 @@ namespace Oohra.Client
                     continue;
                 }
 
-                var screen = _camera.WorldToScreenPoint(position.Value + Vector3.up * 0.9f);
+                var screen = _camera.WorldToScreenPoint(position.Value + Vector3.up * (PlayerViews.BodyHeight / 2 + 0.3f));
                 if (screen.z < 0)
                 {
                     continue;
