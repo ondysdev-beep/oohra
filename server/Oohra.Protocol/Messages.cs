@@ -79,8 +79,8 @@ public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart 
 /// <summary>Oheň na ostrově (hoří, nebo z něj zbyl popel).</summary>
 public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 
-/// <summary>Stavba hráče (zeď, zeď s otvorem, dveře): střed a úhel v radiánech (0 = na východ, y mapy roste na jih).</summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle);
+/// <summary>Stavba hráče (zeď, zeď s otvorem, dveře): střed, úhel v radiánech (0 = na východ, y mapy roste na jih) a délka v metrech.</summary>
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length);
 
 public sealed record InventoryView(int Capacity, StackView[] Stacks);
 
@@ -187,19 +187,20 @@ public static class Messages
         return r.GetInt();
     }
 
-    /// <summary>Režim stavby: postavit stavbu (zeď, oheň) se středem (x, y) a úhlem v radiánech.</summary>
-    public static void WritePlace(NetDataWriter w, BuildKind kind, float x, float y, float angle)
+    /// <summary>Režim stavby: postavit stavbu se středem (x, y), úhlem v radiánech a délkou (zeď) v metrech.</summary>
+    public static void WritePlace(NetDataWriter w, BuildKind kind, float x, float y, float angle, float length)
     {
         w.Put((byte)MessageType.Place);
         w.Put((byte)kind);
         w.Put(x);
         w.Put(y);
         w.Put(angle);
+        w.Put(length);
     }
 
-    public static (BuildKind Kind, float X, float Y, float Angle) ReadPlace(NetDataReader r)
+    public static (BuildKind Kind, float X, float Y, float Angle, float Length) ReadPlace(NetDataReader r)
     {
-        return ((BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat());
+        return ((BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat());
     }
 
     /// <summary>Rozebrat stavbu podle čísla.</summary>
@@ -467,12 +468,13 @@ public static class Messages
             w.Put(s.X);
             w.Put(s.Y);
             w.Put(s.Angle);
+            w.Put(s.Length);
         }
     }
 
     public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat()));
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat()));
     }
 
     private static T[] ReadList<T>(NetDataReader r, Func<T> read)

@@ -161,7 +161,7 @@ namespace Oohra.Client
                     continue;
                 }
 
-                var half = (structure.Kind == BuildKind.Door ? StructureViews.OpeningWidth : StructureViews.WallLength) / 2;
+                var half = (structure.Kind == BuildKind.Door ? StructureViews.OpeningWidth : structure.Length) / 2;
                 var dx = System.Math.Cos(structure.Angle) * half;
                 var dy = System.Math.Sin(structure.Angle) * half;
                 if (DistanceToSegment(x, y, structure.X - dx, structure.Y - dy, structure.X + dx, structure.Y + dy) < 0.35)

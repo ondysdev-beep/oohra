@@ -51,10 +51,10 @@ namespace Oohra.Client
         }
 
         /// <summary>
-        /// Model stavby se středem v počátku, otočený podél osy x (úhel 0). Dveře mají pant jako samostatný
+        /// Model stavby se středem v počátku, otočený podél osy x (úhel 0), zeď dlouhá length. Dveře mají pant jako samostatný
         /// objekt (pro otáčení). Vrací kořen modelu, díly jsou jeho děti.
         /// </summary>
-        public static GameObject CreateModel(BuildKind kind, Transform parent)
+        public static GameObject CreateModel(BuildKind kind, Transform parent, float length = WallLength)
         {
             var root = new GameObject(NameOf(kind));
             root.transform.SetParent(parent, false);
@@ -76,7 +76,7 @@ namespace Oohra.Client
                     Part(root.transform, "Ohniště", new Vector3(0f, 0.05f, 0f), new Vector3(0.7f, 0.05f, 0.7f), Palette.Hex("#4a4038"), PrimitiveType.Cylinder);
                     break;
                 default:
-                    Part(root.transform, "Zeď", new Vector3(0f, WallHeight / 2, 0f), new Vector3(WallLength, WallHeight, WallThickness), WallColor);
+                    Part(root.transform, "Zeď", new Vector3(0f, WallHeight / 2, 0f), new Vector3(length, WallHeight, WallThickness), WallColor);
                     break;
             }
 
@@ -143,7 +143,7 @@ namespace Oohra.Client
 
         private GameObject Create(StructureView structure)
         {
-            var root = CreateModel(structure.Kind, transform);
+            var root = CreateModel(structure.Kind, transform, structure.Length);
             root.name = NameOf(structure.Kind) + " " + structure.Id;
             PlaceModel(root.transform, structure.X, structure.Y, structure.Angle);
 

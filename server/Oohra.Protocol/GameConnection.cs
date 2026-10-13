@@ -140,10 +140,10 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteFeedFire(w, fireId));
     }
 
-    /// <summary>Režim stavby: postavit stavbu (zeď, oheň) se středem (x, y) a úhlem v radiánech.</summary>
-    public void Place(BuildKind kind, float x, float y, float angle)
+    /// <summary>Režim stavby: postavit stavbu se středem (x, y), úhlem v radiánech a délkou zdi v metrech.</summary>
+    public void Place(BuildKind kind, float x, float y, float angle, float length = 1f)
     {
-        Send(w => Messages.WritePlace(w, kind, x, y, angle));
+        Send(w => Messages.WritePlace(w, kind, x, y, angle, length));
     }
 
     /// <summary>Rozebrat stavbu (u zdi se vrátí klacek).</summary>

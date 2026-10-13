@@ -177,17 +177,17 @@ namespace Oohra.Client
             for (var i = 0; i < options.Length; i++)
             {
                 var option = options[i];
-                var selected = option.Kind == _buildMode.Selected;
+                var selected = option == _buildMode.SelectedOption;
                 var text = $"{i + 1}  {option.Name} ({option.Cost})" + (selected ? "  ◄" : string.Empty);
                 if (GUI.Button(new Rect(x, y, 332, 28), text))
                 {
-                    _buildMode.Open(option.Kind);
+                    _buildMode.Open(option);
                 }
 
                 y += 32;
             }
 
-            var mode = _buildMode.Modular ? "MODULÁRNĚ (zdi se napojují, Q, E po 90°)" : "VOLNĚ (Q, E plynule otáčí)";
+            var mode = _buildMode.Modular ? "MODULÁRNĚ (napojí a dorovná, Q, E po 15°)" : "VOLNĚ (Q, E plynule otáčí)";
             if (GUI.Button(new Rect(x, y + 2, 332, 28), "R  " + mode))
             {
                 _buildMode.Modular = !_buildMode.Modular;
