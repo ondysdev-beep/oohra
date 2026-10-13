@@ -96,4 +96,21 @@ public sealed class Island
     {
         return _treeTiles.Contains(tileIndex);
     }
+
+    /// <summary>V okolí (čtverec o poloměru radius) je jezírko.</summary>
+    public bool PondNear(int x, int y, int radius)
+    {
+        for (var yy = -radius; yy <= radius; yy++)
+        {
+            for (var xx = -radius; xx <= radius; xx++)
+            {
+                if (InBounds(x + xx, y + yy) && TileAt(x + xx, y + yy) == TileType.Pond)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

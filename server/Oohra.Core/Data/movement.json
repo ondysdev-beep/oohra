@@ -1,0 +1,36 @@
+// Pohyb postavy. Přepsáno z movePlayer, canStand a terrainSpeed v prototype/src/part4.js.
+{
+  // Rychlost chůze v dlaždicích za sekundu reálného času.
+  "walkSpeed": 4,
+  // Poloměr postavy pro kolize (v dlaždicích).
+  "radius": 0.28,
+  // Násobek rychlosti podle dlaždice. Ostatní dlaždice mají 1.
+  "terrainSpeed": {
+    "Bog": 0.72,
+    "Rock": 0.9,
+    "Sand": 0.95
+  },
+  // Zpomalení a zrychlení podle stavu těla (prototyp speedMul).
+  "body": {
+    "toxinAbove": 45,
+    "toxinScale": 200,
+    "toxinMaxSlowdown": 0.3,
+    "feverAbove": 40,
+    "feverScale": 150,
+    "feverMaxSlowdown": 0.3,
+    "tiredEnergyBelow": 15,
+    "tiredSlowdown": 0.2,
+    "stimulantBonus": 0.18,
+    "minMultiplier": 0.35,
+    "maxMultiplier": 1.3
+  },
+  // Místo narození: nejdřív písek, pak i tráva, v prvním životě u jezírka, daleko od táborů.
+  "spawn": {
+    "attempts": 900,
+    "sandOnlyAttempts": 500,
+    "nearPondAttempts": 600,
+    "pondRadius": 12,
+    "campDistance": 8,
+    "clearance": 0.3
+  }
+}
