@@ -15,4 +15,5 @@ public sealed record CampfireRules(
     double RelightMinutes,
     double WarmthRadius,
     double WarmthBonus,
-    double CookRadius);
+    double CookRadius,
+    double FootprintRadius);

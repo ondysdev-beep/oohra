@@ -10,7 +10,7 @@ namespace Oohra.Client
     /// <summary>
     /// Rozhraní šedé krabice (Unity OnGUI): čas, pruhy těla, příznaky, hlášky, jmenovky hráčů,
     /// nabídka u rostliny, vody, stromu, skály a ohně, batoh a okno smrti. Data posílá server.
-    /// Klávesy: B batoh, F rozdělat oheň, G postavit zeď, Esc zavřít.
+    /// Klávesy: B batoh, G režim stavby (F rovnou oheň), Esc zavřít.
     /// </summary>
     public class GameHud : MonoBehaviour
     {
@@ -30,8 +30,9 @@ namespace Oohra.Client
         private Rect _backpackRect;
         private Rect _deathRect;
         private Rect _backpackButtonRect;
-        private Rect _fireButtonRect;
-        private Rect _wallButtonRect;
+        private Rect _buildButtonRect;
+        private Rect _buildPanelRect;
+        private BuildMode _buildMode;
 
         /// <summary>Myš je nad rozhraním: kliknutí nemá posílat postavu na zem pod ním.</summary>
         public static bool MouseOverHud { get; private set; }
@@ -41,6 +42,7 @@ namespace Oohra.Client
             _session = session;
             _players = players;
             _camera = camera;
+            _buildMode = GetComponent<BuildMode>();
         }
 
         private void Update()
@@ -52,8 +54,6 @@ namespace Oohra.Client
             }
 
             if (keyboard.bKey.wasPressedThisFrame) _session.BackpackOpen = !_session.BackpackOpen;
-            if (keyboard.fKey.wasPressedThisFrame) _session.LightFire();
-            if (keyboard.gKey.wasPressedThisFrame) _session.BuildWall();
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
                 _session.BackpackOpen = false;
@@ -75,7 +75,7 @@ namespace Oohra.Client
             var width = Screen.width / scale;
             var height = Screen.height / scale;
 
-            _menuRect = _backpackRect = _deathRect = Rect.zero;
+            _menuRect = _backpackRect = _deathRect = _buildPanelRect = Rect.zero;
             DrawInfo();
             DrawButtons(width);
             var bottom = DrawBody(width, height);
@@ -86,6 +86,10 @@ namespace Oohra.Client
             {
                 DrawDeath(width, height);
             }
+            else if (BuildMode.IsActive)
+            {
+                DrawBuildPanel(width);
+            }
             else if (_session.BackpackOpen)
             {
                 DrawBackpack(width, height);
@@ -95,7 +99,7 @@ namespace Oohra.Client
             if (Event.current.type == EventType.Repaint)
             {
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
-                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _fireButtonRect.Contains(mouse) || _wallButtonRect.Contains(mouse);
+                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse);
             }
         }
 
@@ -137,10 +141,10 @@ namespace Oohra.Client
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 760, 20),
-                "WASD / klik = chůze · klik na rostlinu, vodu, strom, skálu, oheň, zeď · F oheň · G zeď · B batoh · Q, E kamera", _label);
+                "WASD / klik = chůze · klik na rostlinu, vodu, strom, skálu, oheň, zeď · G stavět · B batoh · Q, E nebo kolečko = kamera", _label);
         }
 
-        /// <summary>Vpravo nahoře: batoh a rozdělání ohně (3 klacky a kámen, na dlaždici před postavou).</summary>
+        /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>
         private void DrawButtons(float width)
         {
             var inventory = _session.Connection.Inventory;
@@ -150,17 +154,39 @@ namespace Oohra.Client
                 _session.BackpackOpen = !_session.BackpackOpen;
             }
 
-            _fireButtonRect = new Rect(width - 264, 12, 120, 34);
-            if (GUI.Button(_fireButtonRect, "Oheň (F)"))
+            _buildButtonRect = new Rect(width - 264, 12, 120, 34);
+            if (GUI.Button(_buildButtonRect, BuildMode.IsActive ? "Konec stavby" : "Stavět (G)"))
             {
-                _session.LightFire();
+                if (BuildMode.IsActive) _buildMode.Close();
+                else _buildMode.Open(_buildMode.Selected);
+            }
+        }
+
+        /// <summary>Režim stavby: výběr stavby a nápověda k ovládání.</summary>
+        private void DrawBuildPanel(float width)
+        {
+            var options = BuildMode.Catalog;
+            _buildPanelRect = new Rect(width - 344, 56, 332, 84 + options.Length * 32);
+            GUI.Box(_buildPanelRect, GUIContent.none);
+            GUI.Box(_buildPanelRect, GUIContent.none);
+            var x = _buildPanelRect.x + 10;
+            var y = _buildPanelRect.y + 6;
+            GUI.Label(new Rect(x, y, 300, 22), "REŽIM STAVBY", _title);
+            y += 28;
+            for (var i = 0; i < options.Length; i++)
+            {
+                var option = options[i];
+                var selected = option.Kind == _buildMode.Selected;
+                var text = $"{i + 1}  {option.Name} ({option.Cost})" + (selected ? "  ◄" : string.Empty);
+                if (GUI.Button(new Rect(x, y, 312, 28), text))
+                {
+                    _buildMode.Open(option.Kind);
+                }
+
+                y += 32;
             }
 
-            _wallButtonRect = new Rect(width - 396, 12, 120, 34);
-            if (GUI.Button(_wallButtonRect, "Zeď (G)"))
-            {
-                _session.BuildWall();
-            }
+            GUI.Label(new Rect(x, y + 2, 312, 40), "Q, E otočit · levé tlačítko postavit (do 1,2 m)\npravé tlačítko nebo Esc konec", _label);
         }
 
         /// <summary>Pět pruhů a příznaky dole uprostřed. Vrací horní okraj (pro další prvky nad nimi).</summary>
@@ -232,9 +258,9 @@ namespace Oohra.Client
                 case TargetKind.Fire:
                     DrawFireMenu(titleRect, ref buttonRect);
                     break;
-                case TargetKind.Wall:
+                case TargetKind.Structure:
                     GUI.Label(titleRect, "ZEĎ", _title);
-                    if (Button(ref buttonRect, "Rozebrat")) _session.RemoveWall();
+                    if (Button(ref buttonRect, "Rozebrat")) _session.RemoveStructure();
                     break;
             }
 

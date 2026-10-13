@@ -29,20 +29,22 @@ namespace Oohra.Core.World
         WrongPlace,
     }
 
-    /// <summary>Jak dopadla stavba nebo rozebrání zdi.</summary>
+    /// <summary>Jak dopadla stavba nebo rozebrání stavby.</summary>
     public enum BuildResult
     {
         Built,
         Removed,
-        NeedSticks,
 
-        /// <summary>Před postavou nejde stavět (voda, strom, oheň, jiná zeď, stojí tam hráč).</summary>
+        /// <summary>Chybí materiál (klacky).</summary>
+        NeedMaterials,
+
+        /// <summary>Tady nejde stavět (voda, kmen stromu, oheň, stojí tam hráč).</summary>
         CannotBuildHere,
 
         TooFar,
 
-        /// <summary>Rozebrat: tady žádná zeď není.</summary>
-        NoWall,
+        /// <summary>Rozebrat: taková stavba už není.</summary>
+        NotFound,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>
@@ -59,7 +61,7 @@ namespace Oohra.Core.World
         /// <summary>Přiložit: nemá klacek.</summary>
         NoStick,
 
-        /// <summary>Před postavou nejde oheň rozdělat (voda, strom, jiný oheň).</summary>
+        /// <summary>Tady nejde oheň rozdělat (voda, kmen stromu, jiný oheň, zeď).</summary>
         CannotBuildHere,
 
         TooFar,

@@ -73,7 +73,7 @@ namespace Oohra.Client
         private void ReadClick()
         {
             var mouse = Mouse.current;
-            if (mouse == null || !mouse.leftButton.wasPressedThisFrame || GameHud.MouseOverHud)
+            if (mouse == null || !mouse.leftButton.wasPressedThisFrame || GameHud.MouseOverHud || BuildMode.IsActive)
             {
                 return;
             }
@@ -93,16 +93,22 @@ namespace Oohra.Client
             _moveTo = _target == null ? new Vector2((float)x, (float)y) : (Vector2?)null;
         }
 
-        /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, rostlina, strom, zeď, voda, skála.</summary>
+        /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, stavba, rostlina, strom, voda, skála.</summary>
         private InteractionTarget PickTarget(double x, double y)
         {
             var world = _session.Connection.World;
             foreach (var fire in _session.Connection.Fires)
             {
-                if (Distance(fire.TileX + 0.5, fire.TileY + 0.5, x, y) < PickRadius)
+                if (Distance(fire.X, fire.Y, x, y) < PickRadius)
                 {
-                    return InteractionTarget.ForFire(fire.Id, fire.TileX, fire.TileY);
+                    return InteractionTarget.ForFire(fire.Id, fire.X, fire.Y);
                 }
+            }
+
+            var structure = PickStructure(x, y);
+            if (structure != null)
+            {
+                return structure;
             }
 
             var plant = PickPlant(x, y);
@@ -120,7 +126,6 @@ namespace Oohra.Client
 
             var tile = world.TileAt(tx, ty);
             if (TreeTiles.Contains(ty * world.Width + tx)) return InteractionTarget.ForTile(TargetKind.Tree, tx, ty);
-            if (System.Array.IndexOf(_session.Connection.Walls, ty * world.Width + tx) >= 0) return InteractionTarget.ForTile(TargetKind.Wall, tx, ty);
             if (IsWater(tile)) return InteractionTarget.ForTile(TargetKind.Water, tx, ty);
             if (tile == TileType.Rock) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);
             return null;
@@ -137,6 +142,31 @@ namespace Oohra.Client
 
                 return _treeTiles;
             }
+        }
+
+        /// <summary>Zeď, na kterou hráč kliknul (do 35 cm od její osy).</summary>
+        private InteractionTarget PickStructure(double x, double y)
+        {
+            foreach (var structure in _session.Connection.Structures)
+            {
+                var half = StructureViews.WallLength / 2;
+                var dx = System.Math.Cos(structure.Angle) * half;
+                var dy = System.Math.Sin(structure.Angle) * half;
+                if (DistanceToSegment(x, y, structure.X - dx, structure.Y - dy, structure.X + dx, structure.Y + dy) < 0.35)
+                {
+                    return InteractionTarget.ForStructure(structure.Id, structure.X, structure.Y);
+                }
+            }
+
+            return null;
+        }
+
+        private static double DistanceToSegment(double px, double py, double x1, double y1, double x2, double y2)
+        {
+            var ex = x2 - x1;
+            var ey = y2 - y1;
+            var t = System.Math.Max(0, System.Math.Min(1, ((px - x1) * ex + (py - y1) * ey) / (ex * ex + ey * ey)));
+            return Distance(x1 + t * ex, y1 + t * ey, px, py);
         }
 
         private InteractionTarget PickPlant(double x, double y)

@@ -67,13 +67,13 @@ public class FireTests
         var fires = new Fires();
         var inventory = WithMaterials(sticks: 2, stones: 1);
 
-        Assert.Equal(FireResult.NeedMaterials, fires.Light(_island, inventory, x, y, facing: 0));
+        Assert.Equal(FireResult.NeedMaterials, fires.Light(_island, inventory, x, y, x + 1, y));
 
         inventory.TryAdd(Item.Stick);
-        Assert.Equal(FireResult.Lit, fires.Light(_island, inventory, x, y, facing: 0));
+        Assert.Equal(FireResult.Lit, fires.Light(_island, inventory, x, y, x + 1, y));
 
         var fire = Assert.Single(fires.All);
-        Assert.Equal(((int)x + 1, (int)y), (fire.TileX, fire.TileY));
+        Assert.Equal((x + 1, y), (fire.X, fire.Y));
         Assert.True(fire.Burning);
         Assert.Empty(inventory.Stacks);
     }
@@ -85,9 +85,9 @@ public class FireTests
         var fires = new Fires();
         var inventory = WithMaterials(sticks: 6, stones: 2);
 
-        fires.Light(_island, inventory, x, y, facing: 0);
+        fires.Light(_island, inventory, x, y, x + 1, y);
 
-        Assert.Equal(FireResult.CannotBuildHere, fires.Light(_island, inventory, x, y, facing: 0));
+        Assert.Equal(FireResult.CannotBuildHere, fires.Light(_island, inventory, x, y, x + 1, y));
         Assert.Equal(3, inventory.Count(ItemKind.Stick));
     }
 
@@ -98,7 +98,7 @@ public class FireTests
         var fires = new Fires();
 
         // Postava stojí západně od moře a dívá se na východ, do vody.
-        Assert.Equal(FireResult.CannotBuildHere, fires.Light(_island, WithMaterials(3, 1), seaX - 0.5, seaY + 0.5, facing: 0));
+        Assert.Equal(FireResult.CannotBuildHere, fires.Light(_island, WithMaterials(3, 1), seaX - 0.5, seaY + 0.5, seaX + 0.5, seaY + 0.5));
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class FireTests
         var (x, y) = SpotWithFreeEast();
         var fires = new Fires();
         var inventory = WithMaterials(sticks: 5, stones: 1);
-        fires.Light(_island, inventory, x, y, facing: 0);
+        fires.Light(_island, inventory, x, y, x + 1, y);
         var fire = fires.All[0];
         var version = fires.Version;
 
@@ -124,15 +124,27 @@ public class FireTests
         Assert.Equal(FireResult.TooFar, fires.Feed(fire.Id, WithMaterials(1, 0), x + 5, y));
     }
 
-    [Theory]
-    [InlineData(0, 1, 0)]
-    [InlineData(Math.PI, -1, 0)]
-    [InlineData(Math.PI / 2, 0, 1)]
-    [InlineData(-Math.PI / 2, 0, -1)]
-    [InlineData(0.3, 1, 0)]
-    public void FacingTileIsNeighbourInMainDirection(double facing, int dx, int dy)
+    /// <summary>Oheň se staví v režimu stavby nejdál 1,2 m od postavy, kamkoli (nejen doprostřed dlaždice).</summary>
+    [Fact]
+    public void FireIsPlacedFreelyWithinReach()
     {
-        Assert.Equal((10 + dx, 20 + dy), Fires.FacingTile(10.5, 20.5, facing));
+        var (x, y) = SpotWithFreeEast();
+        var fires = new Fires();
+
+        Assert.Equal(FireResult.TooFar, fires.Light(_island, WithMaterials(3, 1), x, y, x + 1.3, y));
+        Assert.Equal(FireResult.Lit, fires.Light(_island, WithMaterials(3, 1), x, y, x + 0.83, y + 0.27));
+
+        Assert.Equal((x + 0.83, y + 0.27), (fires.All[0].X, fires.All[0].Y));
+    }
+
+    [Fact]
+    public void FireNotOnWall()
+    {
+        var island = IslandGenerator.Build(12345, 84, 84);
+        var (x, y) = SpotWithFreeEast();
+        island.Structures.Place(x + 1, y, Math.PI / 2);
+
+        Assert.Equal(FireResult.CannotBuildHere, new Fires().Light(island, WithMaterials(3, 1), x, y, x + 1, y));
     }
 
     [Fact]
@@ -140,7 +152,7 @@ public class FireTests
     {
         var (x, y) = SpotWithFreeEast();
         var fires = new Fires();
-        fires.Light(_island, WithMaterials(3, 1), x, y, facing: 0);
+        fires.Light(_island, WithMaterials(3, 1), x, y, x + 1, y);
 
         Assert.True(fires.WarmsAt(_island, x, y));
         Assert.False(fires.WarmsAt(_island, x + 4, y));
@@ -181,7 +193,7 @@ public class FireTests
 
         Assert.Equal(FireResult.NoFireNear, fires.Bake(_island, inventory, 0, x, y));
 
-        fires.Light(_island, inventory, x, y, facing: 0);
+        fires.Light(_island, inventory, x, y, x + 1, y);
         Assert.Equal(FireResult.Baked, fires.Bake(_island, inventory, 0, x, y));
 
         Assert.Equal(2, inventory.Stacks.Count);
@@ -196,7 +208,7 @@ public class FireTests
         var (x, y) = SpotWithFreeEast();
         var fires = new Fires();
         var inventory = WithMaterials(4, 1);
-        fires.Light(_island, inventory, x, y, facing: 0);
+        fires.Light(_island, inventory, x, y, x + 1, y);
 
         Assert.Equal(FireResult.CannotBake, fires.Bake(_island, inventory, 0, x, y));
         Assert.Equal(FireResult.CannotBake, fires.Bake(_island, inventory, 7, x, y));

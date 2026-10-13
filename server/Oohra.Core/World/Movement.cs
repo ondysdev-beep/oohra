@@ -11,7 +11,7 @@ namespace Oohra.Core.World;
 public static class Movement
 {
     /// <summary>
-    /// Obsazená dlaždice: mimo mapu, moře, jezírko, zeď, strom. Na ní nejde stavět ani rozdělat oheň a nikdo se tam nenarodí.
+    /// Obsazená dlaždice: mimo mapu, moře, jezírko, strom. Nikdo se tam nenarodí.
     /// Pro chůzi platí CanStand: strom tam blokuje jen svůj kmen.
     /// </summary>
     public static bool IsBlocked(Island island, int tx, int ty)
@@ -21,7 +21,7 @@ public static class Movement
 
     /// <summary>
     /// Postava o daném poloměru se na místo vejde: žádný ze čtyř rohů není ve vodě ani mimo mapu
-    /// a postava nenaráží do kmene stromu. Rostliny nepřekáží.
+    /// a postava nenaráží do kmene stromu ani do zdi. Rostliny nepřekáží.
     /// </summary>
     public static bool CanStand(Island island, double x, double y, double radius)
     {
@@ -29,10 +29,11 @@ public static class Movement
             && !IsImpassable(island, Floor(x + radius), Floor(y - radius))
             && !IsImpassable(island, Floor(x - radius), Floor(y + radius))
             && !IsImpassable(island, Floor(x + radius), Floor(y + radius))
-            && !HitsTrunk(island, x, y, radius);
+            && !HitsTrunk(island, x, y, radius)
+            && !island.Structures.Blocks(x, y, radius);
     }
 
-    /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko, zeď.</summary>
+    /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko.</summary>
     private static bool IsImpassable(Island island, int tx, int ty)
     {
         if (!island.InBounds(tx, ty))
@@ -41,7 +42,7 @@ public static class Movement
         }
 
         var tile = island.TileAt(tx, ty);
-        return tile == TileType.Sea || tile == TileType.Pond || island.Walls.Has(island.Index(tx, ty));
+        return tile == TileType.Sea || tile == TileType.Pond;
     }
 
     /// <summary>Postava by se překrývala s kmenem stromu (kmen stojí uprostřed své dlaždice).</summary>

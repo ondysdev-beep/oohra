@@ -14,7 +14,7 @@
     "fire": 1.3
   },
   "fire": {
-    // Na oheň: klacky a kámen. Rozdělá se na volné dlaždici před postavou.
+    // Na oheň: klacky a kámen. Staví se v režimu stavby (nejdál placeReach z building.json).
     "sticksCost": 3,
     "stonesCost": 1,
     "burnMinutes": 720,
@@ -24,6 +24,8 @@
     // V tomto okruhu oheň hřeje (cíl tepla těla + warmthBonus) a dá se u něj péct.
     "warmthRadius": 2.6,
     "warmthBonus": 28,
-    "cookRadius": 2.4
+    "cookRadius": 2.4,
+    // Kolik místa ohniště zabere (poloměr). Dva ohně ani oheň a zeď se nepřekrývají.
+    "footprintRadius": 0.35
   }
 }

@@ -38,11 +38,11 @@ public class FireServerTests
         StandWithFreeEast(net, player);
         GiveMaterials(player, sticks: 4, stones: 1);
 
-        a.LightFire();
+        LightFireEast(a, player);
 
         Assert.True(net.Pump(() => b.Fires.Length == 1 && a.Self!.NearFire));
         Assert.True(b.Fires[0].Burning);
-        Assert.Equal(((int)player.X + 1, (int)player.Y), (b.Fires[0].TileX, b.Fires[0].TileY));
+        Assert.Equal(((float)player.X + 1, (float)player.Y), (b.Fires[0].X, b.Fires[0].Y));
         Assert.True(net.Pump(() => a.Inventory.Stacks.Length == 1 && a.Inventory.Stacks[0].Kind == ItemKind.Stick));
         Assert.Contains(a.TakeEvents(), e => e.Kind == EventKind.Fire && e.Code == (byte)FireResult.Lit);
     }
@@ -56,7 +56,7 @@ public class FireServerTests
         var player = net.Server.FindPlayer("Ondra")!;
         StandWithFreeEast(net, player);
         GiveMaterials(player, sticks: 4, stones: 1);
-        a.LightFire();
+        LightFireEast(a, player);
         Assert.True(net.Pump(() => b.Fires.Length == 1));
 
         // 600× zrychlený čas: 720 minut ohně uběhne asi za 3 sekundy.
@@ -79,7 +79,7 @@ public class FireServerTests
         a.Bake(0);
         Assert.True(net.Pump(() => a.TakeEvents().Any(e => e.Kind == EventKind.Fire && e.Code == (byte)FireResult.NoFireNear)));
 
-        a.LightFire();
+        LightFireEast(a, player);
         a.Bake(0);
 
         Assert.True(net.Pump(() => a.Inventory.Stacks.Length == 1 && a.Inventory.Stacks[0].Cooking == Cooking.Baked));
@@ -101,6 +101,12 @@ public class FireServerTests
         Assert.True(net.Pump(() => client.Snapshot is not null));
         Assert.Equal(21, client.Snapshot!.TotalMinutes / 60, 1);
         Assert.Equal(new[] { (ItemKind.Stick, 4), (ItemKind.Stone, 1) }, client.Inventory.Stacks.Select(s => (s.Kind, s.Count)));
+    }
+
+    /// <summary>Režim stavby: oheň 1 m na východ od postavy (na volné dlaždici, viz StandWithFreeEast).</summary>
+    private static void LightFireEast(GameConnection client, PlayerSession player)
+    {
+        client.Place(BuildKind.Campfire, (float)player.X + 1, (float)player.Y, 0);
     }
 
     private static void GiveMaterials(PlayerSession player, int sticks, int stones)

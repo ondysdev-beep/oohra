@@ -18,7 +18,6 @@ namespace Oohra.Client
         {
             var root = new GameObject("Ostrov (vygenerovaný)");
             var seeThrough = root.AddComponent<SeeThrough>();
-            seeThrough.Init(world.Width);
             BuildSea(world, root.transform);
             BuildGround(world, root.transform);
             BuildTrees(world, root.transform, seeThrough);
@@ -30,9 +29,9 @@ namespace Oohra.Client
             fires.transform.SetParent(root.transform);
             fires.AddComponent<FireViews>().Init(connection, world);
 
-            var walls = new GameObject("Zdi");
-            walls.transform.SetParent(root.transform);
-            walls.AddComponent<WallViews>().Init(connection, world, seeThrough);
+            var structures = new GameObject("Stavby");
+            structures.transform.SetParent(root.transform);
+            structures.AddComponent<StructureViews>().Init(connection, seeThrough);
             return root;
         }
 
@@ -103,7 +102,7 @@ namespace Oohra.Client
                 var crown = Primitive(PrimitiveType.Sphere, "Koruna", trees, color);
                 crown.transform.position = WorldCoords.ToUnity(x, y, (TrunkHeight + CrownSize / 2 - 0.4f) * size);
                 crown.transform.localScale = Vector3.one * CrownSize * size;
-                crowns.Add(tree.TileIndex, crown, color);
+                crowns.Add(tree.TileIndex, crown, color, x, y);
             }
         }
 

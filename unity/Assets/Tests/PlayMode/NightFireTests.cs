@@ -48,20 +48,11 @@ namespace Oohra.Client.Tests
             var sun = Object.FindObjectsByType<Light>().First(l => l.type == LightType.Directional);
             Assert.Less(sun.intensity, 0.1f, "Ve 22:00 má být tma.");
 
-            // Oheň vznikne na dlaždici, kam se postava dívá. Zkusí to na všechny čtyři strany.
-            var directions = new[] { new Vector2(1, 0), new Vector2(0, 1), new Vector2(-1, 0), new Vector2(0, -1) };
-            foreach (var direction in directions)
-            {
-                session.Connection.SendInput(direction.x, direction.y);
-                yield return new WaitForSecondsRealtime(0.1f);
-                session.Connection.SendInput(0, 0);
-                session.LightFire();
-                yield return new WaitForSecondsRealtime(0.7f);
-                if (session.Connection.Fires.Length > 0)
-                {
-                    break;
-                }
-            }
+            // Režim stavby: oheň metr od postavy. Zkusí to na všechny čtyři strany (někde může být voda nebo strom).
+            var buildMode = Object.FindAnyObjectByType<BuildMode>();
+            buildMode.Open(Oohra.Core.World.BuildKind.Campfire);
+            yield return PlaceAround(session, buildMode, () => session.Connection.Fires.Length > 0);
+            buildMode.Close();
 
             Assert.AreEqual(1, session.Connection.Fires.Length, "Oheň se nepodařilo rozdělat. Hlášky: "
                 + string.Join(" | ", session.Log.Select(l => l.Text)) + " Batoh: " + session.Connection.Inventory.Stacks.Length);
