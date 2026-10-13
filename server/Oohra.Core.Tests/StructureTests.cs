@@ -49,10 +49,10 @@ public class StructureTests
         var inventory = Sticks(5);
         inventory.TryAdd(Item.Stone);
         fires.Light(island, inventory, x, y, x + 1, y);
-        Assert.Equal(BuildResult.CannotBuildHere, island.Structures.Build(island, fires, inventory, x, y, BuildKind.StickWall, x + 1, y, Math.PI / 2, []));
+        Assert.Equal(BuildResult.CannotBuildHere, island.Structures.Build(island, fires, inventory, x, y, BuildKind.StickWall, x + 1, y, Math.PI / 2, 1.0, []));
 
         Assert.Equal(BuildResult.CannotBuildHere,
-            island.Structures.Build(island, new Fires(), Sticks(2), x, y, BuildKind.StickWall, x, y + 1, 0, [new Position(x, y + 1.2)]));
+            island.Structures.Build(island, new Fires(), Sticks(2), x, y, BuildKind.StickWall, x, y + 1, 0, 1.0, [new Position(x, y + 1.2)]));
         Assert.Empty(island.Structures.All);
     }
 
@@ -153,6 +153,48 @@ public class StructureTests
         Assert.True(inside.Health >= outside.Health);
     }
 
+    /// <summary>Krátká zeď (poloviční, nebo dorovnání mezery) stojí 1 klacek a blokuje jen svou délku.</summary>
+    [Fact]
+    public void ShortWallIsCheaperAndShorter()
+    {
+        var island = NewIsland();
+        var (x, y) = OpenSpot(island);
+        var inventory = Sticks(2);
+
+        Assert.Equal(BuildResult.Built, Build(island, inventory, x, y, x + 1, y, Math.PI / 2, length: 0.5));
+
+        Assert.Equal(1, inventory.Count(ItemKind.Stick));
+        Assert.Equal(0.5, island.Structures.All.Single().Length, 9);
+        Assert.False(Movement.CanStand(island, x + 1, y, 0.28));
+        Assert.True(Movement.CanStand(island, x + 1, y + 0.62, 0.28));
+
+        // Rozebráním se vrátí polovina ceny (dolů): z 1 klacku nic.
+        island.Structures.Remove(island.Structures.All.Single().Id, inventory, x, y);
+        Assert.Equal(1, inventory.Count(ItemKind.Stick));
+    }
+
+    [Theory]
+    [InlineData(0.1)]
+    [InlineData(1.2)]
+    public void WallLengthMustBeInRange(double length)
+    {
+        var island = NewIsland();
+        var (x, y) = OpenSpot(island);
+
+        Assert.Equal(BuildResult.CannotBuildHere, Build(island, Sticks(2), x, y, x + 1, y, 0, length: length));
+    }
+
+    [Fact]
+    public void DoorFrameIsAlwaysFullLength()
+    {
+        var island = NewIsland();
+        var (x, y) = OpenSpot(island);
+
+        Build(island, Sticks(2), x, y, x + 1, y, 0, BuildKind.DoorFrame, length: 0.4);
+
+        Assert.Equal(1.0, island.Structures.All.Single().Length, 9);
+    }
+
     /// <summary>Zeď s otvorem blokuje jen sloupky po krajích, otvorem se projde.</summary>
     [Fact]
     public void DoorFrameBlocksOnlyPosts()
@@ -236,9 +278,10 @@ public class StructureTests
     }
 
     private static BuildResult Build(
-        Island island, Inventory inventory, double px, double py, double x, double y, double angle, BuildKind kind = BuildKind.StickWall)
+        Island island, Inventory inventory, double px, double py, double x, double y, double angle,
+        BuildKind kind = BuildKind.StickWall, double length = 1.0)
     {
-        return island.Structures.Build(island, new Fires(), inventory, px, py, kind, x, y, angle, [new Position(px, py)]);
+        return island.Structures.Build(island, new Fires(), inventory, px, py, kind, x, y, angle, length, [new Position(px, py)]);
     }
 
     /// <summary>Čtverec ze 4 zdí se stranou size kolem bodu (cx, cy). Zdi jsou 1 m dlouhé, větší čtverec má mezery.</summary>

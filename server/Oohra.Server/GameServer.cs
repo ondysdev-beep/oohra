@@ -314,7 +314,7 @@ public sealed class GameServer : IDisposable
     }
 
     /// <summary>Režim stavby: zeď jde do staveb, oheň mezi ohně. Kam a pod jakým úhlem, určil hráč.</summary>
-    private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle) place)
+    private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle, float Length) place)
     {
         if (place.Kind == BuildKind.Campfire)
         {
@@ -323,7 +323,7 @@ public sealed class GameServer : IDisposable
         }
 
         BuildAction(player, () => Island.Structures.Build(
-            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, PlayerPositions()));
+            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions()));
     }
 
     /// <summary>Stavba: postavit nebo rozebrat. Seznam staveb se všem pošle v příštím ticku.</summary>
@@ -582,7 +582,7 @@ public sealed class GameServer : IDisposable
 
     private StructureView[] StructureViews()
     {
-        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle)).ToArray();
+        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length)).ToArray();
     }
 
     private static PlayerInfo InfoOf(PlayerSession player)

@@ -12,13 +12,14 @@ public readonly record struct Segment(double X1, double Y1, double X2, double Y2
 /// </summary>
 public sealed class Structure
 {
-    public Structure(int id, BuildKind kind, double x, double y, double angle, int frameId = 0)
+    public Structure(int id, BuildKind kind, double x, double y, double angle, double length, int frameId = 0)
     {
         Id = id;
         Kind = kind;
         X = x;
         Y = y;
         Angle = angle;
+        Length = length;
         FrameId = frameId;
     }
 
@@ -32,18 +33,21 @@ public sealed class Structure
 
     public double Angle { get; }
 
+    /// <summary>Délka stavby v metrech (zeď může být kratší, zeď s otvorem a dveře mají plnou délku).</summary>
+    public double Length { get; }
+
     /// <summary>Dveře: číslo zdi s otvorem, ve které jsou. Jinak 0.</summary>
     public int FrameId { get; }
 
-    /// <summary>Konce celé stavby (zeď, zeď s otvorem i dveře leží na stejné úsečce dlouhé jako zeď).</summary>
+    /// <summary>Konce celé stavby (zeď, zeď s otvorem i dveře leží na úsečce dlouhé Length).</summary>
     public (double X1, double Y1, double X2, double Y2) Ends
     {
-        get { return WallEnds(X, Y, Angle); }
+        get { return WallEnds(X, Y, Angle, Length); }
     }
 
-    public static (double X1, double Y1, double X2, double Y2) WallEnds(double x, double y, double angle)
+    public static (double X1, double Y1, double X2, double Y2) WallEnds(double x, double y, double angle, double length)
     {
-        var half = GameData.Building.Wall.Length / 2;
+        var half = length / 2;
         var dx = Math.Cos(angle) * half;
         var dy = Math.Sin(angle) * half;
         return (x - dx, y - dy, x + dx, y + dy);
@@ -89,7 +93,7 @@ public sealed class Structure
     private Segment[] Posts()
     {
         var (x1, y1, x2, y2) = Ends;
-        var post = (GameData.Building.Wall.Length - GameData.Building.DoorFrame.OpeningWidth) / 2;
+        var post = (Length - GameData.Building.DoorFrame.OpeningWidth) / 2;
         var dx = Math.Cos(Angle) * post;
         var dy = Math.Sin(Angle) * post;
         return [new Segment(x1, y1, x1 + dx, y1 + dy), new Segment(x2 - dx, y2 - dy, x2, y2)];
@@ -132,16 +136,19 @@ public sealed class Structures
         return _byId.Values.FirstOrDefault(s => s.Kind == BuildKind.Door && s.FrameId == frameId);
     }
 
-    /// <summary>Postaví zeď bez materiálu a kontrol (pro testy).</summary>
+    /// <summary>Postaví zeď plné délky bez materiálu a kontrol (pro testy).</summary>
     public Structure Place(double x, double y, double angle)
     {
         return Place(BuildKind.StickWall, x, y, angle);
     }
 
-    /// <summary>Postaví stavbu bez materiálu a kontrol (pro testy a později pro načtení uloženého světa).</summary>
-    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0)
+    /// <summary>
+    /// Postaví stavbu bez materiálu a kontrol (pro testy a později pro načtení uloženého světa).
+    /// length 0 = plná délka zdi.
+    /// </summary>
+    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0, double length = 0)
     {
-        var structure = new Structure(_nextId++, kind, x, y, angle, frameId);
+        var structure = new Structure(_nextId++, kind, x, y, angle, length > 0 ? length : GameData.Building.Wall.Length, frameId);
         _byId[structure.Id] = structure;
         foreach (var tile in TilesOf(structure))
         {
@@ -159,15 +166,18 @@ public sealed class Structures
     }
 
     /// <summary>
-    /// Postaví stavbu se středem (x, y) a úhlem angle, nejdál placeReach od postavy.
+    /// Postaví stavbu se středem (x, y), úhlem angle a délkou length, nejdál placeReach od postavy.
+    /// Zeď: délka od minLength po plnou délku (kratší zeď dorovná mezeru, aby zdi do sebe zapadly).
     /// Zeď a zeď s otvorem: jen na suché zemi, ne přes kmen stromu, oheň ani hráče (players: polohy všech hráčů).
-    /// Dveře: vsadí se do nejbližší volné zdi s otvorem (jejich poloha a úhel se převezmou od ní).
+    /// Zeď s otvorem má vždy plnou délku. Dveře se vsadí do nejbližší volné zdi s otvorem (převezmou její polohu).
     /// </summary>
     public BuildResult Build(
         Island island, Fires fires, Inventory inventory, double playerX, double playerY,
-        BuildKind kind, double x, double y, double angle, IEnumerable<Position> players)
+        BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players)
     {
-        if (inventory.Count(ItemKind.Stick) < SticksCost(kind))
+        var rules = GameData.Building.Wall;
+        length = kind == BuildKind.StickWall ? length : rules.Length;
+        if (inventory.Count(ItemKind.Stick) < SticksCost(kind, length))
         {
             return BuildResult.NeedMaterials;
         }
@@ -185,18 +195,19 @@ public sealed class Structures
                 return BuildResult.NoDoorway;
             }
 
-            inventory.TryRemove(ItemKind.Stick, SticksCost(kind));
+            inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length));
             Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id);
             return BuildResult.Built;
         }
 
-        if (kind is not (BuildKind.StickWall or BuildKind.DoorFrame) || !WallFits(island, fires, x, y, angle, players))
+        var lengthOk = length >= rules.MinLength - 1e-6 && length <= rules.Length + 1e-6;
+        if (kind is not (BuildKind.StickWall or BuildKind.DoorFrame) || !lengthOk || !WallFits(island, fires, x, y, angle, length, players))
         {
             return BuildResult.CannotBuildHere;
         }
 
-        inventory.TryRemove(ItemKind.Stick, SticksCost(kind));
-        Place(kind, x, y, angle);
+        inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length));
+        Place(kind, x, y, angle, length: length);
         return BuildResult.Built;
     }
 
@@ -270,25 +281,27 @@ public sealed class Structures
         }
     }
 
-    public static int SticksCost(BuildKind kind)
+    /// <summary>Kolik klacků stavba stojí. Krátká zeď (do shortMaxLength) je levnější.</summary>
+    public static int SticksCost(BuildKind kind, double length)
     {
         var rules = GameData.Building;
         switch (kind)
         {
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksCost;
             case BuildKind.Door: return rules.Door.SticksCost;
-            default: return rules.Wall.SticksCost;
+            default: return length <= rules.Wall.ShortMaxLength + 1e-6 ? rules.Wall.ShortSticksCost : rules.Wall.SticksCost;
         }
     }
 
-    private static int SticksBack(BuildKind kind)
+    /// <summary>Kolik klacků se vrátí rozebráním: u zdi polovina ceny (dolů), jinak podle building.json.</summary>
+    private static int SticksBack(Structure structure)
     {
         var rules = GameData.Building;
-        switch (kind)
+        switch (structure.Kind)
         {
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksBack;
             case BuildKind.Door: return rules.Door.SticksBack;
-            default: return rules.Wall.SticksBack;
+            default: return SticksCost(structure.Kind, structure.Length) / 2;
         }
     }
 
@@ -314,15 +327,15 @@ public sealed class Structures
         }
 
         Version++;
-        for (var i = 0; i < SticksBack(structure.Kind); i++)
+        for (var i = 0; i < SticksBack(structure); i++)
         {
             inventory.TryAdd(Item.Stick);
         }
     }
 
-    private bool WallFits(Island island, Fires fires, double x, double y, double angle, IEnumerable<Position> players)
+    private bool WallFits(Island island, Fires fires, double x, double y, double angle, double length, IEnumerable<Position> players)
     {
-        var (x1, y1, x2, y2) = Structure.WallEnds(x, y, angle);
+        var (x1, y1, x2, y2) = Structure.WallEnds(x, y, angle, length);
         var halfThickness = GameData.Building.Wall.Thickness / 2;
         if (!Placement.SegmentOnDryLand(island, x1, y1, x2, y2) || !Placement.ClearOfTrunks(island, x1, y1, x2, y2, halfThickness))
         {

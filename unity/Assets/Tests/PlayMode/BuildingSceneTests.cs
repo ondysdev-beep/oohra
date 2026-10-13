@@ -63,6 +63,13 @@ namespace Oohra.Client.Tests
                 Assert.AreEqual(first.Y, second.Y, 0.01f);
                 Assert.AreEqual(0f, Mathf.DeltaAngle(0f, second.Angle * Mathf.Rad2Deg) % 180f, 0.5f);
                 yield return SaveScreenshot("moduly.png");
+
+                // Poloviční zeď (volně): na serveru je dlouhá 0,5 m.
+                buildMode.Modular = false;
+                buildMode.Open(BuildMode.Catalog[1]);
+                var count = connection.Structures.Length;
+                yield return PlaceAround(session.Session, buildMode, () => connection.Structures.Length > count);
+                Assert.IsTrue(connection.Structures.Any(s => Mathf.Abs(s.Length - 0.5f) < 0.001f), "Poloviční zeď se nepostavila.");
                 yield break;
             }
 

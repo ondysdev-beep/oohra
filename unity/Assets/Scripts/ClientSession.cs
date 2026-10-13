@@ -121,9 +121,9 @@ namespace Oohra.Client
         }
 
         /// <summary>Režim stavby: postavit stavbu se středem (x, y) a úhlem v radiánech. Rozhodne server.</summary>
-        public void Place(BuildKind kind, double x, double y, float angle)
+        public void Place(BuildKind kind, double x, double y, float angle, float length = 1f)
         {
-            Connection.Place(kind, (float)x, (float)y, angle);
+            Connection.Place(kind, (float)x, (float)y, angle, length);
         }
 
         /// <summary>Rozebrat stavbu, u které je otevřená nabídka.</summary>
