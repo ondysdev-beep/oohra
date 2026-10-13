@@ -48,7 +48,7 @@ public sealed class GameClock
     public Season Season => (Season)(MonthOfYear / (_monthsPerYear / 4) % 4);
 
     /// <summary>Světlo 0 (noc) až 1 (den). Noc je kratší než den.</summary>
-    public double Daylight => Math.Clamp(Math.Sin((Hour - 6) / 24 * Math.Tau) * 1.6 + 0.35, 0, 1);
+    public double Daylight => Math.Clamp(Math.Sin((Hour - 6) / 24 * 2 * Math.PI) * 1.6 + 0.35, 0, 1);
 
     /// <summary>Kolik herních minut uplyne za danou dobu reálného času.</summary>
     public double GameMinutesFor(double realSeconds)

@@ -153,7 +153,7 @@ public sealed class Character
         IsDead = true;
         DeathCause = _blame.Count == 0
             ? Characters.DeathCause.Hunger
-            : _blame.MaxBy(b => b.Value).Key;
+            : _blame.OrderByDescending(b => b.Value).First().Key;
         Report(now, BodyEvent.Died);
     }
 
