@@ -32,7 +32,12 @@ public static class GameData
     private static readonly Lazy<GenerationRules> _generations =
         new(() => Load<GenerationRules>("generations.json"));
 
+    private static readonly Lazy<MovementRules> _movement =
+        new(() => Load<MovementRules>("movement.json"));
+
     public static IReadOnlyList<Archetype> Archetypes => _archetypes.Value;
+
+    public static MovementRules Movement => _movement.Value;
 
     public static BodyRules Body => _body.Value;
 

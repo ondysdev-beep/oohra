@@ -4,7 +4,7 @@ obj/
 *.user
 .vs/
 TestResults/
-# Unity (až bude složka unity/)
+# Unity
 unity/[Ll]ibrary/
 unity/[Tt]emp/
 unity/[Oo]bj/
@@ -14,6 +14,9 @@ unity/[Ll]ogs/
 unity/[Uu]ser[Ss]ettings/
 unity/*.csproj
 unity/*.sln
+unity/*.slnx
+unity/.vs/
+unity/.vscode/
 # Systém
 .DS_Store
 Thumbs.db
