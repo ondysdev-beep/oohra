@@ -16,7 +16,7 @@ server/      C# řešení (Oohra.sln)
   Oohra.Core.Tests/      xUnit testy, golden/ obsahuje data z prototypu
   Oohra.TestClient/      konzolový klient (textová mapa a příkazy)
   (později Oohra.Server, Oohra.Protocol)
-unity/       klient (Fáze B)
+unity/       klient v Unity (Fáze B, šedá krabice)
 ```
 
 ## Rozhodnutí (z dotazníků)
@@ -34,6 +34,15 @@ unity/       klient (Fáze B)
 - Pozor na rozdíly JavaScriptu a C#: `Math.imul` je násobení `int` s přetečením (v C# `unchecked`), `>>>` je posun u `uint`, `|0` je přetypování na `int`, čísla v JS jsou `double`. Pořadí průchodu `Map` v JS je pořadí vkládání.
 - Každé pravidlo hry má test. Test z prototypu: golden data v `server/Oohra.Core.Tests/golden/golden_world.json` (seedy 1, 12345 a 987654321).
 - Malé, čitelné metody. Žádná předčasná obecnost.
+
+## Unity (Fáze B)
+- Unity 6000.6.5f1, projekt `unity/` (URP, nový Input System). Scéna hry `Assets/Scenes/Ostrov.unity`, spouští ji objekt `Hra` se skriptem `IslandBootstrap`.
+- Unity umí jen .NET Standard 2.1 a C# 9. Skripty v `unity/Assets` piš bez novějšího C# (žádné `namespace X;`, `required`, `[..]` kolekce, `record struct`).
+- `Oohra.Core` se překládá i pro `netstandard2.1` a po `dotnet build` se sám zkopíruje do `unity/Assets/Plugins/Oohra/Oohra.Core.dll` (DLL je v gitu). Po změně Core vždy sestav a DLL commitni.
+- JSON čte Newtonsoft.Json (v Unity balíček `com.unity.nuget.newtonsoft-json`). `System.Text.Json` a API novější než .NET Standard 2.1 (např. `MaxBy`, `Math.Tau`) v Core nepoužívej.
+- Pravidla (pohyb, kolize, tělo) patří do Core, Unity jen zobrazuje a čte vstup. Ve Fázi B běží Core v Unity celé i se skrytými daty (jen jeden hráč). Od Fáze C dostane klient jen to, co smí vidět.
+- Ověření Unity bez okna (`U="/c/Program Files/Unity/Hub/Editor/6000.6.5f1/Editor/Unity.exe"`):
+  `"$U" -batchmode -projectPath unity -runTests -testPlatform EditMode -testResults <soubor.xml> -logFile <log>` (stejně `PlayMode`). PlayMode test uloží snímek hry do `unity/Logs/ostrov.png`.
 
 ## Pracovní postup
 - Každý úkol na vlastní větvi `feature/...`, na konci commit a push větve. Potom Claude větev sloučí do `main` (`git merge --no-ff`), na `main` ověří `dotnet build` a `dotnet test` a pushne `main`. Příkazy `git checkout main`, `git merge --no-ff ...` a `git push origin main` spouštěj každý zvlášť (tak jsou povolené v `.claude/settings.local.json`). Přímé commity do `main` se nedělají.
