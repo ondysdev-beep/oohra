@@ -40,6 +40,7 @@ public sealed class GameServer : IDisposable
     private int _sentFiresVersion;
     private int _sentStructuresVersion;
     private int _sentSignsVersion;
+    private int _sentRocksVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
     private string _stockSpoilage = string.Empty;
@@ -131,6 +132,13 @@ public sealed class GameServer : IDisposable
         {
             _sentFiresVersion = Fires.Version;
             Broadcast(w => Messages.WriteFires(w, FireViews()));
+        }
+
+        Island.Rocks.Regrow(Clock.TotalMinutes);
+        if (Island.Rocks.Version != _sentRocksVersion)
+        {
+            _sentRocksVersion = Island.Rocks.Version;
+            Broadcast(w => Messages.WriteRockPiles(w, RockPileViews()));
         }
 
         Island.Signs.Weather(Clock.TotalMinutes);
@@ -239,6 +247,7 @@ public sealed class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
         SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
         SendTo(peer, w => Messages.WriteDecorationTypes(w, DecorationTypeViews()));
+        SendTo(peer, w => Messages.WriteRockPiles(w, RockPileViews()));
         player.SentTribeVersion = -1;
         player.SentStockKey = string.Empty;
         player.SentVocabularyVersion = -1;
@@ -504,7 +513,7 @@ public sealed class GameServer : IDisposable
 
         var result = type == MessageType.GatherSticks
             ? Materials.GatherSticks(Island, tile.TileX, tile.TileY, Clock, player.Inventory, _rng, player.X, player.Y)
-            : Materials.TakeStone(Island, tile.TileX, tile.TileY, player.Inventory, player.X, player.Y);
+            : Materials.TakeStone(Island, tile.TileX, tile.TileY, player.Inventory, player.X, player.Y, Clock.TotalMinutes);
         SendEvent(player, new GameEvent(EventKind.Material, (byte)result, default, []));
         if (result is MaterialResult.GotSticks or MaterialResult.GotStone)
         {
@@ -976,6 +985,11 @@ public sealed class GameServer : IDisposable
     private StructureView[] StructureViews()
     {
         return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId, s.DecorationId)).ToArray();
+    }
+
+    private RockPileView[] RockPileViews()
+    {
+        return Island.Rocks.All.Select(p => new RockPileView(p.TileIndex, p.Stones, p.MaxStones)).ToArray();
     }
 
     private static DecorationTypeView[] DecorationTypeViews()

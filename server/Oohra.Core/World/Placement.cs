@@ -47,10 +47,11 @@ public static class Placement
         return true;
     }
 
-    /// <summary>Úsečka (nebo bod, když jsou konce stejné) je dál než clearance od každého kmene stromu.</summary>
+    /// <summary>Úsečka (nebo bod, když jsou konce stejné) je dál než clearance od každého kmene stromu a hromady kamenů.</summary>
     public static bool ClearOfTrunks(Island island, double x1, double y1, double x2, double y2, double clearance)
     {
         var reach = clearance + GameData.Movement.TreeTrunkRadius;
+        var rockReach = clearance + GameData.Rocks.Radius;
         var minX = (int)Math.Floor(Math.Min(x1, x2) - reach) - 1;
         var maxX = (int)Math.Floor(Math.Max(x1, x2) + reach) + 1;
         var minY = (int)Math.Floor(Math.Min(y1, y2) - reach) - 1;
@@ -61,6 +62,13 @@ public static class Placement
             {
                 if (island.InBounds(tx, ty) && island.HasTree(island.Index(tx, ty))
                     && Geometry.DistanceToSegment(tx + 0.5, ty + 0.5, x1, y1, x2, y2) < reach)
+                {
+                    return false;
+                }
+
+                // Hromada kamenů (dokud v ní něco je) překáží stejně jako kmen.
+                if (island.InBounds(tx, ty) && island.Rocks.At(island.Index(tx, ty)) is { Stones: > 0 }
+                    && Geometry.DistanceToSegment(tx + 0.5, ty + 0.5, x1, y1, x2, y2) < rockReach)
                 {
                     return false;
                 }

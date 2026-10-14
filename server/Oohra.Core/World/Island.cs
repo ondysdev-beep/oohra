@@ -48,6 +48,7 @@ public sealed class Island
         Species = species;
         SpeciesSecrets = speciesSecrets;
         _treeTiles = trees.Select(t => t.TileIndex).ToHashSet();
+        Rocks = new RockPiles(this);
     }
 
     public int Seed { get; }
@@ -79,6 +80,9 @@ public sealed class Island
 
     /// <summary>Stavby hráčů (zdi). Na rozdíl od zbytku ostrova se mění během hry.</summary>
     public Structures Structures { get; } = new();
+
+    /// <summary>Hromady kamenů na skalách (berou se z nich kameny, prázdné se za čas obnoví).</summary>
+    public RockPiles Rocks { get; }
 
     /// <summary>Značky a rytiny hráčů a staré rytiny u ruin (ty přidá server při startu, AddAncient).</summary>
     public Signs Signs { get; } = new();

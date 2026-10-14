@@ -75,6 +75,11 @@ public static class GameData
 
     public static TribeRules Tribes => _tribes.Value;
 
+    private static readonly Lazy<RockRules> _rocks =
+        new(() => Load<RockRules>("rocks.json"));
+
+    public static RockRules Rocks => _rocks.Value;
+
     private static readonly Lazy<IReadOnlyList<DecorationType>> _decorations =
         new(() => Load<List<DecorationType>>("decorations.json"));
 

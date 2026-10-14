@@ -1,0 +1,13 @@
+// Hromady kamenů na skalách (skály). Kámen se bere po jednom, prázdná hromada zmizí a za čas se obnoví.
+{
+  // Na jakém podílu skalních dlaždic leží hromada (podle seedu, pořád stejně).
+  "pileChance": 0.45,
+  // Kolik kamenů v hromadě je (nejméně a nejvíc).
+  "minStones": 3,
+  "maxStones": 6,
+  // Poloměr hromady v metrech: přes hromadu se nedá projít (jako přes kmen stromu).
+  "radius": 0.45,
+  // Za kolik herních dní se vybraná hromada obnoví (skála se rozpadá na nové kameny).
+  "regrowDays": 3,
+  "seedSalt": 7331
+}

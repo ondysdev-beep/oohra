@@ -16,9 +16,9 @@ public class FireServerTests
         var client = net.Join("Ondra");
         var player = net.Server.FindPlayer("Ondra")!;
         var island = net.Server.Island;
-        var rock = Array.FindIndex(island.Tiles, t => t == TileType.Rock);
+        var rock = island.Rocks.All.First().TileIndex;
         var (x, y) = (rock % island.Width, rock / island.Width);
-        player.X = x + 0.5;
+        player.X = x + 1.2;
         player.Y = y + 0.5;
 
         client.TakeStone(x, y);
@@ -26,6 +26,9 @@ public class FireServerTests
         Assert.True(net.Pump(() => client.Inventory.Stacks.Length == 1));
         Assert.Equal(ItemKind.Stone, client.Inventory.Stacks[0].Kind);
         Assert.Contains(client.TakeEvents(), e => e.Kind == EventKind.Material && e.Code == (byte)MaterialResult.GotStone);
+
+        // Hromada se zmenšila a klient to ví (kreslí o kámen méně).
+        Assert.True(net.Pump(() => client.RockPiles.Any(p => p.TileIndex == rock && p.Stones == p.MaxStones - 1)));
     }
 
     [Fact]
