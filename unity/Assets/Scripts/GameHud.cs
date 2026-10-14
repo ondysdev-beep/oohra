@@ -72,6 +72,12 @@ namespace Oohra.Client
                 _session.Menu = null;
                 _session.Selected = null;
             }
+
+            if (!_session.BackpackOpen)
+            {
+                // Zavřený batoh ukončí dávání cizinci.
+                _session.GiveTo = -1;
+            }
         }
 
         private void OnGUI()
@@ -343,6 +349,11 @@ namespace Oohra.Client
                     if (Button(ref buttonRect, "Utrhnout list")) _session.Harvest(PlantPart.Leaf);
                     if (HasFruit(target.PlantId) && Button(ref buttonRect, "Utrhnout plod")) _session.Harvest(PlantPart.Fruit);
                     if (_session.Menu != null && Button(ref buttonRect, "Vykopat kořen")) _session.Harvest(PlantPart.Root);
+                    if (_session.Menu != null && _session.NearestStranger(StrangerViews.AskDistance).HasValue && Button(ref buttonRect, "Ukázat cizinci"))
+                    {
+                        _session.ShowPlantToStranger();
+                    }
+
                     break;
                 case TargetKind.Water:
                     var tile = _session.Connection.World.TileAt(target.TileX, target.TileY);
@@ -378,6 +389,9 @@ namespace Oohra.Client
                     break;
                 case TargetKind.Player:
                     DrawPlayerMenu(target, titleRect, ref buttonRect);
+                    break;
+                case TargetKind.Stranger:
+                    DrawStrangerMenu(target, titleRect, ref buttonRect);
                     break;
             }
 
@@ -437,6 +451,27 @@ namespace Oohra.Client
 
             buttonRect.width = 120;
             if (Button(ref buttonRect, "Nahlásit")) _session.AskReport(ReportTarget.Player, target.Id, "hráče " + info.Nickname);
+        }
+
+        /// <summary>
+        /// U cizince: dát mu věc z batohu. Mluvit s ním jde slovy (T) a gesty (V), rostlinu mu jde ukázat v její nabídce.
+        /// Jméno cizinci nemají, jen barvu kmene.
+        /// </summary>
+        private void DrawStrangerMenu(InteractionTarget target, Rect titleRect, ref Rect buttonRect)
+        {
+            var stranger = _session.StrangerOf(target.Id);
+            if (!stranger.HasValue)
+            {
+                _session.Menu = null;
+                _session.Selected = null;
+                return;
+            }
+
+            GUI.Label(titleRect, "CIZINEC", _title);
+            DrawBar(new Rect(titleRect.x + 80, titleRect.y + 3, 14, 14), 1f, StrangerViews.TribeColor(stranger.Value.Tribe));
+            GUI.Label(new Rect(titleRect.x + 100, titleRect.y, 300, 20), "Mluví jinak než ty. Zkus slova a gesta (T, V).", _label);
+            buttonRect.width = 140;
+            if (Button(ref buttonRect, "Dát věc")) _session.StartGiving();
         }
 
         /// <summary>U zvířete: živé udeřit (pěstí nebo kopím, i mezerníkem), z mrtvého stáhnout maso.</summary>
@@ -512,8 +547,8 @@ namespace Oohra.Client
 
             var x = _backpackRect.x + 14;
             var y = _backpackRect.y + 10;
-            GUI.Label(new Rect(x, y, 300, 24), "BATOH", _title);
-            GUI.Label(new Rect(x + 90, y + 2, 300, 22), $"{inventory.Stacks.Length} z {inventory.Capacity} míst", _label);
+            GUI.Label(new Rect(x, y, 300, 24), _session.GiveTo >= 0 ? "CO DÁT CIZINCI?" : "BATOH", _title);
+            GUI.Label(new Rect(x + (_session.GiveTo >= 0 ? 190 : 90), y + 2, 300, 22), $"{inventory.Stacks.Length} z {inventory.Capacity} míst", _label);
             if (GUI.Button(new Rect(_backpackRect.xMax - 94, y, 80, 26), "Zavřít"))
             {
                 _session.BackpackOpen = false;
@@ -541,6 +576,19 @@ namespace Oohra.Client
                 GUI.Label(new Rect(x + 26, y + 6, 240, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
 
                 var buttons = new Rect(x + 270, y + 2, 84, 26);
+                if (_session.GiveTo >= 0)
+                {
+                    // Dávání cizinci: u každé věci jen „Dát“.
+                    if (Button(ref buttons, "Dát"))
+                    {
+                        _session.Give(i);
+                        _session.BackpackOpen = false;
+                    }
+
+                    y += rowHeight;
+                    continue;
+                }
+
                 var canBake = food && stack.Cooking == Cooking.Raw && connection.Self.NearFire;
                 if (food && Button(ref buttons, "Ochutnat")) connection.Taste(i);
                 if (food && Button(ref buttons, "Sníst")) connection.Eat(i);

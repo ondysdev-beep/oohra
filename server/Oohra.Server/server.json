@@ -18,6 +18,8 @@
   // Zvířata na ostrově a do jaké vzdálenosti (metry) hráč dostává jejich polohy.
   "animals": true,
   "animalViewDistance": 40,
+  // Cizí kmeny (NPC) ve dvou táborech: mluví svým jazykem, odpovídají na slova a gesta, darují jídlo.
+  "strangers": true,
   // Tlačítko Nahlásit: nahlášení se zapisují sem (jeden záznam na řádek), nejvýš jedno za reportCooldownSeconds.
   "reportsFile": "reports.jsonl",
   "reportCooldownSeconds": 30,

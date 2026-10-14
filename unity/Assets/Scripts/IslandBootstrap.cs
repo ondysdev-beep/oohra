@@ -168,7 +168,11 @@ namespace Oohra.Client
             gameObject.AddComponent<BuildMode>().Init(_session, camera);
             new GameObject("Kruh výběru").AddComponent<SelectionRing>().Init(_session);
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);
-            gameObject.AddComponent<SpeechHud>().Init(_session, _players, camera);
+            var strangers = new GameObject("Cizinci").AddComponent<StrangerViews>();
+            strangers.Init(_connection);
+            var speech = gameObject.AddComponent<SpeechHud>();
+            speech.Init(_session, _players, camera);
+            speech.ShowStrangers(strangers);
             gameObject.AddComponent<SignHud>().Init(_session);
             gameObject.AddComponent<TribeHud>().Init(_session);
             gameObject.AddComponent<CorpseHud>().Init(_session);

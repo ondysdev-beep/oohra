@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Oohra.Core.Items;
+using Oohra.Core.Language;
 using Oohra.Core.Plants;
 using Oohra.Core.Social;
 using Oohra.Core.World;
@@ -223,6 +224,15 @@ namespace Oohra.Client
                 }
             }
 
+            if (target.Kind == TargetKind.Stranger)
+            {
+                var stranger = StrangerOf(target.Id);
+                if (stranger.HasValue)
+                {
+                    return new Vector2(stranger.Value.X, stranger.Value.Y);
+                }
+            }
+
             if (target.Kind == TargetKind.Player && Connection.Snapshot != null)
             {
                 foreach (var player in Connection.Snapshot.Players)
@@ -399,6 +409,77 @@ namespace Oohra.Client
             }
 
             return Connection.Stockpiles.FirstOrDefault(s => s.StructureId == structure.Value.Id);
+        }
+
+        /// <summary>Cizinec podle čísla, nebo null (je daleko a server ho neposílá).</summary>
+        public StrangerView? StrangerOf(int strangerId)
+        {
+            foreach (var stranger in Connection.Strangers)
+            {
+                if (stranger.Id == strangerId)
+                {
+                    return stranger;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Nejbližší cizinec k hráči do maxDistance (metry), nebo null.</summary>
+        public StrangerView? NearestStranger(float maxDistance)
+        {
+            var self = Connection.SelfSnapshot();
+            if (!self.HasValue)
+            {
+                return null;
+            }
+
+            StrangerView? best = null;
+            var bestDistance = maxDistance;
+            foreach (var stranger in Connection.Strangers)
+            {
+                var distance = Vector2.Distance(new Vector2(stranger.X, stranger.Y), new Vector2(self.Value.X, self.Value.Y));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = stranger;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>Komu hráč dává věc z batohu (číslo cizince), nebo -1. Batoh pak u věcí ukazuje „Dát“.</summary>
+        public int GiveTo { get; set; } = -1;
+
+        /// <summary>Otevře batoh, aby hráč vybral, co dát cizinci v nabídce.</summary>
+        public void StartGiving()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Stranger)
+            {
+                GiveTo = Menu.Id;
+                BackpackOpen = true;
+            }
+        }
+
+        /// <summary>Dá cizinci jednu věc z hromádky a ukončí dávání.</summary>
+        public void Give(int stackIndex)
+        {
+            if (GiveTo >= 0)
+            {
+                Connection.GiveToStranger(GiveTo, stackIndex);
+            }
+
+            GiveTo = -1;
+        }
+
+        /// <summary>Ukázat cizinci rostlinu v nabídce (gesto ukázat). Cizinec řekne, jestli se jí.</summary>
+        public void ShowPlantToStranger()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Plant)
+            {
+                Connection.MakeGesture(Gesture.Point, (float)Menu.X, (float)Menu.Y);
+            }
         }
 
         /// <summary>Pozvat hráče v nabídce do kmene.</summary>
