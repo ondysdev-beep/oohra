@@ -76,6 +76,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Zásoby kmene, do kterých smím (moje a mého kmene).</summary>
     public StockpileView[] Stockpiles { get; private set; } = [];
 
+    /// <summary>Dekorace, které jde postavit (ze serveru).</summary>
+    public DecorationTypeView[] DecorationTypes { get; private set; } = [];
+
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
     public void Connect(string host, int port, string inviteCode, string nickname)
@@ -196,9 +199,9 @@ public sealed class GameConnection : IDisposable
     }
 
     /// <summary>Režim stavby: postavit stavbu se středem (x, y), úhlem v radiánech a délkou zdi v metrech.</summary>
-    public void Place(BuildKind kind, float x, float y, float angle, float length = 1f)
+    public void Place(BuildKind kind, float x, float y, float angle, float length = 1f, string decoration = "")
     {
-        Send(w => Messages.WritePlace(w, kind, x, y, angle, length));
+        Send(w => Messages.WritePlace(w, kind, x, y, angle, length, decoration));
     }
 
     /// <summary>Rozebrat stavbu (u zdi se vrátí klacek).</summary>
@@ -411,6 +414,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Stockpiles:
                 Stockpiles = Messages.ReadStockpiles(reader);
+                break;
+            case MessageType.DecorationTypes:
+                DecorationTypes = Messages.ReadDecorationTypes(reader);
                 break;
         }
     }

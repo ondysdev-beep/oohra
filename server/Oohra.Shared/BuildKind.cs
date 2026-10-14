@@ -23,5 +23,8 @@ namespace Oohra.Core.World
 
         /// <summary>Zásoby kmene: koš z klacků. Ukládat a brát smí jen majitel a jeho kmen. Pohyb neblokuje.</summary>
         Stockpile = 5,
+
+        /// <summary>Dekorace ze seznamu v decorations.json (lavice, totem…). Která to je, říká DecorationId.</summary>
+        Decoration = 6,
     }
 }

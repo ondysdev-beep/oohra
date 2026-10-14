@@ -15,9 +15,10 @@ public readonly record struct Segment(double X1, double Y1, double X2, double Y2
 /// </summary>
 public sealed class Structure
 {
-    public Structure(int id, BuildKind kind, double x, double y, double angle, double length, int frameId = 0, int ownerId = -1)
+    public Structure(int id, BuildKind kind, double x, double y, double angle, double length, int frameId = 0, int ownerId = -1, string? decorationId = null)
     {
         OwnerId = ownerId;
+        DecorationId = decorationId ?? string.Empty;
         Store = kind == BuildKind.Stockpile ? new Inventory(GameData.Building.Stockpile.Capacity) : null;
         Id = id;
         Kind = kind;
@@ -31,6 +32,9 @@ public sealed class Structure
     public int Id { get; }
 
     public BuildKind Kind { get; }
+
+    /// <summary>Dekorace: který druh z decorations.json (id). U ostatních staveb prázdné.</summary>
+    public string DecorationId { get; }
 
     public double X { get; }
 
@@ -160,9 +164,9 @@ public sealed class Structures
     /// Postaví stavbu bez materiálu a kontrol (pro testy a později pro načtení uloženého světa).
     /// length 0 = plná délka zdi.
     /// </summary>
-    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0, double length = 0, int ownerId = -1)
+    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0, double length = 0, int ownerId = -1, string? decorationId = null)
     {
-        var structure = new Structure(_nextId++, kind, x, y, angle, length > 0 ? length : GameData.Building.Wall.Length, frameId, ownerId);
+        var structure = new Structure(_nextId++, kind, x, y, angle, length > 0 ? length : GameData.Building.Wall.Length, frameId, ownerId, decorationId);
         _byId[structure.Id] = structure;
         foreach (var tile in TilesOf(structure))
         {
@@ -190,8 +194,13 @@ public sealed class Structures
     public BuildResult Build(
         Island island, Fires fires, Inventory inventory, double playerX, double playerY,
         BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder = null,
-        int ownerId = -1)
+        int ownerId = -1, string? decorationId = null)
     {
+        if (kind == BuildKind.Decoration)
+        {
+            return BuildDecoration(island, fires, inventory, playerX, playerY, x, y, angle, players, builder, ownerId, decorationId);
+        }
+
         var rules = GameData.Building.Wall;
         length = kind == BuildKind.StickWall ? length : rules.Length;
         if (inventory.Count(ItemKind.Stick) < SticksCost(kind, length, builder))
@@ -241,6 +250,43 @@ public sealed class Structures
         inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
         Place(kind, x, y, angle, length: length, ownerId: ownerId);
         builder?.Practice(SkillKind.Build, kind == BuildKind.DoorFrame ? GameData.Skills.Practice.DoorFrame : GameData.Skills.Practice.Wall);
+        return BuildResult.Built;
+    }
+
+    /// <summary>
+    /// Dekorace z decorations.json: stojí klacky a kameny podle seznamu, zabere kruh o svém poloměru
+    /// (suchá zem, ne kmen, zeď, oheň ani jiná bodová stavba). Když se přes ni nedá projít, nesmí stát na hráči.
+    /// </summary>
+    private BuildResult BuildDecoration(
+        Island island, Fires fires, Inventory inventory, double playerX, double playerY,
+        double x, double y, double angle, IEnumerable<Position> players, Character? builder, int ownerId, string? decorationId)
+    {
+        var decoration = GameData.Decoration(decorationId);
+        if (decoration is null)
+        {
+            return BuildResult.CannotBuildHere;
+        }
+
+        if (inventory.Count(ItemKind.Stick) < decoration.Sticks || inventory.Count(ItemKind.Stone) < decoration.Stones)
+        {
+            return BuildResult.NeedMaterials;
+        }
+
+        if (!Placement.InReach(playerX, playerY, x, y))
+        {
+            return BuildResult.TooFar;
+        }
+
+        var onPlayer = decoration.Blocks && players.Any(p => Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y)) < decoration.Radius + GameData.Movement.Radius);
+        if (onPlayer || !PointFits(island, fires, x, y, decoration.Radius))
+        {
+            return BuildResult.CannotBuildHere;
+        }
+
+        inventory.TryRemove(ItemKind.Stick, decoration.Sticks);
+        inventory.TryRemove(ItemKind.Stone, decoration.Stones);
+        Place(BuildKind.Decoration, x, y, angle, length: 0.01, ownerId: ownerId, decorationId: decoration.Id);
+        builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
         return BuildResult.Built;
     }
 
@@ -360,6 +406,13 @@ public sealed class Structures
         var reach = radius + GameData.Building.Wall.Thickness / 2;
         foreach (var structure in Near(x, y, reach))
         {
+            // Dekorace, přes kterou se nedá projít, je kruh.
+            if (GameData.Decoration(structure.DecorationId) is { Blocks: true } decoration
+                && Math.Sqrt((structure.X - x) * (structure.X - x) + (structure.Y - y) * (structure.Y - y)) < radius + decoration.Radius)
+            {
+                return true;
+            }
+
             foreach (var s in structure.CollisionSegments())
             {
                 if (Geometry.DistanceToSegment(x, y, s.X1, s.Y1, s.X2, s.Y2) < reach)
@@ -413,6 +466,7 @@ public sealed class Structures
             case BuildKind.Door: return rules.Door.SticksCost;
             case BuildKind.Trap: return rules.Trap.SticksCost;
             case BuildKind.Stockpile: return rules.Stockpile.SticksCost;
+            case BuildKind.Decoration: return 0;
         }
 
         if (length <= rules.Wall.ShortMaxLength + 1e-6)
@@ -436,6 +490,7 @@ public sealed class Structures
             case BuildKind.Door: return rules.Door.SticksBack;
             case BuildKind.Trap: return rules.Trap.SticksBack;
             case BuildKind.Stockpile: return rules.Stockpile.SticksBack;
+            case BuildKind.Decoration: return (GameData.Decoration(structure.DecorationId)?.Sticks ?? 0) / 2;
             default: return SticksCost(structure.Kind, structure.Length) / 2;
         }
     }
@@ -498,7 +553,19 @@ public sealed class Structures
             && Placement.ClearOfTrunks(island, x, y, x, y, footprint)
             && !Blocks(x, y, footprint)
             && !fires.All.Any(f => Math.Sqrt((f.X - x) * (f.X - x) + (f.Y - y) * (f.Y - y)) < 2 * footprint)
-            && !Near(x, y, 2 * footprint).Any(s => s.Kind is BuildKind.Trap or BuildKind.Stockpile && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < 2 * footprint);
+            && !Near(x, y, footprint).Any(s => RadiusOf(s) > 0 && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < footprint + RadiusOf(s));
+    }
+
+    /// <summary>Poloměr bodové stavby (past, zásoby, dekorace), u zdí a dveří 0.</summary>
+    public static double RadiusOf(Structure structure)
+    {
+        switch (structure.Kind)
+        {
+            case BuildKind.Trap: return GameData.Building.Trap.FootprintRadius;
+            case BuildKind.Stockpile: return GameData.Building.Stockpile.FootprintRadius;
+            case BuildKind.Decoration: return GameData.Decoration(structure.DecorationId)?.Radius ?? 0;
+            default: return 0;
+        }
     }
 
     /// <summary>Nejbližší zeď s otvorem bez dveří, jejíž střed je do snapDistance od bodu.</summary>
@@ -527,6 +594,11 @@ public sealed class Structures
         {
             inventory.TryAdd(Item.Stick);
         }
+
+        for (var i = 0; i < (GameData.Decoration(structure.DecorationId)?.Stones ?? 0) / 2; i++)
+        {
+            inventory.TryAdd(Item.Stone);
+        }
     }
 
     private bool WallFits(Island island, Fires fires, double x, double y, double angle, double length, IEnumerable<Position> players)
@@ -552,7 +624,7 @@ public sealed class Structures
     private static IEnumerable<(int X, int Y)> TilesOf(Structure structure)
     {
         var (x1, y1, x2, y2) = structure.Ends;
-        var margin = GameData.Building.Wall.Thickness / 2;
+        var margin = Math.Max(GameData.Building.Wall.Thickness / 2, RadiusOf(structure));
         for (var ty = (int)Math.Floor(Math.Min(y1, y2) - margin); ty <= (int)Math.Floor(Math.Max(y1, y2) + margin); ty++)
         {
             for (var tx = (int)Math.Floor(Math.Min(x1, x2) - margin); tx <= (int)Math.Floor(Math.Max(x1, x2) + margin); tx++)

@@ -75,6 +75,17 @@ public static class GameData
 
     public static TribeRules Tribes => _tribes.Value;
 
+    private static readonly Lazy<IReadOnlyList<DecorationType>> _decorations =
+        new(() => Load<List<DecorationType>>("decorations.json"));
+
+    /// <summary>Dekorace pro režim stavby (pořadí jako v souboru).</summary>
+    public static IReadOnlyList<DecorationType> Decorations => _decorations.Value;
+
+    public static DecorationType? Decoration(string? id)
+    {
+        return Decorations.FirstOrDefault(d => d.Id == id);
+    }
+
     public static GatheringRules Gathering => _gathering.Value;
 
     public static MovementRules Movement => _movement.Value;
