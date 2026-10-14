@@ -85,6 +85,17 @@ namespace Oohra.Client
         [Tooltip("Jak rychle se vlnky posouvají (metry za sekundu).")]
         public float WaveSpeed = 0.08f;
 
+        [Header("Postava hráče (nohy dole v počátku, výška 1,8 m, obličej ve směru osy Z)")]
+        [Tooltip("Animator může mít parametry Rychlost (Float, m/s), Spi (Bool) a Mrtvy (Bool). Části se SpeciesTint dostanou barvu generace.")]
+        public GameObject Player;
+
+        [Header("Oheň")]
+        [Tooltip("Ohniště (kameny, polena), průměr asi 0,7 m, střed dole uprostřed. Použije se i u táborů.")]
+        public GameObject Campfire;
+
+        [Tooltip("Plamen, třeba částicový systém. Ukáže se jen, když oheň hoří. Světlo přidá hra.")]
+        public GameObject Flame;
+
         [Header("Zvířata (nohy dole v počátku, hlava ve směru osy Z)")]
         public GameObject Boar;
         public GameObject Rabbit;
@@ -132,7 +143,7 @@ namespace Oohra.Client
             return Plants != null && shape >= 0 && shape < Plants.Length ? Plants[shape] : null;
         }
 
-        /// <summary>Stavba podle druhu, nebo null (oheň kreslí FireViews).</summary>
+        /// <summary>Stavba podle druhu (ohniště jen pro náhled v režimu stavby, postavený oheň kreslí FireViews), nebo null.</summary>
         public GameObject Structure(BuildKind kind)
         {
             switch (kind)
@@ -142,6 +153,7 @@ namespace Oohra.Client
                 case BuildKind.Door: return Door;
                 case BuildKind.Trap: return Trap;
                 case BuildKind.Stockpile: return Stockpile;
+                case BuildKind.Campfire: return Campfire;
                 default: return null;
             }
         }

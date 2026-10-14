@@ -5,7 +5,7 @@ Hra umí místo jednoduchých tvarů (kostky, válce, koule) použít tvoje mode
 modely můžeš přidávat postupně, jeden po druhém.
 
 Zatím jde vyměnit: **stromy, rostliny, zeď, zeď s otvorem, dveře, past, koš se zásobami, dekorace, zvířata,
-textury zemi, kameny na skalách a vodu.** Oheň a postava hráče přijdou v dalších krocích.
+textury zemi, kameny na skalách, vodu, postavu hráče a oheň.**
 
 ## Kde je katalog
 
@@ -86,6 +86,30 @@ ze serveru jako celé číslo v parametru **`Stav`** (typ Int). V Animatoru udě
 
 Bez Animatoru se model jen posouvá a otáčí.
 
+## Postava hráče
+
+Políčko **Player**. Model: nohy dole v počátku, výška 1,8 m, obličej ve směru osy Z. Na serveru je
+postava kruh o poloměru 28 cm, takže model by neměl být o moc širší.
+
+- **Barva generace:** části s komponentou **SpeciesTint** dostanou barvu generace (Pradávní tmavší,
+  Noví světlejší). Hodí se třeba na oblečení. Bez SpeciesTint zůstane model, jak je.
+- **Animace:** když má model Animator, hra do něj posílá tyto parametry (stačí ty, které chceš použít):
+
+| Parametr | Typ | Co znamená |
+|---|---|---|
+| `Rychlost` | Float | jak rychle postava jde (m/s): 0 stojí, asi 2 až 3 jde |
+| `Spi` | Bool | postava spí |
+| `Mrtvy` | Bool | postava je mrtvá |
+
+- Když model nemá parametr `Spi` (nebo `Mrtvy`), hra ho při spánku (nebo smrti) prostě položí na zem.
+
+## Oheň
+
+| Políčko | Co to je |
+|---|---|
+| **Campfire** | ohniště (kameny kolem, polena), průměr asi 0,7 m, střed dole uprostřed. Použije se u ohňů hráčů, u táborů kmenů i jako náhled v režimu stavby. |
+| **Flame** | plamen. Ukáže se jen, když oheň hoří. Hodí se částicový systém (Particle System) s materiálem, který svítí sám. Oranžové mihotavé světlo přidá hra. |
+
 ## Dekorace (lavice, totem, cokoli dalšího)
 
 Dekorace jsou v seznamu **`server/Oohra.Core/Data/decorations.json`**. Novou dekoraci přidáš takto:
@@ -161,5 +185,4 @@ kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůh
 
 ## Co přijde dál
 
-1. Postava hráče a oheň v katalogu.
-2. Měkčí pobřeží (teď je schodovité podle čtvercových dlaždic) a pěna u břehu.
+1. Měkčí pobřeží (teď je schodovité podle čtvercových dlaždic) a pěna u břehu.

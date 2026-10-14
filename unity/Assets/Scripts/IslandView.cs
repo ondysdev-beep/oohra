@@ -142,9 +142,7 @@ namespace Oohra.Client
             for (var i = 0; i < world.Camps.Length; i++)
             {
                 var camp = world.Camps[i];
-                var hearth = Primitive(PrimitiveType.Cylinder, "Tábor kmene " + (i + 1), parent, Palette.Hex("#3a2e24"));
-                hearth.transform.position = WorldCoords.ToUnity(camp.X + 0.5, camp.Y + 0.5, 0.05f);
-                hearth.transform.localScale = new Vector3(0.9f, 0.05f, 0.9f);
+                FireViews.CreateHearth(parent, camp.X + 0.5, camp.Y + 0.5, "Tábor kmene " + (i + 1), Palette.Hex("#3a2e24"));
             }
 
             // Plameny a světla táborů přidá FireViews.

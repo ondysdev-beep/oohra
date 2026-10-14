@@ -51,6 +51,15 @@ namespace Oohra.Client.Tests
             Assert.AreEqual("Strom", trees.GetChild(0).name);
             Assert.IsNotNull(GameObject.Find("Rostlina 0").transform.Find("Listy"));
 
+            // Postava a ohně táborů z katalogu.
+            yield return WaitFor(() => GameObject.Find("Postava") != null, 5f, "Postava se neobjevila.");
+            Assert.IsNotNull(GameObject.Find("Postava").transform.Find("Model"));
+            if (world.Camps.Length > 0)
+            {
+                Assert.IsNotNull(GameObject.Find("Tábor kmene 1").transform.Find("Kámen ohniště"));
+                Assert.IsNotNull(GameObject.Find("Model plamene"));
+            }
+
             var buildMode = Object.FindAnyObjectByType<BuildMode>();
             buildMode.Open(Oohra.Core.World.BuildKind.StickWall);
             yield return PlaceAround(session, buildMode, () => session.Connection.Structures.Length > 0);
@@ -89,6 +98,22 @@ namespace Oohra.Client.Tests
             catalog.Trees = new[] { tree };
             catalog.Plants = new[] { plant, plant, plant, plant };
             catalog.Wall = wall;
+
+            var player = new GameObject("Vzor postavy");
+            player.transform.SetParent(_templates.transform, false);
+            Shape(PrimitiveType.Cube, player.transform, "Tělo", new Vector3(0f, 0.6f, 0f), new Vector3(0.45f, 1.2f, 0.3f), Color.white).AddComponent<SpeciesTint>();
+            Shape(PrimitiveType.Sphere, player.transform, "Hlava", new Vector3(0f, 1.5f, 0f), Vector3.one * 0.3f, new Color(0.9f, 0.75f, 0.6f));
+            catalog.Player = player;
+
+            var hearth = new GameObject("Vzor ohniště");
+            hearth.transform.SetParent(_templates.transform, false);
+            Shape(PrimitiveType.Cube, hearth.transform, "Kámen ohniště", new Vector3(0f, 0.08f, 0f), new Vector3(0.7f, 0.16f, 0.7f), Color.gray);
+            catalog.Campfire = hearth;
+
+            var flame = new GameObject("Vzor plamene");
+            flame.transform.SetParent(_templates.transform, false);
+            Shape(PrimitiveType.Cube, flame.transform, "Jazyk plamene", new Vector3(0f, 0.3f, 0f), new Vector3(0.2f, 0.5f, 0.2f), new Color(1f, 0.6f, 0.2f));
+            catalog.Flame = flame;
             return catalog;
         }
 

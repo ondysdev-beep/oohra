@@ -8,6 +8,21 @@ namespace Oohra.Client
     /// </summary>
     public class SpeciesTint : MonoBehaviour
     {
+        /// <summary>Obarví jen části se SpeciesTint (postava: barva generace). Bez označených částí nic.</summary>
+        public static void ApplyMarked(GameObject model, Color color)
+        {
+            foreach (var marked in model.GetComponentsInChildren<SpeciesTint>())
+            {
+                var renderer = marked.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    var block = new MaterialPropertyBlock();
+                    block.SetColor("_BaseColor", color);
+                    renderer.SetPropertyBlock(block);
+                }
+            }
+        }
+
         /// <summary>Obarví model: části se SpeciesTint, a když žádné nejsou, všechny části.</summary>
         public static void Apply(GameObject model, Color color)
         {
