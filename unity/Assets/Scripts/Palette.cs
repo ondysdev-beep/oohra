@@ -25,11 +25,15 @@ namespace Oohra.Client
         /// <summary>Materiál vodní hladiny (URP/Lit průhledný, hladký, s normálovou mapou vlnek).</summary>
         public const string WaterResource = "OohraWater";
 
+        /// <summary>Materiál pěny u břehu (URP/Particles/Simple Lit: průhledný, bere barvu z vrcholů sítě, obě strany).</summary>
+        public const string FoamResource = "OohraFoam";
+
         private static Material _lit;
         private static Material _glow;
         private static Material _fade;
         private static Material _terrain;
         private static Material _water;
+        private static Material _foam;
 
         public static Material Fade
         {
@@ -50,6 +54,11 @@ namespace Oohra.Client
         public static Material Water
         {
             get { return Load(ref _water, WaterResource); }
+        }
+
+        public static Material Foam
+        {
+            get { return Load(ref _foam, FoamResource); }
         }
 
         /// <summary>Sdílený materiál URP/Unlit (plamen ohně). Barvu nastavuje SetGlow.</summary>

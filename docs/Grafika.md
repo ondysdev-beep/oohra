@@ -169,6 +169,11 @@ a pomalu se po ní posouvají vlnky.
 | **WaterNormalMap** | obrázek vlnek, normálová mapa. Po importu v Unity nastav **Texture Type: Normal map**. Prázdné = vlnky vygenerované hrou. |
 | **WaveSize** | po kolika metrech se vlnky opakují |
 | **WaveSpeed** | jak rychle se vlnky posouvají |
+| **FoamColor** | barva pěny u břehu, alfa (A) = jak je pěna hustá (0 = žádná pěna) |
+| **FoamWidth** | jak široký je pruh pěny od břehu do vody (m) |
+
+Pobřeží není schodovité podle čtverců: rohy dlaždic se zakulatí (jen vzhled, kudy se dá chodit, určuje
+server podle dlaždic). Podél břehu leží na hladině pruh pěny, který pomalu sílí a slábne.
 
 ## Zprůhledňování
 
@@ -185,4 +190,5 @@ kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůh
 
 ## Co přijde dál
 
-1. Měkčí pobřeží (teď je schodovité podle čtvercových dlaždic) a pěna u břehu.
+Všechno ze seznamu je hotové. Další nápady (až budou potřeba): animované stromy ve větru, tráva
+(drobné stébla), mraky a počasí, vlastní textury pro vodu a nebe.

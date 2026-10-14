@@ -85,6 +85,12 @@ namespace Oohra.Client
         [Tooltip("Jak rychle se vlnky posouvají (metry za sekundu).")]
         public float WaveSpeed = 0.08f;
 
+        [Tooltip("Barva pěny u břehu, alfa = jak je pěna hustá.")]
+        public Color FoamColor = new Color(0.95f, 0.97f, 1f, 0.8f);
+
+        [Tooltip("Jak široký je pruh pěny od břehu do vody (m).")]
+        public float FoamWidth = 0.45f;
+
         [Header("Postava hráče (nohy dole v počátku, výška 1,8 m, obličej ve směru osy Z)")]
         [Tooltip("Animator může mít parametry Rychlost (Float, m/s), Spi (Bool) a Mrtvy (Bool). Části se SpeciesTint dostanou barvu generace.")]
         public GameObject Player;

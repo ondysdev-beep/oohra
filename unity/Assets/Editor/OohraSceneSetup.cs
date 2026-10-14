@@ -66,6 +66,7 @@ namespace Oohra.Client.Editor
             EnsureMaterial(Palette.FadeResource, "Universal Render Pipeline/Lit", transparent: true);
             EnsureMaterial(Palette.TerrainResource, "Universal Render Pipeline/Terrain/Lit");
             EnsureMaterial(Palette.WaterResource, "Universal Render Pipeline/Lit", transparent: true, water: true);
+            EnsureMaterial(Palette.FoamResource, "Universal Render Pipeline/Particles/Simple Lit", transparent: true, foam: true);
             EnsureCatalog();
         }
 
@@ -94,7 +95,7 @@ namespace Oohra.Client.Editor
             return catalog;
         }
 
-        private static void EnsureMaterial(string resource, string shader, bool transparent = false, bool water = false)
+        private static void EnsureMaterial(string resource, string shader, bool transparent = false, bool water = false, bool foam = false)
         {
             var path = "Assets/Resources/" + resource + ".mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(path) != null)
@@ -111,6 +112,13 @@ namespace Oohra.Client.Editor
             if (transparent)
             {
                 Palette.MakeTransparent(material);
+            }
+
+            if (foam)
+            {
+                // Pěna: obě strany (na otočení sítě nezáleží), barvu a průhlednost bere i z vrcholů sítě.
+                material.SetFloat("_Cull", 0f);
+                material.SetColor("_BaseColor", Color.white);
             }
 
             if (water)
