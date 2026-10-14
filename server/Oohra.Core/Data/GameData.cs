@@ -80,6 +80,11 @@ public static class GameData
 
     public static RockRules Rocks => _rocks.Value;
 
+    private static readonly Lazy<CorpseRules> _corpses =
+        new(() => Load<CorpseRules>("corpses.json"));
+
+    public static CorpseRules Corpses => _corpses.Value;
+
     private static readonly Lazy<IReadOnlyList<DecorationType>> _decorations =
         new(() => Load<List<DecorationType>>("decorations.json"));
 
