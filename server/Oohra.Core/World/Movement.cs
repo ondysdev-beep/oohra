@@ -97,6 +97,7 @@ public static class Movement
         var m = 1.0;
         m -= Math.Clamp((c.Toxin - rules.ToxinAbove) / rules.ToxinScale, 0, rules.ToxinMaxSlowdown);
         m -= Math.Clamp((c.Fever - rules.FeverAbove) / rules.FeverScale, 0, rules.FeverMaxSlowdown);
+        m -= Math.Clamp(c.Limp / 100 * rules.LimpMaxSlowdown, 0, rules.LimpMaxSlowdown);
         if (c.Energy < rules.TiredEnergyBelow)
         {
             m -= rules.TiredSlowdown;

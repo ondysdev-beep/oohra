@@ -137,6 +137,10 @@ public static class Physiology
         c.Toxin = Math.Max(0, c.Toxin - rules.Recovery.ToxinPerMinute * minutes);
         c.Infection = Math.Max(0, c.Infection - rules.Recovery.InfectionPerMinute * minutes * c.Traits.HealMultiplier);
 
+        // Zranění od zvířat: kulhání se pomalu hojí, krvácení pomalu ustává (a ubírá zdraví, viz ApplyDamage).
+        var wounds = GameData.Animals.Wounds;
+        c.Limp = Math.Max(0, c.Limp - wounds.LimpDecayPerMinute * minutes * c.Traits.HealMultiplier);
+
         var fever = rules.Fever;
         var target = Math.Max(0, (c.Toxin - fever.ToxinAbove) * fever.ToxinFactor) + c.Infection * fever.InfectionFactor;
         c.Fever += (target - c.Fever) * Math.Min(1, fever.ApproachPerMinute * minutes);
@@ -216,6 +220,12 @@ public static class Physiology
         {
             c.TakeDamage((c.Toxin - rules.ToxinAbove) * rules.ToxinFactor * minutes, DeathCause.Toxin);
         }
+
+        if (c.Bleed > 0)
+        {
+            c.TakeDamage(c.Bleed * minutes, DeathCause.Bleeding);
+            c.Bleed = Math.Max(0, c.Bleed - GameData.Animals.Wounds.BleedDecayPerMinute * minutes);
+        }
     }
 
     private static void Heal(Character c, double minutes, RecoveryRules rules)
@@ -224,7 +234,8 @@ public static class Physiology
             && c.Hydration > rules.HealMinHydration
             && c.Fever < rules.HealMaxFever
             && c.Toxin < rules.HealMaxToxin
-            && c.Warmth > rules.HealMinWarmth;
+            && c.Warmth > rules.HealMinWarmth
+            && c.Bleed <= 0;
         if (healthy)
         {
             var sleepHeal = c.Sleeping ? GameData.Body.Sleep.HealMultiplier : 1;
@@ -277,6 +288,10 @@ public static class Physiology
                 case EffectType.Sickness:
                     c.Infection = Math.Max(c.Infection, effect.Strength);
                     c.Report(now, BodyEvent.FeltSick);
+                    break;
+                case EffectType.WoundInfection:
+                    c.Infection = Math.Max(c.Infection, effect.Strength);
+                    c.Report(now, BodyEvent.WoundInflamed);
                     break;
             }
         }

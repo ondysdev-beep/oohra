@@ -23,7 +23,21 @@ public static class Eating
         Consume(c, item, species, clock, GameData.Body.Eating.TasteDose, taste: true);
     }
 
+    /// <summary>Sní (nebo ochutná) maso. Syrové trochu dráždí, upečené je výživné (prototyp comp pro meat).</summary>
+    public static void EatMeat(Character c, Cooking cooking, GameClock clock, bool taste = false)
+    {
+        var meat = GameData.Animals.Meat;
+        var v = Composition.FromArray(cooking == Cooking.Raw ? meat.Raw : meat.Baked);
+        var rules = GameData.Body.Eating;
+        Consume(c, v, clock, taste ? rules.TasteDose : rules.EatDose, taste);
+    }
+
     private static void Consume(Character c, PlantItem item, SpeciesSecret species, GameClock clock, double dose, bool taste)
+    {
+        Consume(c, CompositionCalculator.Compute(item, species), clock, dose, taste);
+    }
+
+    private static void Consume(Character c, Composition v, GameClock clock, double dose, bool taste)
     {
         if (c.IsDead)
         {
@@ -32,7 +46,6 @@ public static class Eating
 
         var rules = GameData.Body;
         var now = clock.TotalMinutes;
-        var v = CompositionCalculator.Compute(item, species);
 
         if (!taste && InstinctStops(c, v, rules.Instinct))
         {

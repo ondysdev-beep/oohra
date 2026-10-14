@@ -58,6 +58,24 @@ public enum BodyEvent
 
     /// <summary>Po spánku stoupla dovednost (zpráva nese dovednost a úroveň).</summary>
     SkillLevelUp,
+
+    /// <summary>Divočák ho zasáhl klem.</summary>
+    WoundedByBoar,
+
+    /// <summary>Vlk ho pokousal.</summary>
+    WoundedByWolf,
+
+    /// <summary>Něco ho vzbudilo, poblíž je divočák.</summary>
+    WokeByAnimal,
+
+    /// <summary>Něco ho sleduje ze tmy (vlk se plíží). Oheň ho odradí.</summary>
+    Stalked,
+
+    /// <summary>Divočák se na něj zaměřil. Až se rozběhne, je čas uhnout.</summary>
+    BoarAlert,
+
+    /// <summary>Rána se zanítila (zánět, z něj horečka).</summary>
+    WoundInflamed,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -85,6 +103,12 @@ public enum DeathCause
     Infection,
     Toxin,
     Neurotoxin,
+
+    /// <summary>Vykrvácel po zranění od zvířete.</summary>
+    Bleeding,
+
+    /// <summary>Zemřel na následky zranění od zvířete.</summary>
+    Wound,
 }
 
 /// <summary>Viditelný příznak ve stavu těla.</summary>
@@ -97,6 +121,8 @@ public enum Symptom
     Diarrhea,
     Inflammation,
     Unconscious,
+    Bleeding,
+    Limping,
 }
 
 /// <summary>
