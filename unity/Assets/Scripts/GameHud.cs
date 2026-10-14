@@ -122,7 +122,8 @@ namespace Oohra.Client
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
                     || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
                     || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse)
-                    || SpeechHud.Covers(mouse) || SignHud.Covers(mouse) || TribeHud.Covers(mouse);
+                    || SpeechHud.Covers(mouse) || SignHud.Covers(mouse) || TribeHud.Covers(mouse)
+                    || CorpseHud.Covers(mouse) || SignatureHud.Covers(mouse);
             }
         }
 
@@ -166,7 +167,7 @@ namespace Oohra.Client
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 980, 20),
-                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · T mluvit · V gesta · J slovník · H kreslit · Q, E, kolečko = kamera", _label);
+                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · T mluvit · V gesta · J slovník · H kreslit · P podpis · Q, E, kolečko = kamera", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>
@@ -313,6 +314,12 @@ namespace Oohra.Client
             var target = _session.Menu;
             if (target == null || _session.Dead)
             {
+                return bottom;
+            }
+
+            if (target.Kind == TargetKind.Corpse)
+            {
+                // Tělo ukazuje CorpseHud (věci a podpis) uprostřed obrazovky.
                 return bottom;
             }
 
@@ -541,7 +548,7 @@ namespace Oohra.Client
         private void DrawDeath(float width, float height)
         {
             var self = _session.Connection.Self;
-            _deathRect = new Rect((width - 520) / 2, (height - 190) / 2, 520, 190);
+            _deathRect = new Rect((width - 520) / 2, (height - 210) / 2, 520, 210);
             GUI.Box(_deathRect, GUIContent.none);
             GUI.Box(_deathRect, GUIContent.none);
 
@@ -550,11 +557,12 @@ namespace Oohra.Client
             var next = System.Math.Min(6, System.Math.Max(1, self.Generation + 1));
             GUI.Label(new Rect(x, y, 480, 26), "ZEMŘEL JSI", _title);
             GUI.Label(new Rect(x, y + 30, 488, 22), self.DeathCause.HasValue ? Texts.For(self.DeathCause.Value) : "Zemřel jsi.", _warn);
-            GUI.Label(new Rect(x, y + 58, 488, 44),
-                "Přišel jsi o věci u sebe a o všechno, co tvoje postava věděla.\n"
+            GUI.Label(new Rect(x, y + 58, 488, 66),
+                "Postava zapomněla, co věděla. Věci zůstaly u tvého těla: můžeš si pro ně dojít,\n"
+                + "prvních 24 hodin je smí vzít jen tvůj kmen, potom kdokoli.\n"
                 + $"Narodíš se jako Nový, generace {next + 1}. Status Pradávného je navždy pryč.",
                 _label);
-            if (GUI.Button(new Rect(x, y + 120, 200, 34), "Narodit se znovu"))
+            if (GUI.Button(new Rect(x, y + 136, 200, 34), "Narodit se znovu"))
             {
                 _session.Reborn();
             }

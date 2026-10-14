@@ -171,6 +171,9 @@ namespace Oohra.Client
             gameObject.AddComponent<SpeechHud>().Init(_session, _players, camera);
             gameObject.AddComponent<SignHud>().Init(_session);
             gameObject.AddComponent<TribeHud>().Init(_session);
+            gameObject.AddComponent<CorpseHud>().Init(_session);
+            gameObject.AddComponent<SignatureHud>().Init(_session);
+            new GameObject("Těla").AddComponent<CorpseViews>().Init(_connection);
             new GameObject("Značky").AddComponent<SignViews>().Init(_connection);
         }
 

@@ -2,6 +2,7 @@ using LiteNetLib;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Language;
+using Oohra.Core.World;
 
 namespace Oohra.Server;
 
@@ -50,6 +51,12 @@ public sealed class PlayerSession
 
     /// <summary>Které hromádky byly zkažené, když se batoh naposledy posílal (ať se pošle znovu, až se něco zkazí).</summary>
     public string SentSpoilage { get; set; } = string.Empty;
+
+    /// <summary>Podpis hráče (jméno ze slabik a znak), nebo null. Patří hráči, přežije smrt.</summary>
+    public Signature? Signature { get; set; }
+
+    /// <summary>Po smrti už zůstalo tělo (aby nevzniklo dvakrát). Nové narození to vynuluje.</summary>
+    public bool BodyLeft { get; set; }
 
     /// <summary>Verze kmenů, která byla naposledy poslána (-1 = poslat znovu).</summary>
     public int SentTribeVersion { get; set; } = -1;

@@ -14,6 +14,7 @@ namespace Oohra.Client
         Animal,
         Sign,
         Player,
+        Corpse,
     }
 
     /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
@@ -97,6 +98,12 @@ namespace Oohra.Client
         public static InteractionTarget ForSign(int signId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Sign, signId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
+        }
+
+        /// <summary>Tělo mrtvého hráče (číslo těla).</summary>
+        public static InteractionTarget ForCorpse(int corpseId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Corpse, corpseId, 0, 0, x, y);
         }
 
         /// <summary>Jiný hráč (číslo hráče). Hýbe se, živou polohu dává ClientSession.PositionOf.</summary>

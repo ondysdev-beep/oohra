@@ -99,6 +99,14 @@ public sealed record DecorationTypeView(string Id, string Name, int Sticks, int 
 /// <summary>Hromada kamenů na skalní dlaždici: kolik kamenů zbývá (0 = zmizela) a kolik jich má plná.</summary>
 public readonly record struct RockPileView(int TileIndex, int Stones, int MaxStones);
 
+/// <summary>
+/// Tělo mrtvého hráče: kde leží, kdo to byl (číslo hráče, generace, podpis), kdy zemřel a do kdy smí brát jen
+/// jeho kmen (herní minuty), a co u něj zůstalo. Prázdné jméno podpisu = bez podpisu.
+/// </summary>
+public sealed record CorpseView(
+    int Id, float X, float Y, int OwnerId, int Generation, double DiedAt, double TribeOnlyUntil, InventoryView Contents,
+    byte[] SignatureName, byte[] SignatureMark);
+
 /// <summary>Zvíře v okolí hráče: poloha, směr pohledu (radiány) a co dělá. Životy se neposílají.</summary>
 public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
 
@@ -125,7 +133,7 @@ public sealed record VocabularyView(WordEntryView[] Entries, byte[] LastHeard);
 /// </summary>
 public sealed record SignView(
     int Id, float X, float Y, byte[] Bits, int AuthorId, double CreatedAt, double WeathersAt, bool Carved, bool Ancient,
-    int RecordSpeciesId, byte[] RecordName, CarvingTag[] RecordTags);
+    int RecordSpeciesId, byte[] RecordName, CarvingTag[] RecordTags, byte[]? SignatureName = null, byte[]? SignatureMark = null);
 
 /// <summary>
 /// Hláška pro hráče: co se stalo s tělem, se sběrem, s pitím, s lovem... U nové úrovně dovednosti nese dovednost
@@ -422,6 +430,58 @@ public static class Messages
         return ReadList(r, () => new DecorationTypeView(r.GetString(MaxDecorationId), r.GetString(), r.GetInt(), r.GetInt(), r.GetFloat(), r.GetBool()));
     }
 
+    /// <summary>Nastavit si podpis: jméno ze slabik (1 až 3) a znak (SignBits).</summary>
+    public static void WriteSetSignature(NetDataWriter w, byte[] name, byte[] mark)
+    {
+        w.Put((byte)MessageType.SetSignature);
+        PutBytes(w, name);
+        PutBytes(w, mark);
+    }
+
+    public static (byte[] Name, byte[] Mark) ReadSetSignature(NetDataReader r)
+    {
+        return (GetBytes(r), GetBytes(r));
+    }
+
+    /// <summary>Můj podpis (prázdné jméno = ještě žádný). Posílá se po přihlášení a po změně.</summary>
+    public static void WriteSignature(NetDataWriter w, byte[] name, byte[] mark)
+    {
+        w.Put((byte)MessageType.Signature);
+        PutBytes(w, name);
+        PutBytes(w, mark);
+    }
+
+    public static (byte[] Name, byte[] Mark) ReadSignature(NetDataReader r)
+    {
+        return (GetBytes(r), GetBytes(r));
+    }
+
+    /// <summary>Těla mrtvých hráčů i s věcmi. Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteCorpses(NetDataWriter w, IReadOnlyList<CorpseView> corpses)
+    {
+        w.Put((byte)MessageType.Corpses);
+        w.Put(corpses.Count);
+        foreach (var c in corpses)
+        {
+            w.Put(c.Id);
+            w.Put(c.X);
+            w.Put(c.Y);
+            w.Put(c.OwnerId);
+            w.Put(c.Generation);
+            w.Put(c.DiedAt);
+            w.Put(c.TribeOnlyUntil);
+            PutInventory(w, c.Contents);
+            PutBytes(w, c.SignatureName);
+            PutBytes(w, c.SignatureMark);
+        }
+    }
+
+    public static CorpseView[] ReadCorpses(NetDataReader r)
+    {
+        return ReadList(r, () => new CorpseView(
+            r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetDouble(), r.GetDouble(), GetInventory(r), GetBytes(r), GetBytes(r)));
+    }
+
     /// <summary>Hromady kamenů na skalách. Posílá se po přihlášení a pak při každé změně.</summary>
     public static void WriteRockPiles(NetDataWriter w, IReadOnlyList<RockPileView> piles)
     {
@@ -487,6 +547,8 @@ public static class Messages
             w.Put(s.RecordSpeciesId);
             PutBytes(w, s.RecordName);
             PutBytes(w, s.RecordTags.Select(t => (byte)t).ToArray());
+            PutBytes(w, s.SignatureName ?? []);
+            PutBytes(w, s.SignatureMark ?? []);
         }
     }
 
@@ -494,7 +556,7 @@ public static class Messages
     {
         return ReadList(r, () => new SignView(
             r.GetInt(), r.GetFloat(), r.GetFloat(), GetBytes(r), r.GetInt(), r.GetDouble(), r.GetDouble(), r.GetBool(), r.GetBool(),
-            r.GetInt(), GetBytes(r), GetBytes(r).Select(b => (CarvingTag)b).ToArray()));
+            r.GetInt(), GetBytes(r), GetBytes(r).Select(b => (CarvingTag)b).ToArray(), GetBytes(r), GetBytes(r)));
     }
 
     private static void PutBytes(NetDataWriter w, byte[] bytes)

@@ -50,6 +50,10 @@ namespace Oohra.Client
                     var build = (BuildResult)e.Code;
                     warn = build != BuildResult.Built && build != BuildResult.Removed;
                     return For(build);
+                case EventKind.Corpse:
+                    var corpse = (CorpseResult)e.Code;
+                    warn = corpse != CorpseResult.Taken;
+                    return For(corpse);
                 case EventKind.Tribe:
                     var tribe = (TribeResult)e.Code;
                     warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined);
@@ -61,6 +65,20 @@ namespace Oohra.Client
                 default:
                     warn = false;
                     return null;
+            }
+        }
+
+        /// <summary>Text k braní věcí z těla.</summary>
+        public static string For(CorpseResult result)
+        {
+            switch (result)
+            {
+                case CorpseResult.Taken: return "Vzal sis to.";
+                case CorpseResult.TooFar: return "Jsi od těla moc daleko.";
+                case CorpseResult.NotFound: return "To už tu není.";
+                case CorpseResult.InventoryFull: return "Batoh je plný.";
+                case CorpseResult.TribeOnly: return "Prvních 24 hodin si věci smí vzít jen jeho kmen.";
+                default: return "U těla už nic není.";
             }
         }
 

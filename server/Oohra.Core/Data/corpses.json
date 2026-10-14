@@ -1,0 +1,9 @@
+// Tělo mrtvého hráče (návrh 7.4 a 14.1, prototyp corpses).
+{
+  // Jak dlouho tělo zůstane ve světě (herní dny).
+  "lifetimeDays": 4,
+  // Prvních tolik herních hodin smí z těla brát jen mrtvý (jeho další život) a jeho kmen, potom kdokoli.
+  "tribeOnlyHours": 24,
+  // Jak blízko musí postava být, aby z těla něco vzala (m).
+  "reach": 1.6
+}

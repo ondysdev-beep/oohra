@@ -283,6 +283,23 @@ namespace Oohra.Client
             return null;
         }
 
+        /// <summary>Tělo v otevřené nabídce, nebo null.</summary>
+        public CorpseView MenuCorpse()
+        {
+            if (Menu == null || Menu.Kind != TargetKind.Corpse)
+            {
+                return null;
+            }
+
+            return Connection.Corpses.FirstOrDefault(c => c.Id == Menu.Id);
+        }
+
+        /// <summary>Smím z těla brát? Moje tělo a tělo z mého kmene hned, cizí až po 24 hodinách (server to ověří).</summary>
+        public bool MayLoot(CorpseView corpse)
+        {
+            return InMyTribe(corpse.OwnerId) || Clock.TotalMinutes >= corpse.TribeOnlyUntil;
+        }
+
         /// <summary>Hromada kamenů na dlaždici, ve které ještě něco je, nebo null.</summary>
         public RockPileView? RockPileAt(int tileX, int tileY)
         {

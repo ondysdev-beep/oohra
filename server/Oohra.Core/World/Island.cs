@@ -81,6 +81,9 @@ public sealed class Island
     /// <summary>Stavby hráčů (zdi). Na rozdíl od zbytku ostrova se mění během hry.</summary>
     public Structures Structures { get; } = new();
 
+    /// <summary>Těla mrtvých hráčů s jejich věcmi (zmizí po 4 dnech).</summary>
+    public Corpses Corpses { get; } = new();
+
     /// <summary>Hromady kamenů na skalách (berou se z nich kameny, prázdné se za čas obnoví).</summary>
     public RockPiles Rocks { get; }
 
