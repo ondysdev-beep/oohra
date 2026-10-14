@@ -169,6 +169,8 @@ namespace Oohra.Client
             new GameObject("Kruh výběru").AddComponent<SelectionRing>().Init(_session);
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);
             gameObject.AddComponent<SpeechHud>().Init(_session, _players, camera);
+            gameObject.AddComponent<SignHud>().Init(_session);
+            new GameObject("Značky").AddComponent<SignViews>().Init(_connection);
         }
 
         private void Disconnect()

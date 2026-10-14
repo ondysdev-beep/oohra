@@ -12,6 +12,7 @@ namespace Oohra.Client
         Fire,
         Structure,
         Animal,
+        Sign,
     }
 
     /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
@@ -89,6 +90,11 @@ namespace Oohra.Client
         public static InteractionTarget ForStructure(int structureId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Structure, structureId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
+        }
+
+        public static InteractionTarget ForSign(int signId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Sign, signId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
         }
 
         /// <summary>Dlaždice: voda, strom nebo skála.</summary>

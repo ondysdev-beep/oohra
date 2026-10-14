@@ -121,7 +121,7 @@ namespace Oohra.Client
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
                     || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
                     || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse)
-                    || SpeechHud.Covers(mouse);
+                    || SpeechHud.Covers(mouse) || SignHud.Covers(mouse);
             }
         }
 
@@ -163,7 +163,7 @@ namespace Oohra.Client
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 980, 20),
-                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · T mluvit · V gesta · J slovník · Q, E, kolečko = kamera", _label);
+                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · T mluvit · V gesta · J slovník · H kreslit · Q, E, kolečko = kamera", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>
@@ -310,6 +310,12 @@ namespace Oohra.Client
             if (target == null || _session.Dead)
             {
                 return bottom;
+            }
+
+            if (target.Kind == TargetKind.Sign)
+            {
+                // Značku ukazuje SignHud (kresba a záznam), tady se pro ni jen nechá místo.
+                return bottom - SignHud.ReadPanelHeight;
             }
 
             var y = bottom - 64;

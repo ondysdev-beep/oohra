@@ -95,7 +95,7 @@ namespace Oohra.Client
             _moveTo = _target == null ? new Vector2((float)x, (float)y) : (Vector2?)null;
         }
 
-        /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, stavba, rostlina, strom, voda, skála.</summary>
+        /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, zvíře, značka, stavba, rostlina, strom, voda, skála.</summary>
         private InteractionTarget PickTarget(double x, double y)
         {
             var world = _session.Connection.World;
@@ -111,6 +111,12 @@ namespace Oohra.Client
             if (animal != null)
             {
                 return animal;
+            }
+
+            var sign = PickSign(x, y);
+            if (sign != null)
+            {
+                return sign;
             }
 
             var structure = PickStructure(x, y);
@@ -207,6 +213,24 @@ namespace Oohra.Client
             var ey = y2 - y1;
             var t = System.Math.Max(0, System.Math.Min(1, ((px - x1) * ex + (py - y1) * ey) / (ex * ex + ey * ey)));
             return Distance(x1 + t * ex, y1 + t * ey, px, py);
+        }
+
+        /// <summary>Značka nebo stará rytina pod kurzorem (do 45 cm od středu).</summary>
+        private InteractionTarget PickSign(double x, double y)
+        {
+            var best = 0.45;
+            InteractionTarget found = null;
+            foreach (var sign in _session.Connection.Signs)
+            {
+                var d = Distance(sign.X, sign.Y, x, y);
+                if (d < best)
+                {
+                    best = d;
+                    found = InteractionTarget.ForSign(sign.Id, sign.X, sign.Y);
+                }
+            }
+
+            return found;
         }
 
         private InteractionTarget PickPlant(double x, double y)
