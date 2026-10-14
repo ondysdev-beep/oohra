@@ -197,6 +197,19 @@ namespace Oohra.Client
                     continue;
                 }
 
+                if (structure.Kind == BuildKind.Decoration)
+                {
+                    // Dekorace je kruh: klik kamkoli do ní (aspoň 35 cm od středu).
+                    var decoration = _session.Connection.DecorationTypes.FirstOrDefault(d => d.Id == structure.Decoration);
+                    var radius = System.Math.Max(0.35, decoration != null ? decoration.Radius : 0.3);
+                    if (Distance(structure.X, structure.Y, x, y) < radius)
+                    {
+                        found = InteractionTarget.ForStructure(structure.Id, structure.X, structure.Y);
+                    }
+
+                    continue;
+                }
+
                 var half = (structure.Kind == BuildKind.Door ? StructureViews.OpeningWidth : structure.Length) / 2;
                 var dx = System.Math.Cos(structure.Angle) * half;
                 var dy = System.Math.Sin(structure.Angle) * half;

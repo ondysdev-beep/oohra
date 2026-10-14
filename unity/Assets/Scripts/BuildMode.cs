@@ -31,10 +31,35 @@ namespace Oohra.Client
 
         /// <summary>Délka zdi v metrech (poloviční zeď 0,5).</summary>
         public float Length { get; }
+
+        /// <summary>Dekorace: id z decorations.json na serveru, jinak prázdné.</summary>
+        public string DecorationId { get; private set; } = string.Empty;
+
+        /// <summary>Dekorace: poloměr v metrech (pro náhled bez modelu).</summary>
+        public float Radius { get; private set; } = 0.3f;
+
+        /// <summary>Položka nabídky pro dekoraci ze serveru.</summary>
+        public static BuildOption ForDecoration(DecorationTypeView decoration)
+        {
+            return new BuildOption(BuildKind.Decoration, decoration.Name, CostText(decoration.Sticks, decoration.Stones), decoration.Sticks, decoration.Stones)
+            {
+                DecorationId = decoration.Id,
+                Radius = decoration.Radius,
+            };
+        }
+
+        /// <summary>Cena česky: „3 klacky a kámen“, „4 kameny“.</summary>
+        public static string CostText(int sticks, int stones)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            if (sticks > 0) parts.Add(sticks == 1 ? "klacek" : sticks + (sticks < 5 ? " klacky" : " klacků"));
+            if (stones > 0) parts.Add(stones == 1 ? "kámen" : stones + (stones < 5 ? " kameny" : " kamenů"));
+            return parts.Count == 0 ? "zdarma" : string.Join(" a ", parts);
+        }
     }
 
     /// <summary>
-    /// Režim stavby pro všechny stavby. G ho zapne a vypne, F ho otevře rovnou s ohněm, 1 až 6 vybírá stavbu.
+    /// Režim stavby pro všechny stavby. G ho zapne a vypne, F ho otevře rovnou s ohněm, 1 až 9 vybírá stavbu (za stavbami z kódu jsou dekorace ze serveru).
     /// U kurzoru je průsvitný náhled stavby, nejdál 3,5 m od postavy. Levé tlačítko staví, pravé tlačítko
     /// nebo Esc režim ukončí. R přepíná volnou a modulární stavbu:
     /// volně Q a E stavbou plynule otáčejí; modulárně se zeď přichytí ke konci jiné zdi (směr určí kurzor,
@@ -67,6 +92,8 @@ namespace Oohra.Client
 
         private ClientSession _session;
         private Camera _camera;
+        private DecorationTypeView[] _decorationSource;
+        private BuildOption[] _options = Catalog;
         private GameObject _ghost;
         private bool _placeable;
 
@@ -99,10 +126,34 @@ namespace Oohra.Client
             _camera = camera;
         }
 
+        /// <summary>
+        /// Celá nabídka: stavby z kódu (Catalog) a za nimi dekorace, které poslal server (decorations.json).
+        /// </summary>
+        public BuildOption[] Options
+        {
+            get
+            {
+                var decorations = _session != null ? _session.Connection.DecorationTypes : null;
+                if (decorations != null && !ReferenceEquals(decorations, _decorationSource))
+                {
+                    _decorationSource = decorations;
+                    var options = new System.Collections.Generic.List<BuildOption>(Catalog);
+                    foreach (var decoration in decorations)
+                    {
+                        options.Add(BuildOption.ForDecoration(decoration));
+                    }
+
+                    _options = options.ToArray();
+                }
+
+                return _options;
+            }
+        }
+
         /// <summary>Otevře režim stavby s první položkou daného druhu.</summary>
         public void Open(BuildKind kind)
         {
-            foreach (var option in Catalog)
+            foreach (var option in Options)
             {
                 if (option.Kind == kind)
                 {
@@ -156,7 +207,7 @@ namespace Oohra.Client
 
         private void Send()
         {
-            _session.Place(Selected, Target.x, Target.y, TargetAngleDegrees * Mathf.Deg2Rad, TargetLength);
+            _session.Place(Selected, Target.x, Target.y, TargetAngleDegrees * Mathf.Deg2Rad, TargetLength, SelectedOption.DecorationId);
         }
 
         private void Update()
@@ -227,10 +278,10 @@ namespace Oohra.Client
                 return;
             }
 
-            var digits = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key, keyboard.digit7Key };
-            for (var i = 0; i < Catalog.Length && i < digits.Length; i++)
+            var digits = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key, keyboard.digit7Key, keyboard.digit8Key, keyboard.digit9Key };
+            for (var i = 0; i < Options.Length && i < digits.Length; i++)
             {
-                if (digits[i].wasPressedThisFrame && !keyboard.shiftKey.isPressed) Open(Catalog[i]);
+                if (digits[i].wasPressedThisFrame && !keyboard.shiftKey.isPressed) Open(Options[i]);
             }
 
             if (keyboard.rKey.wasPressedThisFrame) Modular = !Modular;
@@ -358,7 +409,7 @@ namespace Oohra.Client
                 Destroy(_ghost);
             }
 
-            _ghost = StructureViews.CreateModel(Selected, null, SelectedOption.Length);
+            _ghost = StructureViews.CreateModel(Selected, null, SelectedOption.Length, SelectedOption.DecorationId, SelectedOption.Radius);
             _ghost.name = "Náhled stavby";
         }
 
@@ -368,7 +419,7 @@ namespace Oohra.Client
             if (Selected == BuildKind.StickWall)
             {
                 // Délka zdi se při dorovnávání mění, náhled se natáhne.
-                _ghost.transform.GetChild(0).localScale = new Vector3(TargetLength, StructureViews.WallHeight, StructureViews.WallThickness);
+                StructureViews.StretchWall(_ghost, TargetLength);
             }
 
             var color = _placeable && HasMaterials() ? CanBuild : CannotBuild;

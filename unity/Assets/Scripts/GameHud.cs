@@ -246,7 +246,7 @@ namespace Oohra.Client
         /// <summary>Režim stavby: výběr stavby a nápověda k ovládání.</summary>
         private void DrawBuildPanel(float width)
         {
-            var options = BuildMode.Catalog;
+            var options = _buildMode.Options;
             _buildPanelRect = new Rect(width - 364, 56, 352, 122 + options.Length * 32);
             GUI.Box(_buildPanelRect, GUIContent.none);
             GUI.Box(_buildPanelRect, GUIContent.none);
@@ -258,7 +258,8 @@ namespace Oohra.Client
             {
                 var option = options[i];
                 var selected = option == _buildMode.SelectedOption;
-                var text = $"{i + 1}  {option.Name} ({option.Cost})" + (selected ? "  ◄" : string.Empty);
+                var key = i < 9 ? (i + 1).ToString() : " ";
+                var text = $"{key}  {option.Name} ({option.Cost})" + (selected ? "  ◄" : string.Empty);
                 if (GUI.Button(new Rect(x, y, 332, 28), text))
                 {
                     _buildMode.Open(option);
@@ -382,7 +383,7 @@ namespace Oohra.Client
 
             var trap = structure.Value.Kind == BuildKind.Trap;
             var caught = trap && structure.Value.Caught >= 0;
-            var title = StructureViews.NameOf(structure.Value.Kind).ToUpper();
+            var title = _session.StructureName(structure.Value).ToUpper();
             GUI.Label(titleRect, caught ? title + " (" + AnimalViews.NameOf((AnimalKind)structure.Value.Caught).ToLower() + ")" : title, _title);
             if (!_session.MayTouch(structure.Value))
             {
