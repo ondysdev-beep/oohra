@@ -23,7 +23,7 @@ public class CorpseServerTests
 
         player.Character.Hydration = 0;
         player.Character.Health = 0.0001;
-        Assert.True(net.Pump(() => b.Corpses.Length == 1));
+        Assert.True(net.Pump(() => b.Corpses.Length == 1 && a.Self!.Dead));
         var corpse = b.Corpses[0];
         Assert.Equal(a.PlayerId, corpse.OwnerId);
         Assert.Equal(3, corpse.Contents.Stacks.Sum(s => s.Count));
@@ -38,7 +38,8 @@ public class CorpseServerTests
 
         // Ondra se narodí znovu, dojde k tělu a vezme si své věci.
         a.Reborn();
-        Assert.True(net.Pump(() => a.Self is { Dead: false }));
+        // Čeká se na novou postavu (generace 1), ne jen „živý“: klient mohl mít ještě stav z doby před smrtí.
+        Assert.True(net.Pump(() => a.Self is { Dead: false, Generation: 1 }));
         player.X = corpse.X;
         player.Y = corpse.Y;
         a.TakeFromCorpse(corpse.Id, 0);
