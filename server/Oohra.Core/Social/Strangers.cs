@@ -300,6 +300,38 @@ public sealed class Strangers
     }
 
     /// <summary>
+    /// Hráč ukázal věc z batohu (návrh 9.3). Nejbližší cizinec do answerDistance řekne „jed“ a zavrtí hlavou,
+    /// když věc škodí, „jídlo“ a kývne, když se jí, a s ostatním krčí rameny. Vrací, jestli někdo odpověděl.
+    /// </summary>
+    public bool SeeItem(Island island, Item item, double x, double y)
+    {
+        var rules = GameData.Strangers;
+        var n = Nearest(x, y, rules.AnswerDistance);
+        if (n is null || n.AskCooldown > 0)
+        {
+            return false;
+        }
+
+        n.AskCooldown = rules.AskCooldownSeconds;
+        n.Facing = Math.Atan2(y - n.Y, x - n.X);
+        var at = _seconds + rules.AnswerDelaySeconds;
+        if (item.Kind != ItemKind.Plant && !item.IsFlesh)
+        {
+            Act(n, null, Gesture.Puzzled, at);
+        }
+        else if (item.Plant is not null && Harmful(CompositionCalculator.Compute(item.Plant, island.SpeciesSecrets[item.Plant.SpeciesId])))
+        {
+            Act(n, Concept.Poison, Gesture.No, at);
+        }
+        else
+        {
+            Act(n, Concept.Food, Gesture.Yes, at);
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Hráč dal cizinci jednu věc z batohu (prototyp giveTo). Jídlo, které neškodí, přijme (a za čas dá něco zpátky),
     /// škodlivou rostlinu zahodí a zavrtí hlavou, s ostatním neví, co dělat.
     /// </summary>

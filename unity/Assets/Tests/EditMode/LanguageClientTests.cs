@@ -51,10 +51,18 @@ namespace Oohra.Client.Tests
             contexts[(int)SpeechContext.AtFire] = 1;
             var entry = new WordEntryView(new byte[] { 1, 2 }, 3, contexts, null, false);
 
-            Assert.AreEqual("slyšeno 3× · u jídla ×2, u ohně ×1 · asi: jídlo", LanguageTexts.Describe(entry));
+            Assert.AreEqual("slyšeno 3× · u jídla ×2, u ohně ×1 · asi: jídlo (2×)", LanguageTexts.Describe(entry));
 
             var known = new WordEntryView(new byte[] { 1, 2 }, 3, contexts, Concept.Fire, true);
             Assert.AreEqual("Starý hlas · slyšeno 3× · u jídla ×2, u ohně ×1", LanguageTexts.Describe(known));
+        }
+
+        /// <summary>Ukázat věc (návrh 9.3) má vlastní text a do kola gest nepatří (posílá se z batohu i s věcí).</summary>
+        [Test]
+        public void ShowItemGestureHasText()
+        {
+            Assert.AreEqual("Ukázat věc", LanguageTexts.GestureName(Gesture.ShowItem));
+            Assert.AreEqual("ukazuje věc", LanguageTexts.GestureBubble(Gesture.ShowItem));
         }
     }
 }

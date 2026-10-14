@@ -35,14 +35,17 @@ public static class SpeechContexts
             bits |= Bit(SpeechContext.AtFire);
         }
 
-        if (recentGesture == Gesture.Yes)
+        // Gesto těsně před slovem dá slovu souvislost (návrh 9.3: řekne slovo a ukáže předmět nebo udělá akci).
+        // Ukázaná věc (ShowItem) je tu jen, když to bylo jídlo, server to tak předá.
+        bits |= recentGesture switch
         {
-            bits |= Bit(SpeechContext.Nodding);
-        }
-        else if (recentGesture == Gesture.No)
-        {
-            bits |= Bit(SpeechContext.ShakingHead);
-        }
+            Gesture.Yes => Bit(SpeechContext.Nodding),
+            Gesture.No => Bit(SpeechContext.ShakingHead),
+            Gesture.Eat or Gesture.ShowItem => Bit(SpeechContext.Eating),
+            Gesture.Drink => Bit(SpeechContext.AtWater),
+            Gesture.Beware => Bit(SpeechContext.AnimalNear),
+            _ => 0,
+        };
 
         return bits;
     }

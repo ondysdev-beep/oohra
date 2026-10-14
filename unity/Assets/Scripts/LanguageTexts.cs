@@ -58,6 +58,7 @@ namespace Oohra.Client
                 case Gesture.Eat: return "Jíst";
                 case Gesture.Invite: return "Pozvat do kmene";
                 case Gesture.Puzzled: return "Pokrčit rameny";
+                case Gesture.ShowItem: return "Ukázat věc";
                 default: return "Pít";
             }
         }
@@ -75,6 +76,7 @@ namespace Oohra.Client
                 case Gesture.Eat: return "dělá, že jí";
                 case Gesture.Invite: return "zve do kmene";
                 case Gesture.Puzzled: return "krčí rameny: ?";
+                case Gesture.ShowItem: return "ukazuje věc";
                 default: return "dělá, že pije";
             }
         }
@@ -136,7 +138,8 @@ namespace Oohra.Client
 
             if (best >= 0 && entry.Meaning == null)
             {
-                parts.Add("asi: " + ConceptName(Words.GuessOf((SpeechContext)best)));
+                // Návrh 9.6: „asi: jídlo (3×)“, kolikrát slovo zaznělo v té nejčastější situaci.
+                parts.Add("asi: " + ConceptName(Words.GuessOf((SpeechContext)best)) + " (" + entry.Contexts[best] + "×)");
             }
 
             return string.Join(" · ", parts);

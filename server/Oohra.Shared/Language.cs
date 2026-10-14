@@ -28,6 +28,9 @@ namespace Oohra.Core.Language
 
         /// <summary>Krčí rameny: neví, co hráč chce (dělají to cizinci, když slovu nerozumí).</summary>
         Puzzled = 8,
+
+        /// <summary>Ukazuje věc z batohu (návrh 9.3). Posílá se zprávou ShowItem, ostatní vidí i tu věc.</summary>
+        ShowItem = 9,
     }
 
     /// <summary>

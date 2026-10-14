@@ -297,6 +297,12 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteSetSignature(w, name, mark));
     }
 
+    /// <summary>Ukázat ostatním věc z batohu (hráči ji uvidí v bublině, cizinec řekne, jestli se jí).</summary>
+    public void ShowItem(int stackIndex)
+    {
+        Send(w => Messages.WriteShowItem(w, stackIndex));
+    }
+
     /// <summary>Dát cizinci jednu věc z hromádky v batohu. Co na to řekne, přijde jako hláška a gesto.</summary>
     public void GiveToStranger(int strangerId, int stackIndex)
     {

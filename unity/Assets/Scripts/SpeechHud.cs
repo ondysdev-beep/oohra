@@ -186,7 +186,14 @@ namespace Oohra.Client
 
             foreach (var gesture in connection.TakeGestures())
             {
-                _bubbles[BubbleKey(gesture.PlayerId, gesture.Stranger)] = new Bubble(LanguageTexts.GestureBubble(gesture.Gesture), LanguageTexts.ToneColor(Tone.Calm), Time.time + GestureSeconds);
+                // U ukázané věci bublina řekne, co to je (stejně jako v batohu: list, plod, maso...).
+                var bubble = LanguageTexts.GestureBubble(gesture.Gesture);
+                if (gesture.Item.HasValue)
+                {
+                    bubble += ": " + Texts.Describe(gesture.Item.Value).ToLower();
+                }
+
+                _bubbles[BubbleKey(gesture.PlayerId, gesture.Stranger)] = new Bubble(bubble, LanguageTexts.ToneColor(Tone.Calm), Time.time + GestureSeconds);
                 if (gesture.Gesture == Gesture.Point)
                 {
                     _points.Add(new PointMark(WorldCoords.ToUnity(gesture.X, gesture.Y), Time.time + PointSeconds));

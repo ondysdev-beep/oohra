@@ -67,6 +67,43 @@ public class StrangerServerTests
         Assert.True(net.Pump(() => a.TakeEvents().Any(e => e.Kind == EventKind.Stranger && e.Code == (byte)StrangerResult.Puzzled)));
     }
 
+    /// <summary>
+    /// Ukázaná věc (návrh 9.3): druhý hráč ji uvidí v bublině i s tím, co to je, a slovo řečené hned potom
+    /// si zapíše „u jídla“, když je to jídlo.
+    /// </summary>
+    [Fact]
+    public void ShowItemTeachesWord()
+    {
+        using var net = new TestNetwork(configure: c => c.StartSticks = 1);
+        var a = net.Join("Ondra");
+        var b = net.Join("Petr");
+        var ondra = net.Server.FindPlayer("Ondra")!;
+        var petr = net.Server.FindPlayer("Petr")!;
+        petr.X = ondra.X + 1;
+        petr.Y = ondra.Y;
+        ondra.Inventory.TryAdd(Item.RawMeat(0));
+        var meat = ondra.Inventory.Stacks.ToList().FindIndex(s => s.Item.IsFlesh);
+
+        a.ShowItem(meat);
+        var seen = new List<GestureView>();
+        Assert.True(net.Pump(() =>
+        {
+            seen.AddRange(b.TakeGestures());
+            return seen.Any(g => g.Gesture == Gesture.ShowItem);
+        }));
+        Assert.Equal(ItemKind.Meat, seen.First(g => g.Gesture == Gesture.ShowItem).Item!.Value.Kind);
+
+        var word = new byte[] { 4, 4 };
+        a.Say(word);
+        Assert.True(net.Pump(() => b.Vocabulary.Entries.Any(e => e.Word.SequenceEqual(word) && e.Contexts[(int)SpeechContext.Eating] > 0)));
+
+        // Ukázat klacek (není jídlo) slovu souvislost nedá a gesto ShowItem bez věci server nepustí.
+        a.ShowItem(ondra.Inventory.Stacks.ToList().FindIndex(s => s.Item.Kind == ItemKind.Stick));
+        a.MakeGesture(Gesture.ShowItem);
+        net.PumpFor(200);
+        Assert.All(b.TakeGestures(), g => Assert.True(g.Gesture != Gesture.ShowItem || g.Item.HasValue));
+    }
+
     /// <summary>Postaví hráče těsně vedle cizince (cizinci se hýbou, proto se volá i před každou akcí).</summary>
     private static Stranger PutNextToStranger(TestNetwork net, string nickname, int strangerId = 0)
     {

@@ -135,6 +135,21 @@ public class LanguageTests
         Assert.Equal(0, SpeechContexts.Of(_island, fires, animals, speaker, x, y, clock.TotalMinutes + 10, null) & SpeechContexts.Bit(SpeechContext.Eating));
     }
 
+    /// <summary>Gesto těsně před slovem dá slovu souvislost (návrh 9.3): jíst nebo ukázané jídlo = u jídla, pít = u vody, pozor = zvíře.</summary>
+    [Theory]
+    [InlineData(Gesture.Eat, SpeechContext.Eating)]
+    [InlineData(Gesture.ShowItem, SpeechContext.Eating)]
+    [InlineData(Gesture.Drink, SpeechContext.AtWater)]
+    [InlineData(Gesture.Beware, SpeechContext.AnimalNear)]
+    [InlineData(Gesture.No, SpeechContext.ShakingHead)]
+    public void GestureGivesContext(Gesture gesture, SpeechContext expected)
+    {
+        var (x, y) = OpenSpot();
+        var bits = SpeechContexts.Of(_island, new Fires(), new Animals(1), new Character(1, new Mulberry32(1)), x, y, 0, gesture);
+
+        Assert.Equal(SpeechContexts.Bit(expected), bits);
+    }
+
     [Fact]
     public void ContextAtWater()
     {

@@ -124,8 +124,11 @@ public sealed record StockpileView(int StructureId, InventoryView Contents);
 /// </summary>
 public sealed record SpeechView(int PlayerId, byte[] Word, Tone Tone, bool Stranger = false);
 
-/// <summary>Někdo poblíž udělal gesto. U ukázání je (X, Y) místo, kam ukazuje. Stranger: cizinec (PlayerId = jeho číslo).</summary>
-public readonly record struct GestureView(int PlayerId, Gesture Gesture, float X, float Y, bool Stranger = false);
+/// <summary>
+/// Někdo poblíž udělal gesto. U ukázání je (X, Y) místo, kam ukazuje. Stranger: cizinec (PlayerId = jeho číslo).
+/// Item: věc, kterou ukazuje (gesto ShowItem), jinak null.
+/// </summary>
+public readonly record struct GestureView(int PlayerId, Gesture Gesture, float X, float Y, bool Stranger = false, StackView? Item = null);
 
 /// <summary>Cizinec z cizího kmene (NPC): kmen 0 nebo 1, poloha, směr pohledu a co dělá.</summary>
 public readonly record struct StrangerView(int Id, int Tribe, float X, float Y, float Facing, StrangerState State);
@@ -627,11 +630,30 @@ public static class Messages
         w.Put(gesture.X);
         w.Put(gesture.Y);
         w.Put(gesture.Stranger);
+        w.Put(gesture.Item.HasValue);
+        if (gesture.Item is { } item)
+        {
+            PutStack(w, item);
+        }
     }
 
     public static GestureView ReadGestureSeen(NetDataReader r)
     {
-        return new GestureView(r.GetInt(), (Gesture)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetBool());
+        var (playerId, gesture, x, y, stranger) = (r.GetInt(), (Gesture)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetBool());
+        StackView? item = r.GetBool() ? GetStack(r) : null;
+        return new GestureView(playerId, gesture, x, y, stranger, item);
+    }
+
+    /// <summary>Ukázat ostatním věc z hromádky v batohu (gesto ukázat předmět, návrh 9.3).</summary>
+    public static void WriteShowItem(NetDataWriter w, int stackIndex)
+    {
+        w.Put((byte)MessageType.ShowItem);
+        w.Put(stackIndex);
+    }
+
+    public static int ReadShowItem(NetDataReader r)
+    {
+        return r.GetInt();
     }
 
     /// <summary>Zápisník slov. Posílá se po přihlášení a pak při každé změně.</summary>
@@ -891,21 +913,31 @@ public static class Messages
         w.Put(inventory.Stacks.Length);
         foreach (var s in inventory.Stacks)
         {
-            w.Put((byte)s.Kind);
-            w.Put(s.SpeciesId);
-            w.Put((byte)s.Part);
-            w.Put((byte)s.Ripeness);
-            w.Put((byte)s.Cooking);
-            w.Put(s.Count);
-            w.Put(s.Spoiled);
+            PutStack(w, s);
         }
     }
 
     private static InventoryView GetInventory(NetDataReader r)
     {
         var capacity = r.GetInt();
-        var stacks = ReadList(r, () => new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt(), r.GetBool()));
+        var stacks = ReadList(r, () => GetStack(r));
         return new InventoryView(capacity, stacks);
+    }
+
+    private static void PutStack(NetDataWriter w, StackView s)
+    {
+        w.Put((byte)s.Kind);
+        w.Put(s.SpeciesId);
+        w.Put((byte)s.Part);
+        w.Put((byte)s.Ripeness);
+        w.Put((byte)s.Cooking);
+        w.Put(s.Count);
+        w.Put(s.Spoiled);
+    }
+
+    private static StackView GetStack(NetDataReader r)
+    {
+        return new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt(), r.GetBool());
     }
 
     public static void WriteEvent(NetDataWriter w, GameEvent e)
