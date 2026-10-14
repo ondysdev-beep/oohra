@@ -4,6 +4,7 @@ using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Language;
 using Oohra.Core.Plants;
+using Oohra.Core.Social;
 using Oohra.Core.World;
 
 namespace Oohra.Protocol;
@@ -239,9 +240,18 @@ public static class Messages
         w.Put((byte)MessageType.Sleep);
     }
 
-    public static void WriteReborn(NetDataWriter w)
+    /// <summary>Narodit se znovu: v divočině, nebo u svého kmene.</summary>
+    public static void WriteReborn(NetDataWriter w, BirthPlace place)
     {
         w.Put((byte)MessageType.Reborn);
+        w.Put((byte)place);
+    }
+
+    /// <summary>Neznámá hodnota (jiný klient) znamená divočinu.</summary>
+    public static BirthPlace ReadReborn(NetDataReader r)
+    {
+        var place = (BirthPlace)r.GetByte();
+        return Enum.IsDefined(typeof(BirthPlace), place) ? place : BirthPlace.Wild;
     }
 
     /// <summary>Akce s dlaždicí: GatherSticks (strom), TakeStone (skála) nebo Fish (voda).</summary>

@@ -2,6 +2,7 @@ using LiteNetLib;
 using LiteNetLib.Utils;
 using Oohra.Core.Language;
 using Oohra.Core.Plants;
+using Oohra.Core.Social;
 using Oohra.Core.World;
 
 namespace Oohra.Protocol;
@@ -186,9 +187,10 @@ public sealed class GameConnection : IDisposable
         Send(Messages.WriteMakeSpear);
     }
 
-    public void Reborn()
+    /// <summary>Narodit se znovu (po smrti). U kmene jen když hráč v nějakém je, jinak server zvolí divočinu.</summary>
+    public void Reborn(BirthPlace place = BirthPlace.Wild)
     {
-        Send(Messages.WriteReborn);
+        Send(w => Messages.WriteReborn(w, place));
     }
 
     /// <summary>Nasbírat klacky u stromu na dlaždici.</summary>

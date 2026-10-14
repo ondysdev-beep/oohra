@@ -56,7 +56,7 @@ namespace Oohra.Client
                     return For(corpse);
                 case EventKind.Tribe:
                     var tribe = (TribeResult)e.Code;
-                    warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined);
+                    warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined or TribeResult.BornAtHome);
                     return For(tribe);
                 case EventKind.Sign:
                     var sign = (SignResult)e.Code;
@@ -102,6 +102,8 @@ namespace Oohra.Client
                 case TribeResult.NotYours: return "Cizí zásoby. Brát z nich smí jen jejich kmen.";
                 case TribeResult.NotFound: return "To už tu není.";
                 case TribeResult.TheyDeclined: return "Pozvánku do kmene odmítl.";
+                case TribeResult.BornAtHome: return "Narodil ses u svého kmene. Nic nevíš, ale jsi mezi svými.";
+                case TribeResult.NoHome: return "U kmene nebylo kde se narodit (nemá stavby ani živé členy). Probouzíš se v divočině.";
                 default: return "Přijal pozvánku. Je s tebou v kmeni.";
             }
         }

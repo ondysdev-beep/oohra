@@ -34,5 +34,21 @@ namespace Oohra.Core.Social
 
         /// <summary>Pozvaný hráč přijal (zpráva pro toho, kdo zval).</summary>
         TheyJoined = 15,
+
+        /// <summary>Hráč se narodil u svého kmene.</summary>
+        BornAtHome = 16,
+
+        /// <summary>Kmen nemá kde hráče přijmout (žádná stavba ani živý člen, nebo kolem není místo): narodil se v divočině.</summary>
+        NoHome = 17,
+    }
+
+    /// <summary>Kde se chce hráč po smrti narodit (návrh 4.1).</summary>
+    public enum BirthPlace
+    {
+        /// <summary>Náhodně v divočině, daleko od místa smrti.</summary>
+        Wild = 0,
+
+        /// <summary>Na okraji území svého kmene, mimo domy.</summary>
+        Tribe = 1,
     }
 }
