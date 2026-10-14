@@ -21,6 +21,7 @@ public sealed record BodySpeedRules(
     double TiredEnergyBelow,
     double TiredSlowdown,
     double StimulantBonus,
+    double LimpMaxSlowdown,
     double MinMultiplier,
     double MaxMultiplier);
 

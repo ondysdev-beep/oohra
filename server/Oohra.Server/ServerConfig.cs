@@ -41,6 +41,12 @@ public sealed class ServerConfig
     /// <summary>Kolik kamenů dostane nová postava do batohu (jen pro zkoušení ohně, ve hře 0).</summary>
     public int StartStones { get; set; }
 
+    /// <summary>Zvířata na ostrově. Testy serveru je vypínají, ať je náhodný divočák nerozhodí.</summary>
+    public bool Animals { get; set; } = true;
+
+    /// <summary>Do jaké vzdálenosti (metry) hráč dostává polohy zvířat.</summary>
+    public double AnimalViewDistance { get; set; } = 40;
+
     public static ServerConfig Load(string path)
     {
         if (!File.Exists(path))

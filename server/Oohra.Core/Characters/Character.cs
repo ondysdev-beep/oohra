@@ -1,5 +1,6 @@
 using Oohra.Core.Data;
 using Oohra.Core.Rng;
+using Oohra.Core.World;
 
 namespace Oohra.Core.Characters;
 
@@ -14,6 +15,9 @@ public enum EffectType
 
     /// <summary>Nemoc z kalné vody nebo zkaženého jídla: zánět (Infection) a z něj horečka.</summary>
     Sickness,
+
+    /// <summary>Zánět rány po zranění od zvířete.</summary>
+    WoundInfection,
 }
 
 /// <summary>Účinek, který nastane v čase At (herní minuty). Strength je síla účinku.</summary>
@@ -84,6 +88,36 @@ public sealed class Character
     public double BlameMinutes { get; set; }
 
     public bool IsDead { get; private set; }
+
+    /// <summary>Krvácení: kolik zdraví za herní minutu ubírá. Pomalu ustává.</summary>
+    public double Bleed { get; set; }
+
+    /// <summary>Kulhání 0 až 100: zpomalí chůzi. Pomalu se hojí.</summary>
+    public double Limp { get; set; }
+
+    /// <summary>Omráčení po zásahu (sekundy reálného času): postava se nehýbe a zvíře ji hned znovu nezasáhne.</summary>
+    public double StunSeconds { get; set; }
+
+    /// <summary>
+    /// Zranění od zvířete (prototyp wound). Síla se zmenší dovedností Lov a podle generace (Pradávní snesou víc).
+    /// Ubere zdraví, rozjede krvácení a kulhání, postavu omráčí a vzbudí. Velká rána se může zanítit.
+    /// </summary>
+    public void Wound(double severity, AnimalKind from, double now)
+    {
+        var rules = GameData.Animals.Wounds;
+        severity *= (1 - rules.HuntReductionPerLevel * Skills.Level(SkillKind.Hunt)) * Traits.WoundMultiplier;
+        TakeDamage(severity * rules.HealthFactor, Characters.DeathCause.Wound);
+        Bleed = Math.Min(rules.MaxBleed, Bleed + severity * rules.BleedPerSeverity);
+        Limp = Math.Min(rules.MaxLimp, Limp + severity * rules.LimpPerSeverity);
+        StunSeconds = rules.StunSeconds;
+        WakeUp(now, null);
+        if (severity > rules.InfectionAbove && Rng.NextDouble() < rules.InfectionChance)
+        {
+            Schedule(now + rules.InfectionDelayMin + Rng.NextDouble() * rules.InfectionDelayRange, EffectType.WoundInfection, severity * rules.InfectionFactor);
+        }
+
+        Report(now, from == AnimalKind.Wolf ? BodyEvent.WoundedByWolf : BodyEvent.WoundedByBoar);
+    }
 
     /// <summary>Dovednosti postavy. Smrtí se ztratí (nová postava začíná od nuly).</summary>
     public Skills Skills { get; } = new();
@@ -275,6 +309,16 @@ public sealed class Character
         if (FaintMinutes > 0)
         {
             list.Add(Symptom.Unconscious);
+        }
+
+        if (Bleed > 0)
+        {
+            list.Add(Symptom.Bleeding);
+        }
+
+        if (Limp > GameData.Animals.Wounds.LimpSymptomAbove)
+        {
+            list.Add(Symptom.Limping);
         }
 
         return list;

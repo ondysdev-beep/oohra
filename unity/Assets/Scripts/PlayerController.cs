@@ -107,6 +107,12 @@ namespace Oohra.Client
                 }
             }
 
+            var animal = PickAnimal(x, y);
+            if (animal != null)
+            {
+                return animal;
+            }
+
             var structure = PickStructure(x, y);
             if (structure != null)
             {
@@ -147,6 +153,24 @@ namespace Oohra.Client
         }
 
         /// <summary>Zeď, na kterou hráč kliknul (do 35 cm od její osy).</summary>
+        /// <summary>Zvíře pod kurzorem (do 80 cm), živé i mrtvé.</summary>
+        private InteractionTarget PickAnimal(double x, double y)
+        {
+            var best = 0.8;
+            InteractionTarget found = null;
+            foreach (var animal in _session.Connection.Animals)
+            {
+                var d = Distance(animal.X, animal.Y, x, y);
+                if (d < best)
+                {
+                    best = d;
+                    found = InteractionTarget.ForAnimal(animal.Id, animal.X, animal.Y);
+                }
+            }
+
+            return found;
+        }
+
         /// <summary>
         /// Stavba pod kurzorem (do 35 cm od její osy). Dveře mají přednost: leží v otvoru zdi s otvorem
         /// a klik doprostřed otvoru míří na ně.
@@ -234,7 +258,7 @@ namespace Oohra.Client
         private Vector2 DirectionToTarget(Vector2 position)
         {
             var reach = _target.Reach;
-            var target = new Vector2((float)_target.X, (float)_target.Y);
+            var target = _session.PositionOf(_target);
             if (Vector2.Distance(position, target) <= reach - 0.15)
             {
                 _session.Menu = _target;
@@ -293,7 +317,7 @@ namespace Oohra.Client
             }
 
             var reach = menu.Reach;
-            if (Vector2.Distance(position, new Vector2((float)menu.X, (float)menu.Y)) > reach + MenuCloseExtra)
+            if (Vector2.Distance(position, _session.PositionOf(menu)) > reach + MenuCloseExtra)
             {
                 _session.Menu = null;
                 _session.Selected = null;

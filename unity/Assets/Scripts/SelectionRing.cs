@@ -50,6 +50,7 @@ namespace Oohra.Client
                 case TargetKind.Plant: return 0.35f;
                 case TargetKind.Fire: return 0.5f;
                 case TargetKind.Structure: return 0.7f;
+                case TargetKind.Animal: return 0.7f;
                 default: return 0.55f;
             }
         }
@@ -65,7 +66,8 @@ namespace Oohra.Client
 
             var pulse = 1f + 0.06f * Mathf.Sin(Time.time * 5f);
             var radius = RadiusFor(target.Kind) * pulse;
-            transform.position = WorldCoords.ToUnity(target.X, target.Y, Height);
+            var position = _session.PositionOf(target);
+            transform.position = WorldCoords.ToUnity(position.x, position.y, Height);
             transform.localScale = new Vector3(radius, 1f, radius);
             _line.widthMultiplier = 0.06f;
         }

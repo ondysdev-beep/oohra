@@ -23,7 +23,13 @@ namespace Oohra.Client.Tests
             Assert.IsTrue(File.Exists(serverDll), "Server není sestavený. Spusť dotnet build ve složce server.");
 
             var config = Path.Combine(Application.temporaryCachePath, "server-test-" + port + ".json");
-            var extra = extraJson.Length > 0 ? ", " + extraJson : string.Empty;
+            // Zvířata jen v testech, které je chtějí (jinak by třeba vlk rozhodil test noci u ohně).
+            if (!extraJson.Contains("\"animals\""))
+            {
+                extraJson = extraJson.Length > 0 ? extraJson + ", \"animals\": false" : "\"animals\": false";
+            }
+
+            var extra = ", " + extraJson;
             File.WriteAllText(config, "{ \"port\": " + port + ", \"seed\": 1, \"worldSize\": 84, \"inviteCodes\": [\"" + Invite + "\"]" + extra + " }");
             return Process.Start(new ProcessStartInfo("dotnet", "\"" + serverDll + "\" \"" + config + "\"")
             {

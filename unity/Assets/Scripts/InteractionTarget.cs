@@ -11,9 +11,10 @@ namespace Oohra.Client
         Rock,
         Fire,
         Structure,
+        Animal,
     }
 
-    /// <summary>Na co hráč kliknul: rostlina, oheň nebo stavba (číslo), nebo dlaždice (voda, strom, skála).</summary>
+    /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
     public sealed class InteractionTarget
     {
         private InteractionTarget(TargetKind kind, int id, int tileX, int tileY, double x, double y)
@@ -30,7 +31,7 @@ namespace Oohra.Client
 
         public bool IsPlant => Kind == TargetKind.Plant;
 
-        /// <summary>Číslo rostliny, ohně nebo stavby.</summary>
+        /// <summary>Číslo rostliny, ohně, stavby nebo zvířete.</summary>
         public int Id { get; }
 
         public int PlantId => Id;
@@ -60,6 +61,7 @@ namespace Oohra.Client
                     case TargetKind.Water: return 1.7;
                     case TargetKind.Tree: return 1.5;
                     case TargetKind.Structure: return 1.6;
+                    case TargetKind.Animal: return 1.4;
                     default: return 1.3;
                 }
             }
@@ -73,6 +75,14 @@ namespace Oohra.Client
         public static InteractionTarget ForFire(int fireId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Fire, fireId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
+        }
+
+        /// <summary>
+        /// Zvíře podle čísla. (x, y) je poloha při kliknutí. Zvíře se hýbe, živou polohu dává ClientSession.PositionOf.
+        /// </summary>
+        public static InteractionTarget ForAnimal(int animalId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Animal, animalId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
         }
 
         /// <summary>Stavba (zeď) podle čísla. (x, y) je její střed.</summary>

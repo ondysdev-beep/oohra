@@ -154,7 +154,7 @@ public sealed class Fires
         return BurningNear(island, x, y, GameData.Fire.Fire.WarmthRadius);
     }
 
-    /// <summary>Upeče jeden kus syrové rostliny z hromádky. Musí být u hořícího ohně.</summary>
+    /// <summary>Upeče jeden kus syrové rostliny nebo masa z hromádky. Musí být u hořícího ohně.</summary>
     public FireResult Bake(Island island, Inventory inventory, int stackIndex, double playerX, double playerY, Character? baker = null)
     {
         if (!BurningNear(island, playerX, playerY, GameData.Fire.Fire.CookRadius))
@@ -162,14 +162,14 @@ public sealed class Fires
             return FireResult.NoFireNear;
         }
 
-        if (stackIndex < 0 || stackIndex >= inventory.Stacks.Count
-            || inventory.Stacks[stackIndex].Item.Plant is not { Cooking: Cooking.Raw })
+        if (stackIndex < 0 || stackIndex >= inventory.Stacks.Count || !CanBake(inventory.Stacks[stackIndex].Item))
         {
             return FireResult.CannotBake;
         }
 
         var raw = inventory.TakeOne(stackIndex)!;
-        if (!inventory.TryAdd(Item.Of(raw.Plant! with { Cooking = Cooking.Baked })))
+        var baked = raw.Kind == ItemKind.Meat ? Item.BakedMeat : Item.Of(raw.Plant! with { Cooking = Cooking.Baked });
+        if (!inventory.TryAdd(baked))
         {
             inventory.TryAdd(raw);
             return FireResult.InventoryFull;
@@ -177,6 +177,12 @@ public sealed class Fires
 
         baker?.Practice(SkillKind.Craft, GameData.Skills.Practice.Bake);
         return FireResult.Baked;
+    }
+
+    /// <summary>Péct jde syrovou část rostliny a syrové maso.</summary>
+    private static bool CanBake(Item item)
+    {
+        return item.Kind == ItemKind.Meat ? item.Cooking == Cooking.Raw : item.Plant is { Cooking: Cooking.Raw };
     }
 
     /// <summary>Kolik klacků stojí oheň. Zkušený řemeslník (cheapFireLevel v skills.json) potřebuje méně.</summary>

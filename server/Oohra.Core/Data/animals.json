@@ -1,0 +1,88 @@
+// Zvířata (návrh 12.5). Přepsáno z ECO, spawnAnimal, updateAnimals, attack, wound a meatQty v prototypu (part4.js, part5.js).
+// Vzdálenosti v metrech (= dlaždicích), rychlosti v metrech za sekundu reálného času, časy v sekundách
+// reálného času. Herní minuty jsou označené „Minutes“.
+{
+  // Počty zvířat na ostrov 84 × 84 (prototyp). Na větší ostrov se přepočítají podle plochy.
+  "population": { "boar": 5, "rabbit": 12, "deer": 5, "wolf": 2, "referenceArea": 7056 },
+  // Když zvířat ubude (lov), jedno chybějící se doplní za tolik herních minut.
+  "respawnMinutes": 720,
+  // Mrtvé zvíře (nestažené) zmizí za den.
+  "corpseMinutes": 1440,
+  // Nové zvíře se nenarodí blíž k hráči než spawnAvoid (u každého druhu) a ne do tábora.
+  "campDistance": 8,
+  // Noc pro zvířata: denní světlo pod touto hodnotou (vlci loví, králíci spí).
+  "nightDaylightBelow": 0.3,
+
+  "boar": {
+    "hp": 7, "meat": 3, "radius": 0.32, "spawnAvoid": 16,
+    "wanderSpeed": 0.9, "wanderRange": 4,
+    // Hráč blíž než aggroRange divočáka rozzuří na aggroSeconds. Zaměří se na hráče do alertRange.
+    "aggroRange": 3.4, "aggroSeconds": 12, "alertRange": 9,
+    // Chvíle, kdy se zaměří (zkušený lovec ji vidí delší), výpad a vyčerpání po něm.
+    "alertSeconds": 0.9, "alertBonusPerHuntLevel": 0.12,
+    "chargeSpeed": 7, "chargeSeconds": 1.1, "exhaustSeconds": 2.4, "exhaustAfterHitSeconds": 2.5,
+    // Zranění při zásahu: woundMin + náhoda × woundRange.
+    "woundMin": 18, "woundRange": 22,
+    // Rozzuřený divočák vzbudí spícího hráče do této vzdálenosti.
+    "wakeSleeperRange": 7
+  },
+  "wolf": {
+    "hp": 5, "meat": 2, "radius": 0.3, "spawnAvoid": 20,
+    "wanderSpeed": 1.4, "denRangeDay": 4, "denRangeNight": 12,
+    // V noci se plíží k hráči do stalkRange, který není do fireRange od ohně a není v úkrytu.
+    "stalkRange": 11, "fireRange": 4.5, "stalkSeconds": 7, "stalkSecondsRandom": 4,
+    "stalkFastSpeed": 2.4, "stalkSlowSpeed": 1.4, "stalkSlowWithin": 5, "giveUpRange": 16,
+    "alertRange": 3.2, "alertSeconds": 0.8,
+    "chargeSpeed": 8, "chargeSeconds": 0.9, "exhaustSeconds": 1.6, "exhaustAfterHitSeconds": 2,
+    "woundMin": 10, "woundRange": 14
+  },
+  "rabbit": {
+    "hp": 1, "meat": 1, "radius": 0.2, "spawnAvoid": 6,
+    // Utíká před hráčem blíž než fleeRange (v noci spí a uteče až z fleeRangeAsleep).
+    "fleeRange": 5.5, "fleeRangeAsleep": 2, "fleeSpeed": 5.6, "walkSpeed": 1.2,
+    // Při útěku se unaví (stamina sekund), pak tiredSeconds odpočívá.
+    "stamina": 3, "tiredSeconds": 2.2,
+    // Občas jde okusovat rostlinu do plantSearch metrů (grazeSeconds). Je to stopa, ne záruka bezpečnosti.
+    "grazeChance": 0.5, "plantSearch": 7, "grazeSeconds": 5, "wanderRange": 3
+  },
+  "deer": {
+    "hp": 4, "meat": 4, "radius": 0.2, "spawnAvoid": 14,
+    "fleeRange": 7.5, "fleeRangeAsleep": 7.5, "fleeSpeed": 6.2, "walkSpeed": 1.0,
+    "stamina": 3, "tiredSeconds": 2.2,
+    "grazeChance": 0, "plantSearch": 0, "grazeSeconds": 0, "wanderRange": 2.5,
+    // Stádo: jeleni se drží pohromadě (střed stáda z jelenů do herdRange), noví se rodí u stáda.
+    "herdRange": 14, "herdSpawnSpread": 3
+  },
+
+  // Lov (prototyp attack).
+  "hunt": {
+    "reach": 1.6, "cooldownSeconds": 0.45,
+    "fistDamage": 1, "spearDamage": 3, "spearBonusLevel": 3,
+    // Vyčerpané zvíře (po výpadu) dostane dvojnásobnou ránu.
+    "exhaustedMultiplier": 2,
+    // Zasažené zvíře je rozzuřené tolik sekund.
+    "hitAggroSeconds": 25,
+    "butcherReach": 1.4,
+    "practiceHit": 1.2, "practiceSmall": 2, "practiceKill": 4, "practiceSpear": 3
+  },
+
+  // Zranění od zvířat (prototyp wound). Síla zranění se zmenší dovedností Lov a podle generace.
+  "wounds": {
+    "huntReductionPerLevel": 0.05,
+    "healthFactor": 0.5,
+    "bleedPerSeverity": 0.012, "maxBleed": 0.6, "bleedDecayPerMinute": 0.004,
+    "limpPerSeverity": 1.8, "maxLimp": 100, "limpDecayPerMinute": 0.015,
+    "stunSeconds": 0.8,
+    // Velká rána se může zanítit (zánět a z něj horečka).
+    "infectionAbove": 20, "infectionChance": 0.35,
+    "infectionDelayMin": 400, "infectionDelayRange": 500, "infectionFactor": 0.8,
+    // Příznaky: krvácení a kulhání (nad limpSymptomAbove).
+    "limpSymptomAbove": 5
+  },
+
+  // Maso (prototyp comp pro meat): výživa, dráždivost, toxin, nervový jed, povzbuzení, léčivost.
+  "meat": {
+    "raw": [0.85, 0.35, 0, 0, 0, 0],
+    "baked": [1, 0, 0, 0, 0, 0]
+  }
+}

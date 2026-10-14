@@ -24,6 +24,8 @@
     "tiredEnergyBelow": 15,
     "tiredSlowdown": 0.2,
     "stimulantBonus": 0.18,
+    // Kulhání po zranění zpomalí (nejvýš o limpMaxSlowdown při kulhání 100).
+    "limpMaxSlowdown": 0.45,
     "minMultiplier": 0.35,
     "maxMultiplier": 1.3
   },

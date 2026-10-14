@@ -33,6 +33,9 @@ namespace Oohra.Client
     {
         private const int MaxLogLines = 6;
 
+        // Dosah rány (jako hunt.reach v animals.json, server ho stejně ověří).
+        private const float AttackReach = 1.6f;
+
         private readonly List<LogLine> _log = new List<LogLine>();
 
         public ClientSession(GameConnection connection)
@@ -154,6 +157,84 @@ namespace Oohra.Client
         }
 
         /// <summary>Oheň z nabídky podle čísla (null, když už není).</summary>
+        /// <summary>Zvíře v okolí podle čísla (null, když ho server už neposílá: zmizelo nebo je daleko).</summary>
+        public AnimalView? AnimalOf(int animalId)
+        {
+            foreach (var animal in Connection.Animals)
+            {
+                if (animal.Id == animalId)
+                {
+                    return animal;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Kde cíl je teď. Zvíře se hýbe, ostatní cíle stojí na místě.</summary>
+        public Vector2 PositionOf(InteractionTarget target)
+        {
+            if (target.Kind == TargetKind.Animal)
+            {
+                var animal = AnimalOf(target.Id);
+                if (animal.HasValue)
+                {
+                    return new Vector2(animal.Value.X, animal.Value.Y);
+                }
+            }
+
+            return new Vector2((float)target.X, (float)target.Y);
+        }
+
+        /// <summary>Zaútočit na zvíře v nabídce, jinak na nejbližší živé zvíře na dosah (mezerník).</summary>
+        public void Attack()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Animal)
+            {
+                Connection.Attack(Menu.Id);
+                return;
+            }
+
+            var self = Connection.SelfSnapshot();
+            if (self == null)
+            {
+                return;
+            }
+
+            var best = AttackReach;
+            var found = -1;
+            foreach (var animal in Connection.Animals)
+            {
+                var d = Vector2.Distance(new Vector2(animal.X, animal.Y), new Vector2(self.Value.X, self.Value.Y));
+                if (animal.State != AnimalState.Dead && d < best)
+                {
+                    best = d;
+                    found = animal.Id;
+                }
+            }
+
+            if (found >= 0)
+            {
+                Connection.Attack(found);
+            }
+        }
+
+        /// <summary>Stáhnout maso ze zvířete v nabídce.</summary>
+        public void Butcher()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Animal)
+            {
+                Connection.Butcher(Menu.Id);
+                Menu = null;
+                Selected = null;
+            }
+        }
+
+        public void MakeSpear()
+        {
+            Connection.MakeSpear();
+        }
+
         /// <summary>Druh stavby, u které je otevřená nabídka (zeď, zeď s otvorem, dveře).</summary>
         public BuildKind MenuStructureKind()
         {

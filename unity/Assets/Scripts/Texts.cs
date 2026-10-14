@@ -41,6 +41,10 @@ namespace Oohra.Client
                     var fire = (FireResult)e.Code;
                     warn = fire != FireResult.Lit && fire != FireResult.Fed && fire != FireResult.Relit && fire != FireResult.Baked;
                     return For(fire);
+                case EventKind.Hunt:
+                    var hunt = (HuntResult)e.Code;
+                    warn = hunt != HuntResult.Killed && hunt != HuntResult.CaughtSmall && hunt != HuntResult.Butchered && hunt != HuntResult.SpearMade && hunt != HuntResult.HitSpear;
+                    return For(hunt, (AnimalKind)e.Subject);
                 case EventKind.Build:
                     var build = (BuildResult)e.Code;
                     warn = build != BuildResult.Built && build != BuildResult.Removed;
@@ -48,6 +52,28 @@ namespace Oohra.Client
                 default:
                     warn = false;
                     return null;
+            }
+        }
+
+        /// <summary>Text k výsledku lovu (prototyp attack a nabídka mrtvého zvířete).</summary>
+        public static string For(HuntResult result, AnimalKind animal)
+        {
+            switch (result)
+            {
+                case HuntResult.HitFist: return "Praštil jsi ho pěstí. Spíš ho to rozzuřilo.";
+                case HuntResult.HitSpear: return "Zasáhl jsi ho kopím.";
+                case HuntResult.Killed: return AnimalViews.NameOf(animal) + " padl.";
+                case HuntResult.CaughtSmall: return "Chytil jsi malé zvíře.";
+                case HuntResult.TooFar: return "Je moc daleko.";
+                case HuntResult.TooSoon: return "Ještě se napřahuješ.";
+                case HuntResult.NotFound: return "Zvíře už tu není.";
+                case HuntResult.Butchered: return "Získal jsi maso.";
+                case HuntResult.NotDead: return "Zvíře ještě žije.";
+                case HuntResult.InventoryFull: return "Nemáš kam to dát. Něco z batohu zahoď.";
+                case HuntResult.SpearMade: return "Ostrý kámen ke klacku. Máš kopí.";
+                case HuntResult.AlreadyHasSpear: return "Kopí už máš.";
+                case HuntResult.NeedMaterials: return "Na kopí potřebuješ klacek a kámen.";
+                default: return result.ToString();
             }
         }
 
@@ -153,6 +179,12 @@ namespace Oohra.Client
                 case BodyEvent.NotTired: return "Nejsi dost unavený.";
                 case BodyEvent.TooColdToSleep: return "Je ti moc zima na spaní.";
                 case BodyEvent.LearnedInSleep: return "Ve spánku se ti uložilo, co jsi dělal.";
+                case BodyEvent.WoundedByBoar: return "Kly tě zasáhly. Krvácíš a bolí tě každý krok.";
+                case BodyEvent.WoundedByWolf: return "Vlk tě pokousal. Krvácíš a bolí tě každý krok.";
+                case BodyEvent.WokeByAnimal: return "Něco tě vzbudilo. Divočák je blízko.";
+                case BodyEvent.Stalked: return "Něco tě sleduje ze tmy. Oheň ho odradí.";
+                case BodyEvent.BoarAlert: return "Divočák se na tebe zaměřil. Až se rozběhne, uhni na stranu.";
+                case BodyEvent.WoundInflamed: return "Rána se zanítila. Pálí a je ti horko.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -216,6 +248,8 @@ namespace Oohra.Client
                 case DeathCause.Cold: return "Zemřel jsi podchlazením.";
                 case DeathCause.Thirst: return "Zemřel jsi žízní.";
                 case DeathCause.Hunger: return "Zemřel jsi hladem.";
+                case DeathCause.Bleeding: return "Vykrvácel jsi po zranění od zvířete.";
+                case DeathCause.Wound: return "Zemřel jsi na následky zranění od zvířete.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -231,6 +265,8 @@ namespace Oohra.Client
                 case Symptom.Diarrhea: return "průjem";
                 case Symptom.Inflammation: return "zánět";
                 case Symptom.Unconscious: return "bezvědomí";
+                case Symptom.Bleeding: return "krvácení";
+                case Symptom.Limping: return "kulhání";
                 default: return symptom.ToString();
             }
         }
@@ -251,6 +287,8 @@ namespace Oohra.Client
         {
             if (stack.Kind == ItemKind.Stick) return "Klacek";
             if (stack.Kind == ItemKind.Stone) return "Kámen";
+            if (stack.Kind == ItemKind.Spear) return "Kopí";
+            if (stack.Kind == ItemKind.Meat) return stack.Cooking == Cooking.Baked ? "Maso · upečené" : "Maso · syrové";
 
             var name = stack.Part == PlantPart.Leaf ? "List" : stack.Part == PlantPart.Root ? "Kořen" : "Plod";
             if (stack.Part == PlantPart.Fruit)
