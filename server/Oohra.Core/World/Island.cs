@@ -80,6 +80,9 @@ public sealed class Island
     /// <summary>Stavby hráčů (zdi). Na rozdíl od zbytku ostrova se mění během hry.</summary>
     public Structures Structures { get; } = new();
 
+    /// <summary>Značky a rytiny hráčů a staré rytiny u ruin (ty přidá server při startu, AddAncient).</summary>
+    public Signs Signs { get; } = new();
+
     public int Index(int x, int y)
     {
         return y * Width + x;

@@ -1,0 +1,31 @@
+// Značky a nákresy (prototyp signs, bitsForShape a makeRuins, návrh 7.2 a 14.3).
+// Kresba má 12 × 12 bodů a žádný text. Na skále vydrží (rytina), do hlíny a písku zvětrá.
+{
+  // Jak daleko od postavy jde kreslit (m) a smazat vlastní značku.
+  "drawReach": 1.6,
+  "eraseReach": 1.6,
+  // Nejmenší vzdálenost dvou značek (m).
+  "minSpacing": 0.6,
+  // Kresba do hlíny a písku zvětrá za tolik dní (prototyp 5 × DAY_MIN).
+  "weatherDays": 5,
+  // Nejvíc značek jednoho hráče ve světě (ochrana proti zaplevelení).
+  "maxPerAuthor": 30,
+  // Staré rytiny u ruin: rostlina, jméno ze slabik a poznámky z jejího složení, občas chybné.
+  "ruins": {
+    "seedSalt": 48879,
+    // Jak často je poznámka chybná, a jestli se přitom jedna správná vynechá.
+    "wrongChance": 0.3,
+    "dropChance": 0.6,
+    // Kdy rytina napíše poznámku (prototyp tagsFromComp): složka složení musí být nad hranicí.
+    "fillingAbove": 0.3,
+    "bitterAbove": 0.2,
+    "burnsAbove": 0.2,
+    "vomitAbove": 0.3,
+    "diarrheaAbove": 0.5,
+    "feverAbove": 0.12,
+    "tremorAbove": 0.3,
+    "faintAbove": 0.6,
+    "strengthenedAbove": 0.3,
+    "healsAbove": 0.3
+  }
+}
