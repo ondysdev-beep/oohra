@@ -124,7 +124,7 @@ namespace Oohra.Client
                     || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
                     || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse)
                     || SpeechHud.Covers(mouse) || SignHud.Covers(mouse) || TribeHud.Covers(mouse)
-                    || CorpseHud.Covers(mouse) || SignatureHud.Covers(mouse);
+                    || CorpseHud.Covers(mouse) || SignatureHud.Covers(mouse) || ReportHud.Covers(mouse);
             }
         }
 
@@ -424,14 +424,19 @@ namespace Oohra.Client
             }
 
             GUI.Label(titleRect, info.Nickname.ToUpper(), _title);
+            buttonRect.width = 180;
             if (_session.InMyTribe(target.Id))
             {
-                GUI.Label(new Rect(buttonRect.x, buttonRect.y + 4, 300, 22), "Je s tebou v kmeni.", _label);
-                return;
+                GUI.Label(new Rect(buttonRect.x, buttonRect.y + 4, 180, 22), "Je s tebou v kmeni.", _label);
+                buttonRect.x += buttonRect.width + 8;
+            }
+            else if (Button(ref buttonRect, "Pozvat do kmene"))
+            {
+                _session.InviteToTribe();
             }
 
-            buttonRect.width = 180;
-            if (Button(ref buttonRect, "Pozvat do kmene")) _session.InviteToTribe();
+            buttonRect.width = 120;
+            if (Button(ref buttonRect, "Nahlásit")) _session.AskReport(ReportTarget.Player, target.Id, "hráče " + info.Nickname);
         }
 
         /// <summary>U zvířete: živé udeřit (pěstí nebo kopím, i mezerníkem), z mrtvého stáhnout maso.</summary>

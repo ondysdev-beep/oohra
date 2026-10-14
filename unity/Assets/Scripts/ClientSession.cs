@@ -9,6 +9,24 @@ using UnityEngine;
 
 namespace Oohra.Client
 {
+    /// <summary>Co hráč chce nahlásit: hráče, značku nebo obecný problém (TargetId se pak nepoužije).</summary>
+    public sealed class ReportRequest
+    {
+        public ReportRequest(ReportTarget target, int targetId, string what)
+        {
+            Target = target;
+            TargetId = targetId;
+            What = what;
+        }
+
+        public ReportTarget Target { get; }
+
+        public int TargetId { get; }
+
+        /// <summary>Co se nahlašuje, do nadpisu panelu (přezdívka, „značku“, „problém“).</summary>
+        public string What { get; }
+    }
+
     /// <summary>Řádek v seznamu hlášek. Warn = špatná zpráva (zvýrazní se).</summary>
     public sealed class LogLine
     {
@@ -64,6 +82,27 @@ namespace Oohra.Client
         public InteractionTarget Selected { get; set; }
 
         public bool Dead => Connection.Self != null && Connection.Self.Dead;
+
+        /// <summary>Co hráč chce nahlásit (panel Nahlásit ukazuje důvody), nebo null.</summary>
+        public ReportRequest PendingReport { get; set; }
+
+        /// <summary>Otevře nahlášení hráče, značky nebo obecného problému. what je, co se ukáže v nadpisu.</summary>
+        public void AskReport(ReportTarget target, int targetId, string what)
+        {
+            PendingReport = new ReportRequest(target, targetId, what);
+        }
+
+        /// <summary>Pošle nahlášení s důvodem a zavře panel. Výsledek přijde jako hláška.</summary>
+        public void SendReport(ReportReason reason)
+        {
+            if (PendingReport == null)
+            {
+                return;
+            }
+
+            Connection.Report(PendingReport.Target, PendingReport.TargetId, reason);
+            PendingReport = null;
+        }
 
         /// <summary>Zpracuje zprávy od serveru. Volat každý snímek.</summary>
         public void Update()

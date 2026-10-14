@@ -17,5 +17,10 @@
   "statsEverySeconds": 10,
   // Zvířata na ostrově a do jaké vzdálenosti (metry) hráč dostává jejich polohy.
   "animals": true,
-  "animalViewDistance": 40
+  "animalViewDistance": 40,
+  // Tlačítko Nahlásit: nahlášení se zapisují sem (jeden záznam na řádek), nejvýš jedno za reportCooldownSeconds.
+  "reportsFile": "reports.jsonl",
+  "reportCooldownSeconds": 30,
+  // Vyloučení hráči (přezdívky). Po změně restartuj server.
+  "bannedNicknames": []
 }

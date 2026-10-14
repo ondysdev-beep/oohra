@@ -294,6 +294,12 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteSetSignature(w, name, mark));
     }
 
+    /// <summary>Nahlásit hráče, značku nebo obecný problém správci (tlačítko Nahlásit). Odpověď přijde jako hláška.</summary>
+    public void Report(ReportTarget target, int targetId, ReportReason reason)
+    {
+        Send(w => Messages.WriteReport(w, target, targetId, reason));
+    }
+
     /// <summary>Kdo tě od posledního volání pozval do kmene (čísla hráčů).</summary>
     public List<int> TakeInvites()
     {

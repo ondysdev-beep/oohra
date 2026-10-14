@@ -455,6 +455,20 @@ public static class Messages
         return (GetBytes(r), GetBytes(r));
     }
 
+    /// <summary>Nahlásit hráče, značku (targetId = jejich číslo) nebo obecný problém (targetId se nepoužije).</summary>
+    public static void WriteReport(NetDataWriter w, ReportTarget target, int targetId, ReportReason reason)
+    {
+        w.Put((byte)MessageType.Report);
+        w.Put((byte)target);
+        w.Put(targetId);
+        w.Put((byte)reason);
+    }
+
+    public static (ReportTarget Target, int TargetId, ReportReason Reason) ReadReport(NetDataReader r)
+    {
+        return ((ReportTarget)r.GetByte(), r.GetInt(), (ReportReason)r.GetByte());
+    }
+
     /// <summary>Můj podpis (prázdné jméno = ještě žádný). Posílá se po přihlášení a po změně.</summary>
     public static void WriteSignature(NetDataWriter w, byte[] name, byte[] mark)
     {

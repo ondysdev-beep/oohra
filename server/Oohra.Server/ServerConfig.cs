@@ -47,6 +47,15 @@ public sealed class ServerConfig
     /// <summary>Do jaké vzdálenosti (metry) hráč dostává polohy zvířat.</summary>
     public double AnimalViewDistance { get; set; } = 40;
 
+    /// <summary>Kam se zapisují nahlášení (tlačítko Nahlásit), jeden záznam JSON na řádek. Čte je správce.</summary>
+    public string ReportsFile { get; set; } = "reports.jsonl";
+
+    /// <summary>Nejkratší doba mezi dvěma nahlášeními jednoho hráče (sekundy).</summary>
+    public double ReportCooldownSeconds { get; set; } = 30;
+
+    /// <summary>Vyloučení hráči (přezdívky). Správce je sem dopíše po nahlášení, server je nepustí do hry.</summary>
+    public List<string> BannedNicknames { get; set; } = [];
+
     public static ServerConfig Load(string path)
     {
         if (!File.Exists(path))
