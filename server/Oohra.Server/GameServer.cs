@@ -58,6 +58,7 @@ public sealed class GameServer : IDisposable
         _sentVisuals = new PlantVisual[Island.Plants.Count];
         _commonWords = CommonWords.For(config.Seed);
         Island.Signs.AddAncient(Island);
+        Reports = new ReportLog(config.ReportsFile);
         Animals = new Animals(config.Seed) { Enabled = config.Animals };
         if (config.Animals)
         {
@@ -95,6 +96,9 @@ public sealed class GameServer : IDisposable
 
     /// <summary>Kmeny hráčů (patří hráči, ne postavě, takže přežijí smrt).</summary>
     internal Tribes Tribes { get; } = new();
+
+    /// <summary>Nahlášení od hráčů (tlačítko Nahlásit), zapisují se do souboru reportsFile.</summary>
+    public ReportLog Reports { get; }
 
     /// <summary>Spustí server. Port 0 = vyber volný port (pro testy).</summary>
     public void Start(int port)
@@ -283,6 +287,11 @@ public sealed class GameServer : IDisposable
             return "Neplatný kód pozvánky.";
         }
 
+        if (_config.BannedNicknames.Contains(nickname, StringComparer.OrdinalIgnoreCase))
+        {
+            return "Správce tě z testu vyloučil.";
+        }
+
         if (nickname.Length < MinNicknameLength || nickname.Length > MaxNicknameLength
             || !nickname.All(ch => char.IsLetterOrDigit(ch) || ch is ' ' or '-' or '_'))
         {
@@ -443,6 +452,9 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.SetSignature:
                 SetSignature(player, Messages.ReadSetSignature(reader));
+                break;
+            case MessageType.Report:
+                Report(player, Messages.ReadReport(reader));
                 break;
             case MessageType.InviteToTribe:
                 InviteToTribe(player, Messages.ReadInviteToTribe(reader));
@@ -816,6 +828,90 @@ public sealed class GameServer : IDisposable
         var result = Island.Corpses.Take(corpseId, stackIndex, player.Inventory, player.X, player.Y, player.Id, Tribes, Clock.TotalMinutes);
         SendEvent(player, new GameEvent(EventKind.Corpse, (byte)result, default, []));
         SendInventory(player);
+    }
+
+    // ---------- tlačítko Nahlásit ----------
+
+    /// <summary>
+    /// Hráč něco nahlásil (návrh 14.3). Server zapíše záznam do souboru a do konzole, rozhoduje správce.
+    /// Jedno nahlášení za reportCooldownSeconds, sebe nahlásit nejde.
+    /// </summary>
+    private void Report(PlayerSession reporter, (ReportTarget Target, int TargetId, ReportReason Reason) report)
+    {
+        if (!Enum.IsDefined(report.Target) || !Enum.IsDefined(report.Reason))
+        {
+            return;
+        }
+
+        if (_seconds - reporter.LastReportAt < _config.ReportCooldownSeconds)
+        {
+            SendEvent(reporter, new GameEvent(EventKind.Report, (byte)ReportResult.TooOften, default, []));
+            return;
+        }
+
+        var entry = ReportEntryFor(reporter, report.Target, report.TargetId, report.Reason);
+        if (entry is null)
+        {
+            SendEvent(reporter, new GameEvent(EventKind.Report, (byte)ReportResult.NotFound, default, []));
+            return;
+        }
+
+        reporter.LastReportAt = _seconds;
+        Reports.Write(entry);
+        var what = entry.Player ?? (entry.SignId is { } sign ? $"značku č. {sign}" : "problém");
+        Log?.Invoke($"NAHLÁŠENÍ: {reporter.Nickname} nahlásil {what} ({entry.Reason}). Záznam je v {Reports.Path}.");
+        SendEvent(reporter, new GameEvent(EventKind.Report, (byte)ReportResult.Sent, default, []));
+    }
+
+    /// <summary>Záznam pro správce: kdo, kdy, kde, koho nebo co. Null, když cíl není (nebo je to sám nahlašující).</summary>
+    private ReportEntry? ReportEntryFor(PlayerSession reporter, ReportTarget target, int targetId, ReportReason reason)
+    {
+        var entry = new ReportEntry
+        {
+            Time = DateTime.UtcNow,
+            GameMinutes = Math.Round(Clock.TotalMinutes, 1),
+            Reporter = reporter.Nickname,
+            ReporterId = reporter.Id,
+            ReporterX = Math.Round(reporter.X, 2),
+            ReporterY = Math.Round(reporter.Y, 2),
+            Target = target.ToString(),
+            Reason = reason.ToString(),
+        };
+
+        switch (target)
+        {
+            case ReportTarget.Player:
+                var player = _byNickname.Values.FirstOrDefault(p => p.Id == targetId);
+                return player is null || player.Id == reporter.Id ? null : entry with
+                {
+                    Player = player.Nickname,
+                    PlayerId = player.Id,
+                    PlayerX = Math.Round(player.X, 2),
+                    PlayerY = Math.Round(player.Y, 2),
+                    PlayerOnline = player.Online,
+                };
+            case ReportTarget.Sign:
+                var sign = Island.Signs.Find(targetId);
+                return sign is null ? null : entry with
+                {
+                    SignId = sign.Id,
+                    SignX = Math.Round(sign.X, 2),
+                    SignY = Math.Round(sign.Y, 2),
+                    SignAuthor = _byNickname.Values.FirstOrDefault(p => p.Id == sign.AuthorId)?.Nickname,
+                    SignRows = SignRows(sign.Bits),
+                };
+            default:
+                return entry;
+        }
+    }
+
+    /// <summary>Kresba značky jako 12 řádků textu (# = bod, . = nic), aby ji správce viděl v souboru.</summary>
+    private static string[] SignRows(byte[] bits)
+    {
+        var text = SignBits.ToText(bits);
+        return Enumerable.Range(0, SignBits.Size)
+            .Select(row => text.Substring(row * SignBits.Size, SignBits.Size).Replace('1', '#').Replace('0', '.'))
+            .ToArray();
     }
 
     /// <summary>Podpis: jméno ze slabik (1 až 3) a znak 12 × 12. Neplatný se ignoruje.</summary>

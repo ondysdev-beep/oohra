@@ -58,6 +58,10 @@ namespace Oohra.Client
                     var tribe = (TribeResult)e.Code;
                     warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined or TribeResult.BornAtHome);
                     return For(tribe);
+                case EventKind.Report:
+                    var report = (ReportResult)e.Code;
+                    warn = report != ReportResult.Sent;
+                    return For(report);
                 case EventKind.Sign:
                     var sign = (SignResult)e.Code;
                     warn = sign != SignResult.Drawn && sign != SignResult.Erased;
@@ -105,6 +109,30 @@ namespace Oohra.Client
                 case TribeResult.BornAtHome: return "Narodil ses u svého kmene. Nic nevíš, ale jsi mezi svými.";
                 case TribeResult.NoHome: return "U kmene nebylo kde se narodit (nemá stavby ani živé členy). Probouzíš se v divočině.";
                 default: return "Přijal pozvánku. Je s tebou v kmeni.";
+            }
+        }
+
+        /// <summary>Text k výsledku nahlášení.</summary>
+        public static string For(ReportResult result)
+        {
+            switch (result)
+            {
+                case ReportResult.Sent: return "Nahlášeno. Správce se na to podívá.";
+                case ReportResult.TooOften: return "Nahlašuješ moc často. Chvíli počkej.";
+                default: return "Tohle nahlásit nejde (už tu není, nebo jsi to ty).";
+            }
+        }
+
+        /// <summary>Důvod nahlášení na tlačítku.</summary>
+        public static string ReasonName(ReportReason reason)
+        {
+            switch (reason)
+            {
+                case ReportReason.Behavior: return "Obtěžuje nebo uráží";
+                case ReportReason.Cheating: return "Podvádí";
+                case ReportReason.OffensiveSign: return "Nevhodná kresba";
+                case ReportReason.Bug: return "Chyba ve hře";
+                default: return "Něco jiného";
             }
         }
 

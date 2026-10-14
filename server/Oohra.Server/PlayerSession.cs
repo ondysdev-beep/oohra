@@ -74,4 +74,7 @@ public sealed class PlayerSession
     public Gesture? LastGesture { get; set; }
 
     public double LastGestureAt { get; set; } = double.NegativeInfinity;
+
+    /// <summary>Kdy hráč naposledy něco nahlásil (sekundy od startu serveru), nejvýš jedno za reportCooldownSeconds.</summary>
+    public double LastReportAt { get; set; } = double.NegativeInfinity;
 }

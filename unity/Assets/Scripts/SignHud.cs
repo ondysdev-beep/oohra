@@ -1,4 +1,5 @@
 using System.Linq;
+using Oohra.Core.Social;
 using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
@@ -207,6 +208,12 @@ namespace Oohra.Client
             if (sign.AuthorId == _session.Connection.PlayerId && GUI.Button(new Rect(tx, _readRect.yMax - 36, 110, 28), "Smazat"))
             {
                 _session.EraseSign();
+            }
+
+            // Cizí značku jde nahlásit (nevhodná kresba), správce rozhodne.
+            if (sign.AuthorId != _session.Connection.PlayerId && GUI.Button(new Rect(_readRect.xMax - 120, _readRect.yMax - 36, 110, 28), "Nahlásit"))
+            {
+                _session.AskReport(ReportTarget.Sign, sign.Id, "značku");
             }
         }
 
