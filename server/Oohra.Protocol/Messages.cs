@@ -110,6 +110,14 @@ public sealed record WordEntryView(byte[] Word, int Heard, int[] Contexts, Conce
 public sealed record VocabularyView(WordEntryView[] Entries, byte[] LastHeard);
 
 /// <summary>
+/// Značka ve světě: kresba 12 × 12 (SignBits), kdo ji nakreslil (-1 = stará rytina), kdy (herní minuty) a kdy zvětrá
+/// (-1 = rytina, nezvětrá). Stará rytina má záznam: druh rostliny, jméno ze slabik a poznámky (RecordSpeciesId -1 = bez záznamu).
+/// </summary>
+public sealed record SignView(
+    int Id, float X, float Y, byte[] Bits, int AuthorId, double CreatedAt, double WeathersAt, bool Carved, bool Ancient,
+    int RecordSpeciesId, byte[] RecordName, CarvingTag[] RecordTags);
+
+/// <summary>
 /// Hláška pro hráče: co se stalo s tělem, se sběrem, s pitím, s lovem... U nové úrovně dovednosti nese dovednost
 /// a úroveň, u lovu druh zvířete (Subject).
 /// </summary>
@@ -271,13 +279,13 @@ public static class Messages
     public static void WriteSay(NetDataWriter w, byte[] word, Tone tone)
     {
         w.Put((byte)MessageType.Say);
-        PutWord(w, word);
+        PutBytes(w, word);
         w.Put((byte)tone);
     }
 
     public static (byte[] Word, Tone Tone) ReadSay(NetDataReader r)
     {
-        return (GetWord(r), (Tone)r.GetByte());
+        return (GetBytes(r), (Tone)r.GetByte());
     }
 
     /// <summary>Udělat gesto. U ukázání je (x, y) místo na mapě, jinak se nepoužije.</summary>
@@ -298,28 +306,96 @@ public static class Messages
     public static void WriteSetMeaning(NetDataWriter w, byte[] word, Concept? meaning)
     {
         w.Put((byte)MessageType.SetMeaning);
-        PutWord(w, word);
+        PutBytes(w, word);
         PutConcept(w, meaning);
     }
 
     public static (byte[] Word, Concept? Meaning) ReadSetMeaning(NetDataReader r)
     {
-        return (GetWord(r), GetConcept(r));
+        return (GetBytes(r), GetConcept(r));
+    }
+
+    /// <summary>Nakreslit značku (kresba SignBits, 18 bajtů) na místo (x, y) kousek od postavy.</summary>
+    public static void WriteDrawSign(NetDataWriter w, float x, float y, byte[] bits)
+    {
+        w.Put((byte)MessageType.DrawSign);
+        w.Put(x);
+        w.Put(y);
+        PutBytes(w, bits);
+    }
+
+    public static (float X, float Y, byte[] Bits) ReadDrawSign(NetDataReader r)
+    {
+        return (r.GetFloat(), r.GetFloat(), GetBytes(r));
+    }
+
+    /// <summary>Smazat vlastní značku.</summary>
+    public static void WriteEraseSign(NetDataWriter w, int signId)
+    {
+        w.Put((byte)MessageType.EraseSign);
+        w.Put(signId);
+    }
+
+    public static int ReadEraseSign(NetDataReader r)
+    {
+        return r.GetInt();
     }
 
     // ---------- server → klient ----------
+
+    /// <summary>Všechny značky. Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteSigns(NetDataWriter w, IReadOnlyList<SignView> signs)
+    {
+        w.Put((byte)MessageType.Signs);
+        w.Put(signs.Count);
+        foreach (var s in signs)
+        {
+            w.Put(s.Id);
+            w.Put(s.X);
+            w.Put(s.Y);
+            PutBytes(w, s.Bits);
+            w.Put(s.AuthorId);
+            w.Put(s.CreatedAt);
+            w.Put(s.WeathersAt);
+            w.Put(s.Carved);
+            w.Put(s.Ancient);
+            w.Put(s.RecordSpeciesId);
+            PutBytes(w, s.RecordName);
+            PutBytes(w, s.RecordTags.Select(t => (byte)t).ToArray());
+        }
+    }
+
+    public static SignView[] ReadSigns(NetDataReader r)
+    {
+        return ReadList(r, () => new SignView(
+            r.GetInt(), r.GetFloat(), r.GetFloat(), GetBytes(r), r.GetInt(), r.GetDouble(), r.GetDouble(), r.GetBool(), r.GetBool(),
+            r.GetInt(), GetBytes(r), GetBytes(r).Select(b => (CarvingTag)b).ToArray()));
+    }
+
+    private static void PutBytes(NetDataWriter w, byte[] bytes)
+    {
+        w.Put((byte)bytes.Length);
+        w.Put(bytes);
+    }
+
+    private static byte[] GetBytes(NetDataReader r)
+    {
+        var bytes = new byte[r.GetByte()];
+        r.GetBytes(bytes, bytes.Length);
+        return bytes;
+    }
 
     public static void WriteSpeech(NetDataWriter w, SpeechView speech)
     {
         w.Put((byte)MessageType.Speech);
         w.Put(speech.PlayerId);
-        PutWord(w, speech.Word);
+        PutBytes(w, speech.Word);
         w.Put((byte)speech.Tone);
     }
 
     public static SpeechView ReadSpeech(NetDataReader r)
     {
-        return new SpeechView(r.GetInt(), GetWord(r), (Tone)r.GetByte());
+        return new SpeechView(r.GetInt(), GetBytes(r), (Tone)r.GetByte());
     }
 
     public static void WriteGestureSeen(NetDataWriter w, GestureView gesture)
@@ -343,7 +419,7 @@ public static class Messages
         w.Put(vocabulary.Entries.Length);
         foreach (var e in vocabulary.Entries)
         {
-            PutWord(w, e.Word);
+            PutBytes(w, e.Word);
             w.Put(e.Heard);
             w.Put((byte)e.Contexts.Length);
             foreach (var count in e.Contexts)
@@ -355,14 +431,14 @@ public static class Messages
             w.Put(e.OldVoice);
         }
 
-        PutWord(w, vocabulary.LastHeard);
+        PutBytes(w, vocabulary.LastHeard);
     }
 
     public static VocabularyView ReadVocabulary(NetDataReader r)
     {
         var entries = ReadList(r, () =>
         {
-            var word = GetWord(r);
+            var word = GetBytes(r);
             var heard = r.GetInt();
             var contexts = new int[r.GetByte()];
             for (var i = 0; i < contexts.Length; i++)
@@ -372,20 +448,7 @@ public static class Messages
 
             return new WordEntryView(word, heard, contexts, GetConcept(r), r.GetBool());
         });
-        return new VocabularyView(entries, GetWord(r));
-    }
-
-    private static void PutWord(NetDataWriter w, byte[] word)
-    {
-        w.Put((byte)word.Length);
-        w.Put(word);
-    }
-
-    private static byte[] GetWord(NetDataReader r)
-    {
-        var word = new byte[r.GetByte()];
-        r.GetBytes(word, word.Length);
-        return word;
+        return new VocabularyView(entries, GetBytes(r));
     }
 
     /// <summary>Význam slova jako bajt, 255 = žádný.</summary>

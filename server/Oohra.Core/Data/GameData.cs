@@ -65,6 +65,11 @@ public static class GameData
 
     public static LanguageRules Language => _language.Value;
 
+    private static readonly Lazy<SignRules> _signs =
+        new(() => Load<SignRules>("signs.json"));
+
+    public static SignRules Signs => _signs.Value;
+
     public static GatheringRules Gathering => _gathering.Value;
 
     public static MovementRules Movement => _movement.Value;

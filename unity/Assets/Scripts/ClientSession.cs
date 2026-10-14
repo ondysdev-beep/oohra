@@ -267,6 +267,28 @@ namespace Oohra.Client
             return null;
         }
 
+        /// <summary>Značka v otevřené nabídce, nebo null (mezitím zvětrala nebo ji autor smazal).</summary>
+        public SignView MenuSign()
+        {
+            if (Menu == null || Menu.Kind != TargetKind.Sign)
+            {
+                return null;
+            }
+
+            return Connection.Signs.FirstOrDefault(s => s.Id == Menu.Id);
+        }
+
+        /// <summary>Smazat vlastní značku v nabídce.</summary>
+        public void EraseSign()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Sign)
+            {
+                Connection.EraseSign(Menu.Id);
+                Menu = null;
+                Selected = null;
+            }
+        }
+
         public FireView? MenuFire()
         {
             if (Menu == null || Menu.Kind != TargetKind.Fire)

@@ -49,10 +49,57 @@ namespace Oohra.Client
                     var build = (BuildResult)e.Code;
                     warn = build != BuildResult.Built && build != BuildResult.Removed;
                     return For(build);
+                case EventKind.Sign:
+                    var sign = (SignResult)e.Code;
+                    warn = sign != SignResult.Drawn && sign != SignResult.Erased;
+                    return For(sign);
                 default:
                     warn = false;
                     return null;
             }
+        }
+
+        /// <summary>Text k výsledku kreslení a mazání značky.</summary>
+        public static string For(SignResult result)
+        {
+            switch (result)
+            {
+                case SignResult.Drawn: return "Nakreslil jsi značku.";
+                case SignResult.Erased: return "Smazal jsi značku.";
+                case SignResult.Empty: return "Nakresli aspoň pár bodů.";
+                case SignResult.TooFar: return "Jsi moc daleko.";
+                case SignResult.CannotDrawHere: return "Tady kreslit nejde (voda nebo jiná značka hned vedle).";
+                case SignResult.NotFound: return "Značka už tu není.";
+                case SignResult.NotYours: return "Cizí značku smazat nemůžeš.";
+                default: return "Ve světě máš už moc značek. Nějakou smaž.";
+            }
+        }
+
+        /// <summary>Poznámka na staré rytině (prototyp TAGS).</summary>
+        public static string TagName(CarvingTag tag)
+        {
+            switch (tag)
+            {
+                case CarvingTag.Filling: return "syté";
+                case CarvingTag.Bitter: return "hořké";
+                case CarvingTag.Burns: return "pálí";
+                case CarvingTag.Vomit: return "zvracení";
+                case CarvingTag.Diarrhea: return "průjem";
+                case CarvingTag.Fever: return "horečka";
+                case CarvingTag.Tremor: return "třes";
+                case CarvingTag.Faint: return "omdlení";
+                case CarvingTag.Strengthened: return "posílilo";
+                default: return "léčí";
+            }
+        }
+
+        /// <summary>Jak dávno to bylo (prototyp lt): „právě teď“, „před 20 min“, „před 3 h“, „před 1,5 dne“.</summary>
+        public static string Ago(double minutes)
+        {
+            if (minutes < 1) return "právě teď";
+            if (minutes < 60) return "před " + System.Math.Round(minutes) + " min";
+            if (minutes < 1440) return "před " + System.Math.Round(minutes / 60) + " h";
+            return "před " + (System.Math.Round(minutes / 1440 * 10) / 10).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') + " dny";
         }
 
         /// <summary>Text k výsledku lovu (prototyp attack a nabídka mrtvého zvířete).</summary>

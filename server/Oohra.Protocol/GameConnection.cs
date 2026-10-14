@@ -66,6 +66,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Zápisník slov (ztratí se smrtí, server pošle nový).</summary>
     public VocabularyView Vocabulary { get; private set; } = new([], []);
 
+    /// <summary>Značky a rytiny ve světě.</summary>
+    public SignView[] Signs { get; private set; } = [];
+
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
     public void Connect(string host, int port, string inviteCode, string nickname)
@@ -215,6 +218,18 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteSetMeaning(w, word, meaning));
     }
 
+    /// <summary>Nakreslit značku (kresba SignBits) na místo (x, y) kousek od postavy. Na skále to bude rytina.</summary>
+    public void DrawSign(float x, float y, byte[] bits)
+    {
+        Send(w => Messages.WriteDrawSign(w, x, y, bits));
+    }
+
+    /// <summary>Smazat vlastní značku.</summary>
+    public void EraseSign(int signId)
+    {
+        Send(w => Messages.WriteEraseSign(w, signId));
+    }
+
     /// <summary>Slova, která od posledního volání zazněla poblíž (i vlastní).</summary>
     public List<SpeechView> TakeSpeech()
     {
@@ -340,6 +355,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Vocabulary:
                 Vocabulary = Messages.ReadVocabulary(reader);
+                break;
+            case MessageType.Signs:
+                Signs = Messages.ReadSigns(reader);
                 break;
         }
     }

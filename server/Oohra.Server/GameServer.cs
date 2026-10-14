@@ -38,6 +38,7 @@ public sealed class GameServer : IDisposable
     private long _tick;
     private int _sentFiresVersion;
     private int _sentStructuresVersion;
+    private int _sentSignsVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
 
@@ -52,6 +53,7 @@ public sealed class GameServer : IDisposable
         _rng = new Mulberry32(config.Seed ^ 0x5E4E);
         _sentVisuals = new PlantVisual[Island.Plants.Count];
         _commonWords = CommonWords.For(config.Seed);
+        Island.Signs.AddAncient(Island);
         Animals = new Animals(config.Seed) { Enabled = config.Animals };
         if (config.Animals)
         {
@@ -122,6 +124,13 @@ public sealed class GameServer : IDisposable
         {
             _sentFiresVersion = Fires.Version;
             Broadcast(w => Messages.WriteFires(w, FireViews()));
+        }
+
+        Island.Signs.Weather(Clock.TotalMinutes);
+        if (Island.Signs.Version != _sentSignsVersion)
+        {
+            _sentSignsVersion = Island.Signs.Version;
+            Broadcast(w => Messages.WriteSigns(w, SignViews()));
         }
 
         if (Island.Structures.Version != _sentStructuresVersion)
@@ -220,6 +229,7 @@ public sealed class GameServer : IDisposable
         SendTo(peer, w => Messages.WritePlantStates(w, AllPlantVisuals()));
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
         SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
+        SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
         player.SentVocabularyVersion = -1;
         SendInventory(player);
         SendSelfState(player);
@@ -383,6 +393,14 @@ public sealed class GameServer : IDisposable
             case MessageType.Gesture:
                 MakeGesture(player, Messages.ReadGesture(reader));
                 break;
+            case MessageType.DrawSign:
+                var (signX, signY, bits) = Messages.ReadDrawSign(reader);
+                SignAction(player, () => Island.Signs.Draw(Island, player.Id, player.X, player.Y, signX, signY, bits, Clock.TotalMinutes));
+                break;
+            case MessageType.EraseSign:
+                var signId = Messages.ReadEraseSign(reader);
+                SignAction(player, () => Island.Signs.Erase(signId, player.Id, player.X, player.Y));
+                break;
             case MessageType.SetMeaning:
                 var (word, meaning) = Messages.ReadSetMeaning(reader);
                 if (Words.IsValid(word) && (meaning is null || Enum.IsDefined(meaning.Value)))
@@ -433,6 +451,14 @@ public sealed class GameServer : IDisposable
         var result = action();
         SendEvent(player, new GameEvent(EventKind.Build, (byte)result, default, []));
         SendInventory(player);
+    }
+
+    private void SignAction(PlayerSession player, Func<SignResult> action)
+    {
+        if (!player.Character.IsDead)
+        {
+            SendEvent(player, new GameEvent(EventKind.Sign, (byte)action(), default, []));
+        }
     }
 
     /// <summary>Kde stojí hráči ve hře (zeď se nesmí postavit na nikoho z nich).</summary>
@@ -846,6 +872,13 @@ public sealed class GameServer : IDisposable
     private StructureView[] StructureViews()
     {
         return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1)).ToArray();
+    }
+
+    private SignView[] SignViews()
+    {
+        return Island.Signs.All.Select(s => new SignView(
+            s.Id, (float)s.X, (float)s.Y, s.Bits, s.AuthorId, s.CreatedAt, Signs.WeathersAt(s) ?? -1, s.Carved, s.Ancient,
+            s.Record?.SpeciesId ?? -1, s.Record?.Name ?? [], s.Record?.Tags.ToArray() ?? [])).ToArray();
     }
 
     private static PlayerInfo InfoOf(PlayerSession player)
