@@ -12,17 +12,65 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae67da6c9fb7fe34aa2c2602fef3cacb, type: 3}
   m_Name: VisualCatalog
   m_EditorClassIdentifier: Oohra.Client::Oohra.Client.VisualCatalog
-  Trees: []
+  Trees:
+  - {fileID: 5904771956385372489, guid: 11cf8883d83d51644b35cbcadef2360a, type: 3}
+  - {fileID: 8442056237596460541, guid: ab91a47adb8cc494586dc4fcb69824b7, type: 3}
+  - {fileID: 6584972577766378564, guid: d4b71a6ce5cddea479bcd87e460c9a57, type: 3}
+  - {fileID: 6879069806676925136, guid: 9eb814cd8b9b7bd40812e05f2d1b345e, type: 3}
+  - {fileID: 1154760010325916134, guid: 87b3de9dbda859a4bbfedccb38e33a39, type: 3}
+  TreeHeight: 5
   Plants:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 6887655973843577847, guid: 4c85c0f2b59552040802df6b7573f619, type: 3}
+  - {fileID: 5268203991766783212, guid: 6bb9617c747924f4e97a57b52cf40644, type: 3}
+  - {fileID: 5140232046375016200, guid: 557313cd8c9246d4086d9c90b7c91e8f, type: 3}
+  - {fileID: 4759020594952762026, guid: 0a968327991c4994c97f9a60d82cf7cf, type: 3}
+  PlantHeight: 0.45
+  Grass:
+  - {fileID: 4715064417305335762, guid: aec1d69c44b067f438df5e0ab4f2e8fb, type: 3}
+  - {fileID: 2309905856585748212, guid: 73da1085c08c7bf49a4e010fe06f6bab, type: 3}
+  - {fileID: 3871514886644602936, guid: 2a60f071242e5d747acba6d751a884e2, type: 3}
+  GrassHeight: 0.3
+  GrassPerTile: 1.5
   Wall: {fileID: 0}
   DoorFrame: {fileID: 0}
   Door: {fileID: 0}
   Trap: {fileID: 0}
   Stockpile: {fileID: 0}
+  Decorations: []
+  GrassTexture: {fileID: 0}
+  SandTexture: {fileID: 0}
+  ForestTexture: {fileID: 0}
+  RockTexture: {fileID: 0}
+  BogTexture: {fileID: 0}
+  GroundTextureSize: 4
+  Rocks:
+  - {fileID: 6627928173202147823, guid: 99fc2a8d6198f0b4094b42fa6f22d055, type: 3}
+  - {fileID: 4392374139655778112, guid: 25b2c6cd01eb2984289405b0c5630c79, type: 3}
+  - {fileID: 8326338799085073278, guid: 30341d14ac7701c4d98f93cc7e7fc747, type: 3}
+  - {fileID: 3098550211319787307, guid: d9ddf19eacd4f2a43ae7312261511d81, type: 3}
+  - {fileID: 6142644470582631958, guid: 1f317b53cda66eb41bc261297cd9c166, type: 3}
+  - {fileID: 7718055000384658500, guid: 31c6908be6824ba4ba12a1359a8ee40e, type: 3}
+  - {fileID: 6324864460766391841, guid: 1f475b8b9661e5f4ba04be7c6fd7f0da, type: 3}
+  - {fileID: 3394907288064244817, guid: 3d1ce29006014924a80da7628fb2b4b6, type: 3}
+  - {fileID: 8940962466641769734, guid: b4474f9d0bfee044fa5f456a197bdbb1, type: 3}
+  - {fileID: 3411743564861290590, guid: e644c16c780ca4948947fafbe5db3fc0, type: 3}
+  - {fileID: 6686823240032269789, guid: d4f6d455d2649164aaebdf0317378ae6, type: 3}
+  - {fileID: 3787026813779523426, guid: 12472b102cc4f5c4f8da06f6df840f22, type: 3}
+  - {fileID: 5112067364858557263, guid: d7d16e259a61cfa4e88065f59996f7bf, type: 3}
+  - {fileID: 2367486897356952710, guid: acd4dc441e341234188ace961d48e9cb, type: 3}
+  RockMinSize: 0.2
+  RockMaxSize: 0.45
+  WaterColor: {r: 0.16, g: 0.38, b: 0.50980395, a: 0.72}
+  WaterNormalMap: {fileID: 2800000, guid: 766a7edc5f25e3b4daafb5554da17927, type: 3}
+  WaveSize: 3
+  WaveSpeed: 0.08
+  WaterMaterial: {fileID: 0}
+  WaterReflectionCamera: {fileID: 0}
+  FoamColor: {r: 0.95, g: 0.97, b: 1, a: 0.8}
+  FoamWidth: 0.45
+  Player: {fileID: 0}
+  Campfire: {fileID: 0}
+  Flame: {fileID: 0}
   Boar: {fileID: 0}
   Rabbit: {fileID: 0}
   Deer: {fileID: 0}
