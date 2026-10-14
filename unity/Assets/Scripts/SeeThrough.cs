@@ -34,8 +34,7 @@ namespace Oohra.Client
         /// <summary>Jedna věc, která umí zprůhlednět: kde je, jak je široká a v jaké výšce.</summary>
         private sealed class Entry
         {
-            public Renderer Renderer;
-            public Color Color;
+            public FadeTarget Target;
             public Vector2 Position;
             public Vector2Int Cell;
             public float Radius;
@@ -47,15 +46,15 @@ namespace Oohra.Client
 
         /// <summary>
         /// Přidá věc pod klíčem (strom: číslo dlaždice, stavba: záporné číslo stavby). (x, y) je střed na mapě,
-        /// radius polovina šířky, bottom a top výška spodku a vršku v metrech.
+        /// radius polovina šířky, bottom a top výška spodku a vršku v metrech. color: barva tvaru z kódu,
+        /// null = vlastní model z katalogu vzhledu (zachová své materiály).
         /// </summary>
-        public void Add(int key, GameObject go, Color color, double x, double y, float radius, float bottom, float top)
+        public void Add(int key, GameObject go, Color? color, double x, double y, float radius, float bottom, float top)
         {
             Remove(key);
             var entry = new Entry
             {
-                Renderer = go.GetComponent<Renderer>(),
-                Color = color,
+                Target = new FadeTarget(go, color),
                 Position = new Vector2((float)x, (float)y),
                 Cell = new Vector2Int(Mathf.FloorToInt((float)x), Mathf.FloorToInt((float)y)),
                 Radius = radius,
@@ -204,11 +203,7 @@ namespace Oohra.Client
         /// <summary>Průhledná věc má průhledný materiál, úplně neprůhledná zase obyčejný (kvůli stínům a pořadí kreslení).</summary>
         private static void Apply(Entry entry)
         {
-            var opaque = entry.Alpha >= 1f;
-            entry.Renderer.sharedMaterial = opaque ? Palette.Lit : Palette.Fade;
-            var block = new MaterialPropertyBlock();
-            block.SetColor("_BaseColor", new Color(entry.Color.r, entry.Color.g, entry.Color.b, entry.Alpha));
-            entry.Renderer.SetPropertyBlock(block);
+            entry.Target.SetAlpha(entry.Alpha);
         }
     }
 }

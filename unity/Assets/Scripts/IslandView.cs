@@ -96,6 +96,12 @@ namespace Oohra.Client
                 var y = tree.TileIndex / world.Width + 0.5;
                 // 1 dlaždice = 1 metr. Strom je vysoký asi 5 až 7 m, koruna začíná nad hlavou postavy (1,8 m).
                 var size = 0.8f + tree.Variant * 0.4f;
+                var prefab = VisualCatalog.Current.Tree(tree.Variant);
+                if (prefab != null)
+                {
+                    AddTreeModel(prefab, trees, crowns, tree.TileIndex, x, y, size);
+                    continue;
+                }
 
                 // Kmen má stejnou tloušťku jako kolize na serveru (treeTrunkRadius 0,12 v movement.json).
                 var trunk = Primitive(PrimitiveType.Cylinder, "Kmen", trees, trunkColor);
@@ -110,6 +116,21 @@ namespace Oohra.Client
                 crown.transform.localScale = Vector3.one * CrownSize * size;
                 crowns.Add(tree.TileIndex, crown, color, x, y, crownRadius, crownCenter - crownRadius, crownCenter + crownRadius);
             }
+        }
+
+        /// <summary>
+        /// Strom z katalogu vzhledu: natočený podle dlaždice (ať nejsou všechny stejně), zmenšený nebo zvětšený
+        /// podle varianty. Zprůhlední celý, když zakrývá postavu (koruna začíná zhruba ve 40 % výšky).
+        /// </summary>
+        private static void AddTreeModel(GameObject prefab, Transform parent, SeeThrough crowns, int tileIndex, double x, double y, float size)
+        {
+            var model = VisualCatalog.Spawn(prefab, parent, "Strom");
+            model.transform.position = WorldCoords.ToUnity(x, y);
+            model.transform.rotation = Quaternion.Euler(0f, tileIndex * 137 % 360, 0f);
+            model.transform.localScale *= size;
+            var bounds = VisualCatalog.BoundsOf(model);
+            var radius = Mathf.Max(bounds.extents.x, bounds.extents.z);
+            crowns.Add(tileIndex, model, null, x, y, radius, bounds.max.y * 0.4f, bounds.max.y);
         }
 
         /// <summary>
@@ -129,13 +150,28 @@ namespace Oohra.Client
                 var plant = world.Plants[i];
                 var species = world.Species[plant.SpeciesId];
                 var color = Palette.Leaf(species);
-                var go = Primitive(shapes[species.Shape % shapes.Length], "Rostlina " + i, root.transform, color);
-                go.transform.position = WorldCoords.ToUnity(plant.X, plant.Y, 0.18f);
-                go.transform.localScale = Vector3.one * 0.32f;
+                var prefab = VisualCatalog.Current.Plant(species.Shape);
+                GameObject go;
+                if (prefab != null)
+                {
+                    // Vlastní model: obarví se barvou druhu, podle ní hráč druhy rozezná.
+                    go = VisualCatalog.Spawn(prefab, root.transform, "Rostlina " + i);
+                    go.transform.position = WorldCoords.ToUnity(plant.X, plant.Y);
+                    go.transform.rotation = Quaternion.Euler(0f, i * 97 % 360, 0f);
+                    SpeciesTint.Apply(go, color);
+                }
+                else
+                {
+                    go = Primitive(shapes[species.Shape % shapes.Length], "Rostlina " + i, root.transform, color);
+                    go.transform.position = WorldCoords.ToUnity(plant.X, plant.Y, 0.18f);
+                    go.transform.localScale = Vector3.one * 0.32f;
+                }
 
+                // Plod: tam, kde má model část „Plod“, jinak kousek vedle a nad zemí. Ve světě má 14 cm.
+                var spot = go.transform.Find("Plod");
                 var fruit = Primitive(PrimitiveType.Sphere, "Plod", go.transform, color);
-                fruit.transform.position = WorldCoords.ToUnity(plant.X + 0.12, plant.Y, 0.42f);
-                fruit.transform.localScale = Vector3.one * 0.45f;
+                fruit.transform.position = spot != null ? spot.position : WorldCoords.ToUnity(plant.X + 0.12, plant.Y, 0.42f);
+                fruit.transform.localScale = Vector3.one * (0.144f / go.transform.lossyScale.x);
                 fruit.SetActive(false);
 
                 plants[i] = go;
@@ -173,7 +209,9 @@ namespace Oohra.Client
             var go = GameObject.CreatePrimitive(type);
             go.name = name;
             go.transform.SetParent(parent);
-            Object.Destroy(go.GetComponent<Collider>());
+            // Kolize počítá server. Mimo hru (testy v editoru) jde mazat jen hned.
+            if (Application.isPlaying) Object.Destroy(go.GetComponent<Collider>());
+            else Object.DestroyImmediate(go.GetComponent<Collider>());
             Palette.SetColor(go, color);
             return go;
         }

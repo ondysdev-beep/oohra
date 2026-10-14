@@ -1,0 +1,151 @@
+using Oohra.Core.World;
+using UnityEngine;
+
+namespace Oohra.Client
+{
+    /// <summary>
+    /// Katalog vzhledu: které vlastní modely (prefaby) hra použije pro stromy, rostliny, stavby a zvířata.
+    /// Upravuje se v Unity: soubor Assets/Resources/VisualCatalog.asset, do políček se přetáhnou prefaby.
+    /// Prázdné políčko = jednoduchý tvar z kódu (kostka, koule), takže hra funguje i bez modelů.
+    /// Návod je v docs/Grafika.md (velikost, natočení, materiály).
+    /// </summary>
+    [CreateAssetMenu(menuName = "Oohra/Katalog vzhledu", fileName = "VisualCatalog")]
+    public class VisualCatalog : ScriptableObject
+    {
+        /// <summary>Název souboru v Assets/Resources.</summary>
+        public const string Resource = "VisualCatalog";
+
+        private static VisualCatalog _current;
+
+        [Header("Stromy (střed kmene dole v počátku, výška asi 5 m)")]
+        [Tooltip("Varianty stromů. Každý strom na ostrově dostane jednu podle svého čísla varianty.")]
+        public GameObject[] Trees = new GameObject[0];
+
+        [Header("Rostliny podle tvaru druhu (0 až 3), výška asi 0,3 až 0,6 m")]
+        [Tooltip("Index = tvar druhu. Model se obarví barvou druhu (části se SpeciesTint, jinak celý), ať jdou druhy poznat.")]
+        public GameObject[] Plants = new GameObject[4];
+
+        [Header("Stavby (střed dole v počátku, délka podél osy X)")]
+        [Tooltip("Zeď z klacků dlouhá přesně 1 m. Kratší zeď se zmenší podél osy X.")]
+        public GameObject Wall;
+
+        [Tooltip("Zeď s otvorem na dveře, 1 m dlouhá, otvor 0,8 m uprostřed.")]
+        public GameObject DoorFrame;
+
+        [Tooltip("Křídlo dveří 0,8 m široké, střed v počátku. Pant (otáčení) je na levém kraji, přidá ho hra.")]
+        public GameObject Door;
+
+        [Tooltip("Past z klacků, asi 0,6 × 0,6 m.")]
+        public GameObject Trap;
+
+        [Tooltip("Koš se zásobami kmene, průměr asi 0,6 m.")]
+        public GameObject Stockpile;
+
+        [Header("Zvířata (nohy dole v počátku, hlava ve směru osy Z)")]
+        public GameObject Boar;
+        public GameObject Rabbit;
+        public GameObject Deer;
+        public GameObject Wolf;
+
+        /// <summary>
+        /// Katalog, který hra používá (z Resources). Když soubor chybí, je prázdný (všude tvary z kódu).
+        /// Testy si sem můžou dát vlastní.
+        /// </summary>
+        public static VisualCatalog Current
+        {
+            get
+            {
+                if (_current == null)
+                {
+                    _current = Resources.Load<VisualCatalog>(Resource);
+                    if (_current == null)
+                    {
+                        _current = CreateInstance<VisualCatalog>();
+                    }
+                }
+
+                return _current;
+            }
+
+            set { _current = value; }
+        }
+
+        /// <summary>Strom podle varianty (0 až 1), nebo null.</summary>
+        public GameObject Tree(float variant)
+        {
+            var count = Trees == null ? 0 : Trees.Length;
+            if (count == 0)
+            {
+                return null;
+            }
+
+            return Trees[Mathf.Clamp((int)(variant * count), 0, count - 1)];
+        }
+
+        /// <summary>Rostlina podle tvaru druhu, nebo null.</summary>
+        public GameObject Plant(int shape)
+        {
+            return Plants != null && shape >= 0 && shape < Plants.Length ? Plants[shape] : null;
+        }
+
+        /// <summary>Stavba podle druhu, nebo null (oheň kreslí FireViews).</summary>
+        public GameObject Structure(BuildKind kind)
+        {
+            switch (kind)
+            {
+                case BuildKind.StickWall: return Wall;
+                case BuildKind.DoorFrame: return DoorFrame;
+                case BuildKind.Door: return Door;
+                case BuildKind.Trap: return Trap;
+                case BuildKind.Stockpile: return Stockpile;
+                default: return null;
+            }
+        }
+
+        /// <summary>Zvíře podle druhu, nebo null.</summary>
+        public GameObject Animal(AnimalKind kind)
+        {
+            switch (kind)
+            {
+                case AnimalKind.Boar: return Boar;
+                case AnimalKind.Rabbit: return Rabbit;
+                case AnimalKind.Deer: return Deer;
+                default: return Wolf;
+            }
+        }
+
+        /// <summary>Kvádr, do kterého se vejdou všechny viditelné části modelu (ve světě).</summary>
+        public static Bounds BoundsOf(GameObject model)
+        {
+            var renderers = model.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0)
+            {
+                return new Bounds(model.transform.position, Vector3.zero);
+            }
+
+            var bounds = renderers[0].bounds;
+            foreach (var renderer in renderers)
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+
+            return bounds;
+        }
+
+        /// <summary>
+        /// Vytvoří model z prefabu pod rodičem. Kolize (Collider) odstraní: pohyb a srážky počítá server.
+        /// </summary>
+        public static GameObject Spawn(GameObject prefab, Transform parent, string name)
+        {
+            var go = Instantiate(prefab, parent, false);
+            go.name = name;
+            foreach (var collider in go.GetComponentsInChildren<Collider>())
+            {
+                if (Application.isPlaying) Destroy(collider);
+                else DestroyImmediate(collider);
+            }
+
+            return go;
+        }
+    }
+}

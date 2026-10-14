@@ -58,7 +58,29 @@ namespace Oohra.Client
         public static void SetFade(GameObject go, Color color)
         {
             SetColor(go, color);
-            go.GetComponent<Renderer>().sharedMaterial = Fade;
+            var renderer = go.GetComponent<Renderer>();
+            var materials = new Material[Mathf.Max(1, renderer.sharedMaterials.Length)];
+            for (var i = 0; i < materials.Length; i++)
+            {
+                materials[i] = Fade;
+            }
+
+            renderer.sharedMaterials = materials;
+        }
+
+        /// <summary>Nastaví URP/Lit na průhledný povrch (jako v inspektoru Surface Type: Transparent, Blending: Alpha).</summary>
+        public static void MakeTransparent(Material material)
+        {
+            material.SetFloat("_Surface", 1f);
+            material.SetFloat("_Blend", 0f);
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetFloat("_ZWrite", 0f);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
 
         /// <summary>Obarví objekt materiálem, který svítí sám (nezávisle na světle).</summary>

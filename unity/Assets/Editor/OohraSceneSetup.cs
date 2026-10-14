@@ -10,7 +10,8 @@ namespace Oohra.Client.Editor
     /// <summary>
     /// Menu Oohra v editoru Unity:
     /// Vytvořit scénu ostrova (kamera, slunce, objekt Hra), Spustit server (okno s konzolí serveru)
-    /// a Sestavit hru pro Windows (unity/Build/Oohra.exe, abys mohl pustit víc oken najednou).
+    /// Sestavit hru pro Windows (unity/Build/Oohra.exe, abys mohl pustit víc oken najednou)
+    /// a Katalog vzhledu (vlastní modely stromů, rostlin, staveb a zvířat).
     /// </summary>
     public static class OohraSceneSetup
     {
@@ -63,6 +64,32 @@ namespace Oohra.Client.Editor
             EnsureMaterial(Palette.LitResource, "Universal Render Pipeline/Lit");
             EnsureMaterial(Palette.GlowResource, "Universal Render Pipeline/Unlit");
             EnsureMaterial(Palette.FadeResource, "Universal Render Pipeline/Lit", transparent: true);
+            EnsureCatalog();
+        }
+
+        /// <summary>Otevře katalog vzhledu v Inspectoru (a vytvoří ho, když chybí). Návod: docs/Grafika.md.</summary>
+        [MenuItem("Oohra/Katalog vzhledu")]
+        public static void OpenCatalog()
+        {
+            Selection.activeObject = EnsureCatalog();
+            EditorGUIUtility.PingObject(Selection.activeObject);
+        }
+
+        /// <summary>Soubor katalogu vzhledu v Assets/Resources (prázdný = všude tvary z kódu).</summary>
+        private static VisualCatalog EnsureCatalog()
+        {
+            var path = "Assets/Resources/" + VisualCatalog.Resource + ".asset";
+            var catalog = AssetDatabase.LoadAssetAtPath<VisualCatalog>(path);
+            if (catalog != null)
+            {
+                return catalog;
+            }
+
+            catalog = ScriptableObject.CreateInstance<VisualCatalog>();
+            AssetDatabase.CreateAsset(catalog, path);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Oohra: katalog vzhledu uložen do " + path);
+            return catalog;
         }
 
         private static void EnsureMaterial(string resource, string shader, bool transparent = false)
@@ -81,27 +108,12 @@ namespace Oohra.Client.Editor
             var material = new Material(Shader.Find(shader)) { enableInstancing = true };
             if (transparent)
             {
-                MakeTransparent(material);
+                Palette.MakeTransparent(material);
             }
 
             AssetDatabase.CreateAsset(material, path);
             AssetDatabase.SaveAssets();
             Debug.Log("Oohra: materiál uložen do " + path);
-        }
-
-        /// <summary>Nastaví URP/Lit na průhledný povrch (jako v inspektoru Surface Type: Transparent, Blending: Alpha).</summary>
-        private static void MakeTransparent(Material material)
-        {
-            material.SetFloat("_Surface", 1f);
-            material.SetFloat("_Blend", 0f);
-            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
-            material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetFloat("_ZWrite", 0f);
-            material.SetOverrideTag("RenderType", "Transparent");
-            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
         }
 
         /// <summary>

@@ -15,6 +15,9 @@ namespace Oohra.Client
         private const float Smoothing = 12f;
         private static readonly Color DangerColor = new Color(0.78f, 0.25f, 0.18f);
 
+        /// <summary>Celé číslo v Animatoru vlastního modelu: stav zvířete (AnimalState: 0 toulá se, 2 utíká, 9 mrtvé…).</summary>
+        public const string StateParameter = "Stav";
+
         private readonly Dictionary<int, View> _views = new Dictionary<int, View>();
         private readonly HashSet<int> _seen = new HashSet<int>();
         private GameConnection _connection;
@@ -23,6 +26,9 @@ namespace Oohra.Client
         {
             public GameObject Root;
             public Renderer Body;
+
+            /// <summary>Animace vlastního modelu (katalog vzhledu), nebo null.</summary>
+            public Animator Animator;
             public Color Color;
             public AnimalState Shown = (AnimalState)255;
         }
@@ -88,12 +94,36 @@ namespace Oohra.Client
                 root.rotation = Quaternion.Lerp(root.rotation, Quaternion.Euler(0f, yaw, 0f), 1 - Mathf.Exp(-Smoothing * Time.deltaTime));
             }
 
-            root.localScale = animal.State == AnimalState.Asleep ? new Vector3(1f, 0.6f, 1f) : Vector3.one;
-            if (animal.State != view.Shown)
+            if (animal.State == view.Shown)
             {
-                view.Shown = animal.State;
+                return;
+            }
+
+            view.Shown = animal.State;
+            if (view.Body != null)
+            {
+                // Tvar z kódu: spící se přikrčí, barva ukazuje nebezpečí a únavu.
+                root.localScale = animal.State == AnimalState.Asleep ? new Vector3(1f, 0.6f, 1f) : Vector3.one;
                 Palette.SetColor(view.Body.gameObject, ColorFor(view.Color, animal.State));
             }
+            else if (view.Animator != null && HasParameter(view.Animator, StateParameter))
+            {
+                // Vlastní model: stav ze serveru jde do animace (parametr Stav, čísla podle AnimalState).
+                view.Animator.SetInteger(StateParameter, (int)animal.State);
+            }
+        }
+
+        private static bool HasParameter(Animator animator, string name)
+        {
+            foreach (var parameter in animator.parameters)
+            {
+                if (parameter.name == name && parameter.type == AnimatorControllerParameterType.Int)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Color ColorFor(Color normal, AnimalState state)
@@ -119,6 +149,13 @@ namespace Oohra.Client
             var root = new GameObject(NameOf(animal.Kind) + " " + animal.Id);
             root.transform.SetParent(transform, false);
             root.transform.position = WorldCoords.ToUnity(animal.X, animal.Y);
+            var prefab = VisualCatalog.Current.Animal(animal.Kind);
+            if (prefab != null)
+            {
+                var model = VisualCatalog.Spawn(prefab, root.transform, NameOf(animal.Kind));
+                return new View { Root = root, Animator = model.GetComponentInChildren<Animator>() };
+            }
+
             switch (animal.Kind)
             {
                 case AnimalKind.Rabbit:
