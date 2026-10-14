@@ -19,6 +19,7 @@ public sealed class GameConnection : IDisposable
     private readonly Queue<GameEvent> _events = new();
     private readonly Queue<SpeechView> _speech = new();
     private readonly Queue<GestureView> _gestures = new();
+    private readonly Queue<int> _invites = new();
     private NetPeer? _server;
     private string _inviteCode = string.Empty;
     private string _nickname = string.Empty;
@@ -68,6 +69,12 @@ public sealed class GameConnection : IDisposable
 
     /// <summary>Značky a rytiny ve světě.</summary>
     public SignView[] Signs { get; private set; } = [];
+
+    /// <summary>Čísla hráčů v mém kmeni (včetně mě). Prázdné = nejsem v kmeni.</summary>
+    public int[] TribeMembers { get; private set; } = [];
+
+    /// <summary>Zásoby kmene, do kterých smím (moje a mého kmene).</summary>
+    public StockpileView[] Stockpiles { get; private set; } = [];
 
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
@@ -230,6 +237,43 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteEraseSign(w, signId));
     }
 
+    /// <summary>Pozvat hráče do kmene (musí stát kousek od tebe).</summary>
+    public void InviteToTribe(int playerId)
+    {
+        Send(w => Messages.WriteInviteToTribe(w, playerId));
+    }
+
+    /// <summary>Přijmout nebo odmítnout pozvánku hráče inviterId.</summary>
+    public void AnswerInvite(int inviterId, bool accept)
+    {
+        Send(w => Messages.WriteAnswerInvite(w, inviterId, accept));
+    }
+
+    public void LeaveTribe()
+    {
+        Send(Messages.WriteLeaveTribe);
+    }
+
+    /// <summary>Uložit hromádku z batohu do zásob kmene.</summary>
+    public void StoreItem(int stockpileId, int stackIndex)
+    {
+        Send(w => Messages.WriteStockAction(w, MessageType.StoreItem, stockpileId, stackIndex));
+    }
+
+    /// <summary>Vzít hromádku ze zásob kmene do batohu.</summary>
+    public void TakeItem(int stockpileId, int stackIndex)
+    {
+        Send(w => Messages.WriteStockAction(w, MessageType.TakeItem, stockpileId, stackIndex));
+    }
+
+    /// <summary>Kdo tě od posledního volání pozval do kmene (čísla hráčů).</summary>
+    public List<int> TakeInvites()
+    {
+        var invites = _invites.ToList();
+        _invites.Clear();
+        return invites;
+    }
+
     /// <summary>Slova, která od posledního volání zazněla poblíž (i vlastní).</summary>
     public List<SpeechView> TakeSpeech()
     {
@@ -358,6 +402,15 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Signs:
                 Signs = Messages.ReadSigns(reader);
+                break;
+            case MessageType.TribeInvite:
+                _invites.Enqueue(Messages.ReadTribeInvite(reader));
+                break;
+            case MessageType.Tribe:
+                TribeMembers = Messages.ReadTribe(reader);
+                break;
+            case MessageType.Stockpiles:
+                Stockpiles = Messages.ReadStockpiles(reader);
                 break;
         }
     }

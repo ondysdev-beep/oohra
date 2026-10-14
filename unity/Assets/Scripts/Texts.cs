@@ -3,6 +3,7 @@ using Oohra.Core;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
+using Oohra.Core.Social;
 using Oohra.Core.World;
 using Oohra.Protocol;
 
@@ -49,6 +50,10 @@ namespace Oohra.Client
                     var build = (BuildResult)e.Code;
                     warn = build != BuildResult.Built && build != BuildResult.Removed;
                     return For(build);
+                case EventKind.Tribe:
+                    var tribe = (TribeResult)e.Code;
+                    warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined);
+                    return For(tribe);
                 case EventKind.Sign:
                     var sign = (SignResult)e.Code;
                     warn = sign != SignResult.Drawn && sign != SignResult.Erased;
@@ -56,6 +61,30 @@ namespace Oohra.Client
                 default:
                     warn = false;
                     return null;
+            }
+        }
+
+        /// <summary>Text k pozvání do kmene, odpovědi, odchodu a zásobám kmene.</summary>
+        public static string For(TribeResult result)
+        {
+            switch (result)
+            {
+                case TribeResult.Invited: return "Pozval jsi ho do kmene. Teď je to na něm.";
+                case TribeResult.Joined: return "Jsi v kmeni. Zásoby kmene jsou teď i tvoje.";
+                case TribeResult.Declined: return "Pozvánku jsi odmítl.";
+                case TribeResult.Left: return "Odešel jsi z kmene.";
+                case TribeResult.TooFar: return "Je moc daleko. Musí stát kousek od tebe, aby gesto viděl.";
+                case TribeResult.AlreadyTogether: return "Už jste spolu v kmeni.";
+                case TribeResult.NoInvite: return "Pozvánka už neplatí.";
+                case TribeResult.NotInTribe: return "Nejsi v žádném kmeni.";
+                case TribeResult.Stored: return "Uloženo do zásob.";
+                case TribeResult.Taken: return "Vzal jsi to ze zásob.";
+                case TribeResult.StockFull: return "Koš je plný.";
+                case TribeResult.InventoryFull: return "Batoh je plný.";
+                case TribeResult.NotYours: return "Cizí zásoby. Brát z nich smí jen jejich kmen.";
+                case TribeResult.NotFound: return "To už tu není.";
+                case TribeResult.TheyDeclined: return "Pozvánku do kmene odmítl.";
+                default: return "Přijal pozvánku. Je s tebou v kmeni.";
             }
         }
 
@@ -125,6 +154,7 @@ namespace Oohra.Client
                 case HuntResult.FishEscaped: return "Ryba ti proklouzla.";
                 case HuntResult.NeedSpear: return "Na rybaření potřebuješ kopí.";
                 case HuntResult.NotWater: return "Tady se rybařit nedá.";
+                case HuntResult.NotYours: return "Cizí past. Úlovek patří tomu, kdo ji postavil, a jeho kmeni.";
                 default: return result.ToString();
             }
         }
@@ -140,6 +170,8 @@ namespace Oohra.Client
                 case BuildResult.TooFar: return "Je to moc daleko.";
                 case BuildResult.NotFound: return "Ta stavba už tu není.";
                 case BuildResult.NoDoorway: return "Dveře patří do zdi s otvorem. Miř na otvor.";
+                case BuildResult.NotYours: return "Cizí stavbu může rozebrat jen ten, kdo ji postavil, a jeho kmen.";
+                case BuildResult.NotEmpty: return "V koši něco je. Napřed ho vyber.";
                 default: return result.ToString();
             }
         }

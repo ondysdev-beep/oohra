@@ -7,6 +7,7 @@ using Oohra.Core.Items;
 using Oohra.Core.Language;
 using Oohra.Core.Plants;
 using Oohra.Core.Rng;
+using Oohra.Core.Social;
 using Oohra.Core.Time;
 using Oohra.Core.World;
 using Oohra.Protocol;
@@ -41,6 +42,7 @@ public sealed class GameServer : IDisposable
     private int _sentSignsVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
+    private string _stockSpoilage = string.Empty;
 
     public GameServer(ServerConfig config)
     {
@@ -89,6 +91,9 @@ public sealed class GameServer : IDisposable
 
     internal Animals Animals { get; }
 
+    /// <summary>Kmeny hráčů (patří hráči, ne postavě, takže přežijí smrt).</summary>
+    internal Tribes Tribes { get; } = new();
+
     /// <summary>Spustí server. Port 0 = vyber volný port (pro testy).</summary>
     public void Start(int port)
     {
@@ -118,6 +123,8 @@ public sealed class GameServer : IDisposable
             {
                 SendVocabulary(player);
             }
+
+            SendTribeState(player);
         }
 
         if (Fires.Version != _sentFiresVersion)
@@ -157,6 +164,7 @@ public sealed class GameServer : IDisposable
         if (_tick % _config.PlantStatesEveryTicks == 0)
         {
             BroadcastPlantChanges();
+            _stockSpoilage = StockSpoilage();
             foreach (var player in _byPeer.Values)
             {
                 if (SpoilageOf(player) != player.SentSpoilage)
@@ -230,6 +238,8 @@ public sealed class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
         SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
         SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
+        player.SentTribeVersion = -1;
+        player.SentStockKey = string.Empty;
         player.SentVocabularyVersion = -1;
         SendInventory(player);
         SendSelfState(player);
@@ -366,7 +376,7 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.RemoveStructure:
                 var structureId = Messages.ReadRemoveStructure(reader);
-                BuildAction(player, () => Island.Structures.Remove(structureId, player.Inventory, player.X, player.Y));
+                BuildAction(player, () => Island.Structures.Remove(structureId, player.Inventory, player.X, player.Y, player.Id, Tribes));
                 break;
             case MessageType.Attack:
                 var target = Messages.ReadAnimalAction(reader);
@@ -385,7 +395,7 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.TakeCatch:
                 var trapId = Messages.ReadAnimalAction(reader);
-                HuntAction(player, -1, () => Island.Structures.TakeCatch(trapId, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
+                HuntAction(player, -1, () => Island.Structures.TakeCatch(trapId, player.Inventory, player.X, player.Y, Clock.TotalMinutes, player.Id, Tribes));
                 break;
             case MessageType.Say:
                 Say(player, Messages.ReadSay(reader));
@@ -399,7 +409,24 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.EraseSign:
                 var signId = Messages.ReadEraseSign(reader);
-                SignAction(player, () => Island.Signs.Erase(signId, player.Id, player.X, player.Y));
+                SignAction(player, () => Island.Signs.Erase(signId, player.Id, player.X, player.Y, Tribes));
+                break;
+            case MessageType.InviteToTribe:
+                InviteToTribe(player, Messages.ReadInviteToTribe(reader));
+                break;
+            case MessageType.AnswerInvite:
+                AnswerInvite(player, Messages.ReadAnswerInvite(reader));
+                break;
+            case MessageType.LeaveTribe:
+                SendEvent(player, TribeEvent(Tribes.Leave(player.Id)));
+                break;
+            case MessageType.StoreItem:
+                var (storeId, storeIndex) = Messages.ReadStockAction(reader);
+                StockAction(player, () => Island.Structures.StoreItem(storeId, player.Inventory, storeIndex, player.X, player.Y, player.Id, Tribes));
+                break;
+            case MessageType.TakeItem:
+                var (takeId, takeIndex) = Messages.ReadStockAction(reader);
+                StockAction(player, () => Island.Structures.TakeItem(takeId, player.Inventory, takeIndex, player.X, player.Y, player.Id, Tribes));
                 break;
             case MessageType.SetMeaning:
                 var (word, meaning) = Messages.ReadSetMeaning(reader);
@@ -422,7 +449,7 @@ public sealed class GameServer : IDisposable
         }
 
         BuildAction(player, () => Island.Structures.Build(
-            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions(), player.Character));
+            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions(), player.Character, player.Id));
     }
 
     /// <summary>Lov, stažení masa, výroba kopí. Hláška nese druh zvířete (pro text „Divočák padl.“).</summary>
@@ -677,6 +704,82 @@ public sealed class GameServer : IDisposable
         }
     }
 
+    // ---------- kmeny a zásoby ----------
+
+    /// <summary>
+    /// Pozvání do kmene (návrh 14.1): okolí vidí gesto, pozvaný dostane pozvánku a odpoví.
+    /// </summary>
+    private void InviteToTribe(PlayerSession inviter, int inviteeId)
+    {
+        var invitee = _byPeer.Values.FirstOrDefault(p => p.Id == inviteeId);
+        if (inviter.Character.IsDead || invitee is null || invitee == inviter)
+        {
+            return;
+        }
+
+        var result = Tribes.Invite(inviter.Id, inviter.X, inviter.Y, invitee.Id, invitee.X, invitee.Y, Clock.TotalMinutes);
+        SendEvent(inviter, TribeEvent(result));
+        if (result == TribeResult.Invited)
+        {
+            MakeGesture(inviter, (Gesture.Invite, (float)invitee.X, (float)invitee.Y));
+            SendTo(invitee.Peer!, w => Messages.WriteTribeInvite(w, inviter.Id));
+        }
+    }
+
+    private void AnswerInvite(PlayerSession invitee, (int InviterId, bool Accept) answer)
+    {
+        var result = Tribes.Answer(invitee.Id, answer.InviterId, answer.Accept, Clock.TotalMinutes);
+        SendEvent(invitee, TribeEvent(result));
+        var inviter = _byPeer.Values.FirstOrDefault(p => p.Id == answer.InviterId);
+        if (inviter is not null && result is TribeResult.Joined or TribeResult.Declined)
+        {
+            SendEvent(inviter, TribeEvent(result == TribeResult.Joined ? TribeResult.TheyJoined : TribeResult.TheyDeclined));
+        }
+    }
+
+    private void StockAction(PlayerSession player, Func<TribeResult> action)
+    {
+        if (!player.Character.IsDead)
+        {
+            SendEvent(player, TribeEvent(action()));
+            SendInventory(player);
+        }
+    }
+
+    private static GameEvent TribeEvent(TribeResult result)
+    {
+        return new GameEvent(EventKind.Tribe, (byte)result, default, []);
+    }
+
+    /// <summary>Pošle hráči jeho kmen a zásoby, když se od posledně něco změnilo.</summary>
+    private void SendTribeState(PlayerSession player)
+    {
+        if (Tribes.Version != player.SentTribeVersion)
+        {
+            player.SentTribeVersion = Tribes.Version;
+            var members = Tribes.TribeOf(player.Id) is null ? [] : Tribes.MembersWith(player.Id);
+            SendTo(player.Peer!, w => Messages.WriteTribe(w, members));
+        }
+
+        var stockKey = $"{Island.Structures.Version}/{Island.Structures.StockVersion}/{Tribes.Version}/{_stockSpoilage}";
+        if (stockKey != player.SentStockKey)
+        {
+            player.SentStockKey = stockKey;
+            var stockpiles = Island.Structures.All
+                .Where(s => s.Store is not null && Structures.MayTouch(s, player.Id, Tribes))
+                .Select(s => new StockpileView(s.Id, new InventoryView(s.Store!.Capacity, s.Store.Stacks.Select(StackViewOf).ToArray())))
+                .ToArray();
+            SendTo(player.Peer!, w => Messages.WriteStockpiles(w, stockpiles));
+        }
+    }
+
+    /// <summary>Které věci v zásobách jsou zkažené (když se něco zkazí, zásoby se pošlou znovu).</summary>
+    private string StockSpoilage()
+    {
+        return string.Concat(Island.Structures.All.Where(s => s.Store is not null)
+            .SelectMany(s => s.Store!.Stacks.Select(i => Spoilage.IsSpoiled(i.Item, Clock.TotalMinutes) ? '1' : '0')));
+    }
+
     private void SendVocabulary(PlayerSession player)
     {
         var vocabulary = player.Character.Vocabulary;
@@ -871,7 +974,7 @@ public sealed class GameServer : IDisposable
 
     private StructureView[] StructureViews()
     {
-        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1)).ToArray();
+        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId)).ToArray();
     }
 
     private SignView[] SignViews()

@@ -1,0 +1,7 @@
+// Kmeny (návrh 14.1): kmen vzniká pozvánkou, žádná správa ani listina.
+{
+  // Jak blízko musí být pozvaný (m), aby pozvání (gesto) viděl.
+  "inviteDistance": 3,
+  // Jak dlouho pozvánka platí (herní minuty; 10 herních minut je asi 40 skutečných sekund).
+  "inviteMinutes": 10
+}

@@ -1,5 +1,6 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
+using Oohra.Core.Social;
 
 namespace Oohra.Core.World;
 
@@ -98,8 +99,10 @@ public sealed class Signs
         return SignResult.Drawn;
     }
 
-    /// <summary>Smazat jde jen vlastní značku (návrh 14.2: cizí věci jen majitel). Staré rytiny nesmaže nikdo.</summary>
-    public SignResult Erase(int signId, int authorId, double playerX, double playerY)
+    /// <summary>
+    /// Smazat jde vlastní značku nebo značku člena svého kmene (návrh 14.2 a 14.3). Staré rytiny nesmaže nikdo.
+    /// </summary>
+    public SignResult Erase(int signId, int authorId, double playerX, double playerY, Tribes? tribes = null)
     {
         var sign = Find(signId);
         if (sign is null)
@@ -107,7 +110,7 @@ public sealed class Signs
             return SignResult.NotFound;
         }
 
-        if (sign.Ancient || sign.AuthorId != authorId)
+        if (sign.Ancient || (sign.AuthorId != authorId && tribes?.SameTribe(sign.AuthorId, authorId) != true))
         {
             return SignResult.NotYours;
         }

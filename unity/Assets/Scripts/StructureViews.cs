@@ -87,6 +87,11 @@ namespace Oohra.Client
                     var prop = Part(root.transform, "Vzpěra", new Vector3(0f, 0.2f, 0f), new Vector3(0.05f, 0.4f, 0.05f), WallColor);
                     prop.transform.localRotation = Quaternion.Euler(0f, 0f, 30f);
                     break;
+                case BuildKind.Stockpile:
+                    // Koš z klacků: nízký válec a tmavé dno uvnitř.
+                    Part(root.transform, "Koš", new Vector3(0f, 0.22f, 0f), new Vector3(0.6f, 0.22f, 0.6f), WallColor, PrimitiveType.Cylinder);
+                    Part(root.transform, "Dno", new Vector3(0f, 0.445f, 0f), new Vector3(0.5f, 0.005f, 0.5f), Palette.Hex("#3b2d1e"), PrimitiveType.Cylinder);
+                    break;
                 default:
                     Part(root.transform, "Zeď", new Vector3(0f, WallHeight / 2, 0f), new Vector3(length, WallHeight, WallThickness), WallColor);
                     break;
@@ -110,6 +115,7 @@ namespace Oohra.Client
                 case BuildKind.Door: return "Dveře";
                 case BuildKind.Campfire: return "Oheň";
                 case BuildKind.Trap: return "Past";
+                case BuildKind.Stockpile: return "Zásoby kmene";
                 default: return "Zeď";
             }
         }

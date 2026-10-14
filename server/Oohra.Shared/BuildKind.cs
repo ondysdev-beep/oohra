@@ -20,5 +20,8 @@ namespace Oohra.Core.World
 
         /// <summary>Past z klacků: chytí králíka nebo jelena, který jde kolem. Pohyb neblokuje.</summary>
         Trap = 4,
+
+        /// <summary>Zásoby kmene: koš z klacků. Ukládat a brát smí jen majitel a jeho kmen. Pohyb neblokuje.</summary>
+        Stockpile = 5,
     }
 }

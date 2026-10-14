@@ -183,6 +183,17 @@ namespace Oohra.Client
                 }
             }
 
+            if (target.Kind == TargetKind.Player && Connection.Snapshot != null)
+            {
+                foreach (var player in Connection.Snapshot.Players)
+                {
+                    if (player.Id == target.Id)
+                    {
+                        return new Vector2(player.X, player.Y);
+                    }
+                }
+            }
+
             return new Vector2((float)target.X, (float)target.Y);
         }
 
@@ -256,6 +267,11 @@ namespace Oohra.Client
         /// <summary>Stavba, u které je otevřená nabídka (null, když už není).</summary>
         public StructureView? MenuStructure()
         {
+            if (Menu == null || Menu.Kind != TargetKind.Structure)
+            {
+                return null;
+            }
+
             foreach (var structure in Connection.Structures)
             {
                 if (Menu != null && structure.Id == Menu.Id)
@@ -265,6 +281,40 @@ namespace Oohra.Client
             }
 
             return null;
+        }
+
+        /// <summary>Je hráč se mnou v kmeni (nebo jsem to já)?</summary>
+        public bool InMyTribe(int playerId)
+        {
+            var members = Connection.TribeMembers;
+            return playerId == Connection.PlayerId || (members.Contains(playerId) && members.Contains(Connection.PlayerId));
+        }
+
+        /// <summary>Smím sahat na stavbu (rozebrat, vzít úlovek, zásoby)? Jen svou a svého kmene (návrh 14.2).</summary>
+        public bool MayTouch(StructureView structure)
+        {
+            return structure.OwnerId < 0 || InMyTribe(structure.OwnerId);
+        }
+
+        /// <summary>Obsah zásob kmene v otevřené nabídce, nebo null (není to koš, nebo cizí).</summary>
+        public StockpileView MenuStockpile()
+        {
+            var structure = MenuStructure();
+            if (structure == null || structure.Value.Kind != BuildKind.Stockpile)
+            {
+                return null;
+            }
+
+            return Connection.Stockpiles.FirstOrDefault(s => s.StructureId == structure.Value.Id);
+        }
+
+        /// <summary>Pozvat hráče v nabídce do kmene.</summary>
+        public void InviteToTribe()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Player)
+            {
+                Connection.InviteToTribe(Menu.Id);
+            }
         }
 
         /// <summary>Značka v otevřené nabídce, nebo null (mezitím zvětrala nebo ji autor smazal).</summary>

@@ -90,12 +90,15 @@ public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 /// Stavba hráče (zeď, zeď s otvorem, dveře, past): střed, úhel v radiánech (0 = na východ, y mapy roste na jih)
 /// a délka v metrech. Caught: co je v pasti (číslo AnimalKind), -1 = nic.
 /// </summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1);
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1);
 
 /// <summary>Zvíře v okolí hráče: poloha, směr pohledu (radiány) a co dělá. Životy se neposílají.</summary>
 public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
 
 public sealed record InventoryView(int Capacity, StackView[] Stacks);
+
+/// <summary>Obsah zásob kmene (koše) podle čísla stavby.</summary>
+public sealed record StockpileView(int StructureId, InventoryView Contents);
 
 /// <summary>Někdo poblíž řekl slovo (jen slabiky a nálada, význam se nepřenáší).</summary>
 public sealed record SpeechView(int PlayerId, byte[] Word, Tone Tone);
@@ -341,7 +344,78 @@ public static class Messages
         return r.GetInt();
     }
 
+    /// <summary>Pozvat hráče (podle čísla) do kmene. Pozvaný musí stát kousek od tebe.</summary>
+    public static void WriteInviteToTribe(NetDataWriter w, int playerId)
+    {
+        w.Put((byte)MessageType.InviteToTribe);
+        w.Put(playerId);
+    }
+
+    public static int ReadInviteToTribe(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
+    /// <summary>Odpovědět na pozvánku hráče inviterId.</summary>
+    public static void WriteAnswerInvite(NetDataWriter w, int inviterId, bool accept)
+    {
+        w.Put((byte)MessageType.AnswerInvite);
+        w.Put(inviterId);
+        w.Put(accept);
+    }
+
+    public static (int InviterId, bool Accept) ReadAnswerInvite(NetDataReader r)
+    {
+        return (r.GetInt(), r.GetBool());
+    }
+
+    public static void WriteLeaveTribe(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.LeaveTribe);
+    }
+
+    /// <summary>Uložit hromádku z batohu do zásob (StoreItem), nebo vzít hromádku ze zásob (TakeItem).</summary>
+    public static void WriteStockAction(NetDataWriter w, MessageType type, int stockpileId, int stackIndex)
+    {
+        w.Put((byte)type);
+        w.Put(stockpileId);
+        w.Put(stackIndex);
+    }
+
+    public static (int StockpileId, int StackIndex) ReadStockAction(NetDataReader r)
+    {
+        return (r.GetInt(), r.GetInt());
+    }
+
     // ---------- server → klient ----------
+
+    /// <summary>Hráč inviterId tě zve do svého kmene.</summary>
+    public static void WriteTribeInvite(NetDataWriter w, int inviterId)
+    {
+        w.Put((byte)MessageType.TribeInvite);
+        w.Put(inviterId);
+    }
+
+    public static int ReadTribeInvite(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
+    /// <summary>Kdo je s tebou v kmeni (čísla hráčů včetně tebe, prázdné = nejsi v kmeni).</summary>
+    public static void WriteTribe(NetDataWriter w, IReadOnlyList<int> members)
+    {
+        w.Put((byte)MessageType.Tribe);
+        w.Put(members.Count);
+        foreach (var id in members)
+        {
+            w.Put(id);
+        }
+    }
+
+    public static int[] ReadTribe(NetDataReader r)
+    {
+        return ReadList(r, r.GetInt);
+    }
 
     /// <summary>Všechny značky. Posílá se po přihlášení a pak při každé změně.</summary>
     public static void WriteSigns(NetDataWriter w, IReadOnlyList<SignView> signs)
@@ -636,6 +710,33 @@ public static class Messages
     public static void WriteInventory(NetDataWriter w, InventoryView inventory)
     {
         w.Put((byte)MessageType.Inventory);
+        PutInventory(w, inventory);
+    }
+
+    public static InventoryView ReadInventory(NetDataReader r)
+    {
+        return GetInventory(r);
+    }
+
+    /// <summary>Zásoby kmene, do kterých hráč smí (jeho a jeho kmene). Posílá se při každé změně.</summary>
+    public static void WriteStockpiles(NetDataWriter w, IReadOnlyList<StockpileView> stockpiles)
+    {
+        w.Put((byte)MessageType.Stockpiles);
+        w.Put(stockpiles.Count);
+        foreach (var s in stockpiles)
+        {
+            w.Put(s.StructureId);
+            PutInventory(w, s.Contents);
+        }
+    }
+
+    public static StockpileView[] ReadStockpiles(NetDataReader r)
+    {
+        return ReadList(r, () => new StockpileView(r.GetInt(), GetInventory(r)));
+    }
+
+    private static void PutInventory(NetDataWriter w, InventoryView inventory)
+    {
         w.Put(inventory.Capacity);
         w.Put(inventory.Stacks.Length);
         foreach (var s in inventory.Stacks)
@@ -650,7 +751,7 @@ public static class Messages
         }
     }
 
-    public static InventoryView ReadInventory(NetDataReader r)
+    private static InventoryView GetInventory(NetDataReader r)
     {
         var capacity = r.GetInt();
         var stacks = ReadList(r, () => new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt(), r.GetBool()));
@@ -730,12 +831,13 @@ public static class Messages
             w.Put(s.Angle);
             w.Put(s.Length);
             w.Put(s.Caught);
+            w.Put(s.OwnerId);
         }
     }
 
     public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt()));
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt()));
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>

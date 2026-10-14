@@ -21,6 +21,10 @@ namespace Oohra.Core.Language
         Beware = 4,
         Eat = 5,
         Drink = 6,
+
+
+        /// <summary>Pozvat do kmene (posílá se se zprávou o pozvání, ne samostatně).</summary>
+        Invite = 7,
     }
 
     /// <summary>

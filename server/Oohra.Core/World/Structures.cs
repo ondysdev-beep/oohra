@@ -1,6 +1,7 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
+using Oohra.Core.Social;
 using Oohra.Core.Time;
 
 namespace Oohra.Core.World;
@@ -14,8 +15,10 @@ public readonly record struct Segment(double X1, double Y1, double X2, double Y2
 /// </summary>
 public sealed class Structure
 {
-    public Structure(int id, BuildKind kind, double x, double y, double angle, double length, int frameId = 0)
+    public Structure(int id, BuildKind kind, double x, double y, double angle, double length, int frameId = 0, int ownerId = -1)
     {
+        OwnerId = ownerId;
+        Store = kind == BuildKind.Stockpile ? new Inventory(GameData.Building.Stockpile.Capacity) : null;
         Id = id;
         Kind = kind;
         X = x;
@@ -40,6 +43,12 @@ public sealed class Structure
 
     /// <summary>Dveře: číslo zdi s otvorem, ve které jsou. Jinak 0.</summary>
     public int FrameId { get; }
+
+    /// <summary>Kdo stavbu postavil (číslo hráče), -1 = nikdo (staré stavby a testy, smí na ni kdokoli).</summary>
+    public int OwnerId { get; }
+
+    /// <summary>Zásoby kmene: co je v koši. U jiných staveb null.</summary>
+    public Inventory? Store { get; }
 
     /// <summary>Past: co se do ní chytilo (null = nic).</summary>
     public AnimalKind? Caught { get; internal set; }
@@ -151,9 +160,9 @@ public sealed class Structures
     /// Postaví stavbu bez materiálu a kontrol (pro testy a později pro načtení uloženého světa).
     /// length 0 = plná délka zdi.
     /// </summary>
-    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0, double length = 0)
+    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0, double length = 0, int ownerId = -1)
     {
-        var structure = new Structure(_nextId++, kind, x, y, angle, length > 0 ? length : GameData.Building.Wall.Length, frameId);
+        var structure = new Structure(_nextId++, kind, x, y, angle, length > 0 ? length : GameData.Building.Wall.Length, frameId, ownerId);
         _byId[structure.Id] = structure;
         foreach (var tile in TilesOf(structure))
         {
@@ -175,11 +184,13 @@ public sealed class Structures
     /// Zeď: délka od minLength po plnou délku (kratší zeď dorovná mezeru, aby zdi do sebe zapadly).
     /// Zeď a zeď s otvorem: jen na suché zemi, ne přes kmen stromu, oheň ani hráče (players: polohy všech hráčů).
     /// Zeď s otvorem má vždy plnou délku. Dveře se vsadí do nejbližší volné zdi s otvorem (převezmou její polohu).
-    /// Past je bod (jako oheň): suchá zem, ne na kmeni, zdi, ohni ani jiné pasti.
+    /// Past a zásoby kmene jsou bod (jako oheň): suchá zem, ne na kmeni, zdi, ohni, jiné pasti ani zásobách.
+    /// ownerId: kdo staví (rozebrat smí jen on a jeho kmen).
     /// </summary>
     public BuildResult Build(
         Island island, Fires fires, Inventory inventory, double playerX, double playerY,
-        BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder = null)
+        BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder = null,
+        int ownerId = -1)
     {
         var rules = GameData.Building.Wall;
         length = kind == BuildKind.StickWall ? length : rules.Length;
@@ -193,16 +204,17 @@ public sealed class Structures
             return BuildResult.TooFar;
         }
 
-        if (kind == BuildKind.Trap)
+        if (kind is BuildKind.Trap or BuildKind.Stockpile)
         {
-            if (!TrapFits(island, fires, x, y))
+            var footprint = kind == BuildKind.Trap ? GameData.Building.Trap.FootprintRadius : GameData.Building.Stockpile.FootprintRadius;
+            if (!PointFits(island, fires, x, y, footprint))
             {
                 return BuildResult.CannotBuildHere;
             }
 
             inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
-            Place(BuildKind.Trap, x, y, 0, length: 0.01);
-            builder?.Practice(SkillKind.Craft, GameData.Animals.Traps.PracticeBuild);
+            Place(kind, x, y, 0, length: 0.01, ownerId: ownerId);
+            builder?.Practice(SkillKind.Craft, kind == BuildKind.Trap ? GameData.Animals.Traps.PracticeBuild : GameData.Skills.Practice.Wall);
             return BuildResult.Built;
         }
 
@@ -215,7 +227,7 @@ public sealed class Structures
             }
 
             inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
-            Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id);
+            Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id, ownerId: ownerId);
             builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Door);
             return BuildResult.Built;
         }
@@ -227,13 +239,16 @@ public sealed class Structures
         }
 
         inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
-        Place(kind, x, y, angle, length: length);
+        Place(kind, x, y, angle, length: length, ownerId: ownerId);
         builder?.Practice(SkillKind.Build, kind == BuildKind.DoorFrame ? GameData.Skills.Practice.DoorFrame : GameData.Skills.Practice.Wall);
         return BuildResult.Built;
     }
 
-    /// <summary>Rozebere stavbu (zeď s otvorem i s dveřmi). Část klacků se vrátí do batohu (když se tam vejdou).</summary>
-    public BuildResult Remove(int id, Inventory inventory, double playerX, double playerY)
+    /// <summary>
+    /// Rozebere stavbu (zeď s otvorem i s dveřmi). Část klacků se vrátí do batohu (když se tam vejdou).
+    /// Cizí stavbu smí rozebrat jen majitel a jeho kmen (návrh 14.2), zásoby jen prázdné.
+    /// </summary>
+    public BuildResult Remove(int id, Inventory inventory, double playerX, double playerY, int playerId = -1, Tribes? tribes = null)
     {
         var structure = Find(id);
         if (structure is null)
@@ -241,10 +256,20 @@ public sealed class Structures
             return BuildResult.NotFound;
         }
 
+        if (!MayTouch(structure, playerId, tribes))
+        {
+            return BuildResult.NotYours;
+        }
+
         var (x1, y1, x2, y2) = structure.Ends;
         if (Geometry.DistanceToSegment(playerX, playerY, x1, y1, x2, y2) > GameData.Building.Wall.RemoveReach)
         {
             return BuildResult.TooFar;
+        }
+
+        if (structure.Store is { Stacks.Count: > 0 })
+        {
+            return BuildResult.NotEmpty;
         }
 
         if (structure.Kind == BuildKind.DoorFrame && DoorIn(structure.Id) is { } door)
@@ -254,6 +279,79 @@ public sealed class Structures
 
         Take(structure, inventory);
         return BuildResult.Removed;
+    }
+
+    /// <summary>Roste, když se něco uloží do zásob nebo z nich vezme (server pak pošle obsah znovu).</summary>
+    public int StockVersion { get; private set; }
+
+    /// <summary>Uložit celou hromádku z batohu do zásob kmene.</summary>
+    public TribeResult StoreItem(int stockpileId, Inventory inventory, int stackIndex, double playerX, double playerY, int playerId, Tribes tribes)
+    {
+        var (stockpile, result) = OpenStockpile(stockpileId, playerX, playerY, playerId, tribes);
+        if (stockpile is null)
+        {
+            return result;
+        }
+
+        if (stackIndex < 0 || stackIndex >= inventory.Stacks.Count)
+        {
+            return TribeResult.NotFound;
+        }
+
+        if (inventory.MoveStack(stackIndex, stockpile.Store!) == 0)
+        {
+            return TribeResult.StockFull;
+        }
+
+        StockVersion++;
+        return TribeResult.Stored;
+    }
+
+    /// <summary>Vzít celou hromádku ze zásob kmene do batohu.</summary>
+    public TribeResult TakeItem(int stockpileId, Inventory inventory, int stackIndex, double playerX, double playerY, int playerId, Tribes tribes)
+    {
+        var (stockpile, result) = OpenStockpile(stockpileId, playerX, playerY, playerId, tribes);
+        if (stockpile is null)
+        {
+            return result;
+        }
+
+        if (stackIndex < 0 || stackIndex >= stockpile.Store!.Stacks.Count)
+        {
+            return TribeResult.NotFound;
+        }
+
+        if (stockpile.Store.MoveStack(stackIndex, inventory) == 0)
+        {
+            return TribeResult.InventoryFull;
+        }
+
+        StockVersion++;
+        return TribeResult.Taken;
+    }
+
+    /// <summary>Zásoby, do kterých hráč smí a dosáhne, nebo null a důvod.</summary>
+    private (Structure? Stockpile, TribeResult Result) OpenStockpile(int stockpileId, double playerX, double playerY, int playerId, Tribes tribes)
+    {
+        var stockpile = Find(stockpileId);
+        if (stockpile?.Store is null)
+        {
+            return (null, TribeResult.NotFound);
+        }
+
+        if (!MayTouch(stockpile, playerId, tribes))
+        {
+            return (null, TribeResult.NotYours);
+        }
+
+        var distance = Math.Sqrt((stockpile.X - playerX) * (stockpile.X - playerX) + (stockpile.Y - playerY) * (stockpile.Y - playerY));
+        return distance > GameData.Building.Stockpile.Reach ? (null, TribeResult.TooFar) : (stockpile, TribeResult.Stored);
+    }
+
+    /// <summary>Smí hráč sahat na stavbu? Ano, když nemá majitele, nebo je to jeho stavba, nebo stavba jeho kmene.</summary>
+    public static bool MayTouch(Structure structure, int playerId, Tribes? tribes)
+    {
+        return structure.OwnerId < 0 || tribes is null || tribes.SameTribe(structure.OwnerId, playerId);
     }
 
     /// <summary>Kruh (postava, oheň) o daném poloměru se překrývá s něčím, co blokuje pohyb.</summary>
@@ -314,6 +412,7 @@ public sealed class Structures
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksCost;
             case BuildKind.Door: return rules.Door.SticksCost;
             case BuildKind.Trap: return rules.Trap.SticksCost;
+            case BuildKind.Stockpile: return rules.Stockpile.SticksCost;
         }
 
         if (length <= rules.Wall.ShortMaxLength + 1e-6)
@@ -336,6 +435,7 @@ public sealed class Structures
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksBack;
             case BuildKind.Door: return rules.Door.SticksBack;
             case BuildKind.Trap: return rules.Trap.SticksBack;
+            case BuildKind.Stockpile: return rules.Stockpile.SticksBack;
             default: return SticksCost(structure.Kind, structure.Length) / 2;
         }
     }
@@ -348,12 +448,17 @@ public sealed class Structures
     }
 
     /// <summary>Vezme úlovek z pasti: maso (jelen víc, králík méně). Past zůstane a chytá dál.</summary>
-    public HuntResult TakeCatch(int trapId, Inventory inventory, double playerX, double playerY, double now)
+    public HuntResult TakeCatch(int trapId, Inventory inventory, double playerX, double playerY, double now, int playerId = -1, Tribes? tribes = null)
     {
         var trap = Find(trapId);
         if (trap is null || trap.Kind != BuildKind.Trap)
         {
             return HuntResult.NotFound;
+        }
+
+        if (!MayTouch(trap, playerId, tribes))
+        {
+            return HuntResult.NotYours;
         }
 
         if (Math.Sqrt((trap.X - playerX) * (trap.X - playerX) + (trap.Y - playerY) * (trap.Y - playerY)) > GameData.Building.Wall.RemoveReach)
@@ -386,15 +491,14 @@ public sealed class Structures
         return HuntResult.Butchered;
     }
 
-    /// <summary>Past: suchá zem, ne na kmeni, zdi, ohni ani jiné pasti.</summary>
-    private bool TrapFits(Island island, Fires fires, double x, double y)
+    /// <summary>Past a zásoby: suchá zem, ne na kmeni, zdi, ohni ani jiné pasti či zásobách.</summary>
+    private bool PointFits(Island island, Fires fires, double x, double y, double footprint)
     {
-        var footprint = GameData.Building.Trap.FootprintRadius;
         return Placement.OnDryLand(island, x, y)
             && Placement.ClearOfTrunks(island, x, y, x, y, footprint)
             && !Blocks(x, y, footprint)
             && !fires.All.Any(f => Math.Sqrt((f.X - x) * (f.X - x) + (f.Y - y) * (f.Y - y)) < 2 * footprint)
-            && !Near(x, y, 2 * footprint).Any(s => s.Kind == BuildKind.Trap && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < 2 * footprint);
+            && !Near(x, y, 2 * footprint).Any(s => s.Kind is BuildKind.Trap or BuildKind.Stockpile && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < 2 * footprint);
     }
 
     /// <summary>Nejbližší zeď s otvorem bez dveří, jejíž střed je do snapDistance od bodu.</summary>
