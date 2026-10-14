@@ -485,6 +485,9 @@ public sealed class GameServer : IDisposable
             case MessageType.Report:
                 Report(player, Messages.ReadReport(reader));
                 break;
+            case MessageType.ShowItem:
+                ShowItem(player, Messages.ReadShowItem(reader));
+                break;
             case MessageType.GiveToStranger:
                 var give = Messages.ReadGiveToStranger(reader);
                 StrangerAction(player, () => Strangers.Give(Island, player.Id, give.StrangerId, player.X, player.Y, player.Inventory, give.StackIndex, Clock));
@@ -831,7 +834,8 @@ public sealed class GameServer : IDisposable
     /// <summary>Gesto vidí hráči do gestureDistance. Kývnutí a vrtění hlavou dají souvislost slovům řečeným hned potom.</summary>
     private void MakeGesture(PlayerSession player, (Gesture Gesture, float X, float Y) gesture)
     {
-        if (player.Character.IsDead || !Enum.IsDefined(gesture.Gesture))
+        // Ukázat věc má vlastní zprávu (nese věc), krčení rameny dělají jen cizinci.
+        if (player.Character.IsDead || !Enum.IsDefined(gesture.Gesture) || gesture.Gesture is Gesture.ShowItem or Gesture.Puzzled)
         {
             return;
         }
@@ -865,6 +869,36 @@ public sealed class GameServer : IDisposable
         }
 
         StrangerAnswer(player, Strangers.SeeGesture(Island, player.Id, player.X, player.Y, gesture.Gesture, player.Inventory, Clock));
+    }
+
+    /// <summary>
+    /// Hráč ukázal věc z batohu (návrh 9.3, učení v kontextu). Hráči do gestureDistance ji uvidí v bublině.
+    /// Slovo řečené hned potom dostane souvislost „u jídla“, když je to jídlo. Cizinec poblíž řekne, co si o tom myslí.
+    /// </summary>
+    private void ShowItem(PlayerSession player, int stackIndex)
+    {
+        if (player.Character.IsDead || stackIndex < 0 || stackIndex >= player.Inventory.Stacks.Count)
+        {
+            return;
+        }
+
+        var stack = player.Inventory.Stacks[stackIndex];
+        var food = stack.Item.Kind == ItemKind.Plant || stack.Item.IsFlesh;
+        player.LastGesture = food ? Gesture.ShowItem : Gesture.Point;
+        player.LastGestureAt = _seconds;
+        var view = new GestureView(player.Id, Gesture.ShowItem, (float)player.X, (float)player.Y, Item: StackViewOf(stack) with { Count = 1 });
+        foreach (var viewer in _byPeer.Values)
+        {
+            if (Distance(player, viewer) <= GameData.Language.GestureDistance)
+            {
+                SendTo(viewer.Peer!, w => Messages.WriteGestureSeen(w, view));
+            }
+        }
+
+        if (_config.Strangers)
+        {
+            Strangers.SeeItem(Island, stack.Item, player.X, player.Y);
+        }
     }
 
     // ---------- cizí kmeny ----------

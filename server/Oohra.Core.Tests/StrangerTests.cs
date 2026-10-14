@@ -158,6 +158,24 @@ public class StrangerTests
         Assert.Contains(strangers.TakeActs(), a => a.Word == Concept.Poison && a.Gesture == Gesture.No);
     }
 
+    /// <summary>Ukázaná věc z batohu: maso je jídlo (kývne), kámen nezná (krčí rameny). Mezi odpověďmi je chvíle pauza.</summary>
+    [Fact]
+    public void SeesShownItem()
+    {
+        var (island, strangers, n) = Setup();
+        var clock = GameClock.FromSettings();
+
+        Assert.True(strangers.SeeItem(island, Item.RawMeat(0), n.X, n.Y));
+        Assert.False(strangers.SeeItem(island, Item.Stone, n.X, n.Y));
+        strangers.Update(island, new PlantStates(), [], clock, 1, []);
+        Assert.Contains(strangers.TakeActs(), a => a.Word == Concept.Food && a.Gesture == Gesture.Yes);
+
+        strangers.Update(island, new PlantStates(), [], clock, GameData.Strangers.AskCooldownSeconds, []);
+        Assert.True(strangers.SeeItem(island, Item.Stone, n.X, n.Y));
+        strangers.Update(island, new PlantStates(), [], clock, 1, []);
+        Assert.Contains(strangers.TakeActs(), a => a.Word is null && a.Gesture == Gesture.Puzzled);
+    }
+
     /// <summary>Darovaná škodlivá rostlina skončí na zemi, kámen cizinec nechce, dobré jídlo přijme a dá něco zpátky.</summary>
     [Fact]
     public void GiveItems()

@@ -541,7 +541,7 @@ namespace Oohra.Client
             var inventory = connection.Inventory;
             var rowHeight = 34f;
             var panelHeight = Mathf.Min(height - 40, 90 + Mathf.Max(1, inventory.Stacks.Length) * rowHeight);
-            _backpackRect = new Rect((width - 660) / 2, (height - panelHeight) / 2, 660, panelHeight);
+            _backpackRect = new Rect((width - 750) / 2, (height - panelHeight) / 2, 750, panelHeight);
             GUI.Box(_backpackRect, GUIContent.none);
             GUI.Box(_backpackRect, GUIContent.none);
 
@@ -595,6 +595,8 @@ namespace Oohra.Client
                 if (canBake && Button(ref buttons, "Upéct")) _session.Bake(i);
                 buttons.x = x + 270 + 3 * (buttons.width + 8);
                 if (Button(ref buttons, "Zahodit")) connection.Drop(i);
+                // Ukázat věc ostatním (návrh 9.3): řekni k tomu slovo, ať se ho naučí.
+                if (Button(ref buttons, "Ukázat")) connection.ShowItem(i);
                 y += rowHeight;
             }
         }
