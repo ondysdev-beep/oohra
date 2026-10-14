@@ -28,12 +28,13 @@ V Unity v horním menu **Oohra → Katalog vzhledu**. Vpravo v Inspectoru se uk�
    **Universal Render Pipeline/Lit**, jinak bude model ve hře **růžový**.
    Hra to kontroluje testem (`VisualCatalogTests`).
 5. **Prefab** (hotový díl).
-   - Přetáhni model do scény.
-   - Zkontroluj velikost: vedle polož kostku (GameObject → 3D Object → Cube), ta má přesně 1 m.
-   - Zkontroluj natočení a střed (viz tabulka níže). Když je střed modelu jinde, vytvoř prázdný
-     objekt (GameObject → Create Empty) na správném místě a model dej do něj jako dítě.
-   - Přetáhni hotový objekt ze scény do složky `Assets/Prefabs/`. Tím vznikne prefab.
-     Ze scény ho pak smaž.
+   - Přetáhni model ze složky Models rovnou do složky `Assets/Prefabs/`. Tím vznikne prefab.
+     (Nebo model přetáhni do scény, uprav a pak ze scény do Prefabs. **Ze scény ho pak smaž**, jinak
+     zůstane ve hře napevno na jednom místě.)
+   - **Na středu a poloze modelu v prefabu nezáleží:** hra každý model posune tak, aby stál dole
+     uprostřed. Stromy, rostliny, kameny a trávu navíc sama zmenší nebo zvětší (velikosti jsou
+     v katalogu). U staveb, postavy a zvířat velikost dodrž (tabulka níže, kostka 1 × 1 × 1 m pomůže).
+   - Natočení (kam míří „dopředu“) hra neopraví: podle tabulky níže.
 6. **Do katalogu.** Otevři katalog (Oohra → Katalog vzhledu) a prefab přetáhni do políčka.
 7. **Vyzkoušej.** Spusť server (Oohra → Spustit server) a hru (Play), nebo sestav hru
    (Oohra → Sestavit hru pro Windows).
@@ -46,8 +47,8 @@ Kolize (Collider) v prefabu nevadí, hra je smaže. Kudy se dá projít, počít
 
 | Políčko | Velikost | Střed a natočení | Poznámka |
 |---|---|---|---|
-| **Trees** (stromy) | výška asi 5 m, kmen tlustý asi 25 cm | střed kmene dole | Víc variant = víc políček, každý strom dostane jednu. Hra strom náhodně natočí a trochu zvětší nebo zmenší. Na serveru je kmen kruh o poloměru 12 cm, tlustší kmen by hráč „prošel“. |
-| **Plants** (rostliny) | 0,3 až 0,6 m | dole uprostřed | 4 políčka = 4 tvary druhů (0 až 3). Obarví se barvou druhu, aby šly druhy rozeznat (viz níže). |
+| **Trees** (stromy) | libovolná, hra strom srovná na výšku **TreeHeight** (5 m) ±20 % | na středu nezáleží | Víc variant = víc políček, každý strom dostane jednu. Hra strom náhodně natočí. Na serveru je kmen kruh o poloměru 12 cm, tlustší kmen by hráč „prošel“. |
+| **Plants** (rostliny) | libovolná, hra ji srovná na výšku **PlantHeight** (0,45 m) ±15 % | na středu nezáleží | Jen **4 políčka** (0 až 3) = 4 tvary druhů, další se nepoužijí. Obarví se barvou druhu, aby šly druhy rozeznat (viz níže). |
 | **Wall** (zeď) | 1 m dlouhá, 2 m vysoká, 10 cm tlustá | dole uprostřed, délka podél osy X | Kratší zeď (poloviční, dorovnání) hra zmáčkne podél X. |
 | **DoorFrame** (zeď s otvorem) | 1 m × 2 m, otvor 0,8 m uprostřed, vysoký 1,9 m | dole uprostřed, délka podél X | Sloupky po krajích jsou po 10 cm. |
 | **Door** (dveře) | 0,8 m široké, 1,9 m vysoké, asi 5 cm tlusté | dole uprostřed křídla, šířka podél X | Pant na levém kraji přidá hra sama (dveře se otáčejí kolem něj). |
@@ -155,8 +156,18 @@ V katalogu jsou políčka pro textury:
 ## Kameny na skalách
 
 Na skalních dlaždicích leží nízké kameny (asi na každé druhé). Políčko **Rocks**: jeden nebo víc prefabů
-kamenů. Střed dole uprostřed, velikost asi 35 cm. Hra je natočí a trochu zmenší. Musí zůstat nízké:
-přes skálu se chodí, vysoký balvan by postava „prošla“. Prázdné políčko = šedé zploštělé kuličky.
+kamenů. Na velikosti a středu modelu nezáleží: hra každý kámen natočí a srovná tak, aby jeho největší
+rozměr byl mezi **RockMinSize** a **RockMaxSize** (0,2 až 0,45 m). Víc nedávej: přes skálu se chodí,
+vysoký balvan by postava „prošla“. Prázdné políčko = šedé zploštělé kuličky.
+
+## Tráva (jen ozdoba)
+
+Políčko **Grass**: trsy trávy, které hra rozhází po travnatých dlaždicích (v lese řidčeji, u kmene ne).
+Nejsou to rostliny ze hry, nedá se na ně kliknout a server o nich neví.
+
+- **GrassHeight**: výška trsu (hra model srovná, ±20 %).
+- **GrassPerTile**: kolik trsů průměrně připadá na 1 m² trávy. Trsů jsou tisíce, kreslí se úsporně
+  (stovky naráz), ale na slabém počítači můžeš číslo snížit.
 
 ## Voda
 
@@ -171,6 +182,15 @@ a pomalu se po ní posouvají vlnky.
 | **WaveSpeed** | jak rychle se vlnky posouvají |
 | **FoamColor** | barva pěny u břehu, alfa (A) = jak je pěna hustá (0 = žádná pěna) |
 | **FoamWidth** | jak široký je pruh pěny od břehu do vody (m) |
+
+**Vlastní voda** (třeba z Asset Storu, například IgniteCoders Simple Water Shader):
+
+- **WaterMaterial**: přetáhni materiál vody (u IgniteCoders `Water_mat_01` až `03`). Pak se barva, vlnky
+  a jejich posun z katalogu neberou, všechno je v materiálu.
+- **WaterReflectionCamera**: když voda umí odrazy z druhé kamery (u IgniteCoders prefab
+  `WaterReflectionCamera`), přetáhni sem prefab kamery. Hra jí sama dosadí hladinu. Druhá kamera kreslí
+  scénu podruhé, takže hra poběží pomaleji. Bez ní voda funguje, jen bez odrazů okolí.
+- Prázdné WaterMaterial = voda hry.
 
 Pobřeží není schodovité podle čtverců: rohy dlaždic se zakulatí (jen vzhled, kudy se dá chodit, určuje
 server podle dlaždic). Podél břehu leží na hladině pruh pěny, který pomalu sílí a slábne.

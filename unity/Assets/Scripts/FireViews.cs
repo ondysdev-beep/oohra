@@ -106,7 +106,8 @@ namespace Oohra.Client
             var prefab = VisualCatalog.Current.Flame;
             if (prefab != null)
             {
-                VisualCatalog.Spawn(prefab, flame.transform, "Model plamene");
+                // Plamen (třeba částice) má svůj střed, jak ho autor nastavil: nesrovnává se.
+                VisualCatalog.Spawn(prefab, flame.transform, "Model plamene", center: false);
             }
             else
             {

@@ -59,7 +59,9 @@ namespace Oohra.Client.Tests
             var wall = StructureViews.CreateModel(BuildKind.StickWall, null);
             StructureViews.StretchWall(wall, 0.25f);
 
-            Assert.AreEqual(new Vector3(0.25f, 2f, 0.1f), wall.transform.GetChild(0).localScale);
+            // Obal modelu se zmáčkne podél X, model uvnitř si nechá svůj tvar.
+            Assert.AreEqual(new Vector3(0.25f, 1f, 1f), wall.transform.GetChild(0).localScale);
+            Assert.AreEqual(new Vector3(1f, 2f, 0.1f), wall.transform.GetChild(0).GetChild(0).localScale);
             Object.DestroyImmediate(wall);
             Object.DestroyImmediate(template);
         }
