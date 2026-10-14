@@ -17,6 +17,16 @@ namespace Oohra.Client.Tests
             }
         }
 
+        /// <summary>Narození u kmene má vlastní texty (nespadne do výchozího „Přijal pozvánku“).</summary>
+        [Test]
+        public void BirthResultsHaveOwnText()
+        {
+            var joined = Texts.For(TribeResult.TheyJoined);
+            Assert.AreNotEqual(joined, Texts.For(TribeResult.BornAtHome));
+            Assert.AreNotEqual(joined, Texts.For(TribeResult.NoHome));
+            StringAssert.Contains("divočin", Texts.For(TribeResult.NoHome));
+        }
+
         [Test]
         public void InviteGestureHasOwnText()
         {

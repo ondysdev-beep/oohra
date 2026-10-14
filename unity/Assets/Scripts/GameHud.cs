@@ -2,6 +2,7 @@ using System.Linq;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
+using Oohra.Core.Social;
 using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
@@ -562,9 +563,25 @@ namespace Oohra.Client
                 + "prvních 24 hodin je smí vzít jen tvůj kmen, potom kdokoli.\n"
                 + $"Narodíš se jako Nový, generace {next + 1}. Status Pradávného je navždy pryč.",
                 _label);
-            if (GUI.Button(new Rect(x, y + 136, 200, 34), "Narodit se znovu"))
+            if (!_session.HasTribe)
             {
-                _session.Reborn();
+                if (GUI.Button(new Rect(x, y + 136, 200, 34), "Narodit se znovu"))
+                {
+                    _session.Reborn();
+                }
+
+                return;
+            }
+
+            // V kmeni si hráč vybere (návrh 4.1): u kmene je to bezpečnější, divočina je riziko a objevování.
+            if (GUI.Button(new Rect(x, y + 136, 200, 34), "Narodit se u kmene"))
+            {
+                _session.Reborn(BirthPlace.Tribe);
+            }
+
+            if (GUI.Button(new Rect(x + 212, y + 136, 200, 34), "Narodit se v divočině"))
+            {
+                _session.Reborn(BirthPlace.Wild);
             }
         }
 

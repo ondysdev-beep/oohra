@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
+using Oohra.Core.Social;
 using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
@@ -418,13 +419,23 @@ namespace Oohra.Client
             Connection.ToggleSleep();
         }
 
-        public void Reborn()
+        /// <summary>Jsem v kmeni? (Po smrti se pak můžu narodit u něj.)</summary>
+        public bool HasTribe
         {
-            Connection.Reborn();
+            get { return Connection.TribeMembers.Contains(Connection.PlayerId); }
+        }
+
+        /// <summary>Narodit se znovu. U kmene to oznámí server (místo se nemusí najít).</summary>
+        public void Reborn(BirthPlace place = BirthPlace.Wild)
+        {
+            Connection.Reborn(place);
             Menu = null;
             Selected = null;
             _log.Clear();
-            Say("Probouzíš se na neznámém místě. Nic nevíš.", false);
+            if (place == BirthPlace.Wild)
+            {
+                Say("Probouzíš se na neznámém místě. Nic nevíš.", false);
+            }
         }
 
         public void Say(string text, bool warn)

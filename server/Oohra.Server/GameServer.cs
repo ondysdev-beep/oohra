@@ -382,7 +382,7 @@ public sealed class GameServer : IDisposable
                 UseStack(player, type, Messages.ReadStackAction(reader));
                 break;
             case MessageType.Reborn:
-                Reborn(player);
+                Reborn(player, Messages.ReadReborn(reader));
                 break;
             case MessageType.GatherSticks:
             case MessageType.TakeStone:
@@ -657,8 +657,11 @@ public sealed class GameServer : IDisposable
         SendSelfState(player);
     }
 
-    /// <summary>Po smrti: Nový o generaci výš, jinde na ostrově, s prázdným batohem.</summary>
-    private void Reborn(PlayerSession player)
+    /// <summary>
+    /// Po smrti: Nový o generaci výš, s prázdným batohem. Narodí se v divočině daleko od místa smrti,
+    /// nebo, když si to hráč vybral, na okraji území svého kmene (návrh 4.1).
+    /// </summary>
+    private void Reborn(PlayerSession player, BirthPlace place)
     {
         if (!player.Character.IsDead)
         {
@@ -672,7 +675,8 @@ public sealed class GameServer : IDisposable
         player.BodyLeft = false;
         player.SentVocabularyVersion = -1;
         player.Inventory = NewInventory(player.Character);
-        var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: false, avoid: deathPlace);
+        var atHome = place == BirthPlace.Tribe ? SpawnPoint.PickNearTribe(Island, _rng, TribeHome(player)) : null;
+        var spawn = atHome ?? SpawnPoint.PickWild(Island, _rng, firstLife: false, avoid: deathPlace);
         player.X = spawn.X;
         player.Y = spawn.Y;
         player.InputX = player.InputY = 0;
@@ -680,6 +684,39 @@ public sealed class GameServer : IDisposable
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)));
         SendInventory(player);
         SendSelfState(player);
+        if (place == BirthPlace.Tribe)
+        {
+            SendEvent(player, TribeEvent(atHome is null ? TribeResult.NoHome : TribeResult.BornAtHome));
+        }
+    }
+
+    /// <summary>
+    /// Místa kmene, u kterých se dá narodit: stavby členů kmene. Když kmen nic nepostavil, živí členové.
+    /// Hráč bez kmene žádná místa nemá.
+    /// </summary>
+    private List<Position> TribeHome(PlayerSession player)
+    {
+        if (Tribes.TribeOf(player.Id) is null)
+        {
+            return [];
+        }
+
+        var members = Tribes.MembersWith(player.Id);
+        var home = Island.Structures.All
+            .Where(s => members.Contains(s.OwnerId))
+            .OrderBy(s => s.Id)
+            .Select(s => new Position(s.X, s.Y))
+            .ToList();
+        if (home.Count > 0)
+        {
+            return home;
+        }
+
+        return _byPeer.Values
+            .Where(p => p.Id != player.Id && members.Contains(p.Id) && !p.Character.IsDead)
+            .OrderBy(p => p.Id)
+            .Select(p => new Position(p.X, p.Y))
+            .ToList();
     }
 
     // ---------- jazyk a gesta ----------

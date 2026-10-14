@@ -53,6 +53,36 @@ public static class SpawnPoint
     }
 
     /// <summary>
+    /// Místo u kmene (návrh 4.1): okraj území kmene, mimo domy. home jsou místa kmene (stavby členů, když žádné
+    /// nejsou, živí členové). Postava se narodí minDistance až maxDistance od některého z nich, aspoň minDistance
+    /// od každé stavby a tam, odkud se dá odejít. Když se místo nenajde (nebo kmen žádné místo nemá), vrátí null.
+    /// </summary>
+    public static Position? PickNearTribe(Island island, Mulberry32 rng, IReadOnlyList<Position> home)
+    {
+        var rules = GameData.Tribes.Birth;
+        var spawn = GameData.Movement.Spawn;
+        for (var n = 0; n < rules.Attempts && home.Count > 0; n++)
+        {
+            var anchor = home[rng.NextInt(home.Count)];
+            var angle = rng.NextDouble() * 2 * Math.PI;
+            var distance = rules.MinDistance + rng.NextDouble() * (rules.MaxDistance - rules.MinDistance);
+            var x = anchor.X + Math.Cos(angle) * distance;
+            var y = anchor.Y + Math.Sin(angle) * distance;
+            if (!island.InBounds((int)Math.Floor(x), (int)Math.Floor(y))
+                || !Movement.IsWalkable(island, x, y, spawn.Clearance)
+                || island.Structures.Near(x, y, rules.MinDistance).Any()
+                || OpenTiles(island, (int)Math.Floor(x), (int)Math.Floor(y), spawn.MinOpenTiles) < spawn.MinOpenTiles)
+            {
+                continue;
+            }
+
+            return new Position(x, y);
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Na kolik volných dlaždic se dá z dlaždice (x, y) dojít krokem nahoru, dolů, doleva a doprava.
     /// Počítá jen do limitu (víc není potřeba vědět).
     /// </summary>

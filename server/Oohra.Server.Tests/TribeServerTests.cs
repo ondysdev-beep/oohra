@@ -1,3 +1,4 @@
+using Oohra.Core.Data;
 using Oohra.Core.Items;
 using Oohra.Core.Language;
 using Oohra.Core.Social;
@@ -100,6 +101,50 @@ public class TribeServerTests
 
         Assert.True(net.Pump(() => b.TakeEvents().Any(e => e.Kind == EventKind.Build && e.Code == (byte)BuildResult.NotYours)));
         Assert.Single(net.Server.Island.Structures.All);
+    }
+
+    /// <summary>Po smrti se hráč může narodit u kmene: kmen nic nepostavil, takže kousek od živého člena.</summary>
+    [Fact]
+    public void BornNearTribe()
+    {
+        using var net = new TestNetwork();
+        var a = net.Join("Ondra");
+        var b = net.Join("Petr");
+        var (x, y) = OpenSpot(net.Server.Island);
+        Put(net, "Ondra", x, y);
+        MakeTribe(net, a, b);
+        var petr = net.Server.FindPlayer("Petr")!;
+        Kill(net, b, "Petr");
+
+        b.Reborn(BirthPlace.Tribe);
+
+        Assert.True(net.Pump(() => b.TakeEvents().Any(e => e.Kind == EventKind.Tribe && e.Code == (byte)TribeResult.BornAtHome)));
+        var rules = GameData.Tribes.Birth;
+        var ondra = net.Server.FindPlayer("Ondra")!;
+        var distance = Math.Sqrt(Math.Pow(petr.X - ondra.X, 2) + Math.Pow(petr.Y - ondra.Y, 2));
+        Assert.InRange(distance, rules.MinDistance - 0.5, rules.MaxDistance + 0.5);
+    }
+
+    /// <summary>Kdo nemá kmen, narodí se v divočině, i když chtěl ke kmeni.</summary>
+    [Fact]
+    public void WithoutTribeBornInWild()
+    {
+        using var net = new TestNetwork();
+        var a = net.Join("Ondra");
+        Kill(net, a, "Ondra");
+
+        a.Reborn(BirthPlace.Tribe);
+
+        Assert.True(net.Pump(() => a.TakeEvents().Any(e => e.Kind == EventKind.Tribe && e.Code == (byte)TribeResult.NoHome)));
+        Assert.True(net.Pump(() => a.Self is { Dead: false, Generation: 1 }));
+    }
+
+    private static void Kill(TestNetwork net, GameConnection connection, string nickname)
+    {
+        var player = net.Server.FindPlayer(nickname)!;
+        player.Character.Hydration = 0;
+        player.Character.Health = 0.0001;
+        Assert.True(net.Pump(() => connection.Self!.Dead));
     }
 
     private static void MakeTribe(TestNetwork net, GameConnection inviter, GameConnection invitee)

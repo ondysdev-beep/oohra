@@ -3,5 +3,13 @@
   // Jak blízko musí být pozvaný (m), aby pozvání (gesto) viděl.
   "inviteDistance": 3,
   // Jak dlouho pozvánka platí (herní minuty; 10 herních minut je asi 40 skutečných sekund).
-  "inviteMinutes": 10
+  "inviteMinutes": 10,
+  // Narození u kmene (návrh 4.1). Území kmene jsou stavby jeho členů, když žádné nemá, živí členové.
+  // Postava se narodí minDistance až maxDistance (m) od některého místa kmene a aspoň minDistance od každé stavby
+  // (mimo domy). Když se za attempts pokusů místo nenajde, narodí se v divočině.
+  "birth": {
+    "minDistance": 4,
+    "maxDistance": 10,
+    "attempts": 300
+  }
 }
