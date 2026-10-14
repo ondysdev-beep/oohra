@@ -70,6 +70,11 @@ public static class GameData
 
     public static SignRules Signs => _signs.Value;
 
+    private static readonly Lazy<TribeRules> _tribes =
+        new(() => Load<TribeRules>("tribes.json"));
+
+    public static TribeRules Tribes => _tribes.Value;
+
     public static GatheringRules Gathering => _gathering.Value;
 
     public static MovementRules Movement => _movement.Value;

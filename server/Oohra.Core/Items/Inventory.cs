@@ -123,6 +123,35 @@ public sealed class Inventory
         return true;
     }
 
+    /// <summary>
+    /// Přesune hromádku do jiného batohu (nebo zásob), kolik se tam vejde. Vrací počet přesunutých kusů.
+    /// </summary>
+    public int MoveStack(int stackIndex, Inventory target)
+    {
+        if (stackIndex < 0 || stackIndex >= _stacks.Count)
+        {
+            return 0;
+        }
+
+        var stack = _stacks[stackIndex];
+        var moved = 0;
+        while (moved < stack.Count && target.TryAdd(stack.Item))
+        {
+            moved++;
+        }
+
+        if (moved == stack.Count)
+        {
+            _stacks.RemoveAt(stackIndex);
+        }
+        else if (moved > 0)
+        {
+            _stacks[stackIndex] = stack with { Count = stack.Count - moved };
+        }
+
+        return moved;
+    }
+
     /// <summary>Zahodí celou hromádku.</summary>
     public void Drop(int stackIndex)
     {

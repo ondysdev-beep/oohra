@@ -80,5 +80,8 @@ namespace Oohra.Core.World
 
         /// <summary>Tady se rybařit nedá (jen jezírko a moře).</summary>
         NotWater,
+
+        /// <summary>Cizí past: úlovek smí vzít jen majitel a jeho kmen.</summary>
+        NotYours,
     }
 }

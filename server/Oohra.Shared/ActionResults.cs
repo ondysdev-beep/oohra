@@ -48,6 +48,12 @@ namespace Oohra.Core.World
 
         /// <summary>Dveře: poblíž není zeď s volným otvorem.</summary>
         NoDoorway,
+
+        /// <summary>Cizí stavba: rozebrat ji smí jen majitel a jeho kmen.</summary>
+        NotYours,
+
+        /// <summary>V zásobách něco je, napřed je vyber.</summary>
+        NotEmpty,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>

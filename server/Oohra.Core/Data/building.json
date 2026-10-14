@@ -37,6 +37,16 @@
     "sticksBack": 2,
     "footprintRadius": 0.35
   },
+  "stockpile": {
+    // Zásoby kmene: koš z klacků. Ukládat a brát smí majitel a jeho kmen (návrh 14.1).
+    "sticksCost": 4,
+    "sticksBack": 2,
+    // Kolik hromádek se do koše vejde.
+    "capacity": 20,
+    "footprintRadius": 0.35,
+    // Jak blízko musí postava být, aby do koše sáhla.
+    "reach": 1.6
+  },
   "shelter": {
     // Úkryt: z postavy se vyšle tolik paprsků do všech stran. Když každý do maxDistance narazí na zeď
     // (nebo zavřené dveře), postava je v úkrytu (prostor uzavřený zdmi, nejvýš asi 6 × 6 m).
