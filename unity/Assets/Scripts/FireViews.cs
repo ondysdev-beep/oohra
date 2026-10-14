@@ -5,7 +5,8 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Ohně ve scéně podle zpráv serveru: ohniště, plamen a oranžové světlo, které mihotá.
+    /// Ohně ve scéně podle zpráv serveru: ohniště, plamen (oboje jde vyměnit v katalogu vzhledu) a oranžové
+    /// světlo, které mihotá.
     /// Vyhaslý oheň je jen popel (bez plamene a světla). Ohniště táborů hoří pořád.
     /// </summary>
     public class FireViews : MonoBehaviour
@@ -67,9 +68,7 @@ namespace Oohra.Client
             GameObject flame;
             if (!_flames.TryGetValue(fire.Id, out flame))
             {
-                var hearth = IslandView.Primitive(PrimitiveType.Cylinder, "Oheň " + fire.Id, transform, Palette.Hex("#4a4038"));
-                hearth.transform.position = WorldCoords.ToUnity(fire.X, fire.Y, 0.04f);
-                hearth.transform.localScale = new Vector3(0.7f, 0.04f, 0.7f);
+                CreateHearth(transform, fire.X, fire.Y, "Oheň " + fire.Id, Palette.Hex("#4a4038"));
                 flame = CreateFlame(transform, fire.X, fire.Y);
                 _flames[fire.Id] = flame;
             }
@@ -78,17 +77,48 @@ namespace Oohra.Client
             _shown[fire.Id] = fire;
         }
 
-        /// <summary>Plamen (svítí sám) a nad ním bodové světlo, které osvětlí okolí.</summary>
+        /// <summary>Ohniště: model z katalogu vzhledu (Campfire), jinak tmavý plochý válec. Použijí ho i tábory.</summary>
+        public static GameObject CreateHearth(Transform parent, double x, double y, string name, Color color)
+        {
+            var prefab = VisualCatalog.Current.Campfire;
+            if (prefab != null)
+            {
+                var model = VisualCatalog.Spawn(prefab, parent, name);
+                model.transform.position = WorldCoords.ToUnity(x, y);
+                return model;
+            }
+
+            var hearth = IslandView.Primitive(PrimitiveType.Cylinder, name, parent, color);
+            hearth.transform.position = WorldCoords.ToUnity(x, y, 0.04f);
+            hearth.transform.localScale = new Vector3(0.7f, 0.04f, 0.7f);
+            return hearth;
+        }
+
+        /// <summary>
+        /// Plamen (z katalogu vzhledu, jinak koule, která svítí sama) a nad ním bodové světlo, které osvětlí okolí.
+        /// Vrací objekt, který se při vyhasnutí schová (i se světlem).
+        /// </summary>
         private GameObject CreateFlame(Transform parent, double x, double y)
         {
-            var flame = IslandView.Primitive(PrimitiveType.Sphere, "Plamen", parent, Color.white);
-            Palette.SetGlow(flame, Palette.Hex("#f2a03a"));
-            flame.transform.position = WorldCoords.ToUnity(x, y, 0.22f);
-            flame.transform.localScale = new Vector3(0.3f, 0.4f, 0.3f);
+            var flame = new GameObject("Plamen");
+            flame.transform.SetParent(parent);
+            flame.transform.position = WorldCoords.ToUnity(x, y);
+            var prefab = VisualCatalog.Current.Flame;
+            if (prefab != null)
+            {
+                VisualCatalog.Spawn(prefab, flame.transform, "Model plamene");
+            }
+            else
+            {
+                var ball = IslandView.Primitive(PrimitiveType.Sphere, "Koule", flame.transform, Color.white);
+                Palette.SetGlow(ball, Palette.Hex("#f2a03a"));
+                ball.transform.localPosition = new Vector3(0f, 0.22f, 0f);
+                ball.transform.localScale = new Vector3(0.3f, 0.4f, 0.3f);
+            }
 
             var light = new GameObject("Světlo ohně").AddComponent<Light>();
             light.transform.SetParent(flame.transform);
-            light.transform.position = WorldCoords.ToUnity(x, y, 1.3f);
+            light.transform.localPosition = new Vector3(0f, 1.3f, 0f);
             light.type = LightType.Point;
             light.color = LightColor;
             light.range = LightRange;

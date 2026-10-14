@@ -106,24 +106,11 @@ namespace Oohra.Client
                 root.localScale = animal.State == AnimalState.Asleep ? new Vector3(1f, 0.6f, 1f) : Vector3.one;
                 Palette.SetColor(view.Body.gameObject, ColorFor(view.Color, animal.State));
             }
-            else if (view.Animator != null && HasParameter(view.Animator, StateParameter))
+            else
             {
                 // Vlastní model: stav ze serveru jde do animace (parametr Stav, čísla podle AnimalState).
-                view.Animator.SetInteger(StateParameter, (int)animal.State);
+                AnimatorTools.SetInt(view.Animator, StateParameter, (int)animal.State);
             }
-        }
-
-        private static bool HasParameter(Animator animator, string name)
-        {
-            foreach (var parameter in animator.parameters)
-            {
-                if (parameter.name == name && parameter.type == AnimatorControllerParameterType.Int)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static Color ColorFor(Color normal, AnimalState state)

@@ -30,6 +30,7 @@ namespace Oohra.Client.Tests
             models.AddRange(new[] { catalog.Wall, catalog.DoorFrame, catalog.Door, catalog.Trap, catalog.Stockpile });
             models.AddRange(new[] { catalog.Boar, catalog.Rabbit, catalog.Deer, catalog.Wolf });
             models.AddRange(catalog.Rocks);
+            models.AddRange(new[] { catalog.Player, catalog.Campfire, catalog.Flame });
             foreach (var decoration in catalog.Decorations)
             {
                 models.Add(decoration.Prefab);
