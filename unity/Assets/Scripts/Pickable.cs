@@ -61,6 +61,7 @@ namespace Oohra.Client
                 case TargetKind.Animal: return InteractionTarget.ForAnimal(Id, X, Y);
                 case TargetKind.Sign: return InteractionTarget.ForSign(Id, X, Y);
                 case TargetKind.Player: return InteractionTarget.ForPlayer(Id, X, Y);
+                case TargetKind.Corpse: return InteractionTarget.ForCorpse(Id, X, Y);
                 default: return InteractionTarget.ForTile(Kind, TileX, TileY);
             }
         }

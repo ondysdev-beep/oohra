@@ -103,6 +103,7 @@ postava kruh o poloměru 28 cm, takže model by neměl být o moc širší.
 | `Mrtvy` | Bool | postava je mrtvá |
 
 - Když model nemá parametr `Spi` (nebo `Mrtvy`), hra ho při spánku (nebo smrti) prostě položí na zem.
+- Tělo mrtvého hráče (zůstane na zemi 4 dny s jeho věcmi) použije stejný model, položený na záda.
 
 ## Oheň
 

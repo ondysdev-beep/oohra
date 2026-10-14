@@ -30,7 +30,7 @@ namespace Oohra.Client
         private GUIStyle _title;
         private Texture2D _readTexture;
         private int _readId = -1;
-        private bool _paintValue;
+        private readonly BitGrid _grid = new BitGrid();
 
         /// <summary>Rozkreslená značka (SignBits).</summary>
         public byte[] Drawing { get; private set; } = SignBits.Empty();
@@ -132,24 +132,29 @@ namespace Oohra.Client
             y += 44;
 
             var grid = new Rect(_editorRect.x + (_editorRect.width - gridSize) / 2, y, gridSize, gridSize);
-            Paint(grid);
-            for (var cy = 0; cy < SignBits.Size; cy++)
-            {
-                for (var cx = 0; cx < SignBits.Size; cx++)
-                {
-                    var on = SignBits.Get(Drawing, cx, cy);
-                    var old = GUI.color;
-                    GUI.color = on ? SignViews.ClayInk : SignViews.Clay;
-                    GUI.DrawTexture(new Rect(grid.x + cx * Cell, grid.y + cy * Cell, Cell - 1, Cell - 1), Texture2D.whiteTexture);
-                    GUI.color = old;
-                }
-            }
+            _grid.Edit(grid, Drawing, SignViews.Clay, SignViews.ClayInk);
 
             y = grid.yMax + 10;
             if (GUI.Button(new Rect(x, y, 100, 28), "Nakreslit")) Submit();
             if (GUI.Button(new Rect(x + 108, y, 90, 28), "Vymazat")) Drawing = SignBits.Empty();
             if (GUI.Button(new Rect(x + 206, y, 90, 28), "Zavřít")) EditorOpen = false;
-            GUI.Label(new Rect(x, y + 32, 312, 20), "Levé tlačítko kreslí, pravé maže. Žádný text.", _label);
+            var mark = _session.Connection.SignatureMark;
+            if (mark.Length == SignBits.ByteCount && GUI.Button(new Rect(x, y + 32, 120, 24), "Můj znak"))
+            {
+                // Znak podpisu se přikreslí do kresby (podepsat se jde i jinak, podpis se ukládá ke značce sám).
+                AddMark(mark);
+            }
+
+            GUI.Label(new Rect(x + (mark.Length > 0 ? 128 : 0), y + 34, 312, 20), "Levé tlačítko kreslí, pravé maže.", _label);
+        }
+
+        /// <summary>Přikreslí do kresby body znaku (co už nakreslené je, zůstane).</summary>
+        public void AddMark(byte[] mark)
+        {
+            for (var i = 0; i < Drawing.Length && i < mark.Length; i++)
+            {
+                Drawing[i] |= mark[i];
+            }
         }
 
         /// <summary>Na skále vydrží rytina, v hlíně kresba za pár dní zvětrá (prototyp list sign).</summary>
@@ -159,25 +164,6 @@ namespace Oohra.Client
             var world = _session.Connection.World;
             var rock = place.HasValue && world.TileAt(Mathf.FloorToInt(place.Value.x), Mathf.FloorToInt(place.Value.y)) == TileType.Rock;
             return rock ? "Stojíš u skály. Rytina vydrží." : "Kreslíš do hlíny. Za pár dní zvětrá.";
-        }
-
-        private void Paint(Rect grid)
-        {
-            var e = Event.current;
-            if ((e.type != EventType.MouseDown && e.type != EventType.MouseDrag) || !grid.Contains(e.mousePosition))
-            {
-                return;
-            }
-
-            if (e.type == EventType.MouseDown)
-            {
-                _paintValue = e.button == 0;
-            }
-
-            var cx = Mathf.Clamp((int)((e.mousePosition.x - grid.x) / Cell), 0, SignBits.Size - 1);
-            var cy = Mathf.Clamp((int)((e.mousePosition.y - grid.y) / Cell), 0, SignBits.Size - 1);
-            SignBits.Set(Drawing, cx, cy, _paintValue);
-            e.Use();
         }
 
         /// <summary>Přečtení značky: kresba, stáří a u staré rytiny záznam o rostlině (může se mýlit).</summary>
@@ -206,6 +192,15 @@ namespace Oohra.Client
 
             var tx = x + 110;
             GUI.Label(new Rect(tx, y, 380, 22), sign.Ancient ? "STARÁ RYTINA" : sign.Carved ? "RYTINA" : "ZNAČKA", _title);
+            if (sign.SignatureName != null && sign.SignatureName.Length > 0)
+            {
+                // Podpis autora: jméno ze slabik a jeho znak vpravo nahoře.
+                GUI.Label(new Rect(tx + 120, y + 2, 220, 22), "Podpis: " + Oohra.Core.Language.Words.Text(sign.SignatureName), _label);
+                if (sign.SignatureMark != null && sign.SignatureMark.Length == SignBits.ByteCount)
+                {
+                    BitGrid.Draw(new Rect(_readRect.xMax - 46, y, 36, 36), sign.SignatureMark, SignViews.Clay, SignViews.ClayInk);
+                }
+            }
             GUI.Label(new Rect(tx, y + 24, 390, 60), Describe(sign), _label);
             if (sign.AuthorId == _session.Connection.PlayerId && GUI.Button(new Rect(tx, _readRect.yMax - 36, 110, 28), "Smazat"))
             {
