@@ -168,6 +168,27 @@ public class TrapFishSpoilTests
         Assert.True(fisher.Character.Skills.Pending(SkillKind.Hunt) > 0);
     }
 
+    /// <summary>I když jsou zvířata vypnutá (žádná se nerodí), čas pro prodlevy běží a rybařit jde opakovaně.</summary>
+    [Fact]
+    public void FishingWorksWithAnimalsDisabled()
+    {
+        var (wx, wy) = WaterEdge();
+        var animals = new Animals(1) { Enabled = false };
+        var fisher = new AnimalTarget(1, wx, wy, new Character(0, new Mulberry32(1)));
+        var gear = new Inventory(10);
+        gear.TryAdd(Item.Spear);
+        var (tx, ty) = ((int)Math.Floor(wx) + 1, (int)Math.Floor(wy));
+        var clock = TestPlants.Clock();
+
+        animals.Fish(_island, tx, ty, fisher, gear, 0);
+        animals.Update(_island, new Fires(), new PlantStates(), clock, 1.5, []);
+        clock.Advance(clock.RealSecondsFor(800));
+        animals.Update(_island, new Fires(), new PlantStates(), clock, 0.1, []);
+
+        Assert.NotEqual(HuntResult.TooSoon, animals.Fish(_island, tx, ty, fisher, gear, 0));
+        Assert.Empty(animals.All);
+    }
+
     private static Inventory Sticks(int count)
     {
         var inventory = new Inventory(10);

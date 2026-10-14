@@ -79,14 +79,17 @@ public sealed record SelfState(
     byte[] SkillLevels,
     byte PendingSkills);
 
-/// <summary>Hromádka v batohu. U materiálu (klacek, kámen) se údaje o rostlině nepoužívají.</summary>
-public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count);
+/// <summary>Hromádka v batohu. U materiálu (klacek, kámen) se údaje o rostlině nepoužívají. Spoiled: zkažené (zapáchá).</summary>
+public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count, bool Spoiled);
 
 /// <summary>Oheň na ostrově (hoří, nebo z něj zbyl popel).</summary>
 public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 
-/// <summary>Stavba hráče (zeď, zeď s otvorem, dveře): střed, úhel v radiánech (0 = na východ, y mapy roste na jih) a délka v metrech.</summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length);
+/// <summary>
+/// Stavba hráče (zeď, zeď s otvorem, dveře, past): střed, úhel v radiánech (0 = na východ, y mapy roste na jih)
+/// a délka v metrech. Caught: co je v pasti (číslo AnimalKind), -1 = nic.
+/// </summary>
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1);
 
 /// <summary>Zvíře v okolí hráče: poloha, směr pohledu (radiány) a co dělá. Životy se neposílají.</summary>
 public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
@@ -170,7 +173,7 @@ public static class Messages
         return r.GetInt();
     }
 
-    /// <summary>Lov: Attack (zaútočit) nebo Butcher (stáhnout maso) na zvíře podle čísla.</summary>
+    /// <summary>Lov: Attack (zaútočit), Butcher (stáhnout maso) na zvíře podle čísla, nebo TakeCatch (úlovek z pasti podle čísla stavby).</summary>
     public static void WriteAnimalAction(NetDataWriter w, MessageType type, int animalId)
     {
         w.Put((byte)type);
@@ -199,7 +202,7 @@ public static class Messages
         w.Put((byte)MessageType.Reborn);
     }
 
-    /// <summary>Akce s dlaždicí: GatherSticks (strom) nebo TakeStone (skála).</summary>
+    /// <summary>Akce s dlaždicí: GatherSticks (strom), TakeStone (skála) nebo Fish (voda).</summary>
     public static void WriteTileAction(NetDataWriter w, MessageType type, int tileX, int tileY)
     {
         w.Put((byte)type);
@@ -436,13 +439,14 @@ public static class Messages
             w.Put((byte)s.Ripeness);
             w.Put((byte)s.Cooking);
             w.Put(s.Count);
+            w.Put(s.Spoiled);
         }
     }
 
     public static InventoryView ReadInventory(NetDataReader r)
     {
         var capacity = r.GetInt();
-        var stacks = ReadList(r, () => new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt()));
+        var stacks = ReadList(r, () => new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt(), r.GetBool()));
         return new InventoryView(capacity, stacks);
     }
 
@@ -518,12 +522,13 @@ public static class Messages
             w.Put(s.Y);
             w.Put(s.Angle);
             w.Put(s.Length);
+            w.Put(s.Caught);
         }
     }
 
     public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat()));
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt()));
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>

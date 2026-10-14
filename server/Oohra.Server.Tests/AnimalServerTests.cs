@@ -71,6 +71,80 @@ public class AnimalServerTests
         Assert.Contains(client.TakeEvents(), e => e.Kind == EventKind.Body && e.Code == (byte)BodyEvent.WoundedByBoar);
     }
 
+    [Fact]
+    public void FishingWithSpear()
+    {
+        using var net = new TestNetwork();
+        var client = net.Join("Ondra");
+        var player = net.Server.FindPlayer("Ondra")!;
+        player.Inventory.TryAdd(Item.Spear);
+        var (x, y) = WaterEdge(net.Server.Island);
+        player.X = x + 0.5;
+        player.Y = y + 0.5;
+
+        var caught = false;
+        for (var i = 0; i < 40 && !caught; i++)
+        {
+            client.Fish(x + 1, y);
+            caught = net.Pump(() => client.Inventory.Stacks.Any(s => s.Kind == ItemKind.Fish), timeoutMs: 1300);
+        }
+
+        Assert.True(caught, "Za 40 pokusů se nechytila žádná ryba.");
+    }
+
+    [Fact]
+    public void TrapCatchIsSeenAndTaken()
+    {
+        using var net = new TestNetwork(configure: c => c.StartSticks = 3);
+        var client = net.Join("Ondra");
+        var player = net.Server.FindPlayer("Ondra")!;
+        var (x, y) = OpenSpot(net.Server.Island);
+        player.X = x;
+        player.Y = y;
+
+        client.Place(BuildKind.Trap, (float)x + 1, (float)y, 0);
+        Assert.True(net.Pump(() => client.Structures.Length == 1 && client.Structures[0].Caught == -1));
+
+        var trap = net.Server.Island.Structures.All.Single();
+        net.Server.Island.Structures.Catch(trap, AnimalKind.Deer);
+        Assert.True(net.Pump(() => client.Structures[0].Caught == (int)AnimalKind.Deer));
+
+        client.TakeCatch(trap.Id);
+        Assert.True(net.Pump(() => client.Inventory.Stacks.Any(s => s.Kind == ItemKind.Meat && s.Count == 3)));
+        Assert.True(net.Pump(() => client.Structures[0].Caught == -1));
+    }
+
+    [Fact]
+    public void SpoiledMeatIsMarked()
+    {
+        using var net = new TestNetwork();
+        var client = net.Join("Ondra");
+        var player = net.Server.FindPlayer("Ondra")!;
+
+        // Maso z doby před třemi dny už zapáchá.
+        player.Inventory.TryAdd(Item.RawMeat(-3));
+        player.Inventory.TryAdd(Item.RawMeat(0));
+
+        Assert.True(net.Pump(() => client.Inventory.Stacks.Length == 2));
+        Assert.True(client.Inventory.Stacks[0].Spoiled);
+        Assert.False(client.Inventory.Stacks[1].Spoiled);
+    }
+
+    private static (int X, int Y) WaterEdge(Island island)
+    {
+        for (var i = 0; i < island.Tiles.Length; i++)
+        {
+            var (x, y) = (i % island.Width, i / island.Width);
+            if (island.InBounds(x + 1, y) && island.Tiles[i] is TileType.Grass or TileType.Sand
+                && island.TileAt(x + 1, y) is TileType.Pond or TileType.Sea && Movement.CanStand(island, x + 0.5, y + 0.5, 0.28))
+            {
+                return (x, y);
+            }
+        }
+
+        throw new InvalidOperationException("Na ostrově není voda.");
+    }
+
     private static (double X, double Y) OpenSpot(Island island)
     {
         for (var i = 0; i < island.Tiles.Length; i++)

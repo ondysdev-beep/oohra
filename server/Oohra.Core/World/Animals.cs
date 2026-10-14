@@ -101,6 +101,9 @@ public sealed class Animals
 
     public IReadOnlyList<Animal> All => _animals;
 
+    /// <summary>Zvířata se rodí a doplňují (vypnuté např. v testech). Čas (prodlevy, omráčení) běží vždy.</summary>
+    public bool Enabled { get; set; } = true;
+
     public Animal? Find(int id)
     {
         return _animals.Find(a => a.Id == id);
@@ -165,6 +168,11 @@ public sealed class Animals
 
         _animals.RemoveAll(a => a.Trapped);
         RemoveOldCorpses(clock.TotalMinutes);
+        if (!Enabled)
+        {
+            return;
+        }
+
         Respawn(island, clock.TotalMinutes, players);
     }
 
