@@ -59,6 +59,13 @@ namespace Oohra.Client
         {
             var root = new GameObject(NameOf(kind));
             root.transform.SetParent(parent, false);
+            var prefab = VisualCatalog.Current.Structure(kind);
+            if (prefab != null)
+            {
+                AddPrefab(root.transform, kind, prefab, length);
+                return root;
+            }
+
             switch (kind)
             {
                 case BuildKind.DoorFrame:
@@ -98,6 +105,30 @@ namespace Oohra.Client
             }
 
             return root;
+        }
+
+        /// <summary>
+        /// Vlastní model z katalogu vzhledu. Zeď se zmenší podél osy X na svou délku. Dveře dostanou pant na levém
+        /// kraji otvoru (otáčí jím DoorSwing), model křídla je od pantu posunutý o půl šířky otvoru.
+        /// </summary>
+        private static void AddPrefab(Transform root, BuildKind kind, GameObject prefab, float length)
+        {
+            if (kind == BuildKind.Door)
+            {
+                var hinge = new GameObject("Pant");
+                hinge.transform.SetParent(root, false);
+                hinge.transform.localPosition = new Vector3(-OpeningWidth / 2, 0f, 0f);
+                var leaf = VisualCatalog.Spawn(prefab, hinge.transform, "Křídlo");
+                leaf.transform.localPosition = new Vector3(OpeningWidth / 2, 0f, 0f);
+                return;
+            }
+
+            var model = VisualCatalog.Spawn(prefab, root, NameOf(kind));
+            if (kind == BuildKind.StickWall)
+            {
+                var scale = model.transform.localScale;
+                model.transform.localScale = new Vector3(scale.x * length / WallLength, scale.y, scale.z);
+            }
         }
 
         /// <summary>Postaví kořen modelu na místo: střed (x, y) na mapě a úhel v radiánech.</summary>
@@ -193,18 +224,21 @@ namespace Oohra.Client
                     deer ? Palette.Hex("#9b6b3c") : Palette.Hex("#a08a6a"), PrimitiveType.Sphere);
             }
 
-            var renderers = root.GetComponentsInChildren<Renderer>();
-            for (var i = 0; i < renderers.Length && i < PartsPerStructure; i++)
+            // Vlastní model zprůhlední celý najednou, tvary z kódu po dílech (sloupky, překlad zvlášť).
+            // Barvu si každý díl vezme sám ze svého materiálu (color null).
+            var parts = VisualCatalog.Current.Structure(structure.Kind) != null
+                ? new[] { root }
+                : System.Array.ConvertAll(root.GetComponentsInChildren<Renderer>(), r => r.gameObject);
+            for (var i = 0; i < parts.Length && i < PartsPerStructure; i++)
             {
-                var color = structure.Kind == BuildKind.Door ? DoorColor : WallColor;
-                var bounds = renderers[i].bounds;
+                var bounds = VisualCatalog.BoundsOf(parts[i]);
                 double x, y;
                 WorldCoords.FromUnity(bounds.center, out x, out y);
-                _seeThrough.Add(-(structure.Id * PartsPerStructure + i), renderers[i].gameObject, color, x, y,
+                _seeThrough.Add(-(structure.Id * PartsPerStructure + i), parts[i], null, x, y,
                     Mathf.Max(bounds.extents.x, bounds.extents.z), bounds.min.y, bounds.max.y);
             }
 
-            _parts[structure.Id] = Mathf.Min(renderers.Length, PartsPerStructure);
+            _parts[structure.Id] = Mathf.Min(parts.Length, PartsPerStructure);
             return root;
         }
 
