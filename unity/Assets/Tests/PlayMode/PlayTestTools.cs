@@ -19,7 +19,13 @@ namespace Oohra.Client.Tests
         public static Process StartServer(int port, string extraJson = "")
         {
             var repo = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
-            var serverDll = Path.Combine(repo, "server", "Oohra.Server", "bin", "Debug", "net10.0", "Oohra.Server.dll");
+            // Jiný sestavený server jde zadat proměnnou OOHRA_SERVER_DLL (třeba když běžící server zamyká bin).
+            var serverDll = System.Environment.GetEnvironmentVariable("OOHRA_SERVER_DLL");
+            if (string.IsNullOrEmpty(serverDll))
+            {
+                serverDll = Path.Combine(repo, "server", "Oohra.Server", "bin", "Debug", "net10.0", "Oohra.Server.dll");
+            }
+
             Assert.IsTrue(File.Exists(serverDll), "Server není sestavený. Spusť dotnet build ve složce server.");
 
             var config = Path.Combine(Application.temporaryCachePath, "server-test-" + port + ".json");

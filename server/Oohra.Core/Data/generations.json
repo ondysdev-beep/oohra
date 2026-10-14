@@ -10,7 +10,9 @@
     "coldBonus": 7,
     "speedMultiplier": 0.95,
     "learnMultiplier": 1,
-    "woundMultiplier": 0.78
+    "woundMultiplier": 0.78,
+    // Železný žaludek: zkažené jídlo je u Pradávných skoro neškodné.
+    "spoiledMultiplier": 0.45
   },
   "newPerGeneration": {
     "toxinMultiplier": 0.04,
@@ -22,7 +24,8 @@
     // Noví se učí rychleji (nácvik dovedností ×(1 + 0,08·g)).
     "learnMultiplier": 0.08,
     // Noví jsou křehčí: zranění od zvířat ×(1 + 0,03·g).
-    "woundMultiplier": 0.03
+    "woundMultiplier": 0.03,
+    "spoiledMultiplier": 0
   },
   "coldGenerationCap": 4,
   // Noví jsou rychlejší, ale nejvýš o 10 %.

@@ -12,6 +12,8 @@ public sealed record AnimalRules(
     WolfRules Wolf,
     PreyRules Rabbit,
     PreyRules Deer,
+    TrapCatchRules Traps,
+    FishingRules Fishing,
     HuntRules Hunt,
     WoundRules Wounds,
     MeatRules Meat);
@@ -59,3 +61,9 @@ public sealed record WoundRules(
     double LimpSymptomAbove);
 
 public sealed record MeatRules(double[] Raw, double[] Baked);
+
+public sealed record TrapCatchRules(
+    double CatchRange, double RabbitChance, double DeerChance, double RateFactor, int DeerMeat, int OtherMeat, double PracticeBuild);
+
+public sealed record FishingRules(
+    double Reach, double CooldownSeconds, double BaseChance, double ChancePerLevel, double PracticeCatch, double PracticeMiss);

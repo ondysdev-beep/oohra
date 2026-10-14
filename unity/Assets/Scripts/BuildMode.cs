@@ -34,7 +34,7 @@ namespace Oohra.Client
     }
 
     /// <summary>
-    /// Režim stavby pro všechny stavby. G ho zapne a vypne, F ho otevře rovnou s ohněm, 1 až 5 vybírá stavbu.
+    /// Režim stavby pro všechny stavby. G ho zapne a vypne, F ho otevře rovnou s ohněm, 1 až 6 vybírá stavbu.
     /// U kurzoru je průsvitný náhled stavby, nejdál 3,5 m od postavy. Levé tlačítko staví, pravé tlačítko
     /// nebo Esc režim ukončí. R přepíná volnou a modulární stavbu:
     /// volně Q a E stavbou plynule otáčejí; modulárně se zeď přichytí ke konci jiné zdi (směr určí kurzor,
@@ -61,6 +61,7 @@ namespace Oohra.Client
             new BuildOption(BuildKind.DoorFrame, "Zeď s otvorem na dveře", "2 klacky", 2, 0),
             new BuildOption(BuildKind.Door, "Dveře (do otvoru)", "2 klacky", 2, 0),
             new BuildOption(BuildKind.Campfire, "Oheň", "3 klacky a kámen", 3, 1),
+            new BuildOption(BuildKind.Trap, "Past (chytí králíka nebo jelena)", "3 klacky", 3, 0),
         };
 
         private ClientSession _session;
@@ -225,7 +226,7 @@ namespace Oohra.Client
                 return;
             }
 
-            var digits = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key };
+            var digits = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key };
             for (var i = 0; i < Catalog.Length && i < digits.Length; i++)
             {
                 if (digits[i].wasPressedThisFrame) Open(Catalog[i]);

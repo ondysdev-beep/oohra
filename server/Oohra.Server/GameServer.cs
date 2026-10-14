@@ -48,7 +48,7 @@ public sealed class GameServer : IDisposable
         _worldView = WorldViews.From(Island);
         _rng = new Mulberry32(config.Seed ^ 0x5E4E);
         _sentVisuals = new PlantVisual[Island.Plants.Count];
-        Animals = new Animals(config.Seed);
+        Animals = new Animals(config.Seed) { Enabled = config.Animals };
         if (config.Animals)
         {
             Animals.Populate(Island, []);
@@ -100,10 +100,7 @@ public sealed class GameServer : IDisposable
     {
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
         Fires.Burn(minutes);
-        if (_config.Animals)
-        {
-            Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
-        }
+        Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
 
         foreach (var player in _byPeer.Values)
         {
@@ -142,6 +139,13 @@ public sealed class GameServer : IDisposable
         if (_tick % _config.PlantStatesEveryTicks == 0)
         {
             BroadcastPlantChanges();
+            foreach (var player in _byPeer.Values)
+            {
+                if (SpoilageOf(player) != player.SentSpoilage)
+                {
+                    SendInventory(player);
+                }
+            }
         }
     }
 
@@ -338,10 +342,18 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.Butcher:
                 var corpse = Messages.ReadAnimalAction(reader);
-                HuntAction(player, corpse, () => Animals.Butcher(corpse, player.Inventory, player.X, player.Y));
+                HuntAction(player, corpse, () => Animals.Butcher(corpse, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
                 break;
             case MessageType.MakeSpear:
                 HuntAction(player, -1, () => Crafting.MakeSpear(player.Inventory, player.Character));
+                break;
+            case MessageType.Fish:
+                var (waterX, waterY) = Messages.ReadTileAction(reader);
+                HuntAction(player, -1, () => Animals.Fish(Island, waterX, waterY, new AnimalTarget(player.Id, player.X, player.Y, player.Character), player.Inventory, Clock.TotalMinutes));
+                break;
+            case MessageType.TakeCatch:
+                var trapId = Messages.ReadAnimalAction(reader);
+                HuntAction(player, -1, () => Island.Structures.TakeCatch(trapId, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
                 break;
         }
     }
@@ -497,21 +509,22 @@ public sealed class GameServer : IDisposable
 
         var stack = inventory.Stacks[index].Item;
         var item = stack.Plant;
+        var spoiled = Spoilage.IsSpoiled(stack, Clock.TotalMinutes);
         switch (action)
         {
             case MessageType.Eat when item is not null:
                 inventory.TakeOne(index);
-                Eating.Eat(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock);
+                Eating.Eat(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock, spoiled);
                 break;
-            case MessageType.Eat when stack.Kind == ItemKind.Meat:
+            case MessageType.Eat when stack.IsFlesh:
                 inventory.TakeOne(index);
-                Eating.EatMeat(player.Character, stack.Cooking, Clock);
+                Eating.EatMeat(player.Character, stack.Cooking, Clock, spoiled: spoiled);
                 break;
-            case MessageType.Taste when stack.Kind == ItemKind.Meat:
-                Eating.EatMeat(player.Character, stack.Cooking, Clock, taste: true);
+            case MessageType.Taste when stack.IsFlesh:
+                Eating.EatMeat(player.Character, stack.Cooking, Clock, taste: true, spoiled: spoiled);
                 break;
             case MessageType.Taste when item is not null:
-                Eating.Taste(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock);
+                Eating.Taste(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock, spoiled);
                 break;
             case MessageType.Drop:
                 inventory.Drop(index);
@@ -616,7 +629,14 @@ public sealed class GameServer : IDisposable
 
         var stacks = player.Inventory.Stacks.Select(StackViewOf).ToArray();
         var view = new InventoryView(player.Inventory.Capacity, stacks);
+        player.SentSpoilage = SpoilageOf(player);
         SendTo(player.Peer, w => Messages.WriteInventory(w, view));
+    }
+
+    /// <summary>Které hromádky jsou zkažené (jako text, třeba „01“). Když se změní, batoh se pošle znovu.</summary>
+    private string SpoilageOf(PlayerSession player)
+    {
+        return string.Concat(player.Inventory.Stacks.Select(s => Spoilage.IsSpoiled(s.Item, Clock.TotalMinutes) ? '1' : '0'));
     }
 
     private void BroadcastSnapshot()
@@ -702,12 +722,13 @@ public sealed class GameServer : IDisposable
         }
     }
 
-    private static StackView StackViewOf(ItemStack stack)
+    private StackView StackViewOf(ItemStack stack)
     {
         var plant = stack.Item.Plant;
+        var spoiled = Spoilage.IsSpoiled(stack.Item, Clock.TotalMinutes);
         return plant is null
-            ? new StackView(stack.Item.Kind, 0, default, default, stack.Item.Cooking, stack.Count)
-            : new StackView(stack.Item.Kind, plant.SpeciesId, plant.Part, plant.Ripeness, plant.Cooking, stack.Count);
+            ? new StackView(stack.Item.Kind, 0, default, default, stack.Item.Cooking, stack.Count, spoiled)
+            : new StackView(stack.Item.Kind, plant.SpeciesId, plant.Part, plant.Ripeness, plant.Cooking, stack.Count, spoiled);
     }
 
     private FireView[] FireViews()
@@ -717,7 +738,7 @@ public sealed class GameServer : IDisposable
 
     private StructureView[] StructureViews()
     {
-        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length)).ToArray();
+        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1)).ToArray();
     }
 
     private static PlayerInfo InfoOf(PlayerSession player)

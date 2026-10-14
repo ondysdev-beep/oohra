@@ -139,6 +139,18 @@ public sealed class GameConnection : IDisposable
     }
 
     /// <summary>Vyrobit kopí (klacek a kámen).</summary>
+    /// <summary>Rybařit s kopím na dlaždici s vodou (jezírko, moře).</summary>
+    public void Fish(int tileX, int tileY)
+    {
+        Send(w => Messages.WriteTileAction(w, MessageType.Fish, tileX, tileY));
+    }
+
+    /// <summary>Vzít úlovek z pasti (číslo stavby).</summary>
+    public void TakeCatch(int trapId)
+    {
+        Send(w => Messages.WriteAnimalAction(w, MessageType.TakeCatch, trapId));
+    }
+
     public void MakeSpear()
     {
         Send(Messages.WriteMakeSpear);

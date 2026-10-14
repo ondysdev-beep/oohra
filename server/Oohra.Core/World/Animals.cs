@@ -67,6 +67,9 @@ public sealed class Animal
 
     /// <summary>Hráč, na kterého se zvíře zaměřilo (vlk, divočák), nebo -1.</summary>
     internal int Prey { get; set; } = -1;
+
+    /// <summary>Chytilo se do pasti: zmizí ze světa (úlovek je v pasti).</summary>
+    internal bool Trapped { get; set; }
 }
 
 /// <summary>Hráč, jak ho vidí zvířata: poloha a tělo (spánek, zranění).</summary>
@@ -85,6 +88,7 @@ public sealed class Animals
 
     private readonly List<Animal> _animals = [];
     private readonly Dictionary<int, double> _lastAttack = [];
+    private readonly Dictionary<int, double> _lastFish = [];
     private readonly Mulberry32 _rng;
     private int _nextId = 1;
     private double _time;
@@ -96,6 +100,9 @@ public sealed class Animals
     }
 
     public IReadOnlyList<Animal> All => _animals;
+
+    /// <summary>Zvířata se rodí a doplňují (vypnuté např. v testech). Čas (prodlevy, omráčení) běží vždy.</summary>
+    public bool Enabled { get; set; } = true;
 
     public Animal? Find(int id)
     {
@@ -159,7 +166,13 @@ public sealed class Animals
             }
         }
 
+        _animals.RemoveAll(a => a.Trapped);
         RemoveOldCorpses(clock.TotalMinutes);
+        if (!Enabled)
+        {
+            return;
+        }
+
         Respawn(island, clock.TotalMinutes, players);
     }
 
@@ -223,7 +236,7 @@ public sealed class Animals
     }
 
     /// <summary>Stáhne maso z mrtvého zvířete (prototyp meatQty). Zvíře pak zmizí.</summary>
-    public HuntResult Butcher(int animalId, Inventory inventory, double playerX, double playerY)
+    public HuntResult Butcher(int animalId, Inventory inventory, double playerX, double playerY, double now)
     {
         var animal = Find(animalId);
         if (animal is null)
@@ -244,7 +257,7 @@ public sealed class Animals
         var added = 0;
         for (var i = 0; i < MeatOf(animal.Kind); i++)
         {
-            if (inventory.TryAdd(Item.RawMeat))
+            if (inventory.TryAdd(Item.RawMeat(GameClock.DayOf(now))))
             {
                 added++;
             }
@@ -257,6 +270,72 @@ public sealed class Animals
 
         _animals.Remove(animal);
         return HuntResult.Butchered;
+    }
+
+    /// <summary>
+    /// Rybaření s kopím u jezírka nebo moře (prototyp fish). Šance roste s dovedností Lov.
+    /// Mezi pokusy je krátká prodleva.
+    /// </summary>
+    public HuntResult Fish(Island island, int tileX, int tileY, AnimalTarget fisher, Inventory inventory, double now)
+    {
+        var rules = GameData.Animals.Fishing;
+        if (inventory.Count(ItemKind.Spear) == 0)
+        {
+            return HuntResult.NeedSpear;
+        }
+
+        if (!island.InBounds(tileX, tileY) || island.TileAt(tileX, tileY) is not (TileType.Pond or TileType.Sea))
+        {
+            return HuntResult.NotWater;
+        }
+
+        if (Distance(tileX + 0.5, tileY + 0.5, fisher.X, fisher.Y) > rules.Reach)
+        {
+            return HuntResult.TooFar;
+        }
+
+        if (_lastFish.TryGetValue(fisher.Id, out var last) && _time - last < rules.CooldownSeconds)
+        {
+            return HuntResult.TooSoon;
+        }
+
+        _lastFish[fisher.Id] = _time;
+        var c = fisher.Character;
+        if (_rng.NextDouble() >= rules.BaseChance + rules.ChancePerLevel * c.Skills.Level(SkillKind.Hunt))
+        {
+            c.Practice(SkillKind.Hunt, rules.PracticeMiss);
+            return HuntResult.FishEscaped;
+        }
+
+        if (!inventory.TryAdd(Item.RawFish(GameClock.DayOf(now))))
+        {
+            return HuntResult.InventoryFull;
+        }
+
+        c.Practice(SkillKind.Hunt, rules.PracticeCatch);
+        return HuntResult.FishCaught;
+    }
+
+    /// <summary>Kořist u volné pasti se s nějakou šancí chytí (prototyp trapCheck). Zvíře pak zmizí, úlovek je v pasti.</summary>
+    private void CheckTraps(Island island, Animal a, double dt)
+    {
+        var rules = GameData.Animals.Traps;
+        foreach (var trap in island.Structures.Near(a.X, a.Y, rules.CatchRange))
+        {
+            if (trap.Kind != BuildKind.Trap || trap.Caught is not null || Distance(trap.X, trap.Y, a.X, a.Y) >= rules.CatchRange)
+            {
+                continue;
+            }
+
+            var chance = (a.Kind == AnimalKind.Rabbit ? rules.RabbitChance : rules.DeerChance) * dt * rules.RateFactor;
+            if (_rng.NextDouble() < chance)
+            {
+                island.Structures.Catch(trap, a.Kind);
+                a.State = AnimalState.Dead;
+                a.Trapped = true;
+                return;
+            }
+        }
     }
 
     /// <summary>Kolik kusů masa zvíře dá (prototyp meatQty).</summary>
@@ -295,6 +374,7 @@ public sealed class Animals
         if (nearest is not null && d < (asleep ? rules.FleeRangeAsleep : rules.FleeRange))
         {
             Flee(island, a, nearest, d, dt, rules);
+            CheckTraps(island, a, dt);
             return;
         }
 
@@ -339,6 +419,7 @@ public sealed class Animals
         if (distance > 0.3)
         {
             Move(island, a, dx / distance * rules.WalkSpeed * dt, dy / distance * rules.WalkSpeed * dt, rules.Radius);
+            CheckTraps(island, a, dt);
             a.Dir = Math.Atan2(dy, dx);
         }
         else if (a.GoingToPlant)

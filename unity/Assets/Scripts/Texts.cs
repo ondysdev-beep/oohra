@@ -43,7 +43,7 @@ namespace Oohra.Client
                     return For(fire);
                 case EventKind.Hunt:
                     var hunt = (HuntResult)e.Code;
-                    warn = hunt != HuntResult.Killed && hunt != HuntResult.CaughtSmall && hunt != HuntResult.Butchered && hunt != HuntResult.SpearMade && hunt != HuntResult.HitSpear;
+                    warn = hunt != HuntResult.Killed && hunt != HuntResult.CaughtSmall && hunt != HuntResult.Butchered && hunt != HuntResult.SpearMade && hunt != HuntResult.HitSpear && hunt != HuntResult.FishCaught;
                     return For(hunt, (AnimalKind)e.Subject);
                 case EventKind.Build:
                     var build = (BuildResult)e.Code;
@@ -73,6 +73,11 @@ namespace Oohra.Client
                 case HuntResult.SpearMade: return "Ostrý kámen ke klacku. Máš kopí.";
                 case HuntResult.AlreadyHasSpear: return "Kopí už máš.";
                 case HuntResult.NeedMaterials: return "Na kopí potřebuješ klacek a kámen.";
+                case HuntResult.TrapEmpty: return "V pasti nic není.";
+                case HuntResult.FishCaught: return "Bodl jsi rybu.";
+                case HuntResult.FishEscaped: return "Ryba ti proklouzla.";
+                case HuntResult.NeedSpear: return "Na rybaření potřebuješ kopí.";
+                case HuntResult.NotWater: return "Tady se rybařit nedá.";
                 default: return result.ToString();
             }
         }
@@ -137,6 +142,7 @@ namespace Oohra.Client
                 case BodyEvent.WokeUp:
                 case BodyEvent.NotTired:
                 case BodyEvent.LearnedInSleep:
+                case BodyEvent.IronStomach:
                 case BodyEvent.SkillLevelUp:
                     return false;
                 default:
@@ -185,6 +191,7 @@ namespace Oohra.Client
                 case BodyEvent.Stalked: return "Něco tě sleduje ze tmy. Oheň ho odradí.";
                 case BodyEvent.BoarAlert: return "Divočák se na tebe zaměřil. Až se rozběhne, uhni na stranu.";
                 case BodyEvent.WoundInflamed: return "Rána se zanítila. Pálí a je ti horko.";
+                case BodyEvent.IronStomach: return "Železný žaludek to zvládl.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -203,6 +210,7 @@ namespace Oohra.Client
                 case TasteNote.Soapy: return "Divně sladká, skoro mýdlová.";
                 case TasteNote.Fresh: return "Štiplavě svěží, zaostří ti to smysly.";
                 case TasteNote.Herbal: return "Svíravá, bylinná chuť.";
+                case TasteNote.Rotten: return "Páchne to a chutná odporně.";
                 default: return note.ToString();
             }
         }
@@ -288,7 +296,8 @@ namespace Oohra.Client
             if (stack.Kind == ItemKind.Stick) return "Klacek";
             if (stack.Kind == ItemKind.Stone) return "Kámen";
             if (stack.Kind == ItemKind.Spear) return "Kopí";
-            if (stack.Kind == ItemKind.Meat) return stack.Cooking == Cooking.Baked ? "Maso · upečené" : "Maso · syrové";
+            if (stack.Kind == ItemKind.Meat) return (stack.Cooking == Cooking.Baked ? "Maso · upečené" : "Maso · syrové") + (stack.Spoiled ? " · zapáchá" : string.Empty);
+            if (stack.Kind == ItemKind.Fish) return (stack.Cooking == Cooking.Baked ? "Ryba · upečená" : "Ryba · syrová") + (stack.Spoiled ? " · zapáchá" : string.Empty);
 
             var name = stack.Part == PlantPart.Leaf ? "List" : stack.Part == PlantPart.Root ? "Kořen" : "Plod";
             if (stack.Part == PlantPart.Fruit)
@@ -298,6 +307,7 @@ namespace Oohra.Client
 
             if (stack.Cooking == Cooking.Baked) name += " · upečený";
             if (stack.Cooking == Cooking.Boiled) name += " · uvařený";
+            if (stack.Spoiled) name += " · plesnivý";
             return name;
         }
 

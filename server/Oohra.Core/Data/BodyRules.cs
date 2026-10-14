@@ -16,7 +16,8 @@ public sealed record BodyRules(
     InstinctRules Instinct,
     TasteRules Taste,
     SymptomRules Symptoms,
-    SleepRules Sleep);
+    SleepRules Sleep,
+    SpoilageRules Spoilage);
 
 public sealed record StartRules(double Satiety, double Hydration, double Energy, double Warmth, double Health);
 
@@ -156,3 +157,21 @@ public sealed record SleepRules(
     double WakeEnergyInDaylight,
     double WakeDaylightAbove,
     double WakeWarmthBelow);
+
+public sealed record SpoilageRules(
+    double MeatRawDays,
+    double MeatBakedDays,
+    double FruitRawDays,
+    double FruitBakedDays,
+    double NutritionFactor,
+    double SicknessChance,
+    double SicknessChanceTaste,
+    double SicknessDelayMin,
+    double SicknessDelayRange,
+    double SicknessMin,
+    double SicknessRange,
+    double TasteFactor,
+    double VomitChance,
+    double VomitDelayMin,
+    double VomitDelayRange,
+    double VomitStrength);

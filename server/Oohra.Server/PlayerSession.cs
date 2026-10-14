@@ -46,4 +46,7 @@ public sealed class PlayerSession
     public double Facing { get; set; }
 
     public int Lives { get; set; } = 1;
+
+    /// <summary>Které hromádky byly zkažené, když se batoh naposledy posílal (ať se pošle znovu, až se něco zkazí).</summary>
+    public string SentSpoilage { get; set; } = string.Empty;
 }

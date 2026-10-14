@@ -214,12 +214,12 @@ public class AnimalTests
         var deer = animals.Place(AnimalKind.Deer, px + 1, py);
         var inventory = new Inventory(10);
 
-        Assert.Equal(HuntResult.NotDead, animals.Butcher(deer.Id, inventory, px, py));
+        Assert.Equal(HuntResult.NotDead, animals.Butcher(deer.Id, inventory, px, py, 0));
         deer.Hp = 1;
         animals.Attack(deer.Id, Player(1, px, py), inventory, 0);
-        Assert.Equal(HuntResult.TooFar, animals.Butcher(deer.Id, inventory, px - 5, py));
+        Assert.Equal(HuntResult.TooFar, animals.Butcher(deer.Id, inventory, px - 5, py, 0));
 
-        Assert.Equal(HuntResult.Butchered, animals.Butcher(deer.Id, inventory, px, py));
+        Assert.Equal(HuntResult.Butchered, animals.Butcher(deer.Id, inventory, px, py, 0));
 
         Assert.Equal(4, inventory.Count(ItemKind.Meat));
         Assert.Null(animals.Find(deer.Id));
@@ -308,7 +308,7 @@ public class AnimalTests
         var (px, py) = OpenSpot();
         var fires = new Fires();
         var inventory = new Inventory(10);
-        inventory.TryAdd(Item.RawMeat);
+        inventory.TryAdd(Item.RawMeat(0));
         for (var i = 0; i < 3; i++)
         {
             inventory.TryAdd(Item.Stick);
@@ -318,7 +318,7 @@ public class AnimalTests
         fires.Light(_island, inventory, px, py, px + 1, py);
 
         Assert.Equal(FireResult.Baked, fires.Bake(_island, inventory, 0, px, py));
-        Assert.Equal(Item.BakedMeat, Assert.Single(inventory.Stacks).Item);
+        Assert.Equal(Item.RawMeat(0) with { Cooking = Plants.Cooking.Baked }, Assert.Single(inventory.Stacks).Item);
     }
 
     [Fact]

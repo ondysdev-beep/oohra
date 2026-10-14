@@ -168,7 +168,7 @@ public sealed class Fires
         }
 
         var raw = inventory.TakeOne(stackIndex)!;
-        var baked = raw.Kind == ItemKind.Meat ? Item.BakedMeat : Item.Of(raw.Plant! with { Cooking = Cooking.Baked });
+        var baked = raw.IsFlesh ? raw with { Cooking = Cooking.Baked } : Item.Of(raw.Plant! with { Cooking = Cooking.Baked });
         if (!inventory.TryAdd(baked))
         {
             inventory.TryAdd(raw);
@@ -179,10 +179,10 @@ public sealed class Fires
         return FireResult.Baked;
     }
 
-    /// <summary>Péct jde syrovou část rostliny a syrové maso.</summary>
+    /// <summary>Péct jde syrovou část rostliny, syrové maso a rybu.</summary>
     private static bool CanBake(Item item)
     {
-        return item.Kind == ItemKind.Meat ? item.Cooking == Cooking.Raw : item.Plant is { Cooking: Cooking.Raw };
+        return item.IsFlesh ? item.Cooking == Cooking.Raw : item.Plant is { Cooking: Cooking.Raw };
     }
 
     /// <summary>Kolik klacků stojí oheň. Zkušený řemeslník (cheapFireLevel v skills.json) potřebuje méně.</summary>

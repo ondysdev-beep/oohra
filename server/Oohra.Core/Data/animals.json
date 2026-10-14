@@ -54,6 +54,13 @@
     "herdRange": 14, "herdSpawnSpread": 3
   },
 
+  // Pasti (prototyp trapCheck a nabídka pasti). Králík nebo jelen do catchRange od pasti se chytí
+  // s šancí (šance × rateFactor) za sekundu. Z pasti je pak maso (jelen deerMeat, králík otherMeat).
+  "traps": { "catchRange": 0.7, "rabbitChance": 0.9, "deerChance": 0.6, "rateFactor": 2, "deerMeat": 3, "otherMeat": 1, "practiceBuild": 2 },
+
+  // Rybaření s kopím u jezírka nebo moře (prototyp fish). Šance roste s dovedností Lov.
+  "fishing": { "reach": 1.7, "cooldownSeconds": 1.2, "baseChance": 0.32, "chancePerLevel": 0.07, "practiceCatch": 1.5, "practiceMiss": 0.4 },
+
   // Lov (prototyp attack).
   "hunt": {
     "reach": 1.6, "cooldownSeconds": 0.45,

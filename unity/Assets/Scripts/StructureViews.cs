@@ -26,6 +26,7 @@ namespace Oohra.Client
 
         private readonly Dictionary<int, GameObject> _views = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, int> _parts = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _caught = new Dictionary<int, int>();
         private readonly HashSet<int> _current = new HashSet<int>();
         private GameConnection _connection;
         private SeeThrough _seeThrough;
@@ -75,6 +76,17 @@ namespace Oohra.Client
                 case BuildKind.Campfire:
                     Part(root.transform, "Ohniště", new Vector3(0f, 0.05f, 0f), new Vector3(0.7f, 0.05f, 0.7f), Palette.Hex("#4a4038"), PrimitiveType.Cylinder);
                     break;
+                case BuildKind.Trap:
+                    // Rámeček z klacků 60 × 60 cm a šikmá vzpěra.
+                    foreach (var side in new[] { -1f, 1f })
+                    {
+                        Part(root.transform, "Klacek", new Vector3(0f, 0.04f, side * 0.3f), new Vector3(0.66f, 0.06f, 0.06f), WallColor);
+                        Part(root.transform, "Klacek", new Vector3(side * 0.3f, 0.04f, 0f), new Vector3(0.06f, 0.06f, 0.66f), WallColor);
+                    }
+
+                    var prop = Part(root.transform, "Vzpěra", new Vector3(0f, 0.2f, 0f), new Vector3(0.05f, 0.4f, 0.05f), WallColor);
+                    prop.transform.localRotation = Quaternion.Euler(0f, 0f, 30f);
+                    break;
                 default:
                     Part(root.transform, "Zeď", new Vector3(0f, WallHeight / 2, 0f), new Vector3(length, WallHeight, WallThickness), WallColor);
                     break;
@@ -97,6 +109,7 @@ namespace Oohra.Client
                 case BuildKind.DoorFrame: return "Zeď s otvorem";
                 case BuildKind.Door: return "Dveře";
                 case BuildKind.Campfire: return "Oheň";
+                case BuildKind.Trap: return "Past";
                 default: return "Zeď";
             }
         }
@@ -113,9 +126,17 @@ namespace Oohra.Client
             foreach (var structure in _shown)
             {
                 _current.Add(structure.Id);
+                int caught;
+                if (_views.ContainsKey(structure.Id) && _caught.TryGetValue(structure.Id, out caught) && caught != structure.Caught)
+                {
+                    // Do pasti se něco chytilo (nebo úlovek někdo vzal): model se postaví znovu.
+                    RemoveView(structure.Id);
+                }
+
                 if (!_views.ContainsKey(structure.Id))
                 {
                     _views[structure.Id] = Create(structure);
+                    _caught[structure.Id] = structure.Caught;
                 }
             }
 
@@ -130,15 +151,21 @@ namespace Oohra.Client
 
             foreach (var id in removed)
             {
-                for (var part = 0; part < _parts[id]; part++)
-                {
-                    _seeThrough.Remove(-(id * PartsPerStructure + part));
-                }
-
-                Destroy(_views[id]);
-                _views.Remove(id);
-                _parts.Remove(id);
+                RemoveView(id);
             }
+        }
+
+        private void RemoveView(int id)
+        {
+            for (var part = 0; part < _parts[id]; part++)
+            {
+                _seeThrough.Remove(-(id * PartsPerStructure + part));
+            }
+
+            Destroy(_views[id]);
+            _views.Remove(id);
+            _parts.Remove(id);
+            _caught.Remove(id);
         }
 
         private GameObject Create(StructureView structure)
@@ -150,6 +177,14 @@ namespace Oohra.Client
             if (structure.Kind == BuildKind.Door)
             {
                 root.transform.Find("Pant").gameObject.AddComponent<DoorSwing>().Init(_connection, structure.X, structure.Y, structure.Angle);
+            }
+
+            if (structure.Kind == BuildKind.Trap && structure.Caught >= 0)
+            {
+                // Úlovek v pasti: hnědý (jelen) nebo šedohnědý (králík) chlupatý kus.
+                var deer = structure.Caught == (int)AnimalKind.Deer;
+                Part(root.transform, "Úlovek", new Vector3(0f, 0.12f, 0f), deer ? new Vector3(0.45f, 0.3f, 0.6f) : new Vector3(0.25f, 0.18f, 0.32f),
+                    deer ? Palette.Hex("#9b6b3c") : Palette.Hex("#a08a6a"), PrimitiveType.Sphere);
             }
 
             var renderers = root.GetComponentsInChildren<Renderer>();

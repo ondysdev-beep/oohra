@@ -14,7 +14,8 @@ public sealed record GenerationTraits(
     double ColdBonus,
     double SpeedMultiplier,
     double LearnMultiplier,
-    double WoundMultiplier)
+    double WoundMultiplier,
+    double SpoiledMultiplier)
 {
     public bool IsAncient => Generation == 0;
 
@@ -30,7 +31,7 @@ public sealed record GenerationTraits(
         if (generation == 0)
         {
             var a = rules.Ancient;
-            return new GenerationTraits(0, a.ToxinMultiplier, a.HealMultiplier, a.EnergyDrainMultiplier, a.ColdBonus, a.SpeedMultiplier, a.LearnMultiplier, a.WoundMultiplier);
+            return new GenerationTraits(0, a.ToxinMultiplier, a.HealMultiplier, a.EnergyDrainMultiplier, a.ColdBonus, a.SpeedMultiplier, a.LearnMultiplier, a.WoundMultiplier, a.SpoiledMultiplier);
         }
 
         var g = Math.Min(generation, rules.Cap);
@@ -43,6 +44,7 @@ public sealed record GenerationTraits(
             p.ColdBonus * Math.Min(g, rules.ColdGenerationCap),
             Math.Min(rules.SpeedMultiplierMax, 1 + p.SpeedMultiplier * g),
             1 + p.LearnMultiplier * g,
-            1 + p.WoundMultiplier * g);
+            1 + p.WoundMultiplier * g,
+            1 + p.SpoiledMultiplier * g);
     }
 }

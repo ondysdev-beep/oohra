@@ -11,33 +11,28 @@ namespace Oohra.Core.Characters;
 /// </summary>
 public static class Eating
 {
-    /// <summary>Sní celou část rostliny.</summary>
-    public static void Eat(Character c, PlantItem item, SpeciesSecret species, GameClock clock)
+    /// <summary>Sní celou část rostliny. spoiled: plod je zkažený (Spoilage).</summary>
+    public static void Eat(Character c, PlantItem item, SpeciesSecret species, GameClock clock, bool spoiled = false)
     {
-        Consume(c, item, species, clock, GameData.Body.Eating.EatDose, taste: false);
+        Consume(c, CompositionCalculator.Compute(item, species), clock, GameData.Body.Eating.EatDose, taste: false, spoiled);
     }
 
     /// <summary>Ochutná malý kousek: dostane nápovědu chuti a slabší účinky.</summary>
-    public static void Taste(Character c, PlantItem item, SpeciesSecret species, GameClock clock)
+    public static void Taste(Character c, PlantItem item, SpeciesSecret species, GameClock clock, bool spoiled = false)
     {
-        Consume(c, item, species, clock, GameData.Body.Eating.TasteDose, taste: true);
+        Consume(c, CompositionCalculator.Compute(item, species), clock, GameData.Body.Eating.TasteDose, taste: true, spoiled);
     }
 
-    /// <summary>Sní (nebo ochutná) maso. Syrové trochu dráždí, upečené je výživné (prototyp comp pro meat).</summary>
-    public static void EatMeat(Character c, Cooking cooking, GameClock clock, bool taste = false)
+    /// <summary>Sní (nebo ochutná) maso či rybu. Syrové trochu dráždí, upečené je výživné (prototyp comp pro meat).</summary>
+    public static void EatMeat(Character c, Cooking cooking, GameClock clock, bool taste = false, bool spoiled = false)
     {
         var meat = GameData.Animals.Meat;
         var v = Composition.FromArray(cooking == Cooking.Raw ? meat.Raw : meat.Baked);
         var rules = GameData.Body.Eating;
-        Consume(c, v, clock, taste ? rules.TasteDose : rules.EatDose, taste);
+        Consume(c, v, clock, taste ? rules.TasteDose : rules.EatDose, taste, spoiled);
     }
 
-    private static void Consume(Character c, PlantItem item, SpeciesSecret species, GameClock clock, double dose, bool taste)
-    {
-        Consume(c, CompositionCalculator.Compute(item, species), clock, dose, taste);
-    }
-
-    private static void Consume(Character c, Composition v, GameClock clock, double dose, bool taste)
+    private static void Consume(Character c, Composition v, GameClock clock, double dose, bool taste, bool spoiled)
     {
         if (c.IsDead)
         {
@@ -53,19 +48,55 @@ public static class Eating
             c.Report(now, BodyEvent.BitternessStopped);
         }
 
-        c.Satiety = Math.Min(100, c.Satiety + v.Nutrition * rules.Eating.NutritionToSatiety * dose);
+        var nutrition = v.Nutrition * (spoiled ? rules.Spoilage.NutritionFactor : 1);
+        c.Satiety = Math.Min(100, c.Satiety + nutrition * rules.Eating.NutritionToSatiety * dose);
         ScheduleIrritation(c, now, v.Irritant * dose, rules.Effects);
         SchedulePoisons(c, now, v, dose, rules.Effects);
         ApplyStimulant(c, now, v.Stimulant * dose, rules.Effects.Stimulant);
         ApplyMedicine(c, v.Medicine * dose, rules.Effects.Medicine);
+        if (spoiled)
+        {
+            ScheduleSpoiledSickness(c, now, taste, rules.Spoilage);
+        }
 
         if (taste)
         {
-            c.Report(now, BodyEvent.Tasted, TasteNotes(c, v, rules.Taste));
+            var notes = TasteNotes(c, v, rules.Taste);
+            if (spoiled)
+            {
+                notes.Add(TasteNote.Rotten);
+            }
+
+            c.Report(now, BodyEvent.Tasted, notes);
         }
         else
         {
             c.Report(now, BodyEvent.Ate);
+        }
+    }
+
+    /// <summary>
+    /// Zkažené jídlo (prototyp consume, bad): s šancí přijde nemoc (zánět a horečka) a někdy zvracení.
+    /// Pradávní mají železný žaludek (spoiledMultiplier), u ochutnání je to slabší.
+    /// </summary>
+    private static void ScheduleSpoiledSickness(Character c, double now, bool taste, SpoilageRules rules)
+    {
+        var bad = c.Traits.SpoiledMultiplier;
+        if (c.Rng.NextDouble() >= (taste ? rules.SicknessChanceTaste : rules.SicknessChance) * bad)
+        {
+            return;
+        }
+
+        if (c.Traits.IsAncient)
+        {
+            c.Report(now, BodyEvent.IronStomach);
+        }
+
+        var strength = (rules.SicknessMin + c.Rng.NextDouble() * rules.SicknessRange) * (taste ? rules.TasteFactor : 1) * bad;
+        c.Schedule(now + rules.SicknessDelayMin + c.Rng.NextDouble() * rules.SicknessDelayRange, EffectType.Sickness, strength);
+        if (c.Rng.NextDouble() < rules.VomitChance * bad)
+        {
+            c.Schedule(now + rules.VomitDelayMin + c.Rng.NextDouble() * rules.VomitDelayRange, EffectType.Vomit, rules.VomitStrength);
         }
     }
 

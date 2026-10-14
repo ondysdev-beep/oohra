@@ -20,7 +20,8 @@ public enum Cooking
 
 /// <summary>
 /// Utržená část rostliny, jak ji má hráč v batohu: odkud je a jak je upravená.
-/// Tohle hráč vidí. Co v ní je (složení), počítá jen server.
+/// Tohle hráč vidí. Co v ní je (složení), počítá jen server. Day: herní den, kdy byl plod utržen
+/// (plod se časem zkazí, plody z různých dnů se neskládají na jednu hromádku).
 /// </summary>
 public sealed record PlantItem(
     int SpeciesId,
@@ -29,4 +30,5 @@ public sealed record PlantItem(
     Season Season,
     TileType Soil,
     Cooking Cooking = Cooking.Raw,
-    int BredLevel = 0);
+    int BredLevel = 0,
+    int Day = 0);

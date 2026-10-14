@@ -76,6 +76,9 @@ public enum BodyEvent
 
     /// <summary>Rána se zanítila (zánět, z něj horečka).</summary>
     WoundInflamed,
+
+    /// <summary>Pradávný snědl zkažené jídlo a železný žaludek to zvládl.</summary>
+    IronStomach,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -91,6 +94,9 @@ public enum TasteNote
     Soapy,
     Fresh,
     Herbal,
+
+    /// <summary>Zkažené: páchne to a chutná odporně.</summary>
+    Rotten,
 }
 
 /// <summary>Příčina smrti: to, co tělu ubralo nejvíc zdraví.</summary>

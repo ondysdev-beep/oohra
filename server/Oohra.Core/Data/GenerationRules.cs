@@ -15,4 +15,5 @@ public sealed record GenerationValues(
     double ColdBonus,
     double SpeedMultiplier,
     double LearnMultiplier,
-    double WoundMultiplier);
+    double WoundMultiplier,
+    double SpoiledMultiplier);
