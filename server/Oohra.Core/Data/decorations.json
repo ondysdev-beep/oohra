@@ -1,0 +1,12 @@
+// Dekorace pro režim stavby. Novou dekoraci přidáš jedním řádkem tady a prefabem se stejným "id"
+// v katalogu vzhledu v Unity (Oohra -> Katalog vzhledu -> Decorations). Bez prefabu ji hra nakreslí jako sloupek.
+//   id          krátký název bez mezer a diakritiky (spojuje řádek s prefabem, neměň ho u postavených věcí)
+//   name        jak se jmenuje v nabídce stavby
+//   sticks      kolik stojí klacků, stones kolik kamenů (rozebráním se vrátí polovina, zaokrouhleno dolů)
+//   radius      poloměr v metrech (jak velké místo zabere)
+//   blocks      true = nedá se přes ni projít, false = dá (třeba kruh z kamenů na zemi)
+[
+  { "id": "bench", "name": "Lavice", "sticks": 3, "stones": 0, "radius": 0.45, "blocks": true },
+  { "id": "totem", "name": "Totem", "sticks": 4, "stones": 1, "radius": 0.3, "blocks": true },
+  { "id": "stone_circle", "name": "Kruh z kamenů", "sticks": 0, "stones": 4, "radius": 0.6, "blocks": false }
+]

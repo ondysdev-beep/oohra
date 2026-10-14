@@ -129,9 +129,9 @@ namespace Oohra.Client
         }
 
         /// <summary>Režim stavby: postavit stavbu se středem (x, y) a úhlem v radiánech. Rozhodne server.</summary>
-        public void Place(BuildKind kind, double x, double y, float angle, float length = 1f)
+        public void Place(BuildKind kind, double x, double y, float angle, float length = 1f, string decoration = "")
         {
-            Connection.Place(kind, (float)x, (float)y, angle, length);
+            Connection.Place(kind, (float)x, (float)y, angle, length, decoration);
         }
 
         /// <summary>Rozebrat stavbu, u které je otevřená nabídka.</summary>
@@ -281,6 +281,21 @@ namespace Oohra.Client
             }
 
             return null;
+        }
+
+        /// <summary>Název stavby do nabídky: u dekorace její jméno ze serveru (Lavice…), jinak druh stavby.</summary>
+        public string StructureName(StructureView structure)
+        {
+            if (structure.Kind == BuildKind.Decoration)
+            {
+                var decoration = Connection.DecorationTypes.FirstOrDefault(d => d.Id == structure.Decoration);
+                if (decoration != null)
+                {
+                    return decoration.Name;
+                }
+            }
+
+            return StructureViews.NameOf(structure.Kind);
         }
 
         /// <summary>Je hráč se mnou v kmeni (nebo jsem to já)?</summary>

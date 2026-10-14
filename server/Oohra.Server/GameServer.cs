@@ -238,6 +238,7 @@ public sealed class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
         SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
         SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
+        SendTo(peer, w => Messages.WriteDecorationTypes(w, DecorationTypeViews()));
         player.SentTribeVersion = -1;
         player.SentStockKey = string.Empty;
         player.SentVocabularyVersion = -1;
@@ -440,7 +441,7 @@ public sealed class GameServer : IDisposable
     }
 
     /// <summary>Režim stavby: zeď jde do staveb, oheň mezi ohně. Kam a pod jakým úhlem, určil hráč.</summary>
-    private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle, float Length) place)
+    private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle, float Length, string Decoration) place)
     {
         if (place.Kind == BuildKind.Campfire)
         {
@@ -449,7 +450,7 @@ public sealed class GameServer : IDisposable
         }
 
         BuildAction(player, () => Island.Structures.Build(
-            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions(), player.Character, player.Id));
+            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions(), player.Character, player.Id, place.Decoration));
     }
 
     /// <summary>Lov, stažení masa, výroba kopí. Hláška nese druh zvířete (pro text „Divočák padl.“).</summary>
@@ -974,7 +975,12 @@ public sealed class GameServer : IDisposable
 
     private StructureView[] StructureViews()
     {
-        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId)).ToArray();
+        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId, s.DecorationId)).ToArray();
+    }
+
+    private static DecorationTypeView[] DecorationTypeViews()
+    {
+        return GameData.Decorations.Select(d => new DecorationTypeView(d.Id, d.Name, d.Sticks, d.Stones, (float)d.Radius, d.Blocks)).ToArray();
     }
 
     private SignView[] SignViews()

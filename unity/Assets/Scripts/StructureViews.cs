@@ -20,6 +20,7 @@ namespace Oohra.Client
         public const float DoorHeight = 1.9f;
         public static readonly Color WallColor = new Color(0.54f, 0.42f, 0.26f);
         public static readonly Color DoorColor = new Color(0.45f, 0.33f, 0.2f);
+        public static readonly Color DecorationColor = new Color(0.5f, 0.4f, 0.3f);
 
         // Klíče pro SeeThrough: každá stavba má až PartsPerStructure dílů (sloupky, překlad, dveře).
         private const int PartsPerStructure = 8;
@@ -55,10 +56,16 @@ namespace Oohra.Client
         /// Model stavby se středem v počátku, otočený podél osy x (úhel 0), zeď dlouhá length. Dveře mají pant jako samostatný
         /// objekt (pro otáčení). Vrací kořen modelu, díly jsou jeho děti.
         /// </summary>
-        public static GameObject CreateModel(BuildKind kind, Transform parent, float length = WallLength)
+        public static GameObject CreateModel(BuildKind kind, Transform parent, float length = WallLength, string decorationId = null, float radius = 0.3f)
         {
             var root = new GameObject(NameOf(kind));
             root.transform.SetParent(parent, false);
+            if (kind == BuildKind.Decoration)
+            {
+                AddDecoration(root.transform, decorationId, radius);
+                return root;
+            }
+
             var prefab = VisualCatalog.Current.Structure(kind);
             if (prefab != null)
             {
@@ -131,6 +138,50 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>
+        /// Dekorace: prefab z katalogu vzhledu podle id. Bez prefabu sloupek o poloměru dekorace s kuličkou
+        /// navrchu, ať je na mapě vidět, kde stojí.
+        /// </summary>
+        private static void AddDecoration(Transform root, string decorationId, float radius)
+        {
+            var prefab = VisualCatalog.Current.Decoration(decorationId);
+            if (prefab != null)
+            {
+                VisualCatalog.Spawn(prefab, root, decorationId);
+                return;
+            }
+
+            Part(root, "Sloupek", new Vector3(0f, 0.4f, 0f), new Vector3(radius * 2, 0.4f, radius * 2), DecorationColor, PrimitiveType.Cylinder);
+            Part(root, "Hlava", new Vector3(0f, 0.9f, 0f), Vector3.one * Mathf.Min(0.3f, radius * 1.2f), Palette.Hex("#c9a35a"), PrimitiveType.Sphere);
+        }
+
+        /// <summary>
+        /// Natáhne zeď na délku (náhled v režimu stavby, když se zeď dorovnává). Vlastní model zdi se zmáčkne
+        /// podél osy X jako při stavbě, tvar z kódu dostane přesný rozměr.
+        /// </summary>
+        public static void StretchWall(GameObject wall, float length)
+        {
+            var part = wall.transform.GetChild(0);
+            var prefab = VisualCatalog.Current.Wall;
+            part.localScale = prefab != null
+                ? new Vector3(prefab.transform.localScale.x * length / WallLength, prefab.transform.localScale.y, prefab.transform.localScale.z)
+                : new Vector3(length, WallHeight, WallThickness);
+        }
+
+        /// <summary>Druh dekorace podle id ze seznamu od serveru, nebo null.</summary>
+        private DecorationTypeView DecorationOf(string id)
+        {
+            foreach (var decoration in _connection.DecorationTypes)
+            {
+                if (decoration.Id == id)
+                {
+                    return decoration;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>Postaví kořen modelu na místo: střed (x, y) na mapě a úhel v radiánech.</summary>
         public static void PlaceModel(Transform root, double x, double y, float angle)
         {
@@ -147,6 +198,7 @@ namespace Oohra.Client
                 case BuildKind.Campfire: return "Oheň";
                 case BuildKind.Trap: return "Past";
                 case BuildKind.Stockpile: return "Zásoby kmene";
+                case BuildKind.Decoration: return "Dekorace";
                 default: return "Zeď";
             }
         }
@@ -207,7 +259,8 @@ namespace Oohra.Client
 
         private GameObject Create(StructureView structure)
         {
-            var root = CreateModel(structure.Kind, transform, structure.Length);
+            var decoration = DecorationOf(structure.Decoration);
+            var root = CreateModel(structure.Kind, transform, structure.Length, structure.Decoration, decoration != null ? decoration.Radius : 0.3f);
             root.name = NameOf(structure.Kind) + " " + structure.Id;
             PlaceModel(root.transform, structure.X, structure.Y, structure.Angle);
 

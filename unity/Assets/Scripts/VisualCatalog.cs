@@ -3,6 +3,16 @@ using UnityEngine;
 
 namespace Oohra.Client
 {
+    /// <summary>Jedna dekorace v katalogu vzhledu: id z decorations.json a její model.</summary>
+    [System.Serializable]
+    public class DecorationModel
+    {
+        [Tooltip("Stejné id jako v decorations.json (např. bench).")]
+        public string Id;
+
+        public GameObject Prefab;
+    }
+
     /// <summary>
     /// Katalog vzhledu: které vlastní modely (prefaby) hra použije pro stromy, rostliny, stavby a zvířata.
     /// Upravuje se v Unity: soubor Assets/Resources/VisualCatalog.asset, do políček se přetáhnou prefaby.
@@ -40,6 +50,10 @@ namespace Oohra.Client
 
         [Tooltip("Koš se zásobami kmene, průměr asi 0,6 m.")]
         public GameObject Stockpile;
+
+        [Header("Dekorace (id stejné jako v server/Oohra.Core/Data/decorations.json)")]
+        [Tooltip("Pro každou dekoraci její id a prefab (střed dole uprostřed, velikost podle radius v decorations.json).")]
+        public DecorationModel[] Decorations = new DecorationModel[0];
 
         [Header("Zem: textury dlaždic (prázdné = vygenerovaná ze základní barvy)")]
         public Texture2D GrassTexture;
@@ -143,6 +157,25 @@ namespace Oohra.Client
                 case GroundLayout.Rock: return RockTexture;
                 default: return BogTexture;
             }
+        }
+
+        /// <summary>Dekorace podle id (decorations.json na serveru), nebo null.</summary>
+        public GameObject Decoration(string id)
+        {
+            if (Decorations == null || string.IsNullOrEmpty(id))
+            {
+                return null;
+            }
+
+            foreach (var decoration in Decorations)
+            {
+                if (decoration != null && decoration.Id == id)
+                {
+                    return decoration.Prefab;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>Zvíře podle druhu, nebo null.</summary>

@@ -4,7 +4,7 @@ Hra umí místo jednoduchých tvarů (kostky, válce, koule) použít tvoje mode
 říká **katalog vzhledu**. Prázdné políčko v katalogu znamená, že hra použije tvar z kódu, takže
 modely můžeš přidávat postupně, jeden po druhém.
 
-Zatím jde vyměnit: **stromy, rostliny, zeď, zeď s otvorem, dveře, past, koš se zásobami, zvířata,
+Zatím jde vyměnit: **stromy, rostliny, zeď, zeď s otvorem, dveře, past, koš se zásobami, dekorace, zvířata,
 textury zemi, kameny na skalách a vodu.** Oheň a postava hráče přijdou v dalších krocích.
 
 ## Kde je katalog
@@ -86,6 +86,27 @@ ze serveru jako celé číslo v parametru **`Stav`** (typ Int). V Animatoru udě
 
 Bez Animatoru se model jen posouvá a otáčí.
 
+## Dekorace (lavice, totem, cokoli dalšího)
+
+Dekorace jsou v seznamu **`server/Oohra.Core/Data/decorations.json`**. Novou dekoraci přidáš takto:
+
+1. Do seznamu přidej jeden řádek, třeba:
+   ```json
+   { "id": "drying_rack", "name": "Sušák na maso", "sticks": 4, "stones": 0, "radius": 0.5, "blocks": true },
+   ```
+   - `id` je krátký název bez mezer a diakritiky. Spojuje řádek s modelem.
+   - `name` uvidí hráč v nabídce stavby.
+   - `sticks` a `stones` jsou cena. Rozebráním se vrátí polovina.
+   - `radius` je poloměr v metrech, tedy kolik místa dekorace zabere.
+   - `blocks: true` znamená, že se přes ni nedá projít. `false` je třeba pro kruh z kamenů na zemi.
+   - Pozor na čárky: za posledním řádkem v seznamu čárka není.
+2. V Unity v katalogu vzhledu v části **Decorations** přidej položku (tlačítko +), do **Id** napiš stejné
+   id a do **Prefab** přetáhni model. Střed modelu dole uprostřed, velikost podle `radius`.
+3. Restartuj server (Oohra → Spustit server). Dekorace se objeví v režimu stavby (G) za ostatními stavbami.
+
+Bez modelu v katalogu se dekorace ukáže jako hnědý sloupek s kuličkou, takže jde vyzkoušet hned.
+Dekoraci, kterou už někdo postavil, nepřejmenovávej (`id`), jinak ji hra nepozná.
+
 ## Zem: textury dlaždic
 
 Zem je Unity **Terrain**. Každý druh dlaždice má svou texturu a na hranách se textury plynule prolínají.
@@ -140,6 +161,5 @@ kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůh
 
 ## Co přijde dál
 
-1. Dekorace ze seznamu v JSON: novou dekoraci půjde přidat jedním řádkem a jedním prefabem.
-2. Postava hráče a oheň v katalogu.
-3. Měkčí pobřeží (teď je schodovité podle čtvercových dlaždic) a pěna u břehu.
+1. Postava hráče a oheň v katalogu.
+2. Měkčí pobřeží (teď je schodovité podle čtvercových dlaždic) a pěna u břehu.

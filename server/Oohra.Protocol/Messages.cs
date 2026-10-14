@@ -90,7 +90,11 @@ public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 /// Stavba hráče (zeď, zeď s otvorem, dveře, past): střed, úhel v radiánech (0 = na východ, y mapy roste na jih)
 /// a délka v metrech. Caught: co je v pasti (číslo AnimalKind), -1 = nic.
 /// </summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1);
+/// <summary>Stavba. Decoration: id dekorace (u ostatních staveb prázdné).</summary>
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "");
+
+/// <summary>Druh dekorace z decorations.json na serveru: název do nabídky, cena, poloměr a jestli se přes ni dá projít.</summary>
+public sealed record DecorationTypeView(string Id, string Name, int Sticks, int Stones, float Radius, bool Blocks);
 
 /// <summary>Zvíře v okolí hráče: poloha, směr pohledu (radiány) a co dělá. Životy se neposílají.</summary>
 public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
@@ -133,6 +137,9 @@ public sealed record LoginResult(bool Ok, string Reason, int PlayerId);
 /// <summary>Zápis a čtení zpráv. Server i klient používají stejné metody.</summary>
 public static class Messages
 {
+    /// <summary>Nejdelší id dekorace (ochrana proti nesmyslným zprávám).</summary>
+    public const int MaxDecorationId = 64;
+
     // ---------- klient → server ----------
 
     public static void WriteLogin(NetDataWriter w, string inviteCode, string nickname)
@@ -251,7 +258,7 @@ public static class Messages
     }
 
     /// <summary>Režim stavby: postavit stavbu se středem (x, y), úhlem v radiánech a délkou (zeď) v metrech.</summary>
-    public static void WritePlace(NetDataWriter w, BuildKind kind, float x, float y, float angle, float length)
+    public static void WritePlace(NetDataWriter w, BuildKind kind, float x, float y, float angle, float length, string decoration = "")
     {
         w.Put((byte)MessageType.Place);
         w.Put((byte)kind);
@@ -259,11 +266,13 @@ public static class Messages
         w.Put(y);
         w.Put(angle);
         w.Put(length);
+        w.Put(decoration ?? string.Empty);
     }
 
-    public static (BuildKind Kind, float X, float Y, float Angle, float Length) ReadPlace(NetDataReader r)
+    /// <summary>Decoration: id dekorace z decorations.json (u ostatních staveb prázdné).</summary>
+    public static (BuildKind Kind, float X, float Y, float Angle, float Length, string Decoration) ReadPlace(NetDataReader r)
     {
-        return ((BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat());
+        return ((BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetString(MaxDecorationId));
     }
 
     /// <summary>Rozebrat stavbu podle čísla.</summary>
@@ -388,6 +397,27 @@ public static class Messages
     }
 
     // ---------- server → klient ----------
+
+    /// <summary>Dekorace, které jde postavit (ze serveru, decorations.json). Posílá se po přihlášení.</summary>
+    public static void WriteDecorationTypes(NetDataWriter w, IReadOnlyList<DecorationTypeView> decorations)
+    {
+        w.Put((byte)MessageType.DecorationTypes);
+        w.Put(decorations.Count);
+        foreach (var d in decorations)
+        {
+            w.Put(d.Id);
+            w.Put(d.Name);
+            w.Put(d.Sticks);
+            w.Put(d.Stones);
+            w.Put(d.Radius);
+            w.Put(d.Blocks);
+        }
+    }
+
+    public static DecorationTypeView[] ReadDecorationTypes(NetDataReader r)
+    {
+        return ReadList(r, () => new DecorationTypeView(r.GetString(MaxDecorationId), r.GetString(), r.GetInt(), r.GetInt(), r.GetFloat(), r.GetBool()));
+    }
 
     /// <summary>Hráč inviterId tě zve do svého kmene.</summary>
     public static void WriteTribeInvite(NetDataWriter w, int inviterId)
@@ -832,12 +862,13 @@ public static class Messages
             w.Put(s.Length);
             w.Put(s.Caught);
             w.Put(s.OwnerId);
+            w.Put(s.Decoration ?? string.Empty);
         }
     }
 
     public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt()));
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId)));
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>
