@@ -54,7 +54,7 @@ namespace Oohra.Client.Tests
 
             // Postava a ohně táborů z katalogu.
             yield return WaitFor(() => GameObject.Find("Postava") != null, 5f, "Postava se neobjevila.");
-            Assert.IsNotNull(GameObject.Find("Postava").transform.Find("Model"));
+            Assert.IsNotNull(GameObject.Find("Postava").transform.Find(GenerationLook.FigureName + "/Model"));
             if (world.Camps.Length > 0)
             {
                 Assert.IsNotNull(IslandView.FindDeep(GameObject.Find("Tábor kmene 1").transform, "Kámen ohniště"));

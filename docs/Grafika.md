@@ -94,6 +94,12 @@ postava kruh o poloměru 28 cm, takže model by neměl být o moc širší.
 
 - **Barva generace:** části s komponentou **SpeciesTint** dostanou barvu generace (Pradávní tmavší,
   Noví světlejší). Hodí se třeba na oblečení. Bez SpeciesTint zůstane model, jak je.
+- **Pradávní a Noví:** políčko **PlayerAncient** je model pro Pradávné (první generace: mohutní,
+  kožešinový plášť, ochra, kostěné korálky). Prázdné = i Pradávní mají model z **Player**. Hra navíc
+  každou postavu roztáhne podle generace (skript `GenerationLook`): Pradávný je o 15 % širší a o kousek
+  menší, Noví jsou štíhlejší a vyšší. Bez modelu hra kreslí postavu z tvarů i s doplňky: Pradávný plášť,
+  ochru a korálky, Noví od generace 2 čelenku, od 4 korálky a od 5 malbu na obličeji. K vlastnímu modelu
+  hra doplňky nepřidává (nevěděla by, kde má hlavu), takže je dej rovnou do modelu.
 - **Animace:** když má model Animator, hra do něj posílá tyto parametry (stačí ty, které chceš použít):
 
 | Parametr | Typ | Co znamená |

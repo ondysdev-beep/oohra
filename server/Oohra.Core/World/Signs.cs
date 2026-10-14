@@ -13,7 +13,7 @@ public sealed record CarvingRecord(int SpeciesId, byte[] Name, IReadOnlyList<Car
 /// </summary>
 public sealed class Sign
 {
-    public Sign(int id, double x, double y, byte[] bits, int authorId, double createdAt, bool carved, bool ancient = false, CarvingRecord? record = null, Signature? signature = null)
+    public Sign(int id, double x, double y, byte[] bits, int authorId, double createdAt, bool carved, bool ancient = false, CarvingRecord? record = null, Signature? signature = null, bool byAncient = false)
     {
         Id = id;
         X = x;
@@ -25,6 +25,7 @@ public sealed class Sign
         Ancient = ancient;
         Record = record;
         Signature = signature;
+        ByAncient = byAncient;
     }
 
     public int Id { get; }
@@ -50,6 +51,9 @@ public sealed class Sign
 
     /// <summary>Podpis autora v okamžiku kreslení (jméno a znak), nebo null.</summary>
     public Signature? Signature { get; }
+
+    /// <summary>Nakreslil ji Pradávný (návrh 8.6: jeho rytiny ostatní berou jako pradávné).</summary>
+    public bool ByAncient { get; }
 }
 
 /// <summary>Všechny značky ve světě (prototyp S.signs a world.ruins).</summary>
@@ -73,7 +77,7 @@ public sealed class Signs
     /// <summary>
     /// Hráč nakreslí značku na místo (x, y) kousek od sebe. Na skále vyryje rytinu, jinak kreslí do hlíny.
     /// </summary>
-    public SignResult Draw(Island island, int authorId, double playerX, double playerY, double x, double y, byte[] bits, double now, Signature? signature = null)
+    public SignResult Draw(Island island, int authorId, double playerX, double playerY, double x, double y, byte[] bits, double now, Signature? signature = null, bool byAncient = false)
     {
         var rules = GameData.Signs;
         if (bits.Length != SignBits.ByteCount || SignBits.Count(bits) == 0)
@@ -99,7 +103,7 @@ public sealed class Signs
         }
 
         var carved = island.TileAt(tx, ty) == TileType.Rock;
-        Add(new Sign(_nextId++, x, y, (byte[])bits.Clone(), authorId, now, carved, signature: signature));
+        Add(new Sign(_nextId++, x, y, (byte[])bits.Clone(), authorId, now, carved, signature: signature, byAncient: byAncient));
         return SignResult.Drawn;
     }
 

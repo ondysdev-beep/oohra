@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Těla mrtvých hráčů ve scéně: postava ležící na zemi (model postavy z katalogu vzhledu, jinak šedá kapsle,
-    /// Pradávný tmavší). Na tělo jde kliknout a vzít si věci (CorpseHud). Po 4 dnech zmizí.
+    /// Těla mrtvých hráčů ve scéně: postava ležící na zemi, vypadá podle generace jako za života (GenerationLook),
+    /// jen tmavší. Na tělo jde kliknout a vzít si věci (CorpseHud). Po 4 dnech zmizí.
     /// </summary>
     public class CorpseViews : MonoBehaviour
     {
@@ -100,23 +100,13 @@ namespace Oohra.Client
             // Natočení podle čísla těla, ať všechna neleží stejně.
             root.transform.rotation = Quaternion.Euler(0f, corpse.Id * 67 % 360, 0f);
 
-            var color = corpse.Generation == 0 ? Palette.Hex("#6b5540") : Palette.Hex("#9c8a6e");
-            var prefab = VisualCatalog.Current.Player;
-            if (prefab != null)
-            {
-                // Model postavy leží na zádech: otočený o 90° kolem osy X, nohy u středu těla.
-                var model = VisualCatalog.Spawn(prefab, root.transform, "Model");
-                model.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
-                model.transform.localPosition = new Vector3(0f, 0.15f, -PlayerViews.BodyHeight / 2);
-                SpeciesTint.ApplyMarked(model, color * 0.8f);
-            }
-            else
-            {
-                var body = IslandView.Primitive(PrimitiveType.Capsule, "Postava", root.transform, color * 0.8f);
-                body.transform.localPosition = new Vector3(0f, 0.28f, 0f);
-                body.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                body.transform.localScale = new Vector3(0.56f, 0.9f, 0.56f);
-            }
+            // Postava podle generace (jako živá), ležící na zádech: hlava míří k -Z, nohy na +Z, střed těla uprostřed.
+            var figure = GenerationLook.Figure(root.transform, corpse.Generation);
+            var look = GenerationLook.For(corpse.Generation);
+            var lift = GenerationLook.ModelFor(corpse.Generation) != null ? 0.15f : 0.28f * look.Width;
+            figure.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+            figure.transform.localPosition = new Vector3(0f, lift, PlayerViews.BodyHeight * look.Height / 2);
+            SpeciesTint.ApplyMarked(figure, look.Body * 0.8f);
 
             Pickable.Attach(root, InteractionTarget.ForCorpse(corpse.Id, corpse.X, corpse.Y));
             return root;

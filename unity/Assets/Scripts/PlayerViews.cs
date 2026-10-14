@@ -5,7 +5,8 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Všichni hráči ze snímků serveru: vlastní model z katalogu vzhledu (s animacemi), jinak kapsle.
+    /// Všichni hráči ze snímků serveru: postava podle generace (GenerationLook), vlastní model z katalogu vzhledu
+    /// (s animacemi), jinak kapsle s doplňky.
     /// Server posílá polohy asi 15× za sekundu, mezi nimi se postavy plynule posouvají, aby pohyb nebyl trhaný.
     /// </summary>
     public class PlayerViews : MonoBehaviour
@@ -87,23 +88,16 @@ namespace Oohra.Client
                 int shown;
                 if (_shownGeneration.TryGetValue(id, out shown) && shown != generation)
                 {
-                    Paint(view, generation);
-                    _shownGeneration[id] = generation;
+                    // Nové narození (Pradávný → Nový, nebo vyšší generace): jiná postava.
+                    Dress(id, view, generation);
                 }
 
                 return view;
             }
 
-            view = VisualCatalog.Current.Player != null ? CreateModel() : CreateCapsule();
-            view.name = id == _connection.PlayerId ? "Postava" : "Hráč " + id;
-            var animator = view.GetComponentInChildren<Animator>();
-            if (animator != null)
-            {
-                _animators[id] = animator;
-            }
-
-            Paint(view, generation);
-            _shownGeneration[id] = generation;
+            view = new GameObject(id == _connection.PlayerId ? "Postava" : "Hráč " + id);
+            view.transform.SetParent(transform);
+            Dress(id, view, generation);
             _views[id] = view;
             if (id == _connection.PlayerId)
             {
@@ -118,31 +112,31 @@ namespace Oohra.Client
             return view;
         }
 
-        /// <summary>Kapsle s „nosem“, který ukazuje, kam se postava dívá. Střed kapsle je ve výšce půl postavy.</summary>
-        private GameObject CreateCapsule()
-        {
-            var view = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            view.transform.SetParent(transform);
-            view.transform.localScale = new Vector3(BodyRadius * 2, BodyHeight / 2, BodyRadius * 2);
-            Destroy(view.GetComponent<Collider>());
-
-            var nose = IslandView.Primitive(PrimitiveType.Cube, "Směr", view.transform, Palette.Hex("#dba23f"));
-            nose.transform.localPosition = new Vector3(0f, 0.5f, 0.5f);
-            nose.transform.localScale = new Vector3(0.3f, 0.15f, 0.4f);
-            return view;
-        }
-
         /// <summary>
-        /// Vlastní model z katalogu vzhledu. Kořen je jako u kapsle ve výšce půl postavy (podle něj míří kamera
-        /// a jmenovky), model má nohy o půl postavy níž, tedy na zemi.
+        /// Oblékne postavu podle generace (GenerationLook): vlastní model z katalogu, jinak kapsle s doplňky.
+        /// Kořen je ve výšce půl postavy (podle něj míří kamera a jmenovky), postava má nohy o půl postavy níž, tedy na zemi.
         /// </summary>
-        private GameObject CreateModel()
+        private void Dress(int id, GameObject view, int generation)
         {
-            var view = new GameObject();
-            view.transform.SetParent(transform);
-            var model = VisualCatalog.Spawn(VisualCatalog.Current.Player, view.transform, "Model");
-            model.transform.localPosition = new Vector3(0f, -BodyHeight / 2, 0f);
-            return view;
+            var old = view.transform.Find(GenerationLook.FigureName);
+            if (old != null)
+            {
+                old.name = "Stará figura";
+                Destroy(old.gameObject);
+            }
+
+            var figure = GenerationLook.Figure(view.transform, generation);
+            figure.transform.localPosition = new Vector3(0f, -BodyHeight / 2, 0f);
+            _shownGeneration[id] = generation;
+            var animator = figure.GetComponentInChildren<Animator>();
+            if (animator != null)
+            {
+                _animators[id] = animator;
+            }
+            else
+            {
+                _animators.Remove(id);
+            }
         }
 
         /// <summary>Do animace jde rychlost (m/s), spánek a smrt. Jen do parametrů, které model má.</summary>
@@ -153,20 +147,6 @@ namespace Oohra.Client
             AnimatorTools.SetFloat(animator, SpeedParameter, player.Dead || player.Sleeping ? 0f : speed);
             AnimatorTools.SetBool(animator, SleepParameter, player.Sleeping);
             AnimatorTools.SetBool(animator, DeadParameter, player.Dead);
-        }
-
-        /// <summary>Pradávní jsou tmavší (kožešina), Noví světlejší. U vlastního modelu jen části se SpeciesTint.</summary>
-        private static void Paint(GameObject view, int generation)
-        {
-            var color = generation == 0 ? Palette.Hex("#8a6a45") : Palette.Hex("#c5a97e");
-            if (view.GetComponent<Renderer>() != null)
-            {
-                Palette.SetColor(view, color);
-            }
-            else
-            {
-                SpeciesTint.ApplyMarked(view, color);
-            }
         }
 
         private int GenerationOf(int id)

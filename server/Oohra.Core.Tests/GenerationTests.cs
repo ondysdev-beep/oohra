@@ -1,4 +1,5 @@
 using Oohra.Core.Characters;
+using Oohra.Core.Data;
 
 namespace Oohra.Core.Tests;
 
@@ -37,5 +38,18 @@ public class GenerationTests
         Assert.Equal(1.24, beyond.ToxinMultiplier, 9);
         Assert.Equal(0.82, beyond.EnergyDrainMultiplier, 9);
         Assert.Equal(-1.3 * 4, beyond.ColdBonus, 9);
+    }
+
+    /// <summary>Generace světa (návrh 8.2): začíná na 1, roste s kalendářem, ne smrtí, a zastaví se na stropu.</summary>
+    [Fact]
+    public void WorldGenerationGrowsWithCalendar()
+    {
+        var months = GameData.Generations.MonthsPerGeneration;
+
+        Assert.Equal(1, GenerationTraits.WorldGeneration(0));
+        Assert.Equal(1, GenerationTraits.WorldGeneration(months - 0.01));
+        Assert.Equal(2, GenerationTraits.WorldGeneration(months));
+        Assert.Equal(3, GenerationTraits.WorldGeneration(months * 2.5));
+        Assert.Equal(GameData.Generations.Cap, GenerationTraits.WorldGeneration(months * 100));
     }
 }

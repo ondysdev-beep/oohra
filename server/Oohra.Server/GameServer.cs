@@ -431,7 +431,7 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.DrawSign:
                 var (signX, signY, bits) = Messages.ReadDrawSign(reader);
-                SignAction(player, () => Island.Signs.Draw(Island, player.Id, player.X, player.Y, signX, signY, bits, Clock.TotalMinutes, player.Signature));
+                SignAction(player, () => Island.Signs.Draw(Island, player.Id, player.X, player.Y, signX, signY, bits, Clock.TotalMinutes, player.Signature, player.Character.Traits.IsAncient));
                 break;
             case MessageType.EraseSign:
                 var signId = Messages.ReadEraseSign(reader);
@@ -679,7 +679,7 @@ public sealed class GameServer : IDisposable
     }
 
     /// <summary>
-    /// Po smrti: Nový o generaci výš, s prázdným batohem. Narodí se v divočině daleko od místa smrti,
+    /// Po smrti: Nový aktuální generace světa (návrh 8.2), s prázdným batohem. Narodí se v divočině daleko od místa smrti,
     /// nebo, když si to hráč vybral, na okraji území svého kmene (návrh 4.1).
     /// </summary>
     private void Reborn(PlayerSession player, BirthPlace place)
@@ -689,7 +689,7 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        var generation = GenerationTraits.NextAfterDeath(player.Character.Traits.Generation);
+        var generation = GenerationTraits.WorldGeneration(Clock.CalendarMonths);
         var deathPlace = new Position(player.X, player.Y);
         player.Lives++;
         player.Character = NewCharacter(generation);
@@ -992,7 +992,8 @@ public sealed class GameServer : IDisposable
             Shelter.IsSheltered(Island, player.X, player.Y),
             c.Sleeping,
             SkillKinds.Select(s => (byte)c.Skills.Level(s)).ToArray(),
-            PendingSkills(c));
+            PendingSkills(c),
+            GenerationTraits.WorldGeneration(Clock.CalendarMonths));
         SendTo(player.Peer, w => Messages.WriteSelfState(w, state));
     }
 
@@ -1131,7 +1132,7 @@ public sealed class GameServer : IDisposable
     {
         return Island.Signs.All.Select(s => new SignView(
             s.Id, (float)s.X, (float)s.Y, s.Bits, s.AuthorId, s.CreatedAt, Signs.WeathersAt(s) ?? -1, s.Carved, s.Ancient,
-            s.Record?.SpeciesId ?? -1, s.Record?.Name ?? [], s.Record?.Tags.ToArray() ?? [], s.Signature?.Name ?? [], s.Signature?.Mark ?? [])).ToArray();
+            s.Record?.SpeciesId ?? -1, s.Record?.Name ?? [], s.Record?.Tags.ToArray() ?? [], s.Signature?.Name ?? [], s.Signature?.Mark ?? [], s.ByAncient)).ToArray();
     }
 
     private static PlayerInfo InfoOf(PlayerSession player)
