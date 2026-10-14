@@ -62,6 +62,7 @@ namespace Oohra.Client
             new BuildOption(BuildKind.Door, "Dveře (do otvoru)", "2 klacky", 2, 0),
             new BuildOption(BuildKind.Campfire, "Oheň", "3 klacky a kámen", 3, 1),
             new BuildOption(BuildKind.Trap, "Past (chytí králíka nebo jelena)", "3 klacky", 3, 0),
+            new BuildOption(BuildKind.Stockpile, "Zásoby kmene (koš)", "4 klacky", 4, 0),
         };
 
         private ClientSession _session;
@@ -226,7 +227,7 @@ namespace Oohra.Client
                 return;
             }
 
-            var digits = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key };
+            var digits = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key, keyboard.digit7Key };
             for (var i = 0; i < Catalog.Length && i < digits.Length; i++)
             {
                 if (digits[i].wasPressedThisFrame && !keyboard.shiftKey.isPressed) Open(Catalog[i]);

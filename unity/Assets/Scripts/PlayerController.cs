@@ -107,6 +107,12 @@ namespace Oohra.Client
                 }
             }
 
+            var player = PickPlayer(x, y);
+            if (player != null)
+            {
+                return player;
+            }
+
             var animal = PickAnimal(x, y);
             if (animal != null)
             {
@@ -213,6 +219,26 @@ namespace Oohra.Client
             var ey = y2 - y1;
             var t = System.Math.Max(0, System.Math.Min(1, ((px - x1) * ex + (py - y1) * ey) / (ex * ex + ey * ey)));
             return Distance(x1 + t * ex, y1 + t * ey, px, py);
+        }
+
+        /// <summary>Jiný živý hráč pod kurzorem (do 60 cm).</summary>
+        private InteractionTarget PickPlayer(double x, double y)
+        {
+            var snapshot = _session.Connection.Snapshot;
+            if (snapshot == null)
+            {
+                return null;
+            }
+
+            foreach (var player in snapshot.Players)
+            {
+                if (player.Id != _session.Connection.PlayerId && !player.Dead && Distance(player.X, player.Y, x, y) < PickRadius)
+                {
+                    return InteractionTarget.ForPlayer(player.Id, player.X, player.Y);
+                }
+            }
+
+            return null;
         }
 
         /// <summary>Značka nebo stará rytina pod kurzorem (do 45 cm od středu).</summary>

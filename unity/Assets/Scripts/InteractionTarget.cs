@@ -13,6 +13,7 @@ namespace Oohra.Client
         Structure,
         Animal,
         Sign,
+        Player,
     }
 
     /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
@@ -63,6 +64,7 @@ namespace Oohra.Client
                     case TargetKind.Tree: return 1.5;
                     case TargetKind.Structure: return 1.6;
                     case TargetKind.Animal: return 1.4;
+                    case TargetKind.Player: return 2.5;
                     default: return 1.3;
                 }
             }
@@ -95,6 +97,12 @@ namespace Oohra.Client
         public static InteractionTarget ForSign(int signId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Sign, signId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
+        }
+
+        /// <summary>Jiný hráč (číslo hráče). Hýbe se, živou polohu dává ClientSession.PositionOf.</summary>
+        public static InteractionTarget ForPlayer(int playerId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Player, playerId, 0, 0, x, y);
         }
 
         /// <summary>Dlaždice: voda, strom nebo skála.</summary>

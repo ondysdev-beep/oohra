@@ -28,6 +28,7 @@ namespace Oohra.Client
         private GUIStyle _title;
         private GUIStyle _warn;
         private GUIStyle _name;
+        private GUIStyle _tribeName;
         private GUIStyle _center;
         private Rect _menuRect;
         private Rect _backpackRect;
@@ -121,7 +122,7 @@ namespace Oohra.Client
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
                     || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
                     || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse)
-                    || SpeechHud.Covers(mouse) || SignHud.Covers(mouse);
+                    || SpeechHud.Covers(mouse) || SignHud.Covers(mouse) || TribeHud.Covers(mouse);
             }
         }
 
@@ -146,7 +147,9 @@ namespace Oohra.Client
                 }
 
                 var rect = new Rect(screen.x - 80, Screen.height - screen.y - 12, 160, 22);
-                GUI.Label(rect, info.Nickname, _name);
+                // Členové mého kmene mají jméno okrovou barvou.
+                var tribe = id != connection.PlayerId && _session.InMyTribe(id);
+                GUI.Label(rect, info.Nickname, tribe ? _tribeName : _name);
             }
         }
 
@@ -355,12 +358,18 @@ namespace Oohra.Client
                 case TargetKind.Animal:
                     DrawAnimalMenu(target, titleRect, ref buttonRect);
                     break;
+                case TargetKind.Player:
+                    DrawPlayerMenu(target, titleRect, ref buttonRect);
+                    break;
             }
 
             return y - 6;
         }
 
-        /// <summary>U stavby: rozebrat. U pasti vzít úlovek (když v ní něco je) a zvednout ji.</summary>
+        /// <summary>
+        /// U stavby: rozebrat. U pasti vzít úlovek (když v ní něco je) a zvednout ji. Koš se zásobami ukazuje TribeHud.
+        /// Na cizí stavbu (ne tvou ani tvého kmene) sahat nesmíš.
+        /// </summary>
         private void DrawStructureMenu(Rect titleRect, ref Rect buttonRect)
         {
             var structure = _session.MenuStructure();
@@ -375,8 +384,36 @@ namespace Oohra.Client
             var caught = trap && structure.Value.Caught >= 0;
             var title = StructureViews.NameOf(structure.Value.Kind).ToUpper();
             GUI.Label(titleRect, caught ? title + " (" + AnimalViews.NameOf((AnimalKind)structure.Value.Caught).ToLower() + ")" : title, _title);
+            if (!_session.MayTouch(structure.Value))
+            {
+                GUI.Label(new Rect(buttonRect.x, buttonRect.y + 4, 480, 22), "Cizí stavba. Sahat na ni smí jen ten, kdo ji postavil, a jeho kmen.", _label);
+                return;
+            }
+
             if (caught && Button(ref buttonRect, "Vzít úlovek")) _session.TakeCatch();
             if (Button(ref buttonRect, trap ? "Zvednout past" : "Rozebrat")) _session.RemoveStructure();
+        }
+
+        /// <summary>U jiného hráče: pozvat do kmene (když už nejste spolu).</summary>
+        private void DrawPlayerMenu(InteractionTarget target, Rect titleRect, ref Rect buttonRect)
+        {
+            PlayerInfo info;
+            if (!_session.Connection.Players.TryGetValue(target.Id, out info))
+            {
+                _session.Menu = null;
+                _session.Selected = null;
+                return;
+            }
+
+            GUI.Label(titleRect, info.Nickname.ToUpper(), _title);
+            if (_session.InMyTribe(target.Id))
+            {
+                GUI.Label(new Rect(buttonRect.x, buttonRect.y + 4, 300, 22), "Je s tebou v kmeni.", _label);
+                return;
+            }
+
+            buttonRect.width = 180;
+            if (Button(ref buttonRect, "Pozvat do kmene")) _session.InviteToTribe();
         }
 
         /// <summary>U zvířete: živé udeřit (pěstí nebo kopím, i mezerníkem), z mrtvého stáhnout maso.</summary>
@@ -544,6 +581,8 @@ namespace Oohra.Client
             _warn = new GUIStyle(_label);
             _warn.normal.textColor = new Color(0.95f, 0.7f, 0.62f);
             _name = new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = false };
+            _tribeName = new GUIStyle(_name);
+            _tribeName.normal.textColor = Ochre;
             _center = new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter };
         }
     }
