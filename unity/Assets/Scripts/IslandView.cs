@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Postaví šedou krabici ostrova z mapy od serveru: zem jako jedna plocha s texturou dlaždic,
-    /// stromy, rostliny, tábory a ruiny z jednoduchých tvarů. Kolize počítá server, ne fyzika Unity.
+    /// Postaví ostrov z mapy od serveru: zem (GroundView), vodu (WaterView), stromy, rostliny, tábory a ruiny
+    /// (vlastní modely z katalogu vzhledu, jinak jednoduché tvary). Kolize počítá server, ne fyzika Unity.
     /// </summary>
     public static class IslandView
     {
@@ -18,8 +18,8 @@ namespace Oohra.Client
         {
             var root = new GameObject("Ostrov (vygenerovaný)");
             var seeThrough = root.AddComponent<SeeThrough>();
-            BuildSea(world, root.transform);
-            BuildGround(world, root.transform);
+            WaterView.Build(world, root.transform);
+            GroundView.Build(world, root.transform);
             BuildTrees(world, root.transform, seeThrough);
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);
@@ -37,50 +37,6 @@ namespace Oohra.Client
             structures.transform.SetParent(root.transform);
             structures.AddComponent<StructureViews>().Init(connection, seeThrough);
             return root;
-        }
-
-        /// <summary>Zem: jedna čtyřhranná plocha, každý pixel textury je jedna dlaždice.</summary>
-        private static void BuildGround(WorldView world, Transform parent)
-        {
-            var texture = new Texture2D(world.Width, world.Height, TextureFormat.RGBA32, false);
-            texture.filterMode = FilterMode.Point;
-            texture.wrapMode = TextureWrapMode.Clamp;
-            for (var y = 0; y < world.Height; y++)
-            {
-                for (var x = 0; x < world.Width; x++)
-                {
-                    var index = y * world.Width + x;
-                    // Řádek 0 textury je dole (na jihu), řádek 0 mapy nahoře (na severu).
-                    texture.SetPixel(x, world.Height - 1 - y, Palette.Tile(world.Tiles[index], world.Shore[index]));
-                }
-            }
-
-            texture.Apply();
-
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            ground.name = "Zem";
-            ground.transform.SetParent(parent);
-            ground.transform.position = new Vector3(world.Width / 2f, 0f, -world.Height / 2f);
-            ground.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            ground.transform.localScale = new Vector3(world.Width, world.Height, 1f);
-            Object.Destroy(ground.GetComponent<Collider>());
-
-            var material = new Material(Palette.Lit);
-            material.SetTexture("_BaseMap", texture);
-            material.SetFloat("_Smoothness", 0f);
-            ground.GetComponent<Renderer>().sharedMaterial = material;
-        }
-
-        private static void BuildSea(WorldView world, Transform parent)
-        {
-            var sea = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            sea.name = "Moře";
-            sea.transform.SetParent(parent);
-            sea.transform.position = new Vector3(world.Width / 2f, -0.02f, -world.Height / 2f);
-            sea.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            sea.transform.localScale = new Vector3(world.Width * 6f, world.Height * 6f, 1f);
-            Object.Destroy(sea.GetComponent<Collider>());
-            Palette.SetColor(sea, Palette.Tile(TileType.Sea, false));
         }
 
         private static void BuildTrees(WorldView world, Transform parent, SeeThrough crowns)

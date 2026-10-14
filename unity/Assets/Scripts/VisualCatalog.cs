@@ -41,6 +41,36 @@ namespace Oohra.Client
         [Tooltip("Koš se zásobami kmene, průměr asi 0,6 m.")]
         public GameObject Stockpile;
 
+        [Header("Zem: textury dlaždic (prázdné = vygenerovaná ze základní barvy)")]
+        public Texture2D GrassTexture;
+        public Texture2D SandTexture;
+
+        [Tooltip("Les: tráva s jehličím a listím.")]
+        public Texture2D ForestTexture;
+        public Texture2D RockTexture;
+
+        [Tooltip("Bažina a dno jezírek.")]
+        public Texture2D BogTexture;
+
+        [Tooltip("Po kolika metrech se textura zemi opakuje.")]
+        public float GroundTextureSize = 4f;
+
+        [Header("Kameny na skalách (nízké, do 35 cm: přes skálu se chodí)")]
+        public GameObject[] Rocks = new GameObject[0];
+
+        [Header("Voda")]
+        [Tooltip("Barva hladiny, průhlednost je v alfě.")]
+        public Color WaterColor = new Color(0.16f, 0.38f, 0.47f, 0.72f);
+
+        [Tooltip("Normálová mapa vlnek (Texture Type: Normal map). Prázdné = vygenerovaná.")]
+        public Texture2D WaterNormalMap;
+
+        [Tooltip("Po kolika metrech se vlnky opakují.")]
+        public float WaveSize = 3f;
+
+        [Tooltip("Jak rychle se vlnky posouvají (metry za sekundu).")]
+        public float WaveSpeed = 0.08f;
+
         [Header("Zvířata (nohy dole v počátku, hlava ve směru osy Z)")]
         public GameObject Boar;
         public GameObject Rabbit;
@@ -99,6 +129,19 @@ namespace Oohra.Client
                 case BuildKind.Trap: return Trap;
                 case BuildKind.Stockpile: return Stockpile;
                 default: return null;
+            }
+        }
+
+        /// <summary>Textura vrstvy zemi (GroundLayout.Grass…), nebo null.</summary>
+        public Texture2D GroundTexture(int layer)
+        {
+            switch (layer)
+            {
+                case GroundLayout.Grass: return GrassTexture;
+                case GroundLayout.Sand: return SandTexture;
+                case GroundLayout.Forest: return ForestTexture;
+                case GroundLayout.Rock: return RockTexture;
+                default: return BogTexture;
             }
         }
 
