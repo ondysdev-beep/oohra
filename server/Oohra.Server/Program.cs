@@ -9,10 +9,16 @@ Console.OutputEncoding = Encoding.UTF8;
 
 var configPath = args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory, "server.json");
 var config = ServerConfig.Load(configPath);
-// Soubor s nahlášeními leží vedle server.json (když v něm není celá cesta).
+// Soubory s nahlášeními a statistikami leží vedle server.json (když v něm není celá cesta).
+var configDirectory = Path.GetDirectoryName(Path.GetFullPath(configPath)) ?? ".";
 if (!Path.IsPathRooted(config.ReportsFile))
 {
-    config.ReportsFile = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(configPath)) ?? ".", config.ReportsFile);
+    config.ReportsFile = Path.Combine(configDirectory, config.ReportsFile);
+}
+
+if (config.StatsFile.Length > 0 && !Path.IsPathRooted(config.StatsFile))
+{
+    config.StatsFile = Path.Combine(configDirectory, config.StatsFile);
 }
 
 using var server = new GameServer(config) { Log = message => Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}") };
@@ -20,6 +26,10 @@ server.Start(config.Port);
 
 Console.WriteLine($"Server Oohra běží na portu {server.Port}. Svět č. {config.Seed}. Ukonči Ctrl+C.");
 Console.WriteLine($"Nahlášení od hráčů se zapisují do {config.ReportsFile}.");
+if (config.StatsFile.Length > 0)
+{
+    Console.WriteLine($"Statistiky hraní se ukládají do {config.StatsFile}.");
+}
 
 var running = true;
 Console.CancelKeyPress += (_, e) =>

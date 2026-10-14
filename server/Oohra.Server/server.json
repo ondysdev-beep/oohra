@@ -21,6 +21,10 @@
   // Tlačítko Nahlásit: nahlášení se zapisují sem (jeden záznam na řádek), nejvýš jedno za reportCooldownSeconds.
   "reportsFile": "reports.jsonl",
   "reportCooldownSeconds": 30,
+  // Statistiky hraní pro ladění (kolik kdo hraje, na co umírá, co dělá). Testeři o nich vědí.
+  // Ukládají se každých statsSaveSeconds a při vypnutí serveru.
+  "statsFile": "stats.json",
+  "statsSaveSeconds": 300,
   // Vyloučení hráči (přezdívky). Po změně restartuj server.
   "bannedNicknames": []
 }

@@ -23,6 +23,8 @@ public sealed class TestNetwork : IDisposable
             InviteCodes = [InviteCode],
             TimeSpeed = timeSpeed,
             Animals = false,
+            // Statistiky se v testech jen počítají, do souboru se neukládají.
+            StatsFile = string.Empty,
         };
         configure?.Invoke(config);
         Server = new GameServer(config);
