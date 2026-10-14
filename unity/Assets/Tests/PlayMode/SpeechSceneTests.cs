@@ -19,7 +19,8 @@ namespace Oohra.Client.Tests
         [UnitySetUp]
         public IEnumerator StartServer()
         {
-            _server = PlayTestTools.StartServer(TestPort);
+            // Bez cizinců: jejich slova by přidala bubliny a slova do zápisníku.
+            _server = PlayTestTools.StartServer(TestPort, "\"strangers\": false");
             SceneManager.LoadScene("Ostrov");
             yield return new WaitForSecondsRealtime(2f);
         }

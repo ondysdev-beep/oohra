@@ -139,6 +139,7 @@ public sealed class PlayStats
             EventKind.Tribe => ((TribeResult)code).ToString(),
             EventKind.Corpse => ((CorpseResult)code).ToString(),
             EventKind.Report => ((ReportResult)code).ToString(),
+            EventKind.Stranger => ((StrangerResult)code).ToString(),
             _ => code.ToString(),
         };
     }

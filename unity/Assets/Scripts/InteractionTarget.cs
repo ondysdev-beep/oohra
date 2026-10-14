@@ -15,6 +15,9 @@ namespace Oohra.Client
         Sign,
         Player,
         Corpse,
+
+        /// <summary>Člověk z cizího kmene (NPC).</summary>
+        Stranger,
     }
 
     /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
@@ -66,6 +69,7 @@ namespace Oohra.Client
                     case TargetKind.Structure: return 1.6;
                     case TargetKind.Animal: return 1.4;
                     case TargetKind.Player: return 2.5;
+                    case TargetKind.Stranger: return 2.2;
                     default: return 1.3;
                 }
             }
@@ -110,6 +114,12 @@ namespace Oohra.Client
         public static InteractionTarget ForPlayer(int playerId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Player, playerId, 0, 0, x, y);
+        }
+
+        /// <summary>Cizinec (číslo cizince). Hýbe se, živou polohu dává ClientSession.PositionOf.</summary>
+        public static InteractionTarget ForStranger(int strangerId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Stranger, strangerId, 0, 0, x, y);
         }
 
         /// <summary>Dlaždice: voda, strom nebo skála.</summary>

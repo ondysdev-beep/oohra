@@ -1,0 +1,56 @@
+// Cizí kmeny (NPC, prototyp initNPCs, npcThink, updateNPCs, handleNPCWord, askByPoint a giveTo v part5.js).
+// Dva kmeny v táborech ostrova. Mluví slovy svého jazyka, hráč se je učí z toho, v jaké situaci zazněla.
+{
+  // Kolik cizinců žije v každém táboře a jak daleko od ohně (m) stojí na začátku.
+  "perTribe": 3,
+  "ringRadius": 2.4,
+  // Rychlost chůze a útěku (m/s).
+  "walkSpeed": 1.3,
+  "fleeSpeed": 2.6,
+  // Jak dlouho cizinec stojí, než si vymyslí, co dál (s, náhodně mezi).
+  "idleMinSeconds": 3,
+  "idleMaxSeconds": 7,
+  // Jak daleko od tábora se toulá (m).
+  "wanderRadius": 5,
+  // Když se k cíli nedostane do tolika sekund, vzdá to.
+  "stuckSeconds": 1.2,
+  "gotoEatSeconds": 12,
+  "gotoDrinkSeconds": 16,
+  // Jak dlouho jí a pije (s).
+  "eatSeconds": 2.4,
+  "drinkSeconds": 2,
+  "fleeSeconds": 4,
+  // Šance, že si cizinec půjde něco sníst (jinak se napít nebo se toulat).
+  "eatChance": 0.5,
+  "drinkChance": 0.22,
+  // Jak daleko od tábora hledá jídlo a vodu (m).
+  "eatSearchRadius": 13,
+  "pondSearchRadius": 16,
+  // Nebezpečí: útočící zvíře do dangerDistance od cizince, nebo do playerDangerDistance od hráče, který stojí do playerNearDistance.
+  "dangerDistance": 9,
+  "playerDangerDistance": 7,
+  "playerNearDistance": 12,
+  // Cizinec mluví jen, když je hráč do talkDistance, a nejvýš jednou za talkCooldownSeconds.
+  "talkDistance": 14,
+  "talkCooldownSeconds": 6,
+  // Na slovo nebo gesto hráče odpoví nejbližší cizinec do answerDistance, po answerDelaySeconds.
+  "answerDistance": 6,
+  "answerDelaySeconds": 0.5,
+  // Ukázat cizinci rostlinu: cizinec do askDistance, nejvýš jednou za askCooldownSeconds.
+  "askDistance": 7,
+  "askCooldownSeconds": 4,
+  // Na co ukazuje (m): k nejbližší vodě a k jedovaté rostlině.
+  "pointPondRadius": 22,
+  "pointPoisonRadius": 20,
+  // Dát věc cizinci: jak blízko musí hráč stát (m).
+  "giveDistance": 2.5,
+  // Dar od kmene: na slovo „jídlo“ nejvýš jednou za giftEveryDays, za darované jídlo jednou za giveBackEveryDays.
+  "giftEveryDays": 1,
+  "giveBackEveryDays": 0.5,
+  "giftCount": 2,
+  // Kdy je část rostliny upečená bezpečná (cizinci ji jedí a darují) a kdy je škodlivá (zahodí ji).
+  "safe": { "minNutrition": 0.15, "maxIrritant": 0.25, "maxToxin": 0.06, "maxNeurotoxin": 0.1 },
+  "harmful": { "irritant": 0.45, "toxin": 0.12, "neurotoxin": 0.2 },
+  // Náhoda chování cizinců (seed světa XOR tohle číslo).
+  "seedSalt": 20941
+}

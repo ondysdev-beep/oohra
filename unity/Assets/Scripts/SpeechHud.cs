@@ -26,6 +26,7 @@ namespace Oohra.Client
         private readonly List<PointMark> _points = new List<PointMark>();
         private ClientSession _session;
         private PlayerViews _players;
+        private StrangerViews _strangers;
         private Camera _camera;
         private GUIStyle _label;
         private GUIStyle _title;
@@ -57,6 +58,28 @@ namespace Oohra.Client
             _session = session;
             _players = players;
             _camera = camera;
+        }
+
+        /// <summary>Bubliny cizinců se kreslí nad jejich postavami.</summary>
+        public void ShowStrangers(StrangerViews strangers)
+        {
+            _strangers = strangers;
+        }
+
+        /// <summary>Klíč bubliny: hráč má své číslo, cizinec záporné (aby se čísla nepletla).</summary>
+        private static int BubbleKey(int id, bool stranger)
+        {
+            return stranger ? -id - 1 : id;
+        }
+
+        private Vector3? BubblePosition(int key)
+        {
+            if (key >= 0)
+            {
+                return _players.WorldPositionOf(key);
+            }
+
+            return _strangers != null ? _strangers.WorldPositionOf(-key - 1) : null;
         }
 
         /// <summary>Je myš nad některým panelem řeči (souřadnice rozhraní)? Klik pak nemá posílat postavu jinam.</summary>
@@ -153,17 +176,17 @@ namespace Oohra.Client
             {
                 var text = Words.Text(speech.Word);
                 var meaning = MeaningOf(speech.Word);
-                if (meaning.HasValue && speech.PlayerId != connection.PlayerId)
+                if (meaning.HasValue && (speech.Stranger || speech.PlayerId != connection.PlayerId))
                 {
                     text += "\n(" + LanguageTexts.ConceptName(meaning.Value) + "?)";
                 }
 
-                _bubbles[speech.PlayerId] = new Bubble(text, LanguageTexts.ToneColor(speech.Tone), Time.time + WordSeconds);
+                _bubbles[BubbleKey(speech.PlayerId, speech.Stranger)] = new Bubble(text, LanguageTexts.ToneColor(speech.Tone), Time.time + WordSeconds);
             }
 
             foreach (var gesture in connection.TakeGestures())
             {
-                _bubbles[gesture.PlayerId] = new Bubble(LanguageTexts.GestureBubble(gesture.Gesture), LanguageTexts.ToneColor(Tone.Calm), Time.time + GestureSeconds);
+                _bubbles[BubbleKey(gesture.PlayerId, gesture.Stranger)] = new Bubble(LanguageTexts.GestureBubble(gesture.Gesture), LanguageTexts.ToneColor(Tone.Calm), Time.time + GestureSeconds);
                 if (gesture.Gesture == Gesture.Point)
                 {
                     _points.Add(new PointMark(WorldCoords.ToUnity(gesture.X, gesture.Y), Time.time + PointSeconds));
@@ -237,7 +260,7 @@ namespace Oohra.Client
             GUI.matrix = Matrix4x4.identity;
             foreach (var pair in _bubbles)
             {
-                var position = _players.WorldPositionOf(pair.Key);
+                var position = BubblePosition(pair.Key);
                 if (pair.Value.Until < Time.time || !position.HasValue)
                 {
                     continue;

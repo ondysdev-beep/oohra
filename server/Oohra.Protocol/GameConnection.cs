@@ -65,6 +65,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Zvířata v okolí (server posílá jen blízká).</summary>
     public AnimalView[] Animals { get; private set; } = [];
 
+    /// <summary>Cizinci z cizích kmenů v okolí (server posílá jen blízké).</summary>
+    public StrangerView[] Strangers { get; private set; } = [];
+
     /// <summary>Zápisník slov (ztratí se smrtí, server pošle nový).</summary>
     public VocabularyView Vocabulary { get; private set; } = new([], []);
 
@@ -294,6 +297,12 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteSetSignature(w, name, mark));
     }
 
+    /// <summary>Dát cizinci jednu věc z hromádky v batohu. Co na to řekne, přijde jako hláška a gesto.</summary>
+    public void GiveToStranger(int strangerId, int stackIndex)
+    {
+        Send(w => Messages.WriteGiveToStranger(w, strangerId, stackIndex));
+    }
+
     /// <summary>Nahlásit hráče, značku nebo obecný problém správci (tlačítko Nahlásit). Odpověď přijde jako hláška.</summary>
     public void Report(ReportTarget target, int targetId, ReportReason reason)
     {
@@ -421,6 +430,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Animals:
                 Animals = Messages.ReadAnimals(reader);
+                break;
+            case MessageType.Strangers:
+                Strangers = Messages.ReadStrangers(reader);
                 break;
             case MessageType.Structures:
                 Structures = Messages.ReadStructures(reader);

@@ -47,6 +47,9 @@ public sealed class ServerConfig
     /// <summary>Do jaké vzdálenosti (metry) hráč dostává polohy zvířat.</summary>
     public double AnimalViewDistance { get; set; } = 40;
 
+    /// <summary>Cizí kmeny (NPC) v táborech ostrova.</summary>
+    public bool Strangers { get; set; } = true;
+
     /// <summary>Kam se zapisují nahlášení (tlačítko Nahlásit), jeden záznam JSON na řádek. Čte je správce.</summary>
     public string ReportsFile { get; set; } = "reports.jsonl";
 

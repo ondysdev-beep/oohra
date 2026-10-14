@@ -58,6 +58,10 @@ namespace Oohra.Client
                     var tribe = (TribeResult)e.Code;
                     warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined or TribeResult.BornAtHome);
                     return For(tribe);
+                case EventKind.Stranger:
+                    var stranger = (StrangerResult)e.Code;
+                    warn = stranger != StrangerResult.Gift && stranger != StrangerResult.Accepted;
+                    return For(stranger);
                 case EventKind.Report:
                     var report = (ReportResult)e.Code;
                     warn = report != ReportResult.Sent;
@@ -109,6 +113,21 @@ namespace Oohra.Client
                 case TribeResult.BornAtHome: return "Narodil ses u svého kmene. Nic nevíš, ale jsi mezi svými.";
                 case TribeResult.NoHome: return "U kmene nebylo kde se narodit (nemá stavby ani živé členy). Probouzíš se v divočině.";
                 default: return "Přijal pozvánku. Je s tebou v kmeni.";
+            }
+        }
+
+        /// <summary>Text k daru od cizince nebo k tomu, co udělal s darovanou věcí (prototyp giftBack a giveTo).</summary>
+        public static string For(StrangerResult result)
+        {
+            switch (result)
+            {
+                case StrangerResult.Gift: return "Cizinec ti podal upečenou rostlinu.";
+                case StrangerResult.GiftNoRoom: return "Cizinec ti chtěl něco dát, ale nemáš v batohu místo.";
+                case StrangerResult.Accepted: return "Cizinec se spokojeně usmívá.";
+                case StrangerResult.Discarded: return "Cizinec zavrtěl hlavou a věc zahodil.";
+                case StrangerResult.Puzzled: return "Cizinec neví, co s tím.";
+                case StrangerResult.TooFar: return "Cizinec je moc daleko. Dojdi k němu.";
+                default: return "Cizinec už tu není.";
             }
         }
 

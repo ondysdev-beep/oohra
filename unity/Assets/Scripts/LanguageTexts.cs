@@ -57,6 +57,7 @@ namespace Oohra.Client
                 case Gesture.Beware: return "Pozor!";
                 case Gesture.Eat: return "Jíst";
                 case Gesture.Invite: return "Pozvat do kmene";
+                case Gesture.Puzzled: return "Pokrčit rameny";
                 default: return "Pít";
             }
         }
@@ -73,6 +74,7 @@ namespace Oohra.Client
                 case Gesture.Beware: return "varovně mává rukama!";
                 case Gesture.Eat: return "dělá, že jí";
                 case Gesture.Invite: return "zve do kmene";
+                case Gesture.Puzzled: return "krčí rameny: ?";
                 default: return "dělá, že pije";
             }
         }

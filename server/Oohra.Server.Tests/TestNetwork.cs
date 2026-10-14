@@ -25,6 +25,8 @@ public sealed class TestNetwork : IDisposable
             Animals = false,
             // Statistiky se v testech jen počítají, do souboru se neukládají.
             StatsFile = string.Empty,
+            // Cizinci by odpovídali na slova a gesta v testech jazyka. Testy cizinců si je zapnou.
+            Strangers = false,
         };
         configure?.Invoke(config);
         Server = new GameServer(config);

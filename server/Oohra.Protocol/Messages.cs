@@ -118,11 +118,17 @@ public sealed record InventoryView(int Capacity, StackView[] Stacks);
 /// <summary>Obsah zásob kmene (koše) podle čísla stavby.</summary>
 public sealed record StockpileView(int StructureId, InventoryView Contents);
 
-/// <summary>Někdo poblíž řekl slovo (jen slabiky a nálada, význam se nepřenáší).</summary>
-public sealed record SpeechView(int PlayerId, byte[] Word, Tone Tone);
+/// <summary>
+/// Někdo poblíž řekl slovo (jen slabiky a nálada, význam se nepřenáší). Stranger: mluvil cizinec, PlayerId je pak
+/// číslo cizince.
+/// </summary>
+public sealed record SpeechView(int PlayerId, byte[] Word, Tone Tone, bool Stranger = false);
 
-/// <summary>Někdo poblíž udělal gesto. U ukázání je (X, Y) místo, kam ukazuje.</summary>
-public readonly record struct GestureView(int PlayerId, Gesture Gesture, float X, float Y);
+/// <summary>Někdo poblíž udělal gesto. U ukázání je (X, Y) místo, kam ukazuje. Stranger: cizinec (PlayerId = jeho číslo).</summary>
+public readonly record struct GestureView(int PlayerId, Gesture Gesture, float X, float Y, bool Stranger = false);
+
+/// <summary>Cizinec z cizího kmene (NPC): kmen 0 nebo 1, poloha, směr pohledu a co dělá.</summary>
+public readonly record struct StrangerView(int Id, int Tribe, float X, float Y, float Facing, StrangerState State);
 
 /// <summary>Slovo v zápisníku hráče: kolikrát zaznělo, v jakých situacích (index SpeechContext) a jaký význam mu hráč dal.</summary>
 public sealed record WordEntryView(byte[] Word, int Heard, int[] Contexts, Concept? Meaning, bool OldVoice);
@@ -605,11 +611,12 @@ public static class Messages
         w.Put(speech.PlayerId);
         PutBytes(w, speech.Word);
         w.Put((byte)speech.Tone);
+        w.Put(speech.Stranger);
     }
 
     public static SpeechView ReadSpeech(NetDataReader r)
     {
-        return new SpeechView(r.GetInt(), GetBytes(r), (Tone)r.GetByte());
+        return new SpeechView(r.GetInt(), GetBytes(r), (Tone)r.GetByte(), r.GetBool());
     }
 
     public static void WriteGestureSeen(NetDataWriter w, GestureView gesture)
@@ -619,11 +626,12 @@ public static class Messages
         w.Put((byte)gesture.Gesture);
         w.Put(gesture.X);
         w.Put(gesture.Y);
+        w.Put(gesture.Stranger);
     }
 
     public static GestureView ReadGestureSeen(NetDataReader r)
     {
-        return new GestureView(r.GetInt(), (Gesture)r.GetByte(), r.GetFloat(), r.GetFloat());
+        return new GestureView(r.GetInt(), (Gesture)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetBool());
     }
 
     /// <summary>Zápisník slov. Posílá se po přihlášení a pak při každé změně.</summary>
@@ -1002,6 +1010,40 @@ public static class Messages
     public static AnimalView[] ReadAnimals(NetDataReader r)
     {
         return ReadList(r, () => new AnimalView(r.GetInt(), (AnimalKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), (AnimalState)r.GetByte()));
+    }
+
+    /// <summary>Cizinci v okolí hráče (posílá se jako zvířata, často a bez opakování).</summary>
+    public static void WriteStrangers(NetDataWriter w, IReadOnlyList<StrangerView> strangers)
+    {
+        w.Put((byte)MessageType.Strangers);
+        w.Put(strangers.Count);
+        foreach (var s in strangers)
+        {
+            w.Put(s.Id);
+            w.Put((byte)s.Tribe);
+            w.Put(s.X);
+            w.Put(s.Y);
+            w.Put(s.Facing);
+            w.Put((byte)s.State);
+        }
+    }
+
+    public static StrangerView[] ReadStrangers(NetDataReader r)
+    {
+        return ReadList(r, () => new StrangerView(r.GetInt(), r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), (StrangerState)r.GetByte()));
+    }
+
+    /// <summary>Dát cizinci jednu věc z hromádky v batohu.</summary>
+    public static void WriteGiveToStranger(NetDataWriter w, int strangerId, int stackIndex)
+    {
+        w.Put((byte)MessageType.GiveToStranger);
+        w.Put(strangerId);
+        w.Put(stackIndex);
+    }
+
+    public static (int StrangerId, int StackIndex) ReadGiveToStranger(NetDataReader r)
+    {
+        return (r.GetInt(), r.GetInt());
     }
 
     private static T[] ReadList<T>(NetDataReader r, Func<T> read)
