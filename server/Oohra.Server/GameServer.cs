@@ -304,6 +304,7 @@ public sealed class GameServer : IDisposable
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: true);
         var player = new PlayerSession(_nextPlayerId++, nickname, character, NewInventory(character), spawn.X, spawn.Y);
         _byNickname[nickname] = player;
+        Island.BirthGuards.Add(spawn.X, spawn.Y, player.Id, Clock.TotalMinutes);
         return player;
     }
 
@@ -480,8 +481,28 @@ public sealed class GameServer : IDisposable
             return;
         }
 
+        if (place.Kind != BuildKind.Door && GuardedBirthPlace(player, place.Kind, place.X, place.Y, place.Angle, place.Length))
+        {
+            BuildAction(player, () => BuildResult.BirthPlaceProtected);
+            return;
+        }
+
         BuildAction(player, () => Island.Structures.Build(
             Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions(), player.Character, player.Id, place.Decoration));
+    }
+
+    /// <summary>Zasahuje stavba do cizího chráněného místa narození? U zdi se hlídá střed i oba konce.</summary>
+    private bool GuardedBirthPlace(PlayerSession player, BuildKind kind, double x, double y, double angle, double length)
+    {
+        var points = new List<Position> { new(x, y) };
+        if (kind is BuildKind.StickWall or BuildKind.DoorFrame)
+        {
+            var ends = Structure.WallEnds(x, y, angle, kind == BuildKind.StickWall ? length : GameData.Building.Wall.Length);
+            points.Add(new Position(ends.X1, ends.Y1));
+            points.Add(new Position(ends.X2, ends.Y2));
+        }
+
+        return points.Any(p => Island.BirthGuards.Blocking(p.X, p.Y, player.Id, Tribes, Clock.TotalMinutes) is not null);
     }
 
     /// <summary>Lov, stažení masa, výroba kopí. Hláška nese druh zvířete (pro text „Divočák padl.“).</summary>
@@ -680,6 +701,7 @@ public sealed class GameServer : IDisposable
         player.X = spawn.X;
         player.Y = spawn.Y;
         player.InputX = player.InputY = 0;
+        Island.BirthGuards.Add(spawn.X, spawn.Y, player.Id, Clock.TotalMinutes);
 
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)));
         SendInventory(player);

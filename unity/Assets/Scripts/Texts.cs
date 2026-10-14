@@ -192,6 +192,7 @@ namespace Oohra.Client
                 case BuildResult.NoDoorway: return "Dveře patří do zdi s otvorem. Miř na otvor.";
                 case BuildResult.NotYours: return "Cizí stavbu může rozebrat jen ten, kdo ji postavil, a jeho kmen.";
                 case BuildResult.NotEmpty: return "V koši něco je. Napřed ho vyber.";
+                case BuildResult.BirthPlaceProtected: return "Tady se nedávno někdo narodil. Den po narození tu smí stavět jen on a jeho kmen.";
                 default: return result.ToString();
             }
         }

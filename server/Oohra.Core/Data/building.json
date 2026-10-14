@@ -54,5 +54,11 @@
     "maxDistance": 3.5,
     // O kolik se v úkrytu zvedne cíl tepla těla (oheň dává 28).
     "warmthBonus": 14
+  },
+  // Místo narození je chráněné před cizí stavbou (návrh 4.1), aby nikdo nezazdil, kde se jiní rodí.
+  // Prvních tolik herních hodin po narození tam do vzdálenosti radius (m) smí stavět jen ten, kdo se narodil, a jeho kmen.
+  "birthGuard": {
+    "hours": 24,
+    "radius": 5
   }
 }
