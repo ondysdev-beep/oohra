@@ -79,7 +79,7 @@ namespace Oohra.Client.Tests
         [Test]
         public void InventorySurvivesTheWire()
         {
-            var inventory = new InventoryView(10, new[] { new StackView(ItemKind.Plant, 3, PlantPart.Fruit, Ripeness.Overripe, Cooking.Baked, 4), new StackView(ItemKind.Stick, 0, PlantPart.Leaf, Ripeness.Unripe, Cooking.Raw, 5) });
+            var inventory = new InventoryView(10, new[] { new StackView(ItemKind.Plant, 3, PlantPart.Fruit, Ripeness.Overripe, Cooking.Baked, 4, false), new StackView(ItemKind.Meat, 0, PlantPart.Leaf, Ripeness.Unripe, Cooking.Raw, 5, true) });
             var writer = new NetDataWriter();
             Messages.WriteInventory(writer, inventory);
             var reader = new NetDataReader(writer.CopyData());

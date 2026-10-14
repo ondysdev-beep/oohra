@@ -235,18 +235,36 @@ namespace Oohra.Client
             Connection.MakeSpear();
         }
 
-        /// <summary>Druh stavby, u které je otevřená nabídka (zeď, zeď s otvorem, dveře).</summary>
-        public BuildKind MenuStructureKind()
+        /// <summary>Rybařit s kopím u vody, u které je otevřená nabídka.</summary>
+        public void Fish()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Water)
+            {
+                Connection.Fish(Menu.TileX, Menu.TileY);
+            }
+        }
+
+        /// <summary>Vzít úlovek z pasti, u které je otevřená nabídka.</summary>
+        public void TakeCatch()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Structure)
+            {
+                Connection.TakeCatch(Menu.Id);
+            }
+        }
+
+        /// <summary>Stavba, u které je otevřená nabídka (null, když už není).</summary>
+        public StructureView? MenuStructure()
         {
             foreach (var structure in Connection.Structures)
             {
                 if (Menu != null && structure.Id == Menu.Id)
                 {
-                    return structure.Kind;
+                    return structure;
                 }
             }
 
-            return BuildKind.StickWall;
+            return null;
         }
 
         public FireView? MenuFire()

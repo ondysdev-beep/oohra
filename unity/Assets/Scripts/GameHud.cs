@@ -328,6 +328,7 @@ namespace Oohra.Client
                     var tile = _session.Connection.World.TileAt(target.TileX, target.TileY);
                     GUI.Label(titleRect, Texts.WaterName(tile).ToUpper(), _title);
                     if (Button(ref buttonRect, "Napít se")) _session.Drink();
+                    if (tile != TileType.Bog && _session.Count(ItemKind.Spear) > 0 && Button(ref buttonRect, "Rybařit")) _session.Fish();
                     break;
                 case TargetKind.Tree:
                     GUI.Label(titleRect, "STROM", _title);
@@ -341,8 +342,7 @@ namespace Oohra.Client
                     DrawFireMenu(titleRect, ref buttonRect);
                     break;
                 case TargetKind.Structure:
-                    GUI.Label(titleRect, StructureViews.NameOf(_session.MenuStructureKind()).ToUpper(), _title);
-                    if (Button(ref buttonRect, "Rozebrat")) _session.RemoveStructure();
+                    DrawStructureMenu(titleRect, ref buttonRect);
                     break;
                 case TargetKind.Animal:
                     DrawAnimalMenu(target, titleRect, ref buttonRect);
@@ -350,6 +350,25 @@ namespace Oohra.Client
             }
 
             return y - 6;
+        }
+
+        /// <summary>U stavby: rozebrat. U pasti vzít úlovek (když v ní něco je) a zvednout ji.</summary>
+        private void DrawStructureMenu(Rect titleRect, ref Rect buttonRect)
+        {
+            var structure = _session.MenuStructure();
+            if (structure == null)
+            {
+                _session.Menu = null;
+                _session.Selected = null;
+                return;
+            }
+
+            var trap = structure.Value.Kind == BuildKind.Trap;
+            var caught = trap && structure.Value.Caught >= 0;
+            var title = StructureViews.NameOf(structure.Value.Kind).ToUpper();
+            GUI.Label(titleRect, caught ? title + " (" + AnimalViews.NameOf((AnimalKind)structure.Value.Caught).ToLower() + ")" : title, _title);
+            if (caught && Button(ref buttonRect, "Vzít úlovek")) _session.TakeCatch();
+            if (Button(ref buttonRect, trap ? "Zvednout past" : "Rozebrat")) _session.RemoveStructure();
         }
 
         /// <summary>U zvířete: živé udeřit (pěstí nebo kopím, i mezerníkem), z mrtvého stáhnout maso.</summary>
@@ -449,7 +468,7 @@ namespace Oohra.Client
             {
                 var stack = inventory.Stacks[i];
                 var plant = stack.Kind == ItemKind.Plant;
-                var food = plant || stack.Kind == ItemKind.Meat;
+                var food = plant || stack.Kind == ItemKind.Meat || stack.Kind == ItemKind.Fish;
                 DrawBar(new Rect(x, y + 6, 18, 18), 1f, plant ? Palette.Leaf(connection.World.Species[stack.SpeciesId]) : Palette.Material(stack.Kind));
                 GUI.Label(new Rect(x + 26, y + 6, 240, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
 
