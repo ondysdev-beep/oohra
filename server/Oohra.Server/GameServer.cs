@@ -44,6 +44,9 @@ public sealed class GameServer : IDisposable
     private int _sentCorpsesVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
+
+    // Kdy se příště uloží statistiky hraní (sekundy od startu serveru).
+    private double _nextStatsSaveAt;
     private string _stockSpoilage = string.Empty;
 
     public GameServer(ServerConfig config)
@@ -59,6 +62,8 @@ public sealed class GameServer : IDisposable
         _commonWords = CommonWords.For(config.Seed);
         Island.Signs.AddAncient(Island);
         Reports = new ReportLog(config.ReportsFile);
+        PlayStats = new PlayStats(config.StatsFile);
+        _nextStatsSaveAt = config.StatsSaveSeconds;
         Animals = new Animals(config.Seed) { Enabled = config.Animals };
         if (config.Animals)
         {
@@ -100,6 +105,9 @@ public sealed class GameServer : IDisposable
     /// <summary>Nahlášení od hráčů (tlačítko Nahlásit), zapisují se do souboru reportsFile.</summary>
     public ReportLog Reports { get; }
 
+    /// <summary>Statistiky hraní pro ladění (ukládají se do souboru statsFile).</summary>
+    public PlayStats PlayStats { get; }
+
     /// <summary>Spustí server. Port 0 = vyber volný port (pro testy).</summary>
     public void Start(int port)
     {
@@ -116,6 +124,11 @@ public sealed class GameServer : IDisposable
     public void Tick(double realSeconds)
     {
         _seconds += realSeconds;
+        if (_seconds >= _nextStatsSaveAt)
+        {
+            _nextStatsSaveAt = _seconds + _config.StatsSaveSeconds;
+            PlayStats.Save();
+        }
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
         Fires.Burn(minutes);
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
@@ -123,6 +136,7 @@ public sealed class GameServer : IDisposable
         foreach (var player in _byPeer.Values)
         {
             Move(player, realSeconds);
+            PlayStats.Online(player.Nickname, realSeconds, DateTime.UtcNow);
             Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
             if (player.Character.IsDead && !player.BodyLeft)
             {
@@ -203,6 +217,7 @@ public sealed class GameServer : IDisposable
     public void Dispose()
     {
         _net.Stop();
+        PlayStats.Save();
     }
 
     internal PlayerSession? FindPlayer(string nickname)
@@ -272,6 +287,7 @@ public sealed class GameServer : IDisposable
         player.SentVocabularyVersion = -1;
         SendInventory(player);
         SendSelfState(player);
+        PlayStats.Joined(player.Nickname, DateTime.UtcNow);
         Log?.Invoke($"{player.Nickname} přišel (hráčů ve hře: {_byPeer.Count}).");
     }
 
@@ -314,6 +330,7 @@ public sealed class GameServer : IDisposable
         var player = new PlayerSession(_nextPlayerId++, nickname, character, NewInventory(character), spawn.X, spawn.Y);
         _byNickname[nickname] = player;
         Island.BirthGuards.Add(spawn.X, spawn.Y, player.Id, Clock.TotalMinutes);
+        player.BornAt = Clock.TotalMinutes;
         return player;
     }
 
@@ -364,6 +381,12 @@ public sealed class GameServer : IDisposable
         if (!_byPeer.TryGetValue(peer.Id, out var player))
         {
             return;
+        }
+
+        if (type != MessageType.Input)
+        {
+            // Pohyb chodí každý snímek, ten se nepočítá.
+            PlayStats.Intent(player.Nickname, type);
         }
 
         if (player.Character.Sleeping && type is not (MessageType.Input or MessageType.Sleep))
@@ -714,6 +737,7 @@ public sealed class GameServer : IDisposable
         player.Y = spawn.Y;
         player.InputX = player.InputY = 0;
         Island.BirthGuards.Add(spawn.X, spawn.Y, player.Id, Clock.TotalMinutes);
+        player.BornAt = Clock.TotalMinutes;
 
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)));
         SendInventory(player);
@@ -814,6 +838,7 @@ public sealed class GameServer : IDisposable
     private void LeaveBody(PlayerSession player)
     {
         player.BodyLeft = true;
+        PlayStats.Died(player.Nickname, player.Character.DeathCause, Clock.TotalMinutes - player.BornAt);
         Island.Corpses.Add(player.X, player.Y, player.Id, player.Character.Traits.Generation, Clock.TotalMinutes, player.Inventory, player.Signature);
         SendInventory(player);
     }
@@ -1060,6 +1085,7 @@ public sealed class GameServer : IDisposable
 
     private void SendEvent(PlayerSession player, GameEvent gameEvent)
     {
+        PlayStats.Result(player.Nickname, gameEvent);
         if (player.Peer is not null)
         {
             SendTo(player.Peer, w => Messages.WriteEvent(w, gameEvent));

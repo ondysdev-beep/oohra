@@ -77,4 +77,7 @@ public sealed class PlayerSession
 
     /// <summary>Kdy hráč naposledy něco nahlásil (sekundy od startu serveru), nejvýš jedno za reportCooldownSeconds.</summary>
     public double LastReportAt { get; set; } = double.NegativeInfinity;
+
+    /// <summary>Kdy se současná postava narodila (herní minuty), kvůli délce života ve statistikách.</summary>
+    public double BornAt { get; set; }
 }

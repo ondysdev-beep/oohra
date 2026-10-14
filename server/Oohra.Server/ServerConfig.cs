@@ -53,6 +53,12 @@ public sealed class ServerConfig
     /// <summary>Nejkratší doba mezi dvěma nahlášeními jednoho hráče (sekundy).</summary>
     public double ReportCooldownSeconds { get; set; } = 30;
 
+    /// <summary>Kam se ukládají statistiky hraní pro ladění (prázdné = neukládat).</summary>
+    public string StatsFile { get; set; } = "stats.json";
+
+    /// <summary>Jak často se statistiky ukládají (skutečné sekundy). Uloží se i při vypnutí serveru.</summary>
+    public double StatsSaveSeconds { get; set; } = 300;
+
     /// <summary>Vyloučení hráči (přezdívky). Správce je sem dopíše po nahlášení, server je nepustí do hry.</summary>
     public List<string> BannedNicknames { get; set; } = [];
 
