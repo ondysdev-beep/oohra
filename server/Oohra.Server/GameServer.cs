@@ -4,6 +4,7 @@ using LiteNetLib.Utils;
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
+using Oohra.Core.Language;
 using Oohra.Core.Plants;
 using Oohra.Core.Rng;
 using Oohra.Core.Time;
@@ -37,6 +38,8 @@ public sealed class GameServer : IDisposable
     private long _tick;
     private int _sentFiresVersion;
     private int _sentStructuresVersion;
+    private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
+    private double _seconds;
 
     public GameServer(ServerConfig config)
     {
@@ -48,6 +51,7 @@ public sealed class GameServer : IDisposable
         _worldView = WorldViews.From(Island);
         _rng = new Mulberry32(config.Seed ^ 0x5E4E);
         _sentVisuals = new PlantVisual[Island.Plants.Count];
+        _commonWords = CommonWords.For(config.Seed);
         Animals = new Animals(config.Seed) { Enabled = config.Animals };
         if (config.Animals)
         {
@@ -98,6 +102,7 @@ public sealed class GameServer : IDisposable
     /// <summary>Jeden krok simulace: čas, pohyb, tělo, a pravidelné zprávy klientům.</summary>
     public void Tick(double realSeconds)
     {
+        _seconds += realSeconds;
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
         Fires.Burn(minutes);
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
@@ -107,6 +112,10 @@ public sealed class GameServer : IDisposable
             Move(player, realSeconds);
             Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
             SendBodyEvents(player);
+            if (player.Character.Vocabulary.Version != player.SentVocabularyVersion)
+            {
+                SendVocabulary(player);
+            }
         }
 
         if (Fires.Version != _sentFiresVersion)
@@ -211,6 +220,7 @@ public sealed class GameServer : IDisposable
         SendTo(peer, w => Messages.WritePlantStates(w, AllPlantVisuals()));
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
         SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
+        player.SentVocabularyVersion = -1;
         SendInventory(player);
         SendSelfState(player);
         Log?.Invoke($"{player.Nickname} přišel (hráčů ve hře: {_byPeer.Count}).");
@@ -245,11 +255,23 @@ public sealed class GameServer : IDisposable
     /// <summary>Nový hráč: první život je Pradávný, narodí se v divočině u vody.</summary>
     private PlayerSession CreatePlayer(string nickname)
     {
-        var character = new Character(0, new Mulberry32(_rng.NextInt(int.MaxValue)));
+        var character = NewCharacter(0);
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: true);
         var player = new PlayerSession(_nextPlayerId++, nickname, character, NewInventory(character), spawn.X, spawn.Y);
         _byNickname[nickname] = player;
         return player;
+    }
+
+    /// <summary>Nová postava. Pradávný zná od narození slova Starého hlasu.</summary>
+    private Character NewCharacter(int generation)
+    {
+        var character = new Character(generation, new Mulberry32(_rng.NextInt(int.MaxValue)));
+        if (character.Traits.IsAncient)
+        {
+            character.Vocabulary.GrantOldVoice(_commonWords);
+        }
+
+        return character;
     }
 
     /// <summary>Prázdný batoh, při zkoušení (startSticks, startStones v server.json) s materiálem na oheň.</summary>
@@ -354,6 +376,20 @@ public sealed class GameServer : IDisposable
             case MessageType.TakeCatch:
                 var trapId = Messages.ReadAnimalAction(reader);
                 HuntAction(player, -1, () => Island.Structures.TakeCatch(trapId, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
+                break;
+            case MessageType.Say:
+                Say(player, Messages.ReadSay(reader));
+                break;
+            case MessageType.Gesture:
+                MakeGesture(player, Messages.ReadGesture(reader));
+                break;
+            case MessageType.SetMeaning:
+                var (word, meaning) = Messages.ReadSetMeaning(reader);
+                if (Words.IsValid(word) && (meaning is null || Enum.IsDefined(meaning.Value)))
+                {
+                    player.Character.Vocabulary.SetMeaning(word, meaning);
+                }
+
                 break;
         }
     }
@@ -547,7 +583,8 @@ public sealed class GameServer : IDisposable
         var generation = GenerationTraits.NextAfterDeath(player.Character.Traits.Generation);
         var deathPlace = new Position(player.X, player.Y);
         player.Lives++;
-        player.Character = new Character(generation, new Mulberry32(_rng.NextInt(int.MaxValue)));
+        player.Character = NewCharacter(generation);
+        player.SentVocabularyVersion = -1;
         player.Inventory = NewInventory(player.Character);
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: false, avoid: deathPlace);
         player.X = spawn.X;
@@ -557,6 +594,76 @@ public sealed class GameServer : IDisposable
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)));
         SendInventory(player);
         SendSelfState(player);
+    }
+
+    // ---------- jazyk a gesta ----------
+
+    /// <summary>
+    /// Hráč řekl slovo. Uslyší ho hráči do hearDistance (i on sám, kvůli bublině). Kdo mluvčího vidí zblízka,
+    /// zapíše si do zápisníku i situaci (u vody, u ohně...). Význam slova hra nikdy neprozradí.
+    /// </summary>
+    private void Say(PlayerSession speaker, (byte[] Word, Tone Tone) say)
+    {
+        var rules = GameData.Language;
+        if (speaker.Character.IsDead || !Words.IsValid(say.Word) || !Enum.IsDefined(say.Tone)
+            || _seconds - speaker.LastSaidAt < rules.SayCooldownSeconds)
+        {
+            return;
+        }
+
+        speaker.LastSaidAt = _seconds;
+        var gesture = _seconds - speaker.LastGestureAt <= rules.Context.GestureSeconds ? speaker.LastGesture : null;
+        var contexts = SpeechContexts.Of(Island, Fires, Animals, speaker.Character, speaker.X, speaker.Y, Clock.TotalMinutes, gesture);
+        var speech = new SpeechView(speaker.Id, say.Word, say.Tone);
+        foreach (var listener in _byPeer.Values)
+        {
+            var distance = Distance(speaker, listener);
+            if (distance > rules.HearDistance)
+            {
+                continue;
+            }
+
+            SendTo(listener.Peer!, w => Messages.WriteSpeech(w, speech));
+            if (listener != speaker && !listener.Character.IsDead && !listener.Character.Sleeping)
+            {
+                listener.Character.Vocabulary.Hear(say.Word, contexts, seesSpeaker: distance <= rules.ContextDistance);
+            }
+        }
+    }
+
+    /// <summary>Gesto vidí hráči do gestureDistance. Kývnutí a vrtění hlavou dají souvislost slovům řečeným hned potom.</summary>
+    private void MakeGesture(PlayerSession player, (Gesture Gesture, float X, float Y) gesture)
+    {
+        if (player.Character.IsDead || !Enum.IsDefined(gesture.Gesture))
+        {
+            return;
+        }
+
+        player.LastGesture = gesture.Gesture;
+        player.LastGestureAt = _seconds;
+        var view = new GestureView(player.Id, gesture.Gesture, gesture.X, gesture.Y);
+        foreach (var viewer in _byPeer.Values)
+        {
+            if (Distance(player, viewer) <= GameData.Language.GestureDistance)
+            {
+                SendTo(viewer.Peer!, w => Messages.WriteGestureSeen(w, view));
+            }
+        }
+    }
+
+    private void SendVocabulary(PlayerSession player)
+    {
+        var vocabulary = player.Character.Vocabulary;
+        player.SentVocabularyVersion = vocabulary.Version;
+        var entries = vocabulary.Entries
+            .Select(e => new WordEntryView(e.Word, e.Heard, e.Contexts, e.Meaning, e.OldVoice))
+            .ToArray();
+        SendTo(player.Peer!, w => Messages.WriteVocabulary(w, new VocabularyView(entries, vocabulary.LastHeard ?? [])));
+    }
+
+    private static double Distance(PlayerSession a, PlayerSession b)
+    {
+        return Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
     }
 
     // ---------- simulace ----------

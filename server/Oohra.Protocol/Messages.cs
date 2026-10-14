@@ -2,6 +2,7 @@ using LiteNetLib.Utils;
 using Oohra.Core;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
+using Oohra.Core.Language;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
 
@@ -95,6 +96,18 @@ public readonly record struct StructureView(int Id, BuildKind Kind, float X, flo
 public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
 
 public sealed record InventoryView(int Capacity, StackView[] Stacks);
+
+/// <summary>Někdo poblíž řekl slovo (jen slabiky a nálada, význam se nepřenáší).</summary>
+public sealed record SpeechView(int PlayerId, byte[] Word, Tone Tone);
+
+/// <summary>Někdo poblíž udělal gesto. U ukázání je (X, Y) místo, kam ukazuje.</summary>
+public readonly record struct GestureView(int PlayerId, Gesture Gesture, float X, float Y);
+
+/// <summary>Slovo v zápisníku hráče: kolikrát zaznělo, v jakých situacích (index SpeechContext) a jaký význam mu hráč dal.</summary>
+public sealed record WordEntryView(byte[] Word, int Heard, int[] Contexts, Concept? Meaning, bool OldVoice);
+
+/// <summary>Celý zápisník slov a naposledy slyšené slovo (prázdné = žádné).</summary>
+public sealed record VocabularyView(WordEntryView[] Entries, byte[] LastHeard);
 
 /// <summary>
 /// Hláška pro hráče: co se stalo s tělem, se sběrem, s pitím, s lovem... U nové úrovně dovednosti nese dovednost
@@ -254,7 +267,138 @@ public static class Messages
         return r.GetInt();
     }
 
+    /// <summary>Říct slovo (1 až 3 slabiky) s náladou.</summary>
+    public static void WriteSay(NetDataWriter w, byte[] word, Tone tone)
+    {
+        w.Put((byte)MessageType.Say);
+        PutWord(w, word);
+        w.Put((byte)tone);
+    }
+
+    public static (byte[] Word, Tone Tone) ReadSay(NetDataReader r)
+    {
+        return (GetWord(r), (Tone)r.GetByte());
+    }
+
+    /// <summary>Udělat gesto. U ukázání je (x, y) místo na mapě, jinak se nepoužije.</summary>
+    public static void WriteGesture(NetDataWriter w, Gesture gesture, float x, float y)
+    {
+        w.Put((byte)MessageType.Gesture);
+        w.Put((byte)gesture);
+        w.Put(x);
+        w.Put(y);
+    }
+
+    public static (Gesture Gesture, float X, float Y) ReadGesture(NetDataReader r)
+    {
+        return ((Gesture)r.GetByte(), r.GetFloat(), r.GetFloat());
+    }
+
+    /// <summary>Zapsat si do zápisníku význam slova (null = smazat).</summary>
+    public static void WriteSetMeaning(NetDataWriter w, byte[] word, Concept? meaning)
+    {
+        w.Put((byte)MessageType.SetMeaning);
+        PutWord(w, word);
+        PutConcept(w, meaning);
+    }
+
+    public static (byte[] Word, Concept? Meaning) ReadSetMeaning(NetDataReader r)
+    {
+        return (GetWord(r), GetConcept(r));
+    }
+
     // ---------- server → klient ----------
+
+    public static void WriteSpeech(NetDataWriter w, SpeechView speech)
+    {
+        w.Put((byte)MessageType.Speech);
+        w.Put(speech.PlayerId);
+        PutWord(w, speech.Word);
+        w.Put((byte)speech.Tone);
+    }
+
+    public static SpeechView ReadSpeech(NetDataReader r)
+    {
+        return new SpeechView(r.GetInt(), GetWord(r), (Tone)r.GetByte());
+    }
+
+    public static void WriteGestureSeen(NetDataWriter w, GestureView gesture)
+    {
+        w.Put((byte)MessageType.GestureSeen);
+        w.Put(gesture.PlayerId);
+        w.Put((byte)gesture.Gesture);
+        w.Put(gesture.X);
+        w.Put(gesture.Y);
+    }
+
+    public static GestureView ReadGestureSeen(NetDataReader r)
+    {
+        return new GestureView(r.GetInt(), (Gesture)r.GetByte(), r.GetFloat(), r.GetFloat());
+    }
+
+    /// <summary>Zápisník slov. Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteVocabulary(NetDataWriter w, VocabularyView vocabulary)
+    {
+        w.Put((byte)MessageType.Vocabulary);
+        w.Put(vocabulary.Entries.Length);
+        foreach (var e in vocabulary.Entries)
+        {
+            PutWord(w, e.Word);
+            w.Put(e.Heard);
+            w.Put((byte)e.Contexts.Length);
+            foreach (var count in e.Contexts)
+            {
+                w.Put(count);
+            }
+
+            PutConcept(w, e.Meaning);
+            w.Put(e.OldVoice);
+        }
+
+        PutWord(w, vocabulary.LastHeard);
+    }
+
+    public static VocabularyView ReadVocabulary(NetDataReader r)
+    {
+        var entries = ReadList(r, () =>
+        {
+            var word = GetWord(r);
+            var heard = r.GetInt();
+            var contexts = new int[r.GetByte()];
+            for (var i = 0; i < contexts.Length; i++)
+            {
+                contexts[i] = r.GetInt();
+            }
+
+            return new WordEntryView(word, heard, contexts, GetConcept(r), r.GetBool());
+        });
+        return new VocabularyView(entries, GetWord(r));
+    }
+
+    private static void PutWord(NetDataWriter w, byte[] word)
+    {
+        w.Put((byte)word.Length);
+        w.Put(word);
+    }
+
+    private static byte[] GetWord(NetDataReader r)
+    {
+        var word = new byte[r.GetByte()];
+        r.GetBytes(word, word.Length);
+        return word;
+    }
+
+    /// <summary>Význam slova jako bajt, 255 = žádný.</summary>
+    private static void PutConcept(NetDataWriter w, Concept? concept)
+    {
+        w.Put(concept.HasValue ? (byte)concept.Value : byte.MaxValue);
+    }
+
+    private static Concept? GetConcept(NetDataReader r)
+    {
+        var value = r.GetByte();
+        return value == byte.MaxValue ? null : (Concept)value;
+    }
 
     public static void WriteLoginResult(NetDataWriter w, LoginResult result)
     {
