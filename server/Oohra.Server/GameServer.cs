@@ -48,6 +48,11 @@ public sealed class GameServer : IDisposable
         _worldView = WorldViews.From(Island);
         _rng = new Mulberry32(config.Seed ^ 0x5E4E);
         _sentVisuals = new PlantVisual[Island.Plants.Count];
+        Animals = new Animals(config.Seed);
+        if (config.Animals)
+        {
+            Animals.Populate(Island, []);
+        }
 
         var listener = new EventBasedNetListener();
         listener.ConnectionRequestEvent += OnConnectionRequest;
@@ -76,6 +81,8 @@ public sealed class GameServer : IDisposable
 
     internal Materials Materials { get; } = new();
 
+    internal Animals Animals { get; }
+
     /// <summary>Spustí server. Port 0 = vyber volný port (pro testy).</summary>
     public void Start(int port)
     {
@@ -93,6 +100,11 @@ public sealed class GameServer : IDisposable
     {
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
         Fires.Burn(minutes);
+        if (_config.Animals)
+        {
+            Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
+        }
+
         foreach (var player in _byPeer.Values)
         {
             Move(player, realSeconds);
@@ -116,6 +128,7 @@ public sealed class GameServer : IDisposable
         if (_tick % _config.SnapshotEveryTicks == 0)
         {
             BroadcastSnapshot();
+            SendAnimals();
         }
 
         if (_tick % _config.SelfStateEveryTicks == 0)
@@ -319,6 +332,17 @@ public sealed class GameServer : IDisposable
                 var structureId = Messages.ReadRemoveStructure(reader);
                 BuildAction(player, () => Island.Structures.Remove(structureId, player.Inventory, player.X, player.Y));
                 break;
+            case MessageType.Attack:
+                var target = Messages.ReadAnimalAction(reader);
+                HuntAction(player, target, () => Animals.Attack(target, new AnimalTarget(player.Id, player.X, player.Y, player.Character), player.Inventory, Clock.TotalMinutes));
+                break;
+            case MessageType.Butcher:
+                var corpse = Messages.ReadAnimalAction(reader);
+                HuntAction(player, corpse, () => Animals.Butcher(corpse, player.Inventory, player.X, player.Y));
+                break;
+            case MessageType.MakeSpear:
+                HuntAction(player, -1, () => Crafting.MakeSpear(player.Inventory, player.Character));
+                break;
         }
     }
 
@@ -333,6 +357,21 @@ public sealed class GameServer : IDisposable
 
         BuildAction(player, () => Island.Structures.Build(
             Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions(), player.Character));
+    }
+
+    /// <summary>Lov, stažení masa, výroba kopí. Hláška nese druh zvířete (pro text „Divočák padl.“).</summary>
+    private void HuntAction(PlayerSession player, int animalId, Func<HuntResult> action)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var kind = Animals.Find(animalId)?.Kind ?? AnimalKind.Rabbit;
+        var result = action();
+        SendEvent(player, new GameEvent(EventKind.Hunt, (byte)result, default, [], Subject: (byte)kind));
+        SendInventory(player);
+        SendSelfState(player);
     }
 
     /// <summary>Stavba: postavit nebo rozebrat. Seznam staveb se všem pošle v příštím ticku.</summary>
@@ -456,12 +495,20 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        var item = inventory.Stacks[index].Item.Plant;
+        var stack = inventory.Stacks[index].Item;
+        var item = stack.Plant;
         switch (action)
         {
             case MessageType.Eat when item is not null:
                 inventory.TakeOne(index);
                 Eating.Eat(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock);
+                break;
+            case MessageType.Eat when stack.Kind == ItemKind.Meat:
+                inventory.TakeOne(index);
+                Eating.EatMeat(player.Character, stack.Cooking, Clock);
+                break;
+            case MessageType.Taste when stack.Kind == ItemKind.Meat:
+                Eating.EatMeat(player.Character, stack.Cooking, Clock, taste: true);
                 break;
             case MessageType.Taste when item is not null:
                 Eating.Taste(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock);
@@ -504,7 +551,7 @@ public sealed class GameServer : IDisposable
     private void Move(PlayerSession player, double realSeconds)
     {
         var c = player.Character;
-        if (c.IsDead || c.Sleeping || c.FaintMinutes > 0 || (player.InputX == 0 && player.InputY == 0))
+        if (c.IsDead || c.Sleeping || c.FaintMinutes > 0 || c.StunSeconds > 0 || (player.InputX == 0 && player.InputY == 0))
         {
             return;
         }
@@ -625,11 +672,41 @@ public sealed class GameServer : IDisposable
         return (byte)bits;
     }
 
+    /// <summary>Hráči ve hře, jak je vidí zvířata.</summary>
+    private List<AnimalTarget> AnimalTargets()
+    {
+        return _byPeer.Values.Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
+    }
+
+    /// <summary>Každému hráči zvířata v jeho okolí (animalViewDistance), ať se neposílá celý ostrov.</summary>
+    private void SendAnimals()
+    {
+        if (!_config.Animals)
+        {
+            return;
+        }
+
+        var range = _config.AnimalViewDistance;
+        foreach (var player in _byPeer.Values)
+        {
+            if (player.Peer is null)
+            {
+                continue;
+            }
+
+            var near = Animals.All
+                .Where(a => Math.Abs(a.X - player.X) < range && Math.Abs(a.Y - player.Y) < range)
+                .Select(a => new AnimalView(a.Id, a.Kind, (float)a.X, (float)a.Y, (float)a.Dir, a.State))
+                .ToArray();
+            SendTo(player.Peer, w => Messages.WriteAnimals(w, near), DeliveryMethod.Sequenced);
+        }
+    }
+
     private static StackView StackViewOf(ItemStack stack)
     {
         var plant = stack.Item.Plant;
         return plant is null
-            ? new StackView(stack.Item.Kind, 0, default, default, default, stack.Count)
+            ? new StackView(stack.Item.Kind, 0, default, default, stack.Item.Cooking, stack.Count)
             : new StackView(stack.Item.Kind, plant.SpeciesId, plant.Part, plant.Ripeness, plant.Cooking, stack.Count);
     }
 

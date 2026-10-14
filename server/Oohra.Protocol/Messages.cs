@@ -88,10 +88,16 @@ public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 /// <summary>Stavba hráče (zeď, zeď s otvorem, dveře): střed, úhel v radiánech (0 = na východ, y mapy roste na jih) a délka v metrech.</summary>
 public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length);
 
+/// <summary>Zvíře v okolí hráče: poloha, směr pohledu (radiány) a co dělá. Životy se neposílají.</summary>
+public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
+
 public sealed record InventoryView(int Capacity, StackView[] Stacks);
 
-/// <summary>Hláška pro hráče: co se stalo s tělem, se sběrem nebo s pitím. U nové úrovně dovednosti i dovednost a úroveň.</summary>
-public sealed record GameEvent(EventKind Kind, byte Code, PlantPart Part, TasteNote[] Notes, byte Skill = 0, byte Level = 0);
+/// <summary>
+/// Hláška pro hráče: co se stalo s tělem, se sběrem, s pitím, s lovem... U nové úrovně dovednosti nese dovednost
+/// a úroveň, u lovu druh zvířete (Subject).
+/// </summary>
+public sealed record GameEvent(EventKind Kind, byte Code, PlantPart Part, TasteNote[] Notes, byte Skill = 0, byte Level = 0, byte Subject = 0);
 
 public readonly record struct PlantStateChange(int PlantId, PlantVisual Visual);
 
@@ -162,6 +168,24 @@ public static class Messages
     public static int ReadStackAction(NetDataReader r)
     {
         return r.GetInt();
+    }
+
+    /// <summary>Lov: Attack (zaútočit) nebo Butcher (stáhnout maso) na zvíře podle čísla.</summary>
+    public static void WriteAnimalAction(NetDataWriter w, MessageType type, int animalId)
+    {
+        w.Put((byte)type);
+        w.Put(animalId);
+    }
+
+    public static int ReadAnimalAction(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
+    /// <summary>Vyrobit kopí z klacku a kamene.</summary>
+    public static void WriteMakeSpear(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.MakeSpear);
     }
 
     /// <summary>Lehnout si ke spánku, nebo vstát (když postava spí).</summary>
@@ -431,6 +455,7 @@ public static class Messages
         w.PutBytesWithLength(e.Notes.Select(n => (byte)n).ToArray());
         w.Put(e.Skill);
         w.Put(e.Level);
+        w.Put(e.Subject);
     }
 
     public static GameEvent ReadEvent(NetDataReader r)
@@ -441,7 +466,8 @@ public static class Messages
         var notes = r.GetBytesWithLength().Select(b => (TasteNote)b).ToArray();
         var skill = r.GetByte();
         var level = r.GetByte();
-        return new GameEvent(kind, code, part, notes, skill, level);
+        var subject = r.GetByte();
+        return new GameEvent(kind, code, part, notes, skill, level, subject);
     }
 
     public static void WritePlantStates(NetDataWriter w, IReadOnlyList<PlantStateChange> changes)
@@ -498,6 +524,27 @@ public static class Messages
     public static StructureView[] ReadStructures(NetDataReader r)
     {
         return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat()));
+    }
+
+    /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>
+    public static void WriteAnimals(NetDataWriter w, IReadOnlyList<AnimalView> animals)
+    {
+        w.Put((byte)MessageType.Animals);
+        w.Put(animals.Count);
+        foreach (var a in animals)
+        {
+            w.Put(a.Id);
+            w.Put((byte)a.Kind);
+            w.Put(a.X);
+            w.Put(a.Y);
+            w.Put(a.Dir);
+            w.Put((byte)a.State);
+        }
+    }
+
+    public static AnimalView[] ReadAnimals(NetDataReader r)
+    {
+        return ReadList(r, () => new AnimalView(r.GetInt(), (AnimalKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), (AnimalState)r.GetByte()));
     }
 
     private static T[] ReadList<T>(NetDataReader r, Func<T> read)

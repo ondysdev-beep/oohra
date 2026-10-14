@@ -57,6 +57,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Stavby hráčů (zdi).</summary>
     public StructureView[] Structures { get; private set; } = [];
 
+    /// <summary>Zvířata v okolí (server posílá jen blízká).</summary>
+    public AnimalView[] Animals { get; private set; } = [];
+
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
     public void Connect(string host, int port, string inviteCode, string nickname)
@@ -121,6 +124,24 @@ public sealed class GameConnection : IDisposable
     public void ToggleSleep()
     {
         Send(Messages.WriteSleep);
+    }
+
+    /// <summary>Zaútočit na zvíře (pěstí, nebo kopím, když ho má v batohu).</summary>
+    public void Attack(int animalId)
+    {
+        Send(w => Messages.WriteAnimalAction(w, MessageType.Attack, animalId));
+    }
+
+    /// <summary>Stáhnout maso z mrtvého zvířete.</summary>
+    public void Butcher(int animalId)
+    {
+        Send(w => Messages.WriteAnimalAction(w, MessageType.Butcher, animalId));
+    }
+
+    /// <summary>Vyrobit kopí (klacek a kámen).</summary>
+    public void MakeSpear()
+    {
+        Send(Messages.WriteMakeSpear);
     }
 
     public void Reborn()
@@ -252,6 +273,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Fires:
                 Fires = Messages.ReadFires(reader);
+                break;
+            case MessageType.Animals:
+                Animals = Messages.ReadAnimals(reader);
                 break;
             case MessageType.Structures:
                 Structures = Messages.ReadStructures(reader);

@@ -14,5 +14,8 @@
   "startSticks": 0,
   "startStones": 0,
   // Jak často vypsat výkon serveru (sekundy, jen když někdo hraje). 0 = nevypisovat.
-  "statsEverySeconds": 10
+  "statsEverySeconds": 10,
+  // Zvířata na ostrově a do jaké vzdálenosti (metry) hráč dostává jejich polohy.
+  "animals": true,
+  "animalViewDistance": 40
 }

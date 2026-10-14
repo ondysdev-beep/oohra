@@ -22,6 +22,7 @@ public sealed class TestNetwork : IDisposable
             WorldSize = 84,
             InviteCodes = [InviteCode],
             TimeSpeed = timeSpeed,
+            Animals = false,
         };
         configure?.Invoke(config);
         Server = new GameServer(config);
