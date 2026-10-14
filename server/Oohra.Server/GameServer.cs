@@ -41,6 +41,7 @@ public sealed class GameServer : IDisposable
     private int _sentStructuresVersion;
     private int _sentSignsVersion;
     private int _sentRocksVersion;
+    private int _sentCorpsesVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
     private string _stockSpoilage = string.Empty;
@@ -119,6 +120,11 @@ public sealed class GameServer : IDisposable
         {
             Move(player, realSeconds);
             Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
+            if (player.Character.IsDead && !player.BodyLeft)
+            {
+                LeaveBody(player);
+            }
+
             SendBodyEvents(player);
             if (player.Character.Vocabulary.Version != player.SentVocabularyVersion)
             {
@@ -132,6 +138,13 @@ public sealed class GameServer : IDisposable
         {
             _sentFiresVersion = Fires.Version;
             Broadcast(w => Messages.WriteFires(w, FireViews()));
+        }
+
+        Island.Corpses.Decay(Clock.TotalMinutes);
+        if (Island.Corpses.Version != _sentCorpsesVersion)
+        {
+            _sentCorpsesVersion = Island.Corpses.Version;
+            Broadcast(w => Messages.WriteCorpses(w, CorpseViews()));
         }
 
         Island.Rocks.Regrow(Clock.TotalMinutes);
@@ -248,6 +261,8 @@ public sealed class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
         SendTo(peer, w => Messages.WriteDecorationTypes(w, DecorationTypeViews()));
         SendTo(peer, w => Messages.WriteRockPiles(w, RockPileViews()));
+        SendTo(peer, w => Messages.WriteCorpses(w, CorpseViews()));
+        SendSignature(player);
         player.SentTribeVersion = -1;
         player.SentStockKey = string.Empty;
         player.SentVocabularyVersion = -1;
@@ -415,11 +430,18 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.DrawSign:
                 var (signX, signY, bits) = Messages.ReadDrawSign(reader);
-                SignAction(player, () => Island.Signs.Draw(Island, player.Id, player.X, player.Y, signX, signY, bits, Clock.TotalMinutes));
+                SignAction(player, () => Island.Signs.Draw(Island, player.Id, player.X, player.Y, signX, signY, bits, Clock.TotalMinutes, player.Signature));
                 break;
             case MessageType.EraseSign:
                 var signId = Messages.ReadEraseSign(reader);
                 SignAction(player, () => Island.Signs.Erase(signId, player.Id, player.X, player.Y, Tribes));
+                break;
+            case MessageType.TakeFromCorpse:
+                var (corpseId, corpseIndex) = Messages.ReadStockAction(reader);
+                CorpseAction(player, corpseId, corpseIndex);
+                break;
+            case MessageType.SetSignature:
+                SetSignature(player, Messages.ReadSetSignature(reader));
                 break;
             case MessageType.InviteToTribe:
                 InviteToTribe(player, Messages.ReadInviteToTribe(reader));
@@ -647,6 +669,7 @@ public sealed class GameServer : IDisposable
         var deathPlace = new Position(player.X, player.Y);
         player.Lives++;
         player.Character = NewCharacter(generation);
+        player.BodyLeft = false;
         player.SentVocabularyVersion = -1;
         player.Inventory = NewInventory(player.Character);
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: false, avoid: deathPlace);
@@ -712,6 +735,54 @@ public sealed class GameServer : IDisposable
                 SendTo(viewer.Peer!, w => Messages.WriteGestureSeen(w, view));
             }
         }
+    }
+
+    // ---------- těla a podpisy ----------
+
+    /// <summary>Postava zemřela: na místě zůstane tělo s věcmi z batohu (návrh 7.4), batoh je prázdný.</summary>
+    private void LeaveBody(PlayerSession player)
+    {
+        player.BodyLeft = true;
+        Island.Corpses.Add(player.X, player.Y, player.Id, player.Character.Traits.Generation, Clock.TotalMinutes, player.Inventory, player.Signature);
+        SendInventory(player);
+    }
+
+    private void CorpseAction(PlayerSession player, int corpseId, int stackIndex)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = Island.Corpses.Take(corpseId, stackIndex, player.Inventory, player.X, player.Y, player.Id, Tribes, Clock.TotalMinutes);
+        SendEvent(player, new GameEvent(EventKind.Corpse, (byte)result, default, []));
+        SendInventory(player);
+    }
+
+    /// <summary>Podpis: jméno ze slabik (1 až 3) a znak 12 × 12. Neplatný se ignoruje.</summary>
+    private void SetSignature(PlayerSession player, (byte[] Name, byte[] Mark) signature)
+    {
+        if (!Signature.IsValid(signature.Name, signature.Mark))
+        {
+            return;
+        }
+
+        player.Signature = new Signature(signature.Name, signature.Mark);
+        SendSignature(player);
+    }
+
+    private void SendSignature(PlayerSession player)
+    {
+        var signature = player.Signature;
+        SendTo(player.Peer!, w => Messages.WriteSignature(w, signature?.Name ?? [], signature?.Mark ?? []));
+    }
+
+    private CorpseView[] CorpseViews()
+    {
+        return Island.Corpses.All.Select(c => new CorpseView(
+            c.Id, (float)c.X, (float)c.Y, c.OwnerId, c.Generation, c.DiedAt, c.TribeOnlyUntil,
+            new InventoryView(c.Items.Capacity, c.Items.Stacks.Select(StackViewOf).ToArray()),
+            c.Signature?.Name ?? [], c.Signature?.Mark ?? [])).ToArray();
     }
 
     // ---------- kmeny a zásoby ----------
@@ -1001,7 +1072,7 @@ public sealed class GameServer : IDisposable
     {
         return Island.Signs.All.Select(s => new SignView(
             s.Id, (float)s.X, (float)s.Y, s.Bits, s.AuthorId, s.CreatedAt, Signs.WeathersAt(s) ?? -1, s.Carved, s.Ancient,
-            s.Record?.SpeciesId ?? -1, s.Record?.Name ?? [], s.Record?.Tags.ToArray() ?? [])).ToArray();
+            s.Record?.SpeciesId ?? -1, s.Record?.Name ?? [], s.Record?.Tags.ToArray() ?? [], s.Signature?.Name ?? [], s.Signature?.Mark ?? [])).ToArray();
     }
 
     private static PlayerInfo InfoOf(PlayerSession player)

@@ -82,6 +82,14 @@ public sealed class GameConnection : IDisposable
     /// <summary>Hromady kamenů na skalách (i prázdné, Stones 0).</summary>
     public RockPileView[] RockPiles { get; private set; } = [];
 
+    /// <summary>Těla mrtvých hráčů (i s věcmi).</summary>
+    public CorpseView[] Corpses { get; private set; } = [];
+
+    /// <summary>Můj podpis: jméno ze slabik (prázdné = ještě žádný) a znak.</summary>
+    public byte[] SignatureName { get; private set; } = [];
+
+    public byte[] SignatureMark { get; private set; } = [];
+
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
     public void Connect(string host, int port, string inviteCode, string nickname)
@@ -272,6 +280,18 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteStockAction(w, MessageType.TakeItem, stockpileId, stackIndex));
     }
 
+    /// <summary>Vzít z těla celou hromádku do batohu.</summary>
+    public void TakeFromCorpse(int corpseId, int stackIndex)
+    {
+        Send(w => Messages.WriteStockAction(w, MessageType.TakeFromCorpse, corpseId, stackIndex));
+    }
+
+    /// <summary>Nastavit si podpis (jméno ze slabik a znak).</summary>
+    public void SetSignature(byte[] name, byte[] mark)
+    {
+        Send(w => Messages.WriteSetSignature(w, name, mark));
+    }
+
     /// <summary>Kdo tě od posledního volání pozval do kmene (čísla hráčů).</summary>
     public List<int> TakeInvites()
     {
@@ -423,6 +443,12 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.RockPiles:
                 RockPiles = Messages.ReadRockPiles(reader);
+                break;
+            case MessageType.Corpses:
+                Corpses = Messages.ReadCorpses(reader);
+                break;
+            case MessageType.Signature:
+                (SignatureName, SignatureMark) = Messages.ReadSignature(reader);
                 break;
         }
     }
