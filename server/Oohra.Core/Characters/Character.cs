@@ -1,4 +1,5 @@
 using Oohra.Core.Data;
+using Oohra.Core.Language;
 using Oohra.Core.Rng;
 using Oohra.Core.World;
 
@@ -61,6 +62,9 @@ public sealed class Character
 
     public double Health { get; set; }
 
+    /// <summary>Kdy naposledy jedl nebo ochutnával (herní minuty), pro souvislost „u jídla“ v jazyce.</summary>
+    public double LastAte { get; set; } = double.NegativeInfinity;
+
     // Skryté hodnoty těla.
     public double Toxin { get; set; }
 
@@ -121,6 +125,9 @@ public sealed class Character
 
     /// <summary>Dovednosti postavy. Smrtí se ztratí (nová postava začíná od nuly).</summary>
     public Skills Skills { get; } = new();
+
+    /// <summary>Zápisník slov. Smrtí se ztratí (nová postava začíná s prázdným, Pradávný se Starým hlasem).</summary>
+    public Vocabulary Vocabulary { get; } = new();
 
     /// <summary>Postava spí (nehýbe se, síla se vrací, dovednosti se po probuzení utvrdí).</summary>
     public bool Sleeping { get; private set; }

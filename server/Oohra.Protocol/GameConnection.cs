@@ -1,5 +1,6 @@
 using LiteNetLib;
 using LiteNetLib.Utils;
+using Oohra.Core.Language;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
 
@@ -16,6 +17,8 @@ public sealed class GameConnection : IDisposable
     private readonly NetDataWriter _writer = new();
     private readonly Dictionary<int, PlayerInfo> _players = [];
     private readonly Queue<GameEvent> _events = new();
+    private readonly Queue<SpeechView> _speech = new();
+    private readonly Queue<GestureView> _gestures = new();
     private NetPeer? _server;
     private string _inviteCode = string.Empty;
     private string _nickname = string.Empty;
@@ -59,6 +62,9 @@ public sealed class GameConnection : IDisposable
 
     /// <summary>Zvířata v okolí (server posílá jen blízká).</summary>
     public AnimalView[] Animals { get; private set; } = [];
+
+    /// <summary>Zápisník slov (ztratí se smrtí, server pošle nový).</summary>
+    public VocabularyView Vocabulary { get; private set; } = new([], []);
 
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
@@ -191,6 +197,40 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteRemoveStructure(w, structureId));
     }
 
+    /// <summary>Říct slovo (1 až 3 slabiky, čísla 0 až 9) s náladou.</summary>
+    public void Say(byte[] word, Tone tone = Tone.Calm)
+    {
+        Send(w => Messages.WriteSay(w, word, tone));
+    }
+
+    /// <summary>Udělat gesto. U ukázání je (x, y) místo na mapě.</summary>
+    public void MakeGesture(Gesture gesture, float x = 0, float y = 0)
+    {
+        Send(w => Messages.WriteGesture(w, gesture, x, y));
+    }
+
+    /// <summary>Zapsat si význam slova do zápisníku (null = smazat).</summary>
+    public void SetMeaning(byte[] word, Concept? meaning)
+    {
+        Send(w => Messages.WriteSetMeaning(w, word, meaning));
+    }
+
+    /// <summary>Slova, která od posledního volání zazněla poblíž (i vlastní).</summary>
+    public List<SpeechView> TakeSpeech()
+    {
+        var speech = _speech.ToList();
+        _speech.Clear();
+        return speech;
+    }
+
+    /// <summary>Gesta, která od posledního volání někdo poblíž udělal (i vlastní).</summary>
+    public List<GestureView> TakeGestures()
+    {
+        var gestures = _gestures.ToList();
+        _gestures.Clear();
+        return gestures;
+    }
+
     /// <summary>Upéct jeden kus z hromádky u ohně.</summary>
     public void Bake(int stackIndex)
     {
@@ -291,6 +331,15 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Structures:
                 Structures = Messages.ReadStructures(reader);
+                break;
+            case MessageType.Speech:
+                _speech.Enqueue(Messages.ReadSpeech(reader));
+                break;
+            case MessageType.GestureSeen:
+                _gestures.Enqueue(Messages.ReadGestureSeen(reader));
+                break;
+            case MessageType.Vocabulary:
+                Vocabulary = Messages.ReadVocabulary(reader);
                 break;
         }
     }

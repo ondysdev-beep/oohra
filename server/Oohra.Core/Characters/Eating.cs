@@ -41,6 +41,7 @@ public static class Eating
 
         var rules = GameData.Body;
         var now = clock.TotalMinutes;
+        c.LastAte = now;
 
         if (!taste && InstinctStops(c, v, rules.Instinct))
         {

@@ -60,6 +60,11 @@ public static class GameData
 
     public static AnimalRules Animals => _animals.Value;
 
+    private static readonly Lazy<LanguageRules> _language =
+        new(() => Load<LanguageRules>("language.json"));
+
+    public static LanguageRules Language => _language.Value;
+
     public static GatheringRules Gathering => _gathering.Value;
 
     public static MovementRules Movement => _movement.Value;

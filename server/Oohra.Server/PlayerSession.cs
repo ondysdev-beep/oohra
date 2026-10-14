@@ -1,6 +1,7 @@
 using LiteNetLib;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
+using Oohra.Core.Language;
 
 namespace Oohra.Server;
 
@@ -49,4 +50,15 @@ public sealed class PlayerSession
 
     /// <summary>Které hromádky byly zkažené, když se batoh naposledy posílal (ať se pošle znovu, až se něco zkazí).</summary>
     public string SentSpoilage { get; set; } = string.Empty;
+
+    /// <summary>Verze zápisníku slov, která byla naposledy poslána (-1 = poslat znovu).</summary>
+    public int SentVocabularyVersion { get; set; } = -1;
+
+    /// <summary>Kdy hráč naposledy něco řekl (sekundy od startu serveru), kvůli pauze mezi slovy.</summary>
+    public double LastSaidAt { get; set; } = double.NegativeInfinity;
+
+    /// <summary>Poslední gesto a kdy ho udělal (kývnutí a vrtění hlavou dávají slovům souvislost).</summary>
+    public Gesture? LastGesture { get; set; }
+
+    public double LastGestureAt { get; set; } = double.NegativeInfinity;
 }

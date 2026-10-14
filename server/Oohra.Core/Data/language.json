@@ -1,0 +1,28 @@
+// Jazyk ze slabik (návrh 9, prototyp npcSay a grantOldVoice v part5.js).
+// Hra přenáší jen slabiky. Co slovo znamená, si hráč domýšlí sám podle toho, v jaké situaci ho slyšel.
+{
+  // Do jaké vzdálenosti (m) je slovo slyšet.
+  "hearDistance": 14,
+  // Do jaké vzdálenosti (m) posluchač vidí, v jaké situaci mluvčí je (zápis souvislosti do slovníku).
+  "contextDistance": 12,
+  // Nejkratší pauza mezi dvěma slovy jednoho hráče (s).
+  "sayCooldownSeconds": 0.8,
+  // Do jaké vzdálenosti (m) jsou vidět gesta.
+  "gestureDistance": 14,
+  // Kdy je mluvčí „u vody“, „u ohně“, „zvíře poblíž“, „u jídla“ a jak dlouho platí kývnutí a vrtění hlavou.
+  "context": {
+    "waterDistance": 2.5,
+    "fireDistance": 3,
+    "animalDistance": 10,
+    "eatingMinutes": 5,
+    "gestureSeconds": 4
+  },
+  // Starý hlas: slova z jazyka Pradávných (prototyp makeVocab a common v part1.js).
+  // Pořadí pojmů určuje, jak se slova vylosují ze seedu světa, nesmí se měnit.
+  "commonWords": {
+    "seedSalt": 425,
+    "concepts": [ "Food", "Water", "Danger", "Fire", "Yes", "No", "Poison" ],
+    // Tato slova zná první generace (Pradávní) už od narození.
+    "oldVoice": [ "Water", "Danger", "Yes", "No" ]
+  }
+}
