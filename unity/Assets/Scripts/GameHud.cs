@@ -60,6 +60,7 @@ namespace Oohra.Client
             }
 
             if (keyboard.bKey.wasPressedThisFrame) _session.BackpackOpen = !_session.BackpackOpen;
+            if (keyboard.jKey.wasPressedThisFrame) _session.BackpackOpen = false;
             if (keyboard.nKey.wasPressedThisFrame) _session.ToggleSleep();
             if (keyboard.kKey.wasPressedThisFrame) _session.SkillsOpen = !_session.SkillsOpen;
             if (keyboard.spaceKey.wasPressedThisFrame && !BuildMode.IsActive) _session.Attack();
@@ -119,7 +120,8 @@ namespace Oohra.Client
             {
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
                     || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
-                    || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse);
+                    || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse)
+                    || SpeechHud.Covers(mouse);
             }
         }
 
@@ -160,8 +162,8 @@ namespace Oohra.Client
                 + $" · hráčů na ostrově: {players}";
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
-            GUI.Label(new Rect(12, 84, 760, 20),
-                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · Q, E, kolečko = kamera", _label);
+            GUI.Label(new Rect(12, 84, 980, 20),
+                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · T mluvit · V gesta · J slovník · Q, E, kolečko = kamera", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>

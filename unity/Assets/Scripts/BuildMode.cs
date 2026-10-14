@@ -229,7 +229,7 @@ namespace Oohra.Client
             var digits = new[] { keyboard.digit1Key, keyboard.digit2Key, keyboard.digit3Key, keyboard.digit4Key, keyboard.digit5Key, keyboard.digit6Key };
             for (var i = 0; i < Catalog.Length && i < digits.Length; i++)
             {
-                if (digits[i].wasPressedThisFrame) Open(Catalog[i]);
+                if (digits[i].wasPressedThisFrame && !keyboard.shiftKey.isPressed) Open(Catalog[i]);
             }
 
             if (keyboard.rKey.wasPressedThisFrame) Modular = !Modular;
