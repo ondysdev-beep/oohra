@@ -19,9 +19,17 @@ namespace Oohra.Client
         /// <summary>Průhledný materiál URP/Lit (koruny stromů u postavy). Průhlednost je alfa v barvě.</summary>
         public const string FadeResource = "OohraFade";
 
+        /// <summary>Materiál zemi (URP/Terrain/Lit), míchá textury dlaždic.</summary>
+        public const string TerrainResource = "OohraTerrain";
+
+        /// <summary>Materiál vodní hladiny (URP/Lit průhledný, hladký, s normálovou mapou vlnek).</summary>
+        public const string WaterResource = "OohraWater";
+
         private static Material _lit;
         private static Material _glow;
         private static Material _fade;
+        private static Material _terrain;
+        private static Material _water;
 
         public static Material Fade
         {
@@ -32,6 +40,16 @@ namespace Oohra.Client
         public static Material Lit
         {
             get { return Load(ref _lit, LitResource); }
+        }
+
+        public static Material Terrain
+        {
+            get { return Load(ref _terrain, TerrainResource); }
+        }
+
+        public static Material Water
+        {
+            get { return Load(ref _water, WaterResource); }
         }
 
         /// <summary>Sdílený materiál URP/Unlit (plamen ohně). Barvu nastavuje SetGlow.</summary>

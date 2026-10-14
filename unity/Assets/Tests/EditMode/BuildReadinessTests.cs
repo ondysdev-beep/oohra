@@ -12,6 +12,8 @@ namespace Oohra.Client.Tests
         [TestCase("OohraLit", "Universal Render Pipeline/Lit")]
         [TestCase("OohraGlow", "Universal Render Pipeline/Unlit")]
         [TestCase("OohraFade", "Universal Render Pipeline/Lit")]
+        [TestCase("OohraTerrain", "Universal Render Pipeline/Terrain/Lit")]
+        [TestCase("OohraWater", "Universal Render Pipeline/Lit")]
         public void MaterialIsAnAsset(string resource, string shader)
         {
             var material = Resources.Load<Material>(resource);

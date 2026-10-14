@@ -64,6 +64,8 @@ namespace Oohra.Client.Editor
             EnsureMaterial(Palette.LitResource, "Universal Render Pipeline/Lit");
             EnsureMaterial(Palette.GlowResource, "Universal Render Pipeline/Unlit");
             EnsureMaterial(Palette.FadeResource, "Universal Render Pipeline/Lit", transparent: true);
+            EnsureMaterial(Palette.TerrainResource, "Universal Render Pipeline/Terrain/Lit");
+            EnsureMaterial(Palette.WaterResource, "Universal Render Pipeline/Lit", transparent: true, water: true);
             EnsureCatalog();
         }
 
@@ -92,7 +94,7 @@ namespace Oohra.Client.Editor
             return catalog;
         }
 
-        private static void EnsureMaterial(string resource, string shader, bool transparent = false)
+        private static void EnsureMaterial(string resource, string shader, bool transparent = false, bool water = false)
         {
             var path = "Assets/Resources/" + resource + ".mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(path) != null)
@@ -109,6 +111,13 @@ namespace Oohra.Client.Editor
             if (transparent)
             {
                 Palette.MakeTransparent(material);
+            }
+
+            if (water)
+            {
+                // Hladká lesklá hladina s vlnkami (normálovou mapu dodá hra nebo katalog vzhledu).
+                material.SetFloat("_Smoothness", 0.92f);
+                material.EnableKeyword("_NORMALMAP");
             }
 
             AssetDatabase.CreateAsset(material, path);

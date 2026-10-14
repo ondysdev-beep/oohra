@@ -4,8 +4,8 @@ Hra umí místo jednoduchých tvarů (kostky, válce, koule) použít tvoje mode
 říká **katalog vzhledu**. Prázdné políčko v katalogu znamená, že hra použije tvar z kódu, takže
 modely můžeš přidávat postupně, jeden po druhém.
 
-Zatím jde vyměnit: **stromy, rostliny, zeď, zeď s otvorem, dveře, past, koš se zásobami a zvířata.**
-Zem, voda, skály, oheň a postava hráče přijdou v dalších krocích.
+Zatím jde vyměnit: **stromy, rostliny, zeď, zeď s otvorem, dveře, past, koš se zásobami, zvířata,
+textury zemi, kameny na skalách a vodu.** Oheň a postava hráče přijdou v dalších krocích.
 
 ## Kde je katalog
 
@@ -86,6 +86,45 @@ ze serveru jako celé číslo v parametru **`Stav`** (typ Int). V Animatoru udě
 
 Bez Animatoru se model jen posouvá a otáčí.
 
+## Zem: textury dlaždic
+
+Zem je Unity **Terrain**. Každý druh dlaždice má svou texturu a na hranách se textury plynule prolínají.
+Souš je rovně ve výšce 0, dno moře a jezírek je pod hladinou a ke břehu se zvedá.
+
+V katalogu jsou políčka pro textury:
+
+| Políčko | Kde se použije |
+|---|---|
+| **GrassTexture** | tráva |
+| **SandTexture** | písek, pláž a dno moře |
+| **ForestTexture** | les (zem pod stromy) |
+| **RockTexture** | skála |
+| **BogTexture** | bažina a bahnité dno jezírek |
+
+- Textura musí jít **opakovat bez švů** (anglicky „seamless“ nebo „tileable“). Takové najdeš třeba na
+  [ambientCG](https://ambientcg.com) nebo [Poly Haven](https://polyhaven.com) (zdarma, CC0).
+  Stačí obrázek barvy („Color“ nebo „Albedo“), 512 nebo 1024 px.
+- **GroundTextureSize** říká, po kolika metrech se textura opakuje (výchozí 4 m).
+- Prázdné políčko = hra si texturu vygeneruje ze základní barvy dlaždice (jemně skvrnitá barva).
+
+## Kameny na skalách
+
+Na skalních dlaždicích leží nízké kameny (asi na každé druhé). Políčko **Rocks**: jeden nebo víc prefabů
+kamenů. Střed dole uprostřed, velikost asi 35 cm. Hra je natočí a trochu zmenší. Musí zůstat nízké:
+přes skálu se chodí, vysoký balvan by postava „prošla“. Prázdné políčko = šedé zploštělé kuličky.
+
+## Voda
+
+Moře i jezírka mají jednu společnou hladinu kousek pod souší. Je průhledná a lesklá (odráží oblohu)
+a pomalu se po ní posouvají vlnky.
+
+| Políčko | Co dělá |
+|---|---|
+| **WaterColor** | barva hladiny, alfa (A) je průhlednost (víc = méně je vidět dno) |
+| **WaterNormalMap** | obrázek vlnek, normálová mapa. Po importu v Unity nastav **Texture Type: Normal map**. Prázdné = vlnky vygenerované hrou. |
+| **WaveSize** | po kolika metrech se vlnky opakují |
+| **WaveSpeed** | jak rychle se vlnky posouvají |
+
 ## Zprůhledňování
 
 Když strom nebo stavba zakryje postavu, hra je zprůhlední. U vlastních modelů hra použije průhledné
@@ -101,7 +140,6 @@ kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůh
 
 ## Co přijde dál
 
-1. Zem: opravdové textury trávy, písku a skály místo barevných čtverců, 3D kameny na skalách.
-2. Voda: hladina s vlnkami.
-3. Dekorace ze seznamu v JSON: novou dekoraci půjde přidat jedním řádkem a jedním prefabem.
-4. Postava hráče a oheň v katalogu.
+1. Dekorace ze seznamu v JSON: novou dekoraci půjde přidat jedním řádkem a jedním prefabem.
+2. Postava hráče a oheň v katalogu.
+3. Měkčí pobřeží (teď je schodovité podle čtvercových dlaždic) a pěna u břehu.
