@@ -20,6 +20,7 @@ namespace Oohra.Client
             var seeThrough = root.AddComponent<SeeThrough>();
             WaterView.Build(world, root.transform);
             GroundView.Build(world, root.transform);
+            FoamView.Build(world, root.transform);
             BuildTrees(world, root.transform, seeThrough);
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);

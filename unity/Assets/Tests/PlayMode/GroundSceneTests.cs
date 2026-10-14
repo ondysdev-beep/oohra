@@ -47,6 +47,7 @@ namespace Oohra.Client.Tests
             Assert.IsNull(terrain.GetComponent<TerrainCollider>());
             Assert.IsNotNull(Object.FindAnyObjectByType<WaterView>());
             Assert.Greater(GameObject.Find("Kameny").transform.childCount, 0);
+            Assert.Greater(Object.FindAnyObjectByType<FoamView>().GetComponent<MeshFilter>().sharedMesh.vertexCount, 0);
 
             // Souš je ve výšce 0, dno vody pod hladinou.
             Vector2 land;

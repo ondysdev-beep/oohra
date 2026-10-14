@@ -28,11 +28,11 @@ namespace Oohra.Client.Tests
         [Test]
         public void ResolutionsFitTerrain()
         {
-            Assert.AreEqual(257, GroundLayout.HeightResolution(128));
-            Assert.AreEqual(257, GroundLayout.HeightResolution(84));
+            Assert.AreEqual(513, GroundLayout.HeightResolution(128));
+            Assert.AreEqual(513, GroundLayout.HeightResolution(84));
             Assert.AreEqual(33, GroundLayout.HeightResolution(6));
-            Assert.AreEqual(256, GroundLayout.AlphaResolution(128));
-            Assert.AreEqual(16, GroundLayout.AlphaResolution(6));
+            Assert.AreEqual(512, GroundLayout.AlphaResolution(128));
+            Assert.AreEqual(32, GroundLayout.AlphaResolution(6));
         }
 
         [Test]
@@ -88,6 +88,47 @@ namespace Oohra.Client.Tests
             // Uprostřed ostrůvku je čistá tráva, v rohu čistý písek (dno moře).
             Assert.AreEqual(1f, maps[resolution / 2, resolution / 2, GroundLayout.Grass], 1e-5f);
             Assert.AreEqual(1f, maps[0, 0, GroundLayout.Sand], 1e-5f);
+        }
+
+        /// <summary>
+        /// Zakulacené pobřeží: roh ostrůvku je pod vodou, ale kde postava (poloměr 0,28 m) smí stát,
+        /// zůstane souš. Rovná hrana zůstane na hraně dlaždic.
+        /// </summary>
+        [Test]
+        public void ShoreIsRoundedButStandingPlacesStayDry()
+        {
+            var world = Islet();
+
+            // Ostrůvek je x 2..4, y 2..4. Roh (2, 2) je zakulacený pod vodu.
+            Assert.Less(GroundLayout.LandFraction(world, 2.05, 2.05), 0.5f);
+            // Nejkrajnější místo, kde postava v rohu stojí: 28 cm od obou hran.
+            Assert.GreaterOrEqual(GroundLayout.LandFraction(world, 2.28, 2.28), 0.5f);
+            // Uprostřed rovné hrany je čára břehu přesně na hraně dlaždic.
+            Assert.AreEqual(0.5f, GroundLayout.LandFraction(world, 2.0, 3.0), 0.08f);
+            Assert.AreEqual(1f, GroundLayout.LandFraction(world, 3.0, 3.0));
+            Assert.AreEqual(0f, GroundLayout.LandFraction(world, 0.5, 0.5));
+        }
+
+        /// <summary>Pěna leží na hladině kolem celého ostrůvku: u břehu plná, do vody slábne.</summary>
+        [Test]
+        public void FoamRingsTheIslet()
+        {
+            var mesh = FoamView.BuildMesh(Islet(), 0.45f);
+
+            Assert.Greater(mesh.vertexCount, 40);
+            var vertices = mesh.vertices;
+            var colors = mesh.colors;
+            for (var i = 0; i < vertices.Length; i++)
+            {
+                Assert.AreEqual(GroundLayout.WaterLevel + 0.01f, vertices[i].y, 1e-5f);
+                Assert.AreEqual(i % 4 < 2 ? 1f : 0f, colors[i].a);
+            }
+
+            // Pěna obklopuje ostrůvek ze všech stran (střed ostrůvku je v Unity na x 3, z -3).
+            Assert.Less(mesh.bounds.min.x, 2f);
+            Assert.Greater(mesh.bounds.max.x, 4f);
+            Assert.Less(mesh.bounds.min.z, -4f);
+            Assert.Greater(mesh.bounds.max.z, -2f);
         }
 
         [Test]

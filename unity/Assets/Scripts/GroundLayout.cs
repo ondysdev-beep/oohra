@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
@@ -7,7 +8,11 @@ namespace Oohra.Client
     /// <summary>
     /// Výpočty pro zem (Unity Terrain): výšky (souš rovně ve výšce 0, dno moře a jezírek pod hladinou)
     /// a míchání textur (každá dlaždice svou texturou, na hranách plynulý přechod).
-    /// Jen počítá pole čísel, Terrain z nich staví GroundView.
+    /// <para>
+    /// Pobřeží není schodovité: bod je souš, když v kroužku kolem něj (poloměr ShoreRadius) převládá souš.
+    /// Tím se rohy dlaždic zakulatí, ale kde postava smí stát (aspoň 28 cm od vody), zůstane souš.
+    /// </para>
+    /// Jen počítá pole čísel, Terrain z nich staví GroundView, pěnu FoamView.
     /// </summary>
     public static class GroundLayout
     {
@@ -25,8 +30,25 @@ namespace Oohra.Client
         /// <summary>Výška vodní hladiny (kousek pod souší, ať břeh není mokrý).</summary>
         public const float WaterLevel = -0.06f;
 
-        // Jak daleko od bodu se hledá souš: bod je na souši, když se do ní dotkne (břehy zůstanou rovné).
-        private const double ShoreReach = 0.45;
+        /// <summary>
+        /// Poloměr kroužku pro zakulacení pobřeží (m). Musí zůstat pod 0,95 m, jinak by se pod vodu dostal
+        /// i roh souše, kde postava (poloměr 0,28 m) smí stát.
+        /// </summary>
+        public const float ShoreRadius = 0.6f;
+
+        // Poloměr kroužku pro míchání textur (m): přechod mezi dlaždicemi je asi dvakrát tak široký.
+        private const float BlendRadius = 0.7f;
+
+        // Kolik bodů výšek a textur připadá na metr.
+        private const int SamplesPerMeter = 4;
+
+        private static readonly Vector2[] _shoreDisc = Disc(ShoreRadius);
+        private static readonly Vector2[] _blendDisc = Disc(BlendRadius);
+        private static readonly Vector2[] _corners =
+        {
+            new Vector2(-ShoreRadius, -ShoreRadius), new Vector2(ShoreRadius, -ShoreRadius),
+            new Vector2(-ShoreRadius, ShoreRadius), new Vector2(ShoreRadius, ShoreRadius),
+        };
 
         /// <summary>Textura dlaždice: moře má písečné dno, jezírko bahnité.</summary>
         public static int LayerOf(TileType tile)
@@ -56,34 +78,59 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Počet bodů výšek na stranu: 2^n + 1, asi dva na metr (jak chce Terrain).</summary>
-        public static int HeightResolution(int size)
+        public static bool IsWater(TileType tile)
         {
-            var resolution = 32;
-            while (resolution < 2 * size && resolution < 4096)
-            {
-                resolution *= 2;
-            }
-
-            return resolution + 1;
+            return tile == TileType.Sea || tile == TileType.Pond;
         }
 
-        /// <summary>Počet bodů míchání textur na stranu: 2^n, asi dva na metr.</summary>
+        /// <summary>Počet bodů výšek na stranu: 2^n + 1, asi čtyři na metr (jak chce Terrain).</summary>
+        public static int HeightResolution(int size)
+        {
+            return PowerOfTwo(size, 32) + 1;
+        }
+
+        /// <summary>Počet bodů míchání textur na stranu: 2^n, asi čtyři na metr.</summary>
         public static int AlphaResolution(int size)
         {
-            var resolution = 16;
-            while (resolution < 2 * size && resolution < 4096)
+            return PowerOfTwo(size, 16);
+        }
+
+        /// <summary>
+        /// Kolik kroužku kolem bodu (x, y) na mapě je souš (0 až 1). Mimo mapu je moře.
+        /// Bod je na souši, když je to aspoň polovina.
+        /// </summary>
+        public static float LandFraction(WorldView world, double x, double y)
+        {
+            var corners = 0;
+            for (var i = 0; i < 4; i++)
             {
-                resolution *= 2;
+                if (!IsWaterAt(world, x + (i % 2 == 0 ? -ShoreRadius : ShoreRadius), y + (i < 2 ? -ShoreRadius : ShoreRadius)))
+                {
+                    corners++;
+                }
             }
 
-            return resolution;
+            // Kroužek leží nejvýš na 2 × 2 dlaždicích a ty jsou v rozích: když se rohy shodují, výsledek je jasný.
+            if (corners == 0 || corners == 4)
+            {
+                return corners / 4f;
+            }
+
+            var land = 0;
+            foreach (var offset in _shoreDisc)
+            {
+                if (!IsWaterAt(world, x + offset.x, y + offset.y))
+                {
+                    land++;
+                }
+            }
+
+            return (float)land / _shoreDisc.Length;
         }
 
         /// <summary>
         /// Výšky pro Terrain.SetHeights: [řádek od jihu, sloupec od západu], 0 = nejhlubší dno, 1 = souš.
-        /// Bod je na souši, když se kterákoli dlaždice do 45 cm od něj nedá přebrodit (souš zůstane celá rovná),
-        /// jinak má průměrnou hloubku okolních vodních dlaždic (dno se ke břehu zvedá).
+        /// Kde převládá souš, je rovně. Jinak dno klesá od břehu do hloubky okolních vodních dlaždic.
         /// </summary>
         public static float[,] Heights(WorldView world, int resolution)
         {
@@ -103,41 +150,27 @@ namespace Oohra.Client
 
         /// <summary>
         /// Míchání textur pro Terrain.SetAlphamaps: [řádek od jihu, sloupec od západu, vrstva], součet vrstev 1.
-        /// Každý bod dostane texturu své dlaždice, pak se sousední body zprůměrují (měkký přechod asi 1 m).
+        /// Každá vrstva má takový podíl, jaký podíl kroužku kolem bodu pokrývají její dlaždice.
         /// </summary>
         public static float[,,] Alphamaps(WorldView world, int resolution)
         {
-            var layers = new int[resolution, resolution];
+            var maps = new float[resolution, resolution, LayerCount];
             for (var row = 0; row < resolution; row++)
             {
                 for (var column = 0; column < resolution; column++)
                 {
                     var x = (column + 0.5) * world.Width / resolution;
                     var y = world.Height - (row + 0.5) * world.Height / resolution;
-                    layers[row, column] = LayerOf(TileAt(world, x, y));
-                }
-            }
-
-            var maps = new float[resolution, resolution, LayerCount];
-            for (var row = 0; row < resolution; row++)
-            {
-                for (var column = 0; column < resolution; column++)
-                {
-                    var count = 0;
-                    for (var dr = -1; dr <= 1; dr++)
+                    var center = LayerOf(TileAt(world, x, y));
+                    if (SameLayerAround(world, x, y, center))
                     {
-                        for (var dc = -1; dc <= 1; dc++)
-                        {
-                            var r = Mathf.Clamp(row + dr, 0, resolution - 1);
-                            var c = Mathf.Clamp(column + dc, 0, resolution - 1);
-                            maps[row, column, layers[r, c]] += 1f;
-                            count++;
-                        }
+                        maps[row, column, center] = 1f;
+                        continue;
                     }
 
-                    for (var layer = 0; layer < LayerCount; layer++)
+                    foreach (var offset in _blendDisc)
                     {
-                        maps[row, column, layer] /= count;
+                        maps[row, column, LayerOf(TileAt(world, x + offset.x, y + offset.y))] += 1f / _blendDisc.Length;
                     }
                 }
             }
@@ -147,21 +180,63 @@ namespace Oohra.Client
 
         private static float DepthAt(WorldView world, double x, double y)
         {
-            var total = 0f;
-            for (var i = 0; i < 4; i++)
+            var land = LandFraction(world, x, y);
+            if (land >= 0.5f)
             {
-                var sx = x + (i % 2 == 0 ? -ShoreReach : ShoreReach);
-                var sy = y + (i < 2 ? -ShoreReach : ShoreReach);
-                var depth = DepthOfPoint(world, sx, sy);
-                if (depth <= 0f)
-                {
-                    return 0f;
-                }
-
-                total += depth;
+                return 0f;
             }
 
-            return total / 4;
+            // Hloubka okolních vodních dlaždic (na volné vodě stačí rohy kroužku, u břehu celý kroužek),
+            // u břehu (souš těsně pod polovinou) mělčí.
+            var samples = land > 0f || !SameDepthAtCorners(world, x, y) ? _shoreDisc : _corners;
+            var total = 0f;
+            var count = 0;
+            foreach (var offset in samples)
+            {
+                var depth = DepthOfPoint(world, x + offset.x, y + offset.y);
+                if (depth > 0f)
+                {
+                    total += depth;
+                    count++;
+                }
+            }
+
+            var water = count > 0 ? total / count : Depth;
+            return water * Mathf.SmoothStep(0f, 1f, (0.5f - land) * 2f);
+        }
+
+        private static bool SameDepthAtCorners(WorldView world, double x, double y)
+        {
+            var first = DepthOfPoint(world, x + _corners[0].x, y + _corners[0].y);
+            for (var i = 1; i < _corners.Length; i++)
+            {
+                if (DepthOfPoint(world, x + _corners[i].x, y + _corners[i].y) != first)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool SameLayerAround(WorldView world, double x, double y, int layer)
+        {
+            for (var i = 0; i < 4; i++)
+            {
+                if (LayerOf(TileAt(world, x + (i % 2 == 0 ? -BlendRadius : BlendRadius), y + (i < 2 ? -BlendRadius : BlendRadius))) != layer)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsWaterAt(WorldView world, double x, double y)
+        {
+            var tx = (int)System.Math.Floor(x);
+            var ty = (int)System.Math.Floor(y);
+            return tx < 0 || ty < 0 || tx >= world.Width || ty >= world.Height || IsWater(world.Tiles[ty * world.Width + tx]);
         }
 
         private static float DepthOfPoint(WorldView world, double x, double y)
@@ -182,6 +257,39 @@ namespace Oohra.Client
             var tx = Mathf.Clamp((int)System.Math.Floor(x), 0, world.Width - 1);
             var ty = Mathf.Clamp((int)System.Math.Floor(y), 0, world.Height - 1);
             return world.TileAt(tx, ty);
+        }
+
+        /// <summary>
+        /// Body v kroužku o poloměru radius (mřížka 8 × 8, jen ty uvnitř kruhu). Mřížka je souměrná a žádný bod
+        /// neleží přesně na ose, takže na rovné hraně dlaždic vyjde přesně polovina.
+        /// </summary>
+        private static Vector2[] Disc(float radius)
+        {
+            var points = new List<Vector2>();
+            for (var i = 0; i < 8; i++)
+            {
+                for (var j = 0; j < 8; j++)
+                {
+                    var point = new Vector2((i - 3.5f) / 3.5f * radius, (j - 3.5f) / 3.5f * radius);
+                    if (point.magnitude <= radius + 1e-4f)
+                    {
+                        points.Add(point);
+                    }
+                }
+            }
+
+            return points.ToArray();
+        }
+
+        private static int PowerOfTwo(int size, int minimum)
+        {
+            var resolution = minimum;
+            while (resolution < SamplesPerMeter * size && resolution < 4096)
+            {
+                resolution *= 2;
+            }
+
+            return resolution;
         }
     }
 }
