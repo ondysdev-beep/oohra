@@ -68,7 +68,8 @@ namespace Oohra.Client
             GameObject flame;
             if (!_flames.TryGetValue(fire.Id, out flame))
             {
-                CreateHearth(transform, fire.X, fire.Y, "Oheň " + fire.Id, Palette.Hex("#4a4038"));
+                var hearth = CreateHearth(transform, fire.X, fire.Y, "Oheň " + fire.Id, Palette.Hex("#4a4038"));
+                Pickable.Attach(hearth, InteractionTarget.ForFire(fire.Id, fire.X, fire.Y));
                 flame = CreateFlame(transform, fire.X, fire.Y);
                 _flames[fire.Id] = flame;
             }

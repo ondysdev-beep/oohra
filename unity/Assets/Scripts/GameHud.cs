@@ -347,7 +347,16 @@ namespace Oohra.Client
                     if (Button(ref buttonRect, "Nasbírat klacky")) _session.GatherMaterial();
                     break;
                 case TargetKind.Rock:
-                    GUI.Label(titleRect, "SKÁLA", _title);
+                    var pile = _session.RockPileAt(target.TileX, target.TileY);
+                    if (pile == null)
+                    {
+                        // Hromada je vybraná (zmizela): nabídka se zavře.
+                        _session.Menu = null;
+                        _session.Selected = null;
+                        break;
+                    }
+
+                    GUI.Label(titleRect, "SKÁLA (kamenů: " + pile.Value.Stones + ")", _title);
                     if (Button(ref buttonRect, "Vzít kámen")) _session.GatherMaterial();
                     break;
                 case TargetKind.Fire:

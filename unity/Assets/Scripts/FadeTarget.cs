@@ -19,11 +19,13 @@ namespace Oohra.Client
         private readonly Material[][] _originals;
         private readonly Color[][] _baseColors;
         private readonly Color? _color;
+        private readonly GameObject _root;
 
         /// <param name="color">Barva tvaru z kódu, nebo null u vlastního modelu (zprůhlední všechny jeho části).</param>
         public FadeTarget(GameObject go, Color? color)
         {
             _color = color;
+            _root = go;
             _renderers = color.HasValue ? new[] { go.GetComponent<Renderer>() } : go.GetComponentsInChildren<Renderer>();
             _originals = new Material[_renderers.Length][];
             _baseColors = new Color[_renderers.Length][];
@@ -41,6 +43,12 @@ namespace Oohra.Client
         /// <summary>Nastaví průhlednost: 1 = neprůhledný (původní vzhled), menší = průhlednější.</summary>
         public void SetAlpha(float alpha)
         {
+            // Zprůhledněný objekt propustí kliknutí na to, co je za ním (Pickable).
+            foreach (var collider in _root.GetComponentsInChildren<Collider>())
+            {
+                collider.enabled = alpha >= 1f;
+            }
+
             for (var i = 0; i < _renderers.Length; i++)
             {
                 if (_color.HasValue)

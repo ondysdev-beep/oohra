@@ -22,6 +22,8 @@ namespace Oohra.Client
             var catalog = VisualCatalog.Current;
             var go = new GameObject("Pěna");
             go.transform.SetParent(parent);
+            // Pěna leží na hladině (vlastní voda může být níž, viz WaterView.SurfaceLevel).
+            go.transform.position = new Vector3(0f, WaterView.SurfaceLevel(catalog) - GroundLayout.WaterLevel, 0f);
             go.AddComponent<MeshFilter>().sharedMesh = BuildMesh(world, catalog.FoamWidth);
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.shadowCastingMode = ShadowCastingMode.Off;

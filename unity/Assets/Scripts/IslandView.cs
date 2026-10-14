@@ -22,6 +22,10 @@ namespace Oohra.Client
             GroundView.Build(world, root.transform);
             FoamView.Build(world, root.transform);
             GrassView.Build(world, root.transform);
+
+            var rocks = new GameObject("Skály");
+            rocks.transform.SetParent(root.transform);
+            rocks.AddComponent<RockPileViews>().Init(connection, world);
             BuildTrees(world, root.transform, seeThrough);
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);
@@ -58,6 +62,7 @@ namespace Oohra.Client
                 if (prefab != null)
                 {
                     AddTreeModel(prefab, trees, crowns, tree.TileIndex, x, y, size);
+                    Pickable.Attach(trees.GetChild(trees.childCount - 1).gameObject, TreeTarget(world, tree));
                     continue;
                 }
 
@@ -73,7 +78,15 @@ namespace Oohra.Client
                 crown.transform.position = WorldCoords.ToUnity(x, y, crownCenter);
                 crown.transform.localScale = Vector3.one * CrownSize * size;
                 crowns.Add(tree.TileIndex, crown, color, x, y, crownRadius, crownCenter - crownRadius, crownCenter + crownRadius);
+                Pickable.Attach(trunk, TreeTarget(world, tree));
+                Pickable.Attach(crown, TreeTarget(world, tree));
             }
+        }
+
+        /// <summary>Strom jako cíl kliknutí: dlaždice stromu (nasbírat klacky).</summary>
+        private static InteractionTarget TreeTarget(WorldView world, TreeView tree)
+        {
+            return InteractionTarget.ForTile(TargetKind.Tree, tree.TileIndex % world.Width, tree.TileIndex / world.Width);
         }
 
         /// <summary>
@@ -133,6 +146,7 @@ namespace Oohra.Client
                 fruit.transform.localScale = Vector3.one * (0.144f / go.transform.lossyScale.x);
                 fruit.SetActive(false);
 
+                Pickable.Attach(go, InteractionTarget.ForPlant(i, plant.X, plant.Y));
                 plants[i] = go;
                 fruits[i] = fruit;
             }

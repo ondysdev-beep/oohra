@@ -291,6 +291,7 @@ namespace Oohra.Client
             }
 
             _parts[structure.Id] = Mathf.Min(parts.Length, PartsPerStructure);
+            Pickable.Attach(root, InteractionTarget.ForStructure(structure.Id, structure.X, structure.Y));
             return root;
         }
 

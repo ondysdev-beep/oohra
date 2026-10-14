@@ -46,8 +46,33 @@ namespace Oohra.Client.Tests
             Assert.AreEqual(world.Width, terrain.terrainData.size.x, 1e-3f);
             Assert.IsNull(terrain.GetComponent<TerrainCollider>());
             Assert.IsNotNull(Object.FindAnyObjectByType<WaterView>());
-            Assert.Greater(GameObject.Find("Kameny").transform.childCount, 0);
+            yield return WaitFor(() => Object.FindAnyObjectByType<RockPileViews>().VisibleStones > 0, 5f, "Na skalách nejsou hromady kamenů.");
             Assert.Greater(Object.FindAnyObjectByType<FoamView>().GetComponent<MeshFilter>().sharedMesh.vertexCount, 0);
+
+            // Klik shora na vršek stromu označí strom a klik na hromadu kamenů skálu (ne zem za nimi).
+            yield return null;
+            foreach (var kind in new[] { TargetKind.Tree, TargetKind.Rock })
+            {
+                Pickable pickable = null;
+                foreach (var candidate in Object.FindObjectsByType<Pickable>(FindObjectsSortMode.None))
+                {
+                    if (candidate.Kind == kind && candidate.isActiveAndEnabled)
+                    {
+                        pickable = candidate;
+                        break;
+                    }
+                }
+
+                Assert.IsNotNull(pickable, "Žádný objekt " + kind + " na kliknutí.");
+                var box = pickable.GetComponent<BoxCollider>().bounds;
+                // U skály paprsek začíná těsně nad hromadou (nad ní může viset koruna stromu).
+                var start = box.max.y + (kind == TargetKind.Rock ? 0.5f : 30f);
+                var target = PlayerController.PickObject(new Ray(new Vector3(box.center.x, start, box.center.z), Vector3.down));
+                Assert.IsNotNull(target, "Paprsek netrefil " + kind + ".");
+                Assert.AreEqual(kind, target.Kind);
+                // Koruny v lese se překrývají: shora se může trefit i sousední strom, ale vždy je to strom kousek vedle.
+                Assert.LessOrEqual(System.Math.Abs(pickable.TileX - target.TileX), 3);
+            }
 
             // Souš je ve výšce 0, dno vody pod hladinou.
             Vector2 land;
