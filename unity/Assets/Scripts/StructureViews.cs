@@ -133,8 +133,7 @@ namespace Oohra.Client
             var model = VisualCatalog.Spawn(prefab, root, NameOf(kind));
             if (kind == BuildKind.StickWall)
             {
-                var scale = model.transform.localScale;
-                model.transform.localScale = new Vector3(scale.x * length / WallLength, scale.y, scale.z);
+                model.transform.localScale = new Vector3(length / WallLength, 1f, 1f);
             }
         }
 
@@ -161,10 +160,10 @@ namespace Oohra.Client
         /// </summary>
         public static void StretchWall(GameObject wall, float length)
         {
+            // Vlastní model je v obalu (VisualCatalog.Spawn), ten se zmáčkne podél X. Tvar z kódu dostane přesný rozměr.
             var part = wall.transform.GetChild(0);
-            var prefab = VisualCatalog.Current.Wall;
-            part.localScale = prefab != null
-                ? new Vector3(prefab.transform.localScale.x * length / WallLength, prefab.transform.localScale.y, prefab.transform.localScale.z)
+            part.localScale = VisualCatalog.Current.Wall != null
+                ? new Vector3(length / WallLength, 1f, 1f)
                 : new Vector3(length, WallHeight, WallThickness);
         }
 

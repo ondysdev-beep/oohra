@@ -32,19 +32,49 @@ namespace Oohra.Client
             if (Application.isPlaying) Destroy(water.GetComponent<Collider>());
             else DestroyImmediate(water.GetComponent<Collider>());
 
+            water.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var view = water.AddComponent<WaterView>();
+            if (catalog.WaterMaterial != null)
+            {
+                // Vlastní voda z katalogu: všechno nastavuje její materiál, hra jen připojí kameru odrazů.
+                water.GetComponent<Renderer>().sharedMaterial = new Material(catalog.WaterMaterial) { name = "Voda" };
+                AddReflectionCamera(catalog.WaterReflectionCamera, water.transform, parent);
+                return view;
+            }
+
             var material = new Material(Palette.Water) { name = "Voda" };
             material.SetColor("_BaseColor", catalog.WaterColor);
             material.SetTexture("_BumpMap", catalog.WaterNormalMap != null ? catalog.WaterNormalMap : GeneratedNormalMap());
             material.SetFloat("_BumpScale", 0.35f);
             water.GetComponent<Renderer>().sharedMaterial = material;
-            water.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-            var view = water.AddComponent<WaterView>();
             view._material = material;
             view._speed = catalog.WaveSpeed;
             view._tiling = size / Mathf.Max(0.5f, catalog.WaveSize);
             material.SetTextureScale("_BaseMap", new Vector2(view._tiling, view._tiling));
             return view;
+        }
+
+        /// <summary>
+        /// Kamera odrazů pro vlastní vodu (prefab z katalogu). Skript kamery je cizí (není v našem kódu), proto se
+        /// hladina dosadí podle jména pole: každé veřejné pole typu Transform jménem reflectionPlane.
+        /// </summary>
+        private static void AddReflectionCamera(GameObject prefab, Transform water, Transform parent)
+        {
+            if (prefab == null)
+            {
+                return;
+            }
+
+            var camera = Instantiate(prefab, parent, false);
+            camera.name = "Kamera odrazů vody";
+            foreach (var component in camera.GetComponentsInChildren<MonoBehaviour>())
+            {
+                var field = component.GetType().GetField("reflectionPlane");
+                if (field != null && field.FieldType == typeof(Transform))
+                {
+                    field.SetValue(component, water);
+                }
+            }
         }
 
         /// <summary>Normálová mapa vlnek z navazujícího šumu (lineární, RGB = směr povrchu).</summary>

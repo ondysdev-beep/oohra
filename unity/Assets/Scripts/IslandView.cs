@@ -21,6 +21,7 @@ namespace Oohra.Client
             WaterView.Build(world, root.transform);
             GroundView.Build(world, root.transform);
             FoamView.Build(world, root.transform);
+            GrassView.Build(world, root.transform);
             BuildTrees(world, root.transform, seeThrough);
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);
@@ -81,7 +82,7 @@ namespace Oohra.Client
         /// </summary>
         private static void AddTreeModel(GameObject prefab, Transform parent, SeeThrough crowns, int tileIndex, double x, double y, float size)
         {
-            var model = VisualCatalog.Spawn(prefab, parent, "Strom");
+            var model = VisualCatalog.Spawn(prefab, parent, "Strom", height: VisualCatalog.Current.TreeHeight);
             model.transform.position = WorldCoords.ToUnity(x, y);
             model.transform.rotation = Quaternion.Euler(0f, tileIndex * 137 % 360, 0f);
             model.transform.localScale *= size;
@@ -112,7 +113,8 @@ namespace Oohra.Client
                 if (prefab != null)
                 {
                     // Vlastní model: obarví se barvou druhu, podle ní hráč druhy rozezná.
-                    go = VisualCatalog.Spawn(prefab, root.transform, "Rostlina " + i);
+                    var height = VisualCatalog.Current.PlantHeight * (0.85f + 0.3f * GroundView.Hash01(i, 0, 5));
+                    go = VisualCatalog.Spawn(prefab, root.transform, "Rostlina " + i, height: height);
                     go.transform.position = WorldCoords.ToUnity(plant.X, plant.Y);
                     go.transform.rotation = Quaternion.Euler(0f, i * 97 % 360, 0f);
                     SpeciesTint.Apply(go, color);
@@ -125,7 +127,7 @@ namespace Oohra.Client
                 }
 
                 // Plod: tam, kde má model část „Plod“, jinak kousek vedle a nad zemí. Ve světě má 14 cm.
-                var spot = go.transform.Find("Plod");
+                var spot = FindDeep(go.transform, "Plod");
                 var fruit = Primitive(PrimitiveType.Sphere, "Plod", go.transform, color);
                 fruit.transform.position = spot != null ? spot.position : WorldCoords.ToUnity(plant.X + 0.12, plant.Y, 0.42f);
                 fruit.transform.localScale = Vector3.one * (0.144f / go.transform.lossyScale.x);
@@ -157,6 +159,20 @@ namespace Oohra.Client
                 stone.transform.position = WorldCoords.ToUnity(ruin.X, ruin.Y, 0.3f);
                 stone.transform.localScale = new Vector3(0.6f, 0.6f, 0.2f);
             }
+        }
+
+        /// <summary>Část modelu podle jména, hledá se v celém modelu (i hluboko), nebo null.</summary>
+        public static Transform FindDeep(Transform root, string name)
+        {
+            foreach (var child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child != root && child.name == name)
+                {
+                    return child;
+                }
+            }
+
+            return null;
         }
 
         public static GameObject Primitive(PrimitiveType type, string name, Transform parent, Color color)

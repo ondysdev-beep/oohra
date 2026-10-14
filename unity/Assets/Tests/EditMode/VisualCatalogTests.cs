@@ -30,6 +30,7 @@ namespace Oohra.Client.Tests
             models.AddRange(new[] { catalog.Wall, catalog.DoorFrame, catalog.Door, catalog.Trap, catalog.Stockpile });
             models.AddRange(new[] { catalog.Boar, catalog.Rabbit, catalog.Deer, catalog.Wolf });
             models.AddRange(catalog.Rocks);
+            models.AddRange(catalog.Grass);
             models.AddRange(new[] { catalog.Player, catalog.Campfire, catalog.Flame });
             foreach (var decoration in catalog.Decorations)
             {
@@ -88,6 +89,40 @@ namespace Oohra.Client.Tests
             Object.DestroyImmediate(wall);
             Object.DestroyImmediate(door);
             Object.DestroyImmediate(template);
+        }
+
+        /// <summary>
+        /// Model posunutý v prefabu (střed jinde, než je model) a jinak velký se srovná: stojí dole uprostřed
+        /// a má požadovanou výšku nebo největší rozměr.
+        /// </summary>
+        [Test]
+        public void SpawnCentersAndFitsModel()
+        {
+            var prefab = new GameObject("Posunutý strom");
+            prefab.transform.position = new Vector3(60f, 0f, -50f);
+            var mesh = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            mesh.transform.SetParent(prefab.transform, false);
+            mesh.transform.localPosition = new Vector3(3f, 1f, 2f);
+            mesh.transform.localScale = new Vector3(1f, 2f, 1f);
+
+            var tree = VisualCatalog.Spawn(prefab, null, "Strom", height: 5f);
+            var bounds = VisualCatalog.BoundsOf(tree);
+            Assert.AreEqual(0f, bounds.center.x, 1e-4f);
+            Assert.AreEqual(0f, bounds.center.z, 1e-4f);
+            Assert.AreEqual(0f, bounds.min.y, 1e-4f);
+            Assert.AreEqual(5f, bounds.size.y, 1e-4f);
+
+            var rock = VisualCatalog.Spawn(prefab, null, "Kámen", largest: 0.4f);
+            Assert.AreEqual(0.4f, VisualCatalog.BoundsOf(rock).size.y, 1e-4f);
+
+            // Plamen si nechá svůj střed (center: false).
+            var flame = VisualCatalog.Spawn(prefab, null, "Plamen", center: false);
+            Assert.AreEqual(3f, VisualCatalog.BoundsOf(flame).center.x, 1e-4f);
+
+            Object.DestroyImmediate(tree);
+            Object.DestroyImmediate(rock);
+            Object.DestroyImmediate(flame);
+            Object.DestroyImmediate(prefab);
         }
 
         [Test]

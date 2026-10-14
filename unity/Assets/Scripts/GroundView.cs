@@ -15,10 +15,8 @@ namespace Oohra.Client
         private const int GeneratedSize = 64;
         private const float GeneratedVariation = 0.12f;
 
-        // Kameny na skále: na kolika procentech skalních dlaždic leží kámen, a jak je velký (m).
+        // Kameny na skále: na kolika procentech skalních dlaždic leží kámen (velikost je v katalogu vzhledu).
         private const int RockChance = 45;
-        private const float RockMin = 0.15f;
-        private const float RockMax = 0.35f;
 
         public static Terrain Build(WorldView world, Transform parent)
         {
@@ -143,15 +141,14 @@ namespace Oohra.Client
 
                 var x = i % world.Width + 0.2 + Hash01(i, 1, 11) * 0.6;
                 var y = i / world.Width + 0.2 + Hash01(i, 2, 11) * 0.6;
-                var size = Mathf.Lerp(RockMin, RockMax, Hash01(i, 3, 11));
+                var size = Mathf.Lerp(catalog.RockMinSize, catalog.RockMaxSize, Hash01(i, 3, 11));
                 var rotation = Quaternion.Euler(0f, Hash01(i, 4, 11) * 360f, 0f);
                 GameObject rock;
                 if (models.Length > 0 && models[i % models.Length] != null)
                 {
-                    rock = VisualCatalog.Spawn(models[i % models.Length], rocks, "Kámen");
+                    rock = VisualCatalog.Spawn(models[i % models.Length], rocks, "Kámen", largest: size);
                     rock.transform.position = WorldCoords.ToUnity(x, y);
                     rock.transform.rotation = rotation;
-                    rock.transform.localScale *= size / RockMax;
                 }
                 else
                 {

@@ -27,13 +27,28 @@ namespace Oohra.Client
 
         private static VisualCatalog _current;
 
-        [Header("Stromy (střed kmene dole v počátku, výška asi 5 m)")]
+        [Header("Stromy (na středu a velikosti modelu nezáleží, hra je srovná)")]
         [Tooltip("Varianty stromů. Každý strom na ostrově dostane jednu podle svého čísla varianty.")]
         public GameObject[] Trees = new GameObject[0];
 
-        [Header("Rostliny podle tvaru druhu (0 až 3), výška asi 0,3 až 0,6 m")]
+        [Tooltip("Výška stromu v metrech. Hra model zmenší nebo zvětší na tuto výšku (a pak ještě o ±20 % podle stromu).")]
+        public float TreeHeight = 5f;
+
+        [Header("Rostliny podle tvaru druhu: políčka 0 až 3 (víc tvarů druhy nemají)")]
         [Tooltip("Index = tvar druhu. Model se obarví barvou druhu (části se SpeciesTint, jinak celý), ať jdou druhy poznat.")]
         public GameObject[] Plants = new GameObject[4];
+
+        [Tooltip("Výška rostliny v metrech (hra model srovná na tuto výšku, ±15 % podle rostliny).")]
+        public float PlantHeight = 0.45f;
+
+        [Header("Tráva jen pro ozdobu (trsy na travnatých dlaždicích, nedá se na ně kliknout)")]
+        public GameObject[] Grass = new GameObject[0];
+
+        [Tooltip("Výška trsu trávy v metrech.")]
+        public float GrassHeight = 0.3f;
+
+        [Tooltip("Kolik trsů průměrně připadá na jednu travnatou dlaždici (1 m²).")]
+        public float GrassPerTile = 1.5f;
 
         [Header("Stavby (střed dole v počátku, délka podél osy X)")]
         [Tooltip("Zeď z klacků dlouhá přesně 1 m. Kratší zeď se zmenší podél osy X.")]
@@ -69,8 +84,12 @@ namespace Oohra.Client
         [Tooltip("Po kolika metrech se textura zemi opakuje.")]
         public float GroundTextureSize = 4f;
 
-        [Header("Kameny na skalách (nízké, do 35 cm: přes skálu se chodí)")]
+        [Header("Kameny na skalách (nízké: přes skálu se chodí)")]
         public GameObject[] Rocks = new GameObject[0];
+
+        [Tooltip("Nejmenší a největší kámen: jeho největší rozměr v metrech (hra model srovná).")]
+        public float RockMinSize = 0.2f;
+        public float RockMaxSize = 0.45f;
 
         [Header("Voda")]
         [Tooltip("Barva hladiny, průhlednost je v alfě.")]
@@ -84,6 +103,12 @@ namespace Oohra.Client
 
         [Tooltip("Jak rychle se vlnky posouvají (metry za sekundu).")]
         public float WaveSpeed = 0.08f;
+
+        [Tooltip("Vlastní materiál vody (třeba ze Shader Graphu). Prázdné = hladina hry (barva a vlnky výše). S vlastním materiálem se barva, vlnky a jejich posun neberou, vše je v materiálu.")]
+        public Material WaterMaterial;
+
+        [Tooltip("Prefab kamery odrazů pro vlastní vodu (např. IgniteCoders WaterReflectionCamera). Hra jí do pole reflectionPlane dosadí hladinu. Kamera navíc stojí výkon.")]
+        public GameObject WaterReflectionCamera;
 
         [Tooltip("Barva pěny u břehu, alfa = jak je pěna hustá.")]
         public Color FoamColor = new Color(0.95f, 0.97f, 1f, 0.8f);
@@ -228,18 +253,58 @@ namespace Oohra.Client
 
         /// <summary>
         /// Vytvoří model z prefabu pod rodičem. Kolize (Collider) odstraní: pohyb a srážky počítá server.
+        /// <para>
+        /// Model je zabalený do prázdného objektu (ten hra posouvá a otáčí) a srovnaný tak, aby stál dole uprostřed
+        /// (center): na tom, kde má prefab střed a kde v něm model leží, pak nezáleží. Volitelně se zvětší nebo
+        /// zmenší na výšku height nebo tak, aby jeho největší rozměr byl largest (metry, 0 = nechat).
+        /// </para>
         /// </summary>
-        public static GameObject Spawn(GameObject prefab, Transform parent, string name)
+        public static GameObject Spawn(GameObject prefab, Transform parent, string name, bool center = true, float height = 0f, float largest = 0f)
         {
-            var go = Instantiate(prefab, parent, false);
-            go.name = name;
-            foreach (var collider in go.GetComponentsInChildren<Collider>())
+            var wrapper = new GameObject(name);
+            wrapper.transform.SetParent(parent, false);
+            var model = Instantiate(prefab, wrapper.transform, false);
+            model.name = prefab.name;
+            model.transform.localPosition = Vector3.zero;
+            foreach (var collider in model.GetComponentsInChildren<Collider>())
             {
                 if (Application.isPlaying) Destroy(collider);
                 else DestroyImmediate(collider);
             }
 
-            return go;
+            if (center || height > 0f || largest > 0f)
+            {
+                Normalize(wrapper.transform, model.transform, center, height, largest);
+            }
+
+            return wrapper;
+        }
+
+        /// <summary>Posune model, aby stál dole uprostřed obalu, a nastaví obalu velikost (počítá se v klidu v počátku).</summary>
+        private static void Normalize(Transform wrapper, Transform model, bool center, float height, float largest)
+        {
+            var position = wrapper.position;
+            var rotation = wrapper.rotation;
+            wrapper.position = Vector3.zero;
+            wrapper.rotation = Quaternion.identity;
+            var bounds = BoundsOf(model.gameObject);
+            if (bounds.size != Vector3.zero)
+            {
+                var scale = wrapper.lossyScale;
+                if (center)
+                {
+                    var offset = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+                    model.localPosition -= new Vector3(offset.x / scale.x, offset.y / scale.y, offset.z / scale.z);
+                }
+
+                var factor = height > 0f ? height / bounds.size.y
+                    : largest > 0f ? largest / Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z))
+                    : 1f;
+                wrapper.localScale *= factor;
+            }
+
+            wrapper.position = position;
+            wrapper.rotation = rotation;
         }
     }
 }

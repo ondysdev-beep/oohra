@@ -49,14 +49,15 @@ namespace Oohra.Client.Tests
             var trees = GameObject.Find("Stromy").transform;
             Assert.AreEqual(world.Trees.Length, trees.childCount);
             Assert.AreEqual("Strom", trees.GetChild(0).name);
-            Assert.IsNotNull(GameObject.Find("Rostlina 0").transform.Find("Listy"));
+            Assert.IsNotNull(IslandView.FindDeep(GameObject.Find("Rostlina 0").transform, "Listy"));
+            Assert.Greater(Object.FindAnyObjectByType<GrassView>().Count, world.Width);
 
             // Postava a ohně táborů z katalogu.
             yield return WaitFor(() => GameObject.Find("Postava") != null, 5f, "Postava se neobjevila.");
             Assert.IsNotNull(GameObject.Find("Postava").transform.Find("Model"));
             if (world.Camps.Length > 0)
             {
-                Assert.IsNotNull(GameObject.Find("Tábor kmene 1").transform.Find("Kámen ohniště"));
+                Assert.IsNotNull(IslandView.FindDeep(GameObject.Find("Tábor kmene 1").transform, "Kámen ohniště"));
                 Assert.IsNotNull(GameObject.Find("Model plamene"));
             }
 
@@ -98,6 +99,11 @@ namespace Oohra.Client.Tests
             catalog.Trees = new[] { tree };
             catalog.Plants = new[] { plant, plant, plant, plant };
             catalog.Wall = wall;
+
+            var grass = new GameObject("Vzor trávy");
+            grass.transform.SetParent(_templates.transform, false);
+            Shape(PrimitiveType.Cube, grass.transform, "Stébla", new Vector3(5f, 0.5f, 3f), new Vector3(0.3f, 1f, 0.05f), new Color(0.4f, 0.6f, 0.2f));
+            catalog.Grass = new[] { grass };
 
             var player = new GameObject("Vzor postavy");
             player.transform.SetParent(_templates.transform, false);
