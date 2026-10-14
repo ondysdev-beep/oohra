@@ -48,6 +48,17 @@ namespace Oohra.Client.Tests
         }
 
         [Test]
+        public void EveryHuntResultHasText()
+        {
+            foreach (HuntResult result in Enum.GetValues(typeof(HuntResult)))
+            {
+                Assert.AreNotEqual(result.ToString(), Texts.For(result, AnimalKind.Boar));
+            }
+
+            Assert.AreEqual("Divočák padl.", Texts.For(HuntResult.Killed, AnimalKind.Boar));
+        }
+
+        [Test]
         public void EveryBuildResultHasText()
         {
             foreach (BuildResult result in Enum.GetValues(typeof(BuildResult)))

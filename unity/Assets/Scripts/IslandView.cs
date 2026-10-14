@@ -29,6 +29,10 @@ namespace Oohra.Client
             fires.transform.SetParent(root.transform);
             fires.AddComponent<FireViews>().Init(connection, world);
 
+            var animals = new GameObject("Zvířata");
+            animals.transform.SetParent(root.transform);
+            animals.AddComponent<AnimalViews>().Init(connection);
+
             var structures = new GameObject("Stavby");
             structures.transform.SetParent(root.transform);
             structures.AddComponent<StructureViews>().Init(connection, seeThrough);

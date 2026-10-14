@@ -2,6 +2,7 @@ using System.Linq;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
+using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -61,6 +62,7 @@ namespace Oohra.Client
             if (keyboard.bKey.wasPressedThisFrame) _session.BackpackOpen = !_session.BackpackOpen;
             if (keyboard.nKey.wasPressedThisFrame) _session.ToggleSleep();
             if (keyboard.kKey.wasPressedThisFrame) _session.SkillsOpen = !_session.SkillsOpen;
+            if (keyboard.spaceKey.wasPressedThisFrame && !BuildMode.IsActive) _session.Attack();
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
                 _session.BackpackOpen = false;
@@ -159,7 +161,7 @@ namespace Oohra.Client
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 760, 20),
-                "WASD / klik = chůze · G stavět · B batoh · N spát · K dovednosti · Q, E nebo kolečko = kamera", _label);
+                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · Q, E, kolečko = kamera", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>
@@ -342,9 +344,37 @@ namespace Oohra.Client
                     GUI.Label(titleRect, StructureViews.NameOf(_session.MenuStructureKind()).ToUpper(), _title);
                     if (Button(ref buttonRect, "Rozebrat")) _session.RemoveStructure();
                     break;
+                case TargetKind.Animal:
+                    DrawAnimalMenu(target, titleRect, ref buttonRect);
+                    break;
             }
 
             return y - 6;
+        }
+
+        /// <summary>U zvířete: živé udeřit (pěstí nebo kopím, i mezerníkem), z mrtvého stáhnout maso.</summary>
+        private void DrawAnimalMenu(InteractionTarget target, Rect titleRect, ref Rect buttonRect)
+        {
+            var animal = _session.AnimalOf(target.Id);
+            if (animal == null)
+            {
+                _session.Menu = null;
+                _session.Selected = null;
+                return;
+            }
+
+            var dead = animal.Value.State == AnimalState.Dead;
+            var name = AnimalViews.NameOf(animal.Value.Kind).ToUpper();
+            GUI.Label(titleRect, dead ? name + " (MRTVÉ)" : name, _title);
+            if (dead)
+            {
+                if (Button(ref buttonRect, "Stáhnout maso")) _session.Butcher();
+                return;
+            }
+
+            var spear = _session.Count(ItemKind.Spear) > 0;
+            buttonRect.width = 200;
+            if (Button(ref buttonRect, spear ? "Bodnout kopím (mezerník)" : "Udeřit (mezerník)")) _session.Attack();
         }
 
         /// <summary>U ohně: přiložit (vyhaslý znovu zapálit) a batoh na pečení.</summary>
@@ -402,6 +432,12 @@ namespace Oohra.Client
                 _session.BackpackOpen = false;
             }
 
+            var canMakeSpear = _session.Count(ItemKind.Spear) == 0 && _session.Count(ItemKind.Stick) > 0 && _session.Count(ItemKind.Stone) > 0;
+            if (canMakeSpear && GUI.Button(new Rect(_backpackRect.xMax - 284, y, 180, 26), "Vyrobit kopí (klacek, kámen)"))
+            {
+                _session.MakeSpear();
+            }
+
             y += 36;
             if (inventory.Stacks.Length == 0)
             {
@@ -413,13 +449,14 @@ namespace Oohra.Client
             {
                 var stack = inventory.Stacks[i];
                 var plant = stack.Kind == ItemKind.Plant;
+                var food = plant || stack.Kind == ItemKind.Meat;
                 DrawBar(new Rect(x, y + 6, 18, 18), 1f, plant ? Palette.Leaf(connection.World.Species[stack.SpeciesId]) : Palette.Material(stack.Kind));
                 GUI.Label(new Rect(x + 26, y + 6, 240, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
 
                 var buttons = new Rect(x + 270, y + 2, 84, 26);
-                var canBake = plant && stack.Cooking == Cooking.Raw && connection.Self.NearFire;
-                if (plant && Button(ref buttons, "Ochutnat")) connection.Taste(i);
-                if (plant && Button(ref buttons, "Sníst")) connection.Eat(i);
+                var canBake = food && stack.Cooking == Cooking.Raw && connection.Self.NearFire;
+                if (food && Button(ref buttons, "Ochutnat")) connection.Taste(i);
+                if (food && Button(ref buttons, "Sníst")) connection.Eat(i);
                 if (canBake && Button(ref buttons, "Upéct")) _session.Bake(i);
                 buttons.x = x + 270 + 3 * (buttons.width + 8);
                 if (Button(ref buttons, "Zahodit")) connection.Drop(i);

@@ -96,7 +96,13 @@ namespace Oohra.Client
         /// <summary>Barva materiálu v batohu a ve světě.</summary>
         public static Color Material(Oohra.Core.Items.ItemKind kind)
         {
-            return kind == Oohra.Core.Items.ItemKind.Stick ? Hex("#8a6a42") : Hex("#9a948a");
+            switch (kind)
+            {
+                case Oohra.Core.Items.ItemKind.Stick: return Hex("#8a6a42");
+                case Oohra.Core.Items.ItemKind.Meat: return Hex("#b0574a");
+                case Oohra.Core.Items.ItemKind.Spear: return Hex("#c9b48a");
+                default: return Hex("#9a948a");
+            }
         }
 
         /// <summary>Barva listů druhu rostliny.</summary>
