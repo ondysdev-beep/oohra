@@ -51,6 +51,12 @@ public sealed class PlayerSession
     /// <summary>Které hromádky byly zkažené, když se batoh naposledy posílal (ať se pošle znovu, až se něco zkazí).</summary>
     public string SentSpoilage { get; set; } = string.Empty;
 
+    /// <summary>Verze kmenů, která byla naposledy poslána (-1 = poslat znovu).</summary>
+    public int SentTribeVersion { get; set; } = -1;
+
+    /// <summary>Stav zásob, který byl naposledy poslán (prázdné = poslat znovu).</summary>
+    public string SentStockKey { get; set; } = string.Empty;
+
     /// <summary>Verze zápisníku slov, která byla naposledy poslána (-1 = poslat znovu).</summary>
     public int SentVocabularyVersion { get; set; } = -1;
 
