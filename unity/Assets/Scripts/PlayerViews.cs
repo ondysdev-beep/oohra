@@ -50,11 +50,13 @@ namespace Oohra.Client
             {
                 seen.Add(player.Id);
                 var view = ViewFor(player.Id);
-                var target = WorldCoords.ToUnity(player.X, player.Y, player.Dead ? BodyRadius : BodyHeight / 2);
+                var lying = player.Dead || player.Sleeping;
+                var target = WorldCoords.ToUnity(player.X, player.Y, lying ? BodyRadius : BodyHeight / 2);
                 view.transform.position = Vector3.Lerp(view.transform.position, target, 1 - Mathf.Exp(-Smoothing * Time.deltaTime));
                 // Úhel na mapě (y dolů) převedený na otočení v Unity (z nahoru).
                 var facing = Quaternion.Euler(0f, 90f + player.Facing * Mathf.Rad2Deg, 0f);
-                view.transform.rotation = player.Dead ? Quaternion.Euler(90f, 0f, 0f) : facing;
+                // Mrtvá i spící postava leží (spící ve směru, kam se dívala).
+                view.transform.rotation = player.Dead ? Quaternion.Euler(90f, 0f, 0f) : player.Sleeping ? facing * Quaternion.Euler(90f, 0f, 0f) : facing;
             }
 
             RemoveMissing(seen);

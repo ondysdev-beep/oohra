@@ -1,4 +1,5 @@
 using System.Linq;
+using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
 using Oohra.Protocol;
@@ -26,12 +27,16 @@ namespace Oohra.Client
         private GUIStyle _title;
         private GUIStyle _warn;
         private GUIStyle _name;
+        private GUIStyle _center;
         private Rect _menuRect;
         private Rect _backpackRect;
         private Rect _deathRect;
         private Rect _backpackButtonRect;
         private Rect _buildButtonRect;
         private Rect _buildPanelRect;
+        private Rect _sleepButtonRect;
+        private Rect _skillsButtonRect;
+        private Rect _skillsRect;
         private BuildMode _buildMode;
 
         /// <summary>Myš je nad rozhraním: kliknutí nemá posílat postavu na zem pod ním.</summary>
@@ -54,6 +59,8 @@ namespace Oohra.Client
             }
 
             if (keyboard.bKey.wasPressedThisFrame) _session.BackpackOpen = !_session.BackpackOpen;
+            if (keyboard.nKey.wasPressedThisFrame) _session.ToggleSleep();
+            if (keyboard.kKey.wasPressedThisFrame) _session.SkillsOpen = !_session.SkillsOpen;
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
                 _session.BackpackOpen = false;
@@ -76,7 +83,12 @@ namespace Oohra.Client
             var width = Screen.width / scale;
             var height = Screen.height / scale;
 
-            _menuRect = _backpackRect = _deathRect = _buildPanelRect = Rect.zero;
+            _menuRect = _backpackRect = _deathRect = _buildPanelRect = _skillsRect = Rect.zero;
+            if (_session.Sleeping)
+            {
+                DrawSleep(width, height);
+            }
+
             DrawInfo();
             DrawButtons(width);
             var bottom = DrawBody(width, height);
@@ -95,12 +107,17 @@ namespace Oohra.Client
             {
                 DrawBackpack(width, height);
             }
+            else if (_session.SkillsOpen)
+            {
+                DrawSkills(width);
+            }
 
             var mouse = Event.current.mousePosition;
             if (Event.current.type == EventType.Repaint)
             {
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
-                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse);
+                    || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
+                    || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse);
             }
         }
 
@@ -142,7 +159,7 @@ namespace Oohra.Client
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 760, 20),
-                "WASD / klik = chůze · klik na rostlinu, vodu, strom, skálu, oheň, zeď · G stavět · B batoh · Q, E nebo kolečko = kamera", _label);
+                "WASD / klik = chůze · G stavět · B batoh · N spát · K dovednosti · Q, E nebo kolečko = kamera", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>
@@ -161,6 +178,62 @@ namespace Oohra.Client
                 if (BuildMode.IsActive) _buildMode.Close();
                 else _buildMode.Open(_buildMode.Selected);
             }
+
+            _sleepButtonRect = new Rect(width - 396, 12, 120, 34);
+            if (GUI.Button(_sleepButtonRect, _session.Sleeping ? "Vstát (N)" : "Spát (N)"))
+            {
+                _session.ToggleSleep();
+            }
+
+            _skillsButtonRect = new Rect(width - 528, 12, 120, 34);
+            if (GUI.Button(_skillsButtonRect, "Dovednosti (K)"))
+            {
+                _session.SkillsOpen = !_session.SkillsOpen;
+            }
+        }
+
+        /// <summary>Spánek: obrazovka ztmavne, uprostřed nápis. Svět běží dál (ve sdíleném světě se čas nezrychluje).</summary>
+        private void DrawSleep(float width, float height)
+        {
+            var old = GUI.color;
+            GUI.color = new Color(0.02f, 0.03f, 0.08f, 0.6f);
+            GUI.DrawTexture(new Rect(0, 0, width, height), Texture2D.whiteTexture);
+            GUI.color = old;
+            GUI.Label(new Rect(0, height * 0.38f, width, 30), "Spíš…", _name);
+            GUI.Label(new Rect(0, height * 0.38f + 30, width, 24), "Síly se vracejí. Vstaneš tlačítkem Vstát (N) nebo pohybem.", _center);
+        }
+
+        /// <summary>Dovednosti: úroveň 0 až 5 (body) a jestli nácvik čeká na spánek.</summary>
+        private void DrawSkills(float width)
+        {
+            var self = _session.Connection.Self;
+            var skills = new[] { SkillKind.Gather, SkillKind.Hunt, SkillKind.Craft, SkillKind.Build };
+            _skillsRect = new Rect(width - 364, 56, 352, 70 + skills.Length * 30);
+            GUI.Box(_skillsRect, GUIContent.none);
+            GUI.Box(_skillsRect, GUIContent.none);
+            var x = _skillsRect.x + 12;
+            var y = _skillsRect.y + 8;
+            GUI.Label(new Rect(x, y, 300, 22), "DOVEDNOSTI", _title);
+            y += 30;
+            foreach (var skill in skills)
+            {
+                var index = (int)skill;
+                var level = self.SkillLevels != null && index < self.SkillLevels.Length ? self.SkillLevels[index] : 0;
+                GUI.Label(new Rect(x, y, 110, 22), Texts.SkillName(skill), _label);
+                for (var i = 0; i < 5; i++)
+                {
+                    DrawBar(new Rect(x + 110 + i * 22, y + 5, 16, 12), i < level ? 1f : 0f, Ochre);
+                }
+
+                if ((self.PendingSkills & (1 << index)) != 0)
+                {
+                    GUI.Label(new Rect(x + 230, y, 110, 22), "čeká na spánek", _label);
+                }
+
+                y += 30;
+            }
+
+            GUI.Label(new Rect(x, y, 330, 22), "Nácvik se utvrdí ve spánku (aspoň hodinu).", _label);
         }
 
         /// <summary>Režim stavby: výběr stavby a nápověda k ovládání.</summary>
@@ -407,6 +480,7 @@ namespace Oohra.Client
             _warn = new GUIStyle(_label);
             _warn.normal.textColor = new Color(0.95f, 0.7f, 0.62f);
             _name = new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, wordWrap = false };
+            _center = new GUIStyle(_label) { alignment = TextAnchor.MiddleCenter };
         }
     }
 }

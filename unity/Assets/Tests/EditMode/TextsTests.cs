@@ -1,6 +1,9 @@
 using System;
 using NUnit.Framework;
+using Oohra.Core.Characters;
+using Oohra.Core.Plants;
 using Oohra.Core.World;
+using Oohra.Protocol;
 
 namespace Oohra.Client.Tests
 {
@@ -14,6 +17,34 @@ namespace Oohra.Client.Tests
             {
                 Assert.AreNotEqual(result.ToString(), Texts.For(result));
             }
+        }
+
+        /// <summary>Každá zpráva o těle (kromě smrti, ta má vlastní okno) má český text.</summary>
+        [Test]
+        public void EveryBodyEventHasText()
+        {
+            foreach (BodyEvent bodyEvent in Enum.GetValues(typeof(BodyEvent)))
+            {
+                if (bodyEvent == BodyEvent.Died)
+                {
+                    continue;
+                }
+
+                bool warn;
+                var text = Texts.For(new GameEvent(EventKind.Body, (byte)bodyEvent, default(PlantPart), new TasteNote[0], 2, 3), out warn);
+                Assert.IsNotNull(text, bodyEvent.ToString());
+                Assert.AreNotEqual(bodyEvent.ToString(), text);
+            }
+        }
+
+        [Test]
+        public void SkillLevelUpNamesSkillAndLevel()
+        {
+            bool warn;
+            var text = Texts.For(new GameEvent(EventKind.Body, (byte)BodyEvent.SkillLevelUp, default(PlantPart), new TasteNote[0], (byte)SkillKind.Build, 3), out warn);
+
+            Assert.AreEqual("Po spánku ti věci dávají větší smysl: Stavění 3.", text);
+            Assert.IsFalse(warn);
         }
 
         [Test]

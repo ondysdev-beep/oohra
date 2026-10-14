@@ -1,3 +1,4 @@
+using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
@@ -43,7 +44,8 @@ public static class Gathering
         GameClock clock,
         Inventory inventory,
         double playerX,
-        double playerY)
+        double playerY,
+        Character? picker = null)
     {
         var now = clock.TotalMinutes;
         if (!InReach(plant, playerX, playerY))
@@ -93,7 +95,33 @@ public static class Gathering
                 break;
         }
 
+        if (picker is not null)
+        {
+            PracticeAndBonus(picker, part, item, inventory);
+        }
+
         return HarvestResult.Picked;
+    }
+
+    /// <summary>
+    /// Sbírání se procvičí (prototyp practice('gather')). Zkušený sběrač utrhne s nějakou šancí list navíc
+    /// (extraLeafChancePerLevel v skills.json za každou úroveň).
+    /// </summary>
+    private static void PracticeAndBonus(Character picker, PlantPart part, PlantItem item, Inventory inventory)
+    {
+        var rules = GameData.Skills;
+        picker.Practice(SkillKind.Gather, part switch
+        {
+            PlantPart.Leaf => rules.Practice.Leaf,
+            PlantPart.Fruit => rules.Practice.Fruit,
+            _ => rules.Practice.Root,
+        });
+
+        var chance = rules.Effects.ExtraLeafChancePerLevel * picker.Skills.Level(SkillKind.Gather);
+        if (part == PlantPart.Leaf && chance > 0 && picker.Rng.NextDouble() < chance)
+        {
+            inventory.TryAdd(item);
+        }
     }
 
     private static double Distance(double ax, double ay, double bx, double by)

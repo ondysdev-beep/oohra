@@ -272,10 +272,19 @@ public sealed class GameServer : IDisposable
             return;
         }
 
+        if (player.Character.Sleeping && type is not (MessageType.Input or MessageType.Sleep))
+        {
+            // Spící postava nic nedělá. Probudí ji pohyb nebo tlačítko Vstát.
+            return;
+        }
+
         switch (type)
         {
             case MessageType.Input:
                 SetInput(player, Messages.ReadInput(reader));
+                break;
+            case MessageType.Sleep:
+                ToggleSleep(player);
                 break;
             case MessageType.Harvest:
                 Harvest(player, Messages.ReadHarvest(reader));
@@ -301,7 +310,7 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.Bake:
                 var stackIndex = Messages.ReadStackAction(reader);
-                FireAction(player, () => Fires.Bake(Island, player.Inventory, stackIndex, player.X, player.Y));
+                FireAction(player, () => Fires.Bake(Island, player.Inventory, stackIndex, player.X, player.Y, player.Character));
                 break;
             case MessageType.Place:
                 Place(player, Messages.ReadPlace(reader));
@@ -318,12 +327,12 @@ public sealed class GameServer : IDisposable
     {
         if (place.Kind == BuildKind.Campfire)
         {
-            FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, place.X, place.Y));
+            FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, place.X, place.Y, player.Character));
             return;
         }
 
         BuildAction(player, () => Island.Structures.Build(
-            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions()));
+            Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length, PlayerPositions(), player.Character));
     }
 
     /// <summary>Stavba: postavit nebo rozebrat. Seznam staveb se všem pošle v příštím ticku.</summary>
@@ -375,11 +384,40 @@ public sealed class GameServer : IDisposable
         SendInventory(player);
     }
 
-    private static void SetInput(PlayerSession player, (float DirX, float DirY) input)
+    /// <summary>Směr chůze. Když spící postava dostane pokyn k chůzi, probudí se.</summary>
+    private void SetInput(PlayerSession player, (float DirX, float DirY) input)
     {
         var length = Math.Sqrt(input.DirX * input.DirX + input.DirY * input.DirY);
         player.InputX = length > 0.01 ? input.DirX / length : 0;
         player.InputY = length > 0.01 ? input.DirY / length : 0;
+        if (length > 0.01 && player.Character.Sleeping)
+        {
+            player.Character.WakeUp(Clock.TotalMinutes, BodyEvent.WokeUp);
+            SendBodyEvents(player);
+            SendSelfState(player);
+        }
+    }
+
+    /// <summary>Spát, nebo vstát. Usnout jde jen unavený a v teple (rozhodne Core).</summary>
+    private void ToggleSleep(PlayerSession player)
+    {
+        var c = player.Character;
+        if (c.IsDead)
+        {
+            return;
+        }
+
+        if (c.Sleeping)
+        {
+            c.WakeUp(Clock.TotalMinutes, BodyEvent.WokeUp);
+        }
+        else if (c.TryFallAsleep(Clock.TotalMinutes))
+        {
+            player.InputX = player.InputY = 0;
+        }
+
+        SendBodyEvents(player);
+        SendSelfState(player);
     }
 
     private void Harvest(PlayerSession player, (int PlantId, PlantPart Part) request)
@@ -389,7 +427,7 @@ public sealed class GameServer : IDisposable
             return;
         }
 
-        var result = Gathering.Harvest(Island, Plants, Island.Plants[request.PlantId], request.Part, Clock, player.Inventory, player.X, player.Y);
+        var result = Gathering.Harvest(Island, Plants, Island.Plants[request.PlantId], request.Part, Clock, player.Inventory, player.X, player.Y, player.Character);
         SendEvent(player, new GameEvent(EventKind.Harvest, (byte)result, request.Part, []));
         if (result == HarvestResult.Picked)
         {
@@ -466,7 +504,7 @@ public sealed class GameServer : IDisposable
     private void Move(PlayerSession player, double realSeconds)
     {
         var c = player.Character;
-        if (c.IsDead || c.FaintMinutes > 0 || (player.InputX == 0 && player.InputY == 0))
+        if (c.IsDead || c.Sleeping || c.FaintMinutes > 0 || (player.InputX == 0 && player.InputY == 0))
         {
             return;
         }
@@ -484,7 +522,7 @@ public sealed class GameServer : IDisposable
     {
         foreach (var message in player.Character.TakeMessages())
         {
-            SendEvent(player, new GameEvent(EventKind.Body, (byte)message.Event, default, message.Notes?.ToArray() ?? []));
+            SendEvent(player, new GameEvent(EventKind.Body, (byte)message.Event, default, message.Notes?.ToArray() ?? [], (byte)(message.Skill ?? 0), (byte)message.Level));
         }
     }
 
@@ -515,7 +553,10 @@ public sealed class GameServer : IDisposable
             c.IsDead,
             c.DeathCause,
             Fires.WarmsAt(Island, player.X, player.Y),
-            Shelter.IsSheltered(Island, player.X, player.Y));
+            Shelter.IsSheltered(Island, player.X, player.Y),
+            c.Sleeping,
+            SkillKinds.Select(s => (byte)c.Skills.Level(s)).ToArray(),
+            PendingSkills(c));
         SendTo(player.Peer, w => Messages.WriteSelfState(w, state));
     }
 
@@ -534,7 +575,7 @@ public sealed class GameServer : IDisposable
     private void BroadcastSnapshot()
     {
         var players = _byPeer.Values
-            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead))
+            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping))
             .ToArray();
         var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players);
         Broadcast(w => Messages.WriteSnapshot(w, snapshot), DeliveryMethod.Sequenced);
@@ -565,6 +606,23 @@ public sealed class GameServer : IDisposable
         return Island.Plants
             .Select(p => new PlantStateChange(p.Id, WorldViews.PlantVisual(Island, Plants, p, Clock)))
             .ToList();
+    }
+
+    private static readonly SkillKind[] SkillKinds = [SkillKind.Gather, SkillKind.Hunt, SkillKind.Craft, SkillKind.Build];
+
+    /// <summary>Bity dovedností, jejichž nácvik čeká na spánek (bit = číslo dovednosti).</summary>
+    private static byte PendingSkills(Character c)
+    {
+        var bits = 0;
+        foreach (var skill in SkillKinds)
+        {
+            if (c.Skills.Pending(skill) > 0)
+            {
+                bits |= 1 << (int)skill;
+            }
+        }
+
+        return (byte)bits;
     }
 
     private static StackView StackViewOf(ItemStack stack)

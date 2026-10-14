@@ -34,6 +34,30 @@ public enum BodyEvent
     FeltSick,
 
     Died,
+
+    /// <summary>Usnul.</summary>
+    FellAsleep,
+
+    /// <summary>Probudil se odpočatý (síla je plná, nebo skoro plná a je den).</summary>
+    WokeRested,
+
+    /// <summary>Vstal sám (tlačítko nebo pohyb).</summary>
+    WokeUp,
+
+    /// <summary>Zimou nemůže spát, probudil se.</summary>
+    WokeCold,
+
+    /// <summary>Chtěl spát, ale není dost unavený.</summary>
+    NotTired,
+
+    /// <summary>Chtěl spát, ale je mu moc zima.</summary>
+    TooColdToSleep,
+
+    /// <summary>Ve spánku se uložilo, co dělal, ale žádná dovednost nestoupla.</summary>
+    LearnedInSleep,
+
+    /// <summary>Po spánku stoupla dovednost (zpráva nese dovednost a úroveň).</summary>
+    SkillLevelUp,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -75,5 +99,8 @@ public enum Symptom
     Unconscious,
 }
 
-/// <summary>Zpráva o těle s časem (herní minuty). U ochutnání nese nápovědy chuti.</summary>
-public sealed record BodyMessage(double At, BodyEvent Event, IReadOnlyList<TasteNote>? Notes = null);
+/// <summary>
+/// Zpráva o těle s časem (herní minuty). U ochutnání nese nápovědy chuti,
+/// u nové úrovně dovednosti dovednost a úroveň.
+/// </summary>
+public sealed record BodyMessage(double At, BodyEvent Event, IReadOnlyList<TasteNote>? Notes = null, SkillKind? Skill = null, int Level = 0);

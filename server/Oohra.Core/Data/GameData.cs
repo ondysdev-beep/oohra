@@ -50,6 +50,11 @@ public static class GameData
 
     public static BuildingRules Building => _building.Value;
 
+    private static readonly Lazy<SkillRules> _skills =
+        new(() => Load<SkillRules>("skills.json"));
+
+    public static SkillRules Skills => _skills.Value;
+
     public static GatheringRules Gathering => _gathering.Value;
 
     public static MovementRules Movement => _movement.Value;

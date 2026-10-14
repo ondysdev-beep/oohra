@@ -1,3 +1,4 @@
+using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
@@ -68,10 +69,11 @@ public sealed class Fires
     /// Rozdělá oheň z klacků a kamene na místě (x, y) z režimu stavby: nejdál placeReach od postavy,
     /// na suché zemi, ne na kmeni stromu, jiném ohni ani zdi.
     /// </summary>
-    public FireResult Light(Island island, Inventory inventory, double playerX, double playerY, double x, double y)
+    public FireResult Light(Island island, Inventory inventory, double playerX, double playerY, double x, double y, Character? maker = null)
     {
         var rules = GameData.Fire.Fire;
-        if (inventory.Count(ItemKind.Stick) < rules.SticksCost || inventory.Count(ItemKind.Stone) < rules.StonesCost)
+        var sticks = FireSticks(maker);
+        if (inventory.Count(ItemKind.Stick) < sticks || inventory.Count(ItemKind.Stone) < rules.StonesCost)
         {
             return FireResult.NeedMaterials;
         }
@@ -90,10 +92,11 @@ public sealed class Fires
             return FireResult.CannotBuildHere;
         }
 
-        inventory.TryRemove(ItemKind.Stick, rules.SticksCost);
+        inventory.TryRemove(ItemKind.Stick, sticks);
         inventory.TryRemove(ItemKind.Stone, rules.StonesCost);
         _fires.Add(new Fire(_nextId++, x, y, rules.BurnMinutes));
         Version++;
+        maker?.Practice(SkillKind.Craft, GameData.Skills.Practice.Fire);
         return FireResult.Lit;
     }
 
@@ -152,7 +155,7 @@ public sealed class Fires
     }
 
     /// <summary>Upeče jeden kus syrové rostliny z hromádky. Musí být u hořícího ohně.</summary>
-    public FireResult Bake(Island island, Inventory inventory, int stackIndex, double playerX, double playerY)
+    public FireResult Bake(Island island, Inventory inventory, int stackIndex, double playerX, double playerY, Character? baker = null)
     {
         if (!BurningNear(island, playerX, playerY, GameData.Fire.Fire.CookRadius))
         {
@@ -172,7 +175,17 @@ public sealed class Fires
             return FireResult.InventoryFull;
         }
 
+        baker?.Practice(SkillKind.Craft, GameData.Skills.Practice.Bake);
         return FireResult.Baked;
+    }
+
+    /// <summary>Kolik klacků stojí oheň. Zkušený řemeslník (cheapFireLevel v skills.json) potřebuje méně.</summary>
+    public static int FireSticks(Character? maker)
+    {
+        var effects = GameData.Skills.Effects;
+        return maker is not null && maker.Skills.Level(SkillKind.Craft) >= effects.CheapFireLevel
+            ? effects.CheapFireSticks
+            : GameData.Fire.Fire.SticksCost;
     }
 
     private static double Distance(double ax, double ay, double bx, double by)

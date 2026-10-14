@@ -18,7 +18,12 @@ namespace Oohra.Client
             {
                 case EventKind.Body:
                     var bodyEvent = (BodyEvent)e.Code;
-                    warn = bodyEvent != BodyEvent.Ate && bodyEvent != BodyEvent.Tasted && bodyEvent != BodyEvent.CameTo;
+                    warn = IsBad(bodyEvent);
+                    if (bodyEvent == BodyEvent.SkillLevelUp)
+                    {
+                        return "Po spánku ti věci dávají větší smysl: " + SkillName((SkillKind)e.Skill) + " " + e.Level + ".";
+                    }
+
                     return bodyEvent == BodyEvent.Died ? null : For(bodyEvent, e.Notes);
                 case EventKind.Harvest:
                     var harvest = (HarvestResult)e.Code;
@@ -93,6 +98,38 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Špatná zpráva o těle (zvýrazní se). Jídlo, spánek a učení jsou dobré zprávy.</summary>
+        public static bool IsBad(BodyEvent bodyEvent)
+        {
+            switch (bodyEvent)
+            {
+                case BodyEvent.Ate:
+                case BodyEvent.Tasted:
+                case BodyEvent.CameTo:
+                case BodyEvent.FellAsleep:
+                case BodyEvent.WokeRested:
+                case BodyEvent.WokeUp:
+                case BodyEvent.NotTired:
+                case BodyEvent.LearnedInSleep:
+                case BodyEvent.SkillLevelUp:
+                    return false;
+                default:
+                    return true;
+            }
+        }
+
+        /// <summary>Název dovednosti (prototyp SKN).</summary>
+        public static string SkillName(SkillKind skill)
+        {
+            switch (skill)
+            {
+                case SkillKind.Gather: return "Sbírání";
+                case SkillKind.Hunt: return "Lov";
+                case SkillKind.Craft: return "Řemeslo";
+                default: return "Stavění";
+            }
+        }
+
         public static string For(BodyEvent bodyEvent, TasteNote[] notes)
         {
             switch (bodyEvent)
@@ -109,6 +146,13 @@ namespace Oohra.Client
                 case BodyEvent.Crash: return "Ten příval sil je pryč. Cítíš prázdnotu.";
                 case BodyEvent.FeverStarted: return "Hoří ti čelo.";
                 case BodyEvent.FeltSick: return "Je ti horko a špatně od žaludku. Něco v tobě se pokazilo.";
+                case BodyEvent.FellAsleep: return "Ležíš a spíš. Čas neběží rychleji, ale síly se vracejí.";
+                case BodyEvent.WokeRested: return "Probudil ses odpočatý.";
+                case BodyEvent.WokeUp: return "Probudil ses.";
+                case BodyEvent.WokeCold: return "Zimou nemůžeš spát.";
+                case BodyEvent.NotTired: return "Nejsi dost unavený.";
+                case BodyEvent.TooColdToSleep: return "Je ti moc zima na spaní.";
+                case BodyEvent.LearnedInSleep: return "Ve spánku se ti uložilo, co jsi dělal.";
                 default: return "Zemřel jsi.";
             }
         }

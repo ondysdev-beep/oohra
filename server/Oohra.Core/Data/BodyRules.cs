@@ -15,7 +15,8 @@ public sealed record BodyRules(
     OutcomeRules Outcomes,
     InstinctRules Instinct,
     TasteRules Taste,
-    SymptomRules Symptoms);
+    SymptomRules Symptoms,
+    SleepRules Sleep);
 
 public sealed record StartRules(double Satiety, double Hydration, double Energy, double Warmth, double Health);
 
@@ -143,3 +144,15 @@ public sealed record TasteRules(
     double HerbalAbove);
 
 public sealed record SymptomRules(double HeavyBodyToxinAbove, double FeverAbove, double InflammationAbove);
+
+public sealed record SleepRules(
+    double MaxEnergyToSleep,
+    double MinWarmthToSleep,
+    double EnergyPerMinute,
+    double HydrationMultiplier,
+    double SatietyMultiplier,
+    double HealMultiplier,
+    double WarmthBonus,
+    double WakeEnergyInDaylight,
+    double WakeDaylightAbove,
+    double WakeWarmthBelow);

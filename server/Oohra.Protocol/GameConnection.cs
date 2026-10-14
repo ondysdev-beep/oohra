@@ -117,6 +117,12 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteStackAction(w, MessageType.Drop, stackIndex));
     }
 
+    /// <summary>Lehnout si ke spánku, nebo vstát. Jestli postava usne, rozhodne server (únava, teplo).</summary>
+    public void ToggleSleep()
+    {
+        Send(Messages.WriteSleep);
+    }
+
     public void Reborn()
     {
         Send(Messages.WriteReborn);
