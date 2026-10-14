@@ -153,12 +153,23 @@ V katalogu jsou políčka pro textury:
 - **GroundTextureSize** říká, po kolika metrech se textura opakuje (výchozí 4 m).
 - Prázdné políčko = hra si texturu vygeneruje ze základní barvy dlaždice (jemně skvrnitá barva).
 
-## Kameny na skalách
+## Skály (hromady kamenů)
 
-Na skalních dlaždicích leží nízké kameny (asi na každé druhé). Políčko **Rocks**: jeden nebo víc prefabů
-kamenů. Na velikosti a středu modelu nezáleží: hra každý kámen natočí a srovná tak, aby jeho největší
-rozměr byl mezi **RockMinSize** a **RockMaxSize** (0,2 až 0,45 m). Víc nedávej: přes skálu se chodí,
-vysoký balvan by postava „prošla“. Prázdné políčko = šedé zploštělé kuličky.
+Na části skalních dlaždic leží hromada kamenů (které to jsou, určuje server podle seedu, `rocks.json`).
+Každý kámen v hromadě je jeden kámen k vytěžení: hráč klikne na hromadu a dá „Vzít kámen“, nejvyšší kámen
+zmizí. Prázdná hromada zmizí celá a za 3 herní dny se obnoví. Přes hromadu se nedá projít.
+
+- Políčko **Rocks**: jeden nebo víc prefabů kamenů, hra je v hromadách střídá. Dole je kruh až čtyř
+  velkých kamenů, nahoře menší.
+- **RockMinSize** a **RockMaxSize**: největší rozměr jednoho kamene (0,4 až 0,6 m). Na velikosti a středu
+  modelu nezáleží, hra ho srovná. Hromada pak má asi 1 m.
+- Prázdné políčko = šedé zploštělé kuličky.
+
+## Klikání na věci
+
+Na strom, rostlinu, hromadu kamenů, stavbu, oheň, značku, zvíře i jiného hráče se kliká přímo na model
+(i na korunu stromu vysoko nad zemí). Hra každému objektu dá neviditelnou krabici přes celý model.
+Zprůhledněný strom (zakrývá postavu) klik propustí na to, co je za ním.
 
 ## Tráva (jen ozdoba)
 
@@ -187,9 +198,14 @@ a pomalu se po ní posouvají vlnky.
 
 - **WaterMaterial**: přetáhni materiál vody (u IgniteCoders `Water_mat_01` až `03`). Pak se barva, vlnky
   a jejich posun z katalogu neberou, všechno je v materiálu.
-- **WaterReflectionCamera**: když voda umí odrazy z druhé kamery (u IgniteCoders prefab
-  `WaterReflectionCamera`), přetáhni sem prefab kamery. Hra jí sama dosadí hladinu. Druhá kamera kreslí
-  scénu podruhé, takže hra poběží pomaleji. Bez ní voda funguje, jen bez odrazů okolí.
+- **WaterUvSize**: kolik metrů odpovídá jednomu opakování textury vody. U IgniteCoders 50 (jejich blok vody
+  má 50 m). Když je textura moc velká nebo malá, uprav tohle číslo (nebo „Normal Tiling“ v materiálu).
+- **CustomWaterDrop**: o kolik metrů níž se vlastní voda položí. Vlny IgniteCoders jdou nahoru až o 0,3 m
+  (u `Water_mat_02` „Displacement“ 0,3), voda by jinak přetekla přes pláž. Výchozí 0,2 m.
+- **WaterReflectionCamera**: jen když má materiál zapnuté odrazy (u IgniteCoders „Use Reflection“).
+  Pak sem přetáhni prefab `WaterReflectionCamera` (ne `WaterBlock_50m`, to je kus vody). Hra jí sama dosadí
+  hladinu. Druhá kamera kreslí scénu podruhé, takže hra poběží pomaleji. S vypnutými odrazy ji nech prázdnou.
+- Do **WaterNormalMap** patří normálová mapa vlnek, ne obrázek (ikona). U vlastní vody se nepoužije.
 - Prázdné WaterMaterial = voda hry.
 
 Pobřeží není schodovité podle čtverců: rohy dlaždic se zakulatí (jen vzhled, kudy se dá chodit, určuje

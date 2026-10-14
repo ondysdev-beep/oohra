@@ -49,15 +49,18 @@ public class FireTests
     [Fact]
     public void StoneFromRock()
     {
-        var (rockX, rockY) = FindTile(TileType.Rock);
+        var island = IslandGenerator.Build(12345, 84, 84);
+        var pile = island.Rocks.All.First();
+        var (rockX, rockY) = (pile.TileIndex % island.Width, pile.TileIndex / island.Width);
         var inventory = new Inventory(10);
 
-        Assert.Equal(MaterialResult.GotStone, Materials.TakeStone(_island, rockX, rockY, inventory, rockX + 0.5, rockY + 0.5));
-        Assert.Equal(MaterialResult.GotStone, Materials.TakeStone(_island, rockX, rockY, inventory, rockX + 0.5, rockY + 0.5));
+        Assert.Equal(MaterialResult.GotStone, Materials.TakeStone(island, rockX, rockY, inventory, rockX + 1.2, rockY + 0.5, 0));
+        Assert.Equal(MaterialResult.GotStone, Materials.TakeStone(island, rockX, rockY, inventory, rockX + 1.2, rockY + 0.5, 0));
 
         Assert.Equal(2, inventory.Count(ItemKind.Stone));
         Assert.Single(inventory.Stacks);
-        Assert.Equal(MaterialResult.TooFar, Materials.TakeStone(_island, rockX, rockY, inventory, rockX + 3, rockY));
+        Assert.Equal(pile.MaxStones - 2, pile.Stones);
+        Assert.Equal(MaterialResult.TooFar, Materials.TakeStone(island, rockX, rockY, inventory, rockX + 3, rockY, 0));
     }
 
     [Fact]

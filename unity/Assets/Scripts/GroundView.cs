@@ -7,7 +7,7 @@ namespace Oohra.Client
     /// <summary>
     /// Zem ostrova jako Unity Terrain: souš rovně ve výšce 0, dno moře a jezírek pod hladinou, textury dlaždic
     /// se na hranách plynule míchají (GroundLayout). Textury jsou z katalogu vzhledu, prázdné políčko =
-    /// textura vygenerovaná ze základní barvy dlaždice. Na skalách leží nízké kameny.
+    /// textura vygenerovaná ze základní barvy dlaždice. Hromady kamenů na skalách kreslí RockPileViews.
     /// </summary>
     public static class GroundView
     {
@@ -15,8 +15,6 @@ namespace Oohra.Client
         private const int GeneratedSize = 64;
         private const float GeneratedVariation = 0.12f;
 
-        // Kameny na skále: na kolika procentech skalních dlaždic leží kámen (velikost je v katalogu vzhledu).
-        private const int RockChance = 45;
 
         public static Terrain Build(WorldView world, Transform parent)
         {
@@ -29,12 +27,12 @@ namespace Oohra.Client
             data.terrainLayers = Layers(catalog);
             data.SetAlphamaps(0, 0, GroundLayout.Alphamaps(world, data.alphamapResolution));
 
-            var go = Terrain.CreateTerrainGameObject(data);
-            go.name = "Zem";
+            // Terrain bez TerrainCollider: kolize počítá server, klikání řeší Pickable a rovina země.
+            var go = new GameObject("Zem");
+            go.AddComponent<Terrain>().terrainData = data;
             go.transform.SetParent(parent);
             // Terrain začíná v rohu: jih-západ mapy je v Unity (0, -výška mapy). Souš (výška 1) je pak v y = 0.
             go.transform.position = new Vector3(0f, -GroundLayout.Depth, -world.Height);
-            RemoveCollider(go);
 
             var terrain = go.GetComponent<Terrain>();
             terrain.materialTemplate = Palette.Terrain;
@@ -42,7 +40,6 @@ namespace Oohra.Client
             terrain.basemapDistance = 1000f;
             terrain.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-            BuildRocks(world, parent, catalog);
             return terrain;
         }
 
@@ -124,54 +121,6 @@ namespace Oohra.Client
                 h ^= h >> 16;
                 return (h & 0xFFFFFF) / (float)0x1000000;
             }
-        }
-
-        /// <summary>Nízké kameny na skalních dlaždicích (z katalogu, jinak šedé zploštělé koule).</summary>
-        private static void BuildRocks(WorldView world, Transform parent, VisualCatalog catalog)
-        {
-            var rocks = new GameObject("Kameny").transform;
-            rocks.SetParent(parent);
-            var models = catalog.Rocks ?? new GameObject[0];
-            for (var i = 0; i < world.Tiles.Length; i++)
-            {
-                if (world.Tiles[i] != TileType.Rock || Hash01(i, 0, 11) * 100 >= RockChance)
-                {
-                    continue;
-                }
-
-                var x = i % world.Width + 0.2 + Hash01(i, 1, 11) * 0.6;
-                var y = i / world.Width + 0.2 + Hash01(i, 2, 11) * 0.6;
-                var size = Mathf.Lerp(catalog.RockMinSize, catalog.RockMaxSize, Hash01(i, 3, 11));
-                var rotation = Quaternion.Euler(0f, Hash01(i, 4, 11) * 360f, 0f);
-                GameObject rock;
-                if (models.Length > 0 && models[i % models.Length] != null)
-                {
-                    rock = VisualCatalog.Spawn(models[i % models.Length], rocks, "Kámen", largest: size);
-                    rock.transform.position = WorldCoords.ToUnity(x, y);
-                    rock.transform.rotation = rotation;
-                }
-                else
-                {
-                    var grey = Palette.Tile(TileType.Rock, false) * Mathf.Lerp(0.75f, 1.05f, Hash01(i, 5, 11));
-                    grey.a = 1f;
-                    rock = IslandView.Primitive(PrimitiveType.Sphere, "Kámen", rocks, grey);
-                    rock.transform.position = WorldCoords.ToUnity(x, y, size * 0.15f);
-                    rock.transform.rotation = rotation;
-                    rock.transform.localScale = new Vector3(size, size * 0.55f, size * 0.8f);
-                }
-            }
-        }
-
-        private static void RemoveCollider(GameObject go)
-        {
-            var collider = go.GetComponent<TerrainCollider>();
-            if (collider == null)
-            {
-                return;
-            }
-
-            if (Application.isPlaying) Object.Destroy(collider);
-            else Object.DestroyImmediate(collider);
         }
     }
 }

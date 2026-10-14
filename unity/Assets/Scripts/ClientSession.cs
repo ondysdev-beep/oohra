@@ -283,6 +283,27 @@ namespace Oohra.Client
             return null;
         }
 
+        /// <summary>Hromada kamenů na dlaždici, ve které ještě něco je, nebo null.</summary>
+        public RockPileView? RockPileAt(int tileX, int tileY)
+        {
+            var world = Connection.World;
+            if (world == null)
+            {
+                return null;
+            }
+
+            var index = tileY * world.Width + tileX;
+            foreach (var pile in Connection.RockPiles)
+            {
+                if (pile.TileIndex == index && pile.Stones > 0)
+                {
+                    return pile;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>Název stavby do nabídky: u dekorace její jméno ze serveru (Lavice…), jinak druh stavby.</summary>
         public string StructureName(StructureView structure)
         {

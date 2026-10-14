@@ -84,12 +84,12 @@ namespace Oohra.Client
         [Tooltip("Po kolika metrech se textura zemi opakuje.")]
         public float GroundTextureSize = 4f;
 
-        [Header("Kameny na skalách (nízké: přes skálu se chodí)")]
+        [Header("Skály: hromady kamenů na skalních dlaždicích (z každého kamene je jeden kámen k vytěžení)")]
         public GameObject[] Rocks = new GameObject[0];
 
-        [Tooltip("Nejmenší a největší kámen: jeho největší rozměr v metrech (hra model srovná).")]
-        public float RockMinSize = 0.2f;
-        public float RockMaxSize = 0.45f;
+        [Tooltip("Nejmenší a největší kámen v hromadě: jeho největší rozměr v metrech (hra model srovná). Hromada má asi 1 m.")]
+        public float RockMinSize = 0.4f;
+        public float RockMaxSize = 0.6f;
 
         [Header("Voda")]
         [Tooltip("Barva hladiny, průhlednost je v alfě.")]
@@ -104,8 +104,14 @@ namespace Oohra.Client
         [Tooltip("Jak rychle se vlnky posouvají (metry za sekundu).")]
         public float WaveSpeed = 0.08f;
 
+        [Tooltip("Kolik metrů odpovídá jednomu opakování souřadnic textury vody (u IgniteCoders 50, jejich blok vody má 50 m).")]
+        public float WaterUvSize = 50f;
+
         [Tooltip("Vlastní materiál vody (třeba ze Shader Graphu). Prázdné = hladina hry (barva a vlnky výše). S vlastním materiálem se barva, vlnky a jejich posun neberou, vše je v materiálu.")]
         public Material WaterMaterial;
+
+        [Tooltip("O kolik metrů níž se položí vlastní voda (WaterMaterial). Vlastní shadery často dělají vlny nahoru a voda by jinak přetékala přes břeh.")]
+        public float CustomWaterDrop = 0.2f;
 
         [Tooltip("Prefab kamery odrazů pro vlastní vodu (např. IgniteCoders WaterReflectionCamera). Hra jí do pole reflectionPlane dosadí hladinu. Kamera navíc stojí výkon.")]
         public GameObject WaterReflectionCamera;

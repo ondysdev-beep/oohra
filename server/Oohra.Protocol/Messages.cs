@@ -96,6 +96,9 @@ public readonly record struct StructureView(int Id, BuildKind Kind, float X, flo
 /// <summary>Druh dekorace z decorations.json na serveru: název do nabídky, cena, poloměr a jestli se přes ni dá projít.</summary>
 public sealed record DecorationTypeView(string Id, string Name, int Sticks, int Stones, float Radius, bool Blocks);
 
+/// <summary>Hromada kamenů na skalní dlaždici: kolik kamenů zbývá (0 = zmizela) a kolik jich má plná.</summary>
+public readonly record struct RockPileView(int TileIndex, int Stones, int MaxStones);
+
 /// <summary>Zvíře v okolí hráče: poloha, směr pohledu (radiány) a co dělá. Životy se neposílají.</summary>
 public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
 
@@ -417,6 +420,24 @@ public static class Messages
     public static DecorationTypeView[] ReadDecorationTypes(NetDataReader r)
     {
         return ReadList(r, () => new DecorationTypeView(r.GetString(MaxDecorationId), r.GetString(), r.GetInt(), r.GetInt(), r.GetFloat(), r.GetBool()));
+    }
+
+    /// <summary>Hromady kamenů na skalách. Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteRockPiles(NetDataWriter w, IReadOnlyList<RockPileView> piles)
+    {
+        w.Put((byte)MessageType.RockPiles);
+        w.Put(piles.Count);
+        foreach (var p in piles)
+        {
+            w.Put(p.TileIndex);
+            w.Put((byte)p.Stones);
+            w.Put((byte)p.MaxStones);
+        }
+    }
+
+    public static RockPileView[] ReadRockPiles(NetDataReader r)
+    {
+        return ReadList(r, () => new RockPileView(r.GetInt(), r.GetByte(), r.GetByte()));
     }
 
     /// <summary>Hráč inviterId tě zve do svého kmene.</summary>

@@ -58,13 +58,13 @@ MonoBehaviour:
   - {fileID: 3787026813779523426, guid: 12472b102cc4f5c4f8da06f6df840f22, type: 3}
   - {fileID: 5112067364858557263, guid: d7d16e259a61cfa4e88065f59996f7bf, type: 3}
   - {fileID: 2367486897356952710, guid: acd4dc441e341234188ace961d48e9cb, type: 3}
-  RockMinSize: 0.2
-  RockMaxSize: 0.45
+  RockMinSize: 0.4
+  RockMaxSize: 0.6
   WaterColor: {r: 0.16, g: 0.38, b: 0.50980395, a: 0.72}
-  WaterNormalMap: {fileID: 2800000, guid: 766a7edc5f25e3b4daafb5554da17927, type: 3}
+  WaterNormalMap: {fileID: 0}
   WaveSize: 3
   WaveSpeed: 0.08
-  WaterMaterial: {fileID: 0}
+  WaterMaterial: {fileID: 2100000, guid: 8759ec410a6774b4ea13ae32dc2b8d2e, type: 2}
   WaterReflectionCamera: {fileID: 0}
   FoamColor: {r: 0.95, g: 0.97, b: 1, a: 0.8}
   FoamWidth: 0.45

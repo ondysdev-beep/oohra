@@ -7,7 +7,7 @@ namespace Oohra.Core.World;
 
 /// <summary>
 /// Klacky ze stromů a kameny ze skal (prototyp nabídky Strom a Skála v part5.js).
-/// Strom dá několikrát za den spadlé větve, pak je potřeba počkat do zítřka. Kamenů je na skále dost.
+/// Strom dá několikrát za den spadlé větve, pak je potřeba počkat do zítřka. Kameny jsou v hromadách na skalách.
 /// </summary>
 public sealed class Materials
 {
@@ -48,8 +48,11 @@ public sealed class Materials
         return MaterialResult.GotSticks;
     }
 
-    /// <summary>Vezme kámen ze skály na dlaždici (tileX, tileY).</summary>
-    public static MaterialResult TakeStone(Island island, int tileX, int tileY, Inventory inventory, double playerX, double playerY)
+    /// <summary>
+    /// Vezme kámen z hromady na skalní dlaždici (tileX, tileY). Hromada se tím zmenší, prázdná zmizí
+    /// a za čas se obnoví (RockPiles). Skála bez hromady kámen nedá.
+    /// </summary>
+    public static MaterialResult TakeStone(Island island, int tileX, int tileY, Inventory inventory, double playerX, double playerY, double now)
     {
         if (!island.InBounds(tileX, tileY) || island.TileAt(tileX, tileY) != TileType.Rock)
         {
@@ -61,7 +64,19 @@ public sealed class Materials
             return MaterialResult.TooFar;
         }
 
-        return inventory.TryAdd(Item.Stone) ? MaterialResult.GotStone : MaterialResult.InventoryFull;
+        var pile = island.Rocks.At(island.Index(tileX, tileY));
+        if (pile is null || pile.Stones <= 0)
+        {
+            return MaterialResult.NothingLeft;
+        }
+
+        if (!inventory.TryAdd(Item.Stone))
+        {
+            return MaterialResult.InventoryFull;
+        }
+
+        island.Rocks.TakeOne(pile.TileIndex, now);
+        return MaterialResult.GotStone;
     }
 
     /// <summary>Stav stromu. Po prvním sběru se za den větve obnoví (prototyp c.c a c.r).</summary>

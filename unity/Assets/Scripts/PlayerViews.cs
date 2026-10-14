@@ -109,6 +109,11 @@ namespace Oohra.Client
             {
                 Self = view.transform;
             }
+            else
+            {
+                // Na jiné hráče jde kliknout (pozvat do kmene). Na sebe ne, to by zakrylo zem pod nohama.
+                Pickable.Attach(view, InteractionTarget.ForPlayer(id, 0, 0));
+            }
 
             return view;
         }

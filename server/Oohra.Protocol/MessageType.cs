@@ -3,7 +3,7 @@ namespace Oohra.Protocol;
 /// <summary>Základní údaje o protokolu. Klient a server musí mít stejnou verzi.</summary>
 public static class ProtocolInfo
 {
-    public const int Version = 13;
+    public const int Version = 14;
 
     public const int DefaultPort = 9050;
 
@@ -67,6 +67,7 @@ public enum MessageType : byte
     Tribe = 117,
     Stockpiles = 118,
     DecorationTypes = 119,
+    RockPiles = 120,
 }
 
 /// <summary>Jak rostlina vypadá (plody nebo vykopaná). Klient nevidí, proč tomu tak je.</summary>

@@ -30,7 +30,8 @@ public static class Movement
             && !IsImpassable(island, Floor(x - radius), Floor(y + radius))
             && !IsImpassable(island, Floor(x + radius), Floor(y + radius))
             && !HitsTrunk(island, x, y, radius)
-            && !island.Structures.Blocks(x, y, radius);
+            && !island.Structures.Blocks(x, y, radius)
+            && !island.Rocks.Blocks(island, x, y, radius);
     }
 
     /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko.</summary>

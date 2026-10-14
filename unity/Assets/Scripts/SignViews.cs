@@ -106,6 +106,8 @@ namespace Oohra.Client
                 Face(root.transform, texture, new Vector3(0f, 0.015f, 0f), Quaternion.Euler(90f, 0f, 0f), GroundSize);
             }
 
+            Pickable.Attach(root, InteractionTarget.ForSign(sign.Id, sign.X, sign.Y));
+
             return root;
         }
 

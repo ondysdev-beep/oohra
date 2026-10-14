@@ -70,6 +70,7 @@ namespace Oohra.Client
                 if (!_views.TryGetValue(animal.Id, out view))
                 {
                     view = Create(animal);
+                    Pickable.Attach(view.Root, InteractionTarget.ForAnimal(animal.Id, animal.X, animal.Y));
                     _views[animal.Id] = view;
                 }
 

@@ -25,7 +25,7 @@ namespace Oohra.Client
         public const int LayerCount = 5;
 
         /// <summary>Nejhlubší místo (hluboké moře) pod úrovní souše, v metrech.</summary>
-        public const float Depth = 0.8f;
+        public const float Depth = 1f;
 
         /// <summary>Výška vodní hladiny (kousek pod souší, ať břeh není mokrý).</summary>
         public const float WaterLevel = -0.06f;
@@ -72,8 +72,8 @@ namespace Oohra.Client
         {
             switch (tile)
             {
-                case TileType.Sea: return shore ? 0.35f : Depth;
-                case TileType.Pond: return 0.45f;
+                case TileType.Sea: return shore ? 0.55f : Depth;
+                case TileType.Pond: return 0.6f;
                 default: return 0f;
             }
         }

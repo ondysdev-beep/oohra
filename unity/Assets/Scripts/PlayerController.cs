@@ -90,9 +90,29 @@ namespace Oohra.Client
             WorldCoords.FromUnity(ray.GetPoint(distance), out x, out y);
             _session.Menu = null;
             _stuckTime = 0;
-            _target = PickTarget(x, y);
+            _target = PickObject(ray) ?? PickTarget(x, y);
             _session.Selected = _target;
             _moveTo = _target == null ? new Vector2((float)x, (float)y) : (Vector2?)null;
+        }
+
+        /// <summary>
+        /// Objekt pod kurzorem: první věc s Pickable, kterou paprsek z kamery protne (koruna stromu, rostlina,
+        /// hromada kamenů…). Když paprsek nic netrefí, rozhodne místo na zemi (PickTarget).
+        /// </summary>
+        public static InteractionTarget PickObject(Ray ray)
+        {
+            var hits = Physics.RaycastAll(ray, 500f);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+            foreach (var hit in hits)
+            {
+                var pickable = hit.collider.GetComponentInParent<Pickable>();
+                if (pickable != null)
+                {
+                    return pickable.Target();
+                }
+            }
+
+            return null;
         }
 
         /// <summary>Co je pod kurzorem. Pořadí jako v prototypu (pickAt): oheň, zvíře, značka, stavba, rostlina, strom, voda, skála.</summary>
@@ -147,7 +167,8 @@ namespace Oohra.Client
             var tile = world.TileAt(tx, ty);
             if (TreeTiles.Contains(ty * world.Width + tx)) return InteractionTarget.ForTile(TargetKind.Tree, tx, ty);
             if (IsWater(tile)) return InteractionTarget.ForTile(TargetKind.Water, tx, ty);
-            if (tile == TileType.Rock) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);
+            // Skála bez hromady kamenů nic nedá: klik na ni je obyčejná chůze.
+            if (tile == TileType.Rock && _session.RockPileAt(tx, ty) != null) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);
             return null;
         }
 

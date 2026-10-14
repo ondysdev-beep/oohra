@@ -79,6 +79,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Dekorace, které jde postavit (ze serveru).</summary>
     public DecorationTypeView[] DecorationTypes { get; private set; } = [];
 
+    /// <summary>Hromady kamenů na skalách (i prázdné, Stones 0).</summary>
+    public RockPileView[] RockPiles { get; private set; } = [];
+
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
     public void Connect(string host, int port, string inviteCode, string nickname)
@@ -417,6 +420,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.DecorationTypes:
                 DecorationTypes = Messages.ReadDecorationTypes(reader);
+                break;
+            case MessageType.RockPiles:
+                RockPiles = Messages.ReadRockPiles(reader);
                 break;
         }
     }
