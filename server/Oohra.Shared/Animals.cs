@@ -66,5 +66,19 @@ namespace Oohra.Core.World
 
         /// <summary>Na kopí chybí klacek nebo kámen.</summary>
         NeedMaterials,
+
+        /// <summary>V pasti nic není.</summary>
+        TrapEmpty,
+
+        FishCaught,
+
+        /// <summary>Ryba proklouzla.</summary>
+        FishEscaped,
+
+        /// <summary>Na rybaření je potřeba kopí.</summary>
+        NeedSpear,
+
+        /// <summary>Tady se rybařit nedá (jen jezírko a moře).</summary>
+        NotWater,
     }
 }

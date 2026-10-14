@@ -37,6 +37,12 @@ public sealed class GameClock
 
     public int Day => (int)Math.Floor(TotalMinutes / MinutesPerDay);
 
+    /// <summary>Herní den, do kterého patří daný čas (herní minuty).</summary>
+    public static int DayOf(double totalMinutes)
+    {
+        return (int)Math.Floor(totalMinutes / MinutesPerDay);
+    }
+
     /// <summary>Hodina dne 0 až 24 (desetinné číslo).</summary>
     public double Hour => TotalMinutes % MinutesPerDay / 60;
 

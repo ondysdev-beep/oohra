@@ -17,5 +17,8 @@ namespace Oohra.Core.World
 
         /// <summary>Dveře: vsadí se do otvoru ve zdi. Pohyb neblokují (otevřou se), ale uzavřou úkryt.</summary>
         Door = 3,
+
+        /// <summary>Past z klacků: chytí králíka nebo jelena, který jde kolem. Pohyb neblokuje.</summary>
+        Trap = 4,
     }
 }

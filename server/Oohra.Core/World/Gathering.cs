@@ -76,7 +76,8 @@ public static class Gathering
                 break;
         }
 
-        var item = new PlantItem(plant.SpeciesId, part, ripeness, clock.Season, plant.Tile);
+        // Plod si pamatuje den utržení (časem se zkazí). Listy a kořeny se nekazí.
+        var item = new PlantItem(plant.SpeciesId, part, ripeness, clock.Season, plant.Tile, Day: part == PlantPart.Fruit ? clock.Day : 0);
         if (!inventory.TryAdd(item))
         {
             return HarvestResult.InventoryFull;

@@ -170,5 +170,27 @@
     "wakeDaylightAbove": 0.7,
     // Zimou se postava probudí.
     "wakeWarmthBelow": 20
+  },
+
+  // Zkažené jídlo (prototyp spoiled a consume). Maso, ryba a plody se časem zkazí (dny od získání).
+  // Zkažené sytí méně a často po něm přijde nemoc a zvracení. Pradávní to snesou líp (spoiledMultiplier v generations.json).
+  "spoilage": {
+    "meatRawDays": 1.5,
+    "meatBakedDays": 4,
+    "fruitRawDays": 3.5,
+    "fruitBakedDays": 5,
+    "nutritionFactor": 0.5,
+    "sicknessChance": 0.85,
+    "sicknessChanceTaste": 0.35,
+    "sicknessDelayMin": 90,
+    "sicknessDelayRange": 300,
+    "sicknessMin": 18,
+    "sicknessRange": 22,
+    // Při ochutnání je nemoc slabší.
+    "tasteFactor": 0.5,
+    "vomitChance": 0.5,
+    "vomitDelayMin": 40,
+    "vomitDelayRange": 120,
+    "vomitStrength": 0.5
   }
 }

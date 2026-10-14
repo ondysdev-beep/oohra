@@ -338,7 +338,7 @@ public sealed class GameServer : IDisposable
                 break;
             case MessageType.Butcher:
                 var corpse = Messages.ReadAnimalAction(reader);
-                HuntAction(player, corpse, () => Animals.Butcher(corpse, player.Inventory, player.X, player.Y));
+                HuntAction(player, corpse, () => Animals.Butcher(corpse, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
                 break;
             case MessageType.MakeSpear:
                 HuntAction(player, -1, () => Crafting.MakeSpear(player.Inventory, player.Character));

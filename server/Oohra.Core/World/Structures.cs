@@ -1,6 +1,7 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
+using Oohra.Core.Time;
 
 namespace Oohra.Core.World;
 
@@ -39,6 +40,9 @@ public sealed class Structure
 
     /// <summary>Dveře: číslo zdi s otvorem, ve které jsou. Jinak 0.</summary>
     public int FrameId { get; }
+
+    /// <summary>Past: co se do ní chytilo (null = nic).</summary>
+    public AnimalKind? Caught { get; internal set; }
 
     /// <summary>Konce celé stavby (zeď, zeď s otvorem i dveře leží na úsečce dlouhé Length).</summary>
     public (double X1, double Y1, double X2, double Y2) Ends
@@ -171,6 +175,7 @@ public sealed class Structures
     /// Zeď: délka od minLength po plnou délku (kratší zeď dorovná mezeru, aby zdi do sebe zapadly).
     /// Zeď a zeď s otvorem: jen na suché zemi, ne přes kmen stromu, oheň ani hráče (players: polohy všech hráčů).
     /// Zeď s otvorem má vždy plnou délku. Dveře se vsadí do nejbližší volné zdi s otvorem (převezmou její polohu).
+    /// Past je bod (jako oheň): suchá zem, ne na kmeni, zdi, ohni ani jiné pasti.
     /// </summary>
     public BuildResult Build(
         Island island, Fires fires, Inventory inventory, double playerX, double playerY,
@@ -186,6 +191,19 @@ public sealed class Structures
         if (!Placement.InReach(playerX, playerY, x, y))
         {
             return BuildResult.TooFar;
+        }
+
+        if (kind == BuildKind.Trap)
+        {
+            if (!TrapFits(island, fires, x, y))
+            {
+                return BuildResult.CannotBuildHere;
+            }
+
+            inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
+            Place(BuildKind.Trap, x, y, 0, length: 0.01);
+            builder?.Practice(SkillKind.Craft, GameData.Animals.Traps.PracticeBuild);
+            return BuildResult.Built;
         }
 
         if (kind == BuildKind.Door)
@@ -295,6 +313,7 @@ public sealed class Structures
         {
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksCost;
             case BuildKind.Door: return rules.Door.SticksCost;
+            case BuildKind.Trap: return rules.Trap.SticksCost;
         }
 
         if (length <= rules.Wall.ShortMaxLength + 1e-6)
@@ -316,8 +335,66 @@ public sealed class Structures
         {
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksBack;
             case BuildKind.Door: return rules.Door.SticksBack;
+            case BuildKind.Trap: return rules.Trap.SticksBack;
             default: return SticksCost(structure.Kind, structure.Length) / 2;
         }
+    }
+
+    /// <summary>Do pasti se chytilo zvíře (volá Animals). Hráči pak uvidí plnou past.</summary>
+    public void Catch(Structure trap, AnimalKind kind)
+    {
+        trap.Caught = kind;
+        Version++;
+    }
+
+    /// <summary>Vezme úlovek z pasti: maso (jelen víc, králík méně). Past zůstane a chytá dál.</summary>
+    public HuntResult TakeCatch(int trapId, Inventory inventory, double playerX, double playerY, double now)
+    {
+        var trap = Find(trapId);
+        if (trap is null || trap.Kind != BuildKind.Trap)
+        {
+            return HuntResult.NotFound;
+        }
+
+        if (Math.Sqrt((trap.X - playerX) * (trap.X - playerX) + (trap.Y - playerY) * (trap.Y - playerY)) > GameData.Building.Wall.RemoveReach)
+        {
+            return HuntResult.TooFar;
+        }
+
+        if (trap.Caught is not { } kind)
+        {
+            return HuntResult.TrapEmpty;
+        }
+
+        var rules = GameData.Animals.Traps;
+        var added = 0;
+        for (var i = 0; i < (kind == AnimalKind.Deer ? rules.DeerMeat : rules.OtherMeat); i++)
+        {
+            if (inventory.TryAdd(Item.RawMeat(GameClock.DayOf(now))))
+            {
+                added++;
+            }
+        }
+
+        if (added == 0)
+        {
+            return HuntResult.InventoryFull;
+        }
+
+        trap.Caught = null;
+        Version++;
+        return HuntResult.Butchered;
+    }
+
+    /// <summary>Past: suchá zem, ne na kmeni, zdi, ohni ani jiné pasti.</summary>
+    private bool TrapFits(Island island, Fires fires, double x, double y)
+    {
+        var footprint = GameData.Building.Trap.FootprintRadius;
+        return Placement.OnDryLand(island, x, y)
+            && Placement.ClearOfTrunks(island, x, y, x, y, footprint)
+            && !Blocks(x, y, footprint)
+            && !fires.All.Any(f => Math.Sqrt((f.X - x) * (f.X - x) + (f.Y - y) * (f.Y - y)) < 2 * footprint)
+            && !Near(x, y, 2 * footprint).Any(s => s.Kind == BuildKind.Trap && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < 2 * footprint);
     }
 
     /// <summary>Nejbližší zeď s otvorem bez dveří, jejíž střed je do snapDistance od bodu.</summary>

@@ -30,6 +30,13 @@
     "sticksCost": 2,
     "sticksBack": 1
   },
+  "trap": {
+    // Past z klacků (staví se v režimu stavby jako oheň). Chytí kořist, která jde kolem (animals.json, traps).
+    "sticksCost": 3,
+    // Zvednutím pasti se vrátí část klacků.
+    "sticksBack": 2,
+    "footprintRadius": 0.35
+  },
   "shelter": {
     // Úkryt: z postavy se vyšle tolik paprsků do všech stran. Když každý do maxDistance narazí na zeď
     // (nebo zavřené dveře), postava je v úkrytu (prostor uzavřený zdmi, nejvýš asi 6 × 6 m).
