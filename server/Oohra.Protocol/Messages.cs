@@ -51,7 +51,7 @@ public sealed class WorldView
 }
 
 /// <summary>Poloha jednoho hráče ve snímku.</summary>
-public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead);
+public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping);
 
 /// <summary>Snímek světa: čas a polohy všech hráčů. Posílá se mnohokrát za sekundu.</summary>
 public sealed record Snapshot(double TotalMinutes, double CalendarMonths, PlayerSnapshot[] Players);
@@ -59,7 +59,10 @@ public sealed record Snapshot(double TotalMinutes, double CalendarMonths, Player
 /// <summary>Hráč ve světě (jméno a generace). Posílá se při příchodu a novém narození.</summary>
 public sealed record PlayerInfo(int Id, string Nickname, int Generation);
 
-/// <summary>Stav vlastního těla: pruhy a příznaky. Skryté hodnoty (toxin, horečka) se neposílají.</summary>
+/// <summary>
+/// Stav vlastního těla: pruhy, příznaky, spánek a dovednosti. Skryté hodnoty (toxin, horečka) se neposílají.
+/// SkillLevels: úroveň každé dovednosti (index = SkillKind), PendingSkills: bity dovedností, jejichž nácvik čeká na spánek.
+/// </summary>
 public sealed record SelfState(
     float Satiety,
     float Hydration,
@@ -71,7 +74,10 @@ public sealed record SelfState(
     bool Dead,
     DeathCause? DeathCause,
     bool NearFire,
-    bool Sheltered);
+    bool Sheltered,
+    bool Sleeping,
+    byte[] SkillLevels,
+    byte PendingSkills);
 
 /// <summary>Hromádka v batohu. U materiálu (klacek, kámen) se údaje o rostlině nepoužívají.</summary>
 public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count);
@@ -84,8 +90,8 @@ public readonly record struct StructureView(int Id, BuildKind Kind, float X, flo
 
 public sealed record InventoryView(int Capacity, StackView[] Stacks);
 
-/// <summary>Hláška pro hráče: co se stalo s tělem, se sběrem nebo s pitím.</summary>
-public sealed record GameEvent(EventKind Kind, byte Code, PlantPart Part, TasteNote[] Notes);
+/// <summary>Hláška pro hráče: co se stalo s tělem, se sběrem nebo s pitím. U nové úrovně dovednosti i dovednost a úroveň.</summary>
+public sealed record GameEvent(EventKind Kind, byte Code, PlantPart Part, TasteNote[] Notes, byte Skill = 0, byte Level = 0);
 
 public readonly record struct PlantStateChange(int PlantId, PlantVisual Visual);
 
@@ -156,6 +162,12 @@ public static class Messages
     public static int ReadStackAction(NetDataReader r)
     {
         return r.GetInt();
+    }
+
+    /// <summary>Lehnout si ke spánku, nebo vstát (když postava spí).</summary>
+    public static void WriteSleep(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.Sleep);
     }
 
     public static void WriteReborn(NetDataWriter w)
@@ -316,6 +328,7 @@ public static class Messages
             w.Put(p.Y);
             w.Put(p.Facing);
             w.Put(p.Dead);
+            w.Put(p.Sleeping);
         }
     }
 
@@ -323,7 +336,7 @@ public static class Messages
     {
         var minutes = r.GetDouble();
         var months = r.GetDouble();
-        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool()));
+        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool()));
         return new Snapshot(minutes, months, players);
     }
 
@@ -365,6 +378,9 @@ public static class Messages
         w.Put(s.DeathCause.HasValue ? (byte)s.DeathCause.Value : byte.MaxValue);
         w.Put(s.NearFire);
         w.Put(s.Sheltered);
+        w.Put(s.Sleeping);
+        w.PutBytesWithLength(s.SkillLevels);
+        w.Put(s.PendingSkills);
     }
 
     public static SelfState ReadSelfState(NetDataReader r)
@@ -376,8 +392,11 @@ public static class Messages
         var cause = r.GetByte();
         var nearFire = r.GetBool();
         var sheltered = r.GetBool();
+        var sleeping = r.GetBool();
+        var skillLevels = r.GetBytesWithLength();
+        var pendingSkills = r.GetByte();
         return new SelfState(bars[0], bars[1], bars[2], bars[3], bars[4], symptoms, generation, dead,
-            cause == byte.MaxValue ? null : (DeathCause)cause, nearFire, sheltered);
+            cause == byte.MaxValue ? null : (DeathCause)cause, nearFire, sheltered, sleeping, skillLevels, pendingSkills);
     }
 
     public static void WriteInventory(NetDataWriter w, InventoryView inventory)
@@ -410,6 +429,8 @@ public static class Messages
         w.Put(e.Code);
         w.Put((byte)e.Part);
         w.PutBytesWithLength(e.Notes.Select(n => (byte)n).ToArray());
+        w.Put(e.Skill);
+        w.Put(e.Level);
     }
 
     public static GameEvent ReadEvent(NetDataReader r)
@@ -418,7 +439,9 @@ public static class Messages
         var code = r.GetByte();
         var part = (PlantPart)r.GetByte();
         var notes = r.GetBytesWithLength().Select(b => (TasteNote)b).ToArray();
-        return new GameEvent(kind, code, part, notes);
+        var skill = r.GetByte();
+        var level = r.GetByte();
+        return new GameEvent(kind, code, part, notes, skill, level);
     }
 
     public static void WritePlantStates(NetDataWriter w, IReadOnlyList<PlantStateChange> changes)

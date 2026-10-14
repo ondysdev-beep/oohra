@@ -48,6 +48,11 @@ namespace Oohra.Client
 
         public bool BackpackOpen { get; set; }
 
+        /// <summary>Panel dovedností (klávesa K).</summary>
+        public bool SkillsOpen { get; set; }
+
+        public bool Sleeping => Connection.Self != null && Connection.Self.Sleeping;
+
         /// <summary>Nabídka u rostliny nebo vody, když k ní postava došla.</summary>
         public InteractionTarget Menu { get; set; }
 
@@ -179,6 +184,14 @@ namespace Oohra.Client
             }
 
             return null;
+        }
+
+        /// <summary>Lehnout si ke spánku, nebo vstát. Jestli postava usne, rozhodne server (únava, teplo).</summary>
+        public void ToggleSleep()
+        {
+            Menu = null;
+            Selected = null;
+            Connection.ToggleSleep();
         }
 
         public void Reborn()

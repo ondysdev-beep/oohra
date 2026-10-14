@@ -69,6 +69,11 @@ namespace Oohra.Client.Tests
             Assert.AreNotEqual(start.Y, moved.Y, "Server postavou nepohnul.");
 
             yield return SaveScreenshot("sit.png");
+
+            // Spánek: odpočatá postava (síla 90) neusne a dostane hlášku.
+            session.ToggleSleep();
+            yield return WaitFor(() => session.Log.Any(l => l.Text == "Nejsi dost unavený."), 3f, "Chybí hláška o únavě.");
+            Assert.IsFalse(session.Sleeping);
         }
 
         /// <summary>Postava dojde ke stromu a jeho koruna zprůhlední, aby postava byla vidět.</summary>

@@ -8,7 +8,8 @@
     "healMultiplier": 1.05,
     "energyDrainMultiplier": 1,
     "coldBonus": 7,
-    "speedMultiplier": 0.95
+    "speedMultiplier": 0.95,
+    "learnMultiplier": 1
   },
   "newPerGeneration": {
     "toxinMultiplier": 0.04,
@@ -16,7 +17,9 @@
     "energyDrainMultiplier": -0.03,
     // Teplota těla Nových klesá o 1,3 za generaci, nejvýš do coldGenerationCap generací.
     "coldBonus": -1.3,
-    "speedMultiplier": 0.02
+    "speedMultiplier": 0.02,
+    // Noví se učí rychleji (nácvik dovedností ×(1 + 0,08·g)).
+    "learnMultiplier": 0.08
   },
   "coldGenerationCap": 4,
   // Noví jsou rychlejší, ale nejvýš o 10 %.

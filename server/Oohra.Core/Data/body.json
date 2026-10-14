@@ -152,5 +152,23 @@
     "heavyBodyToxinAbove": 25,
     "feverAbove": 30,
     "inflammationAbove": 20
+  },
+
+  // Spánek (návrh 5.4, prototyp toggleSleep, endSleep a physiology). Čas světa se při spánku nezrychluje.
+  "sleep": {
+    // Usnout jde jen unavený (síla nejvýš maxEnergyToSleep) a v teple (teplo aspoň minWarmthToSleep).
+    "maxEnergyToSleep": 85,
+    "minWarmthToSleep": 22,
+    // Ve spánku se síla rychle vrací, hlad a žízeň rostou pomaleji, zdraví se hojí rychleji a je o trochu tepleji.
+    "energyPerMinute": 0.35,
+    "hydrationMultiplier": 0.5,
+    "satietyMultiplier": 0.6,
+    "healMultiplier": 2,
+    "warmthBonus": 3,
+    // Probuzení: síla plná, nebo aspoň wakeEnergyInDaylight a je den (světlo nad wakeDaylightAbove).
+    "wakeEnergyInDaylight": 88,
+    "wakeDaylightAbove": 0.7,
+    // Zimou se postava probudí.
+    "wakeWarmthBelow": 20
   }
 }

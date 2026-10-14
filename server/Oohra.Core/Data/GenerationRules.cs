@@ -13,4 +13,5 @@ public sealed record GenerationValues(
     double HealMultiplier,
     double EnergyDrainMultiplier,
     double ColdBonus,
-    double SpeedMultiplier);
+    double SpeedMultiplier,
+    double LearnMultiplier);

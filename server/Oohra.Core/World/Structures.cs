@@ -1,3 +1,4 @@
+using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
 
@@ -173,11 +174,11 @@ public sealed class Structures
     /// </summary>
     public BuildResult Build(
         Island island, Fires fires, Inventory inventory, double playerX, double playerY,
-        BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players)
+        BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder = null)
     {
         var rules = GameData.Building.Wall;
         length = kind == BuildKind.StickWall ? length : rules.Length;
-        if (inventory.Count(ItemKind.Stick) < SticksCost(kind, length))
+        if (inventory.Count(ItemKind.Stick) < SticksCost(kind, length, builder))
         {
             return BuildResult.NeedMaterials;
         }
@@ -195,8 +196,9 @@ public sealed class Structures
                 return BuildResult.NoDoorway;
             }
 
-            inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length));
+            inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
             Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id);
+            builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Door);
             return BuildResult.Built;
         }
 
@@ -206,8 +208,9 @@ public sealed class Structures
             return BuildResult.CannotBuildHere;
         }
 
-        inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length));
+        inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
         Place(kind, x, y, angle, length: length);
+        builder?.Practice(SkillKind.Build, kind == BuildKind.DoorFrame ? GameData.Skills.Practice.DoorFrame : GameData.Skills.Practice.Wall);
         return BuildResult.Built;
     }
 
@@ -281,16 +284,28 @@ public sealed class Structures
         }
     }
 
-    /// <summary>Kolik klacků stavba stojí. Krátká zeď (do shortMaxLength) je levnější.</summary>
-    public static int SticksCost(BuildKind kind, double length)
+    /// <summary>
+    /// Kolik klacků stavba stojí. Krátká zeď (do shortMaxLength) je levnější. Zkušený stavitel
+    /// (cheapWallLevel v skills.json) postaví plnou zeď za méně klacků.
+    /// </summary>
+    public static int SticksCost(BuildKind kind, double length, Character? builder = null)
     {
         var rules = GameData.Building;
         switch (kind)
         {
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksCost;
             case BuildKind.Door: return rules.Door.SticksCost;
-            default: return length <= rules.Wall.ShortMaxLength + 1e-6 ? rules.Wall.ShortSticksCost : rules.Wall.SticksCost;
         }
+
+        if (length <= rules.Wall.ShortMaxLength + 1e-6)
+        {
+            return rules.Wall.ShortSticksCost;
+        }
+
+        var effects = GameData.Skills.Effects;
+        return builder is not null && builder.Skills.Level(SkillKind.Build) >= effects.CheapWallLevel
+            ? effects.CheapWallSticks
+            : rules.Wall.SticksCost;
     }
 
     /// <summary>Kolik klacků se vrátí rozebráním: u zdi polovina ceny (dolů), jinak podle building.json.</summary>

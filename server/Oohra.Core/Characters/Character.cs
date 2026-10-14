@@ -85,6 +85,82 @@ public sealed class Character
 
     public bool IsDead { get; private set; }
 
+    /// <summary>Dovednosti postavy. Smrtí se ztratí (nová postava začíná od nuly).</summary>
+    public Skills Skills { get; } = new();
+
+    /// <summary>Postava spí (nehýbe se, síla se vrací, dovednosti se po probuzení utvrdí).</summary>
+    public bool Sleeping { get; private set; }
+
+    /// <summary>Kolik herních minut už spí.</summary>
+    public double SleepMinutes { get; set; }
+
+    /// <summary>Procvičí dovednost (Noví se učí rychleji).</summary>
+    public void Practice(SkillKind skill, double amount)
+    {
+        Skills.Practice(skill, amount, Traits.LearnMultiplier);
+    }
+
+    /// <summary>Lehne si ke spánku (prototyp toggleSleep). Jen unavený a v teple. Vrací, zda usnul.</summary>
+    public bool TryFallAsleep(double now)
+    {
+        var rules = GameData.Body.Sleep;
+        if (IsDead || Sleeping || FaintMinutes > 0)
+        {
+            return false;
+        }
+
+        if (Energy > rules.MaxEnergyToSleep)
+        {
+            Report(now, BodyEvent.NotTired);
+            return false;
+        }
+
+        if (Warmth < rules.MinWarmthToSleep)
+        {
+            Report(now, BodyEvent.TooColdToSleep);
+            return false;
+        }
+
+        Sleeping = true;
+        SleepMinutes = 0;
+        Report(now, BodyEvent.FellAsleep);
+        return true;
+    }
+
+    /// <summary>
+    /// Probudí se (prototyp endSleep). Po dost dlouhém spánku se utvrdí nácvik dovedností.
+    /// reason: proč (odpočatý, sám, zimou). Null = bez hlášky (třeba při omdlení).
+    /// </summary>
+    public void WakeUp(double now, BodyEvent? reason)
+    {
+        if (!Sleeping)
+        {
+            return;
+        }
+
+        Sleeping = false;
+        if (reason is { } bodyEvent)
+        {
+            Report(now, bodyEvent);
+        }
+
+        if (SleepMinutes >= GameData.Skills.MinSleepMinutes)
+        {
+            var levelUps = Skills.Consolidate(out var learned);
+            foreach (var (skill, level) in levelUps)
+            {
+                _messages.Add(new BodyMessage(now, BodyEvent.SkillLevelUp, null, skill, level));
+            }
+
+            if (learned && levelUps.Count == 0)
+            {
+                Report(now, BodyEvent.LearnedInSleep);
+            }
+        }
+
+        SleepMinutes = 0;
+    }
+
     public DeathCause? DeathCause { get; private set; }
 
     public IReadOnlyList<ScheduledEffect> Scheduled => _scheduled;
@@ -154,6 +230,7 @@ public sealed class Character
         }
 
         IsDead = true;
+        Sleeping = false;
         DeathCause = _blame.Count == 0
             ? Characters.DeathCause.Hunger
             : _blame.OrderByDescending(b => b.Value).First().Key;

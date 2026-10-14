@@ -6,7 +6,7 @@ namespace Oohra.Core.Characters;
 /// <summary>
 /// Co se děje s tělem v čase (prototyp physiology a runEvents v part4.js):
 /// teplo, hlad, žízeň, únava, horečka, uzdravování, poškození a naplánované účinky jídla.
-/// Oheň hřeje (nearFire), úkryt taky (sheltered). Spánek a zranění zatím nejsou (přijdou ve Fázi D).
+/// Oheň hřeje (nearFire), úkryt taky (sheltered). Spánek vrací sílu a zpomaluje hlad a žízeň. Zranění zatím nejsou.
 /// </summary>
 public static class Physiology
 {
@@ -29,6 +29,7 @@ public static class Physiology
         UpdateRecoveryAndFever(c, clock.TotalMinutes, minutes, rules);
         UpdatePoisonProtection(c, rules.FirstPoisonProtection);
         CountDownConditions(c, clock.TotalMinutes, minutes);
+        UpdateSleep(c, clock, rules.Sleep);
         ApplyDamage(c, minutes, rules.Damage);
         Heal(c, minutes, rules.Recovery);
         ForgetOldBlame(c, minutes, rules.Damage);
@@ -66,8 +67,35 @@ public static class Physiology
         var ambient = AmbientTemperature(clock, rules);
         var fire = nearFire ? GameData.Fire.Fire.WarmthBonus : 0;
         var shelter = sheltered ? GameData.Building.Shelter.WarmthBonus : 0;
-        var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor + fire + shelter, 0, 100);
+        var sleeping = c.Sleeping ? GameData.Body.Sleep.WarmthBonus : 0;
+        var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor + fire + shelter + sleeping, 0, 100);
         c.Warmth += (target - c.Warmth) * Math.Min(1, rules.ApproachPerMinute * minutes);
+    }
+
+    /// <summary>
+    /// Kdy se spící postava probudí (prototyp physiology): v bezvědomí, zimou, nebo odpočatá
+    /// (síla plná, nebo skoro plná a je den).
+    /// </summary>
+    private static void UpdateSleep(Character c, GameClock clock, SleepRules rules)
+    {
+        if (!c.Sleeping)
+        {
+            return;
+        }
+
+        var now = clock.TotalMinutes;
+        if (c.FaintMinutes > 0)
+        {
+            c.WakeUp(now, null);
+        }
+        else if (c.Warmth < rules.WakeWarmthBelow)
+        {
+            c.WakeUp(now, BodyEvent.WokeCold);
+        }
+        else if (c.Energy >= 100 || (c.Energy > rules.WakeEnergyInDaylight && clock.Daylight > rules.WakeDaylightAbove))
+        {
+            c.WakeUp(now, BodyEvent.WokeRested);
+        }
     }
 
     private static void UpdateNeeds(Character c, double minutes, NeedsRules rules)
@@ -89,8 +117,15 @@ public static class Physiology
             c.DiarrheaMinutes = Math.Max(0, c.DiarrheaMinutes - minutes);
         }
 
-        c.Hydration = Math.Max(0, c.Hydration - thirst * minutes);
-        c.Satiety = Math.Max(0, c.Satiety - 100 / rules.SatietyEmptyMinutes * minutes);
+        var sleep = GameData.Body.Sleep;
+        c.Hydration = Math.Max(0, c.Hydration - thirst * minutes * (c.Sleeping ? sleep.HydrationMultiplier : 1));
+        c.Satiety = Math.Max(0, c.Satiety - 100 / rules.SatietyEmptyMinutes * minutes * (c.Sleeping ? sleep.SatietyMultiplier : 1));
+        if (c.Sleeping)
+        {
+            c.Energy = Math.Min(100, c.Energy + sleep.EnergyPerMinute * minutes);
+            c.SleepMinutes += minutes;
+            return;
+        }
 
         var drain = c.StimulantMinutes > 0 ? rules.StimulantEnergyDrainMultiplier : 1;
         c.Energy = Math.Max(0, c.Energy - 100 / rules.EnergyEmptyMinutes * minutes * c.Traits.EnergyDrainMultiplier * drain);
@@ -192,7 +227,8 @@ public static class Physiology
             && c.Warmth > rules.HealMinWarmth;
         if (healthy)
         {
-            c.Health = Math.Min(100, c.Health + rules.HealthPerMinute * minutes * c.Traits.HealMultiplier);
+            var sleepHeal = c.Sleeping ? GameData.Body.Sleep.HealMultiplier : 1;
+            c.Health = Math.Min(100, c.Health + rules.HealthPerMinute * minutes * c.Traits.HealMultiplier * sleepHeal);
         }
     }
 

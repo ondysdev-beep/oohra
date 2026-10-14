@@ -1,0 +1,30 @@
+// Dovednosti (prototyp practice, skillLvl a consolidate v part2.js, návrh 5.4).
+// Nácvik se během dne jen hromadí a na úroveň se převede až ve spánku (aspoň minSleepMinutes herních minut).
+{
+  // Úroveň = odmocnina(body / levelDivisor), zaokrouhleno dolů, nejvýš maxLevel.
+  "levelDivisor": 2,
+  "maxLevel": 5,
+  "minSleepMinutes": 60,
+  // Kolik bodů nácviku dá jedna činnost (Noví dostanou víc, viz learnMultiplier v generations.json).
+  "practice": {
+    "leaf": 1,
+    "fruit": 1,
+    "root": 1.2,
+    "fire": 3,
+    "bake": 0.8,
+    "wall": 1,
+    "doorFrame": 1.5,
+    "door": 1.5
+  },
+  // Co úrovně dávají.
+  "effects": {
+    // Sbírání: šance na list navíc, za každou úroveň.
+    "extraLeafChancePerLevel": 0.12,
+    // Řemeslo od této úrovně: oheň za méně klacků.
+    "cheapFireLevel": 3,
+    "cheapFireSticks": 2,
+    // Stavění od této úrovně: plná zeď za méně klacků.
+    "cheapWallLevel": 3,
+    "cheapWallSticks": 1
+  }
+}
