@@ -555,13 +555,14 @@ namespace Oohra.Client
 
             var x = _deathRect.x + 16;
             var y = _deathRect.y + 14;
-            var next = System.Math.Min(6, System.Math.Max(1, self.Generation + 1));
+            // Narodí se jako aktuální generace světa (návrh 8.2), ne o jednu výš.
+            var next = System.Math.Max(1, self.WorldGeneration);
             GUI.Label(new Rect(x, y, 480, 26), "ZEMŘEL JSI", _title);
             GUI.Label(new Rect(x, y + 30, 488, 22), self.DeathCause.HasValue ? Texts.For(self.DeathCause.Value) : "Zemřel jsi.", _warn);
             GUI.Label(new Rect(x, y + 58, 488, 66),
                 "Postava zapomněla, co věděla. Věci zůstaly u tvého těla: můžeš si pro ně dojít,\n"
                 + "prvních 24 hodin je smí vzít jen tvůj kmen, potom kdokoli.\n"
-                + $"Narodíš se jako Nový, generace {next + 1}. Status Pradávného je navždy pryč.",
+                + $"Narodíš se jako Nový, generace {next + 1}." + (self.Generation == 0 ? " Status Pradávného je navždy pryč." : string.Empty),
                 _label);
             if (!_session.HasTribe)
             {

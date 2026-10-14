@@ -29,5 +29,9 @@
   },
   "coldGenerationCap": 4,
   // Noví jsou rychlejší, ale nejvýš o 10 %.
-  "speedMultiplierMax": 1.1
+  "speedMultiplierMax": 1.1,
+  // Generace světa (návrh 8.2): po smrti se postava narodí jako aktuální generace světa, ne o jednu výš.
+  // Generace světa roste o jednu každých monthsPerGeneration měsíců kalendáře (měsíc je 9 reálných hodin,
+  // 6 měsíců jsou asi 2 a čtvrt dne). Začíná na 1, strop je cap.
+  "monthsPerGeneration": 6
 }

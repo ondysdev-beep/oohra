@@ -191,11 +191,13 @@ namespace Oohra.Client
             }
 
             var tx = x + 110;
-            GUI.Label(new Rect(tx, y, 380, 22), sign.Ancient ? "STARÁ RYTINA" : sign.Carved ? "RYTINA" : "ZNAČKA", _title);
+            var title = Title(sign);
+            GUI.Label(new Rect(tx, y, 380, 22), title, _title);
             if (sign.SignatureName != null && sign.SignatureName.Length > 0)
             {
-                // Podpis autora: jméno ze slabik a jeho znak vpravo nahoře.
-                GUI.Label(new Rect(tx + 120, y + 2, 220, 22), "Podpis: " + Oohra.Core.Language.Words.Text(sign.SignatureName), _label);
+                // Podpis autora: jméno ze slabik za nadpisem a jeho znak vpravo nahoře.
+                var after = Mathf.Max(120f, _title.CalcSize(new GUIContent(title)).x + 16f);
+                GUI.Label(new Rect(tx + after, y + 2, 340 - after, 22), "Podpis: " + Oohra.Core.Language.Words.Text(sign.SignatureName), _label);
                 if (sign.SignatureMark != null && sign.SignatureMark.Length == SignBits.ByteCount)
                 {
                     BitGrid.Draw(new Rect(_readRect.xMax - 46, y, 36, 36), sign.SignatureMark, SignViews.Clay, SignViews.ClayInk);
@@ -206,6 +208,14 @@ namespace Oohra.Client
             {
                 _session.EraseSign();
             }
+        }
+
+        /// <summary>Nadpis značky. Rytinu Pradávného ostatní berou jako pradávnou (návrh 8.6).</summary>
+        public static string Title(SignView sign)
+        {
+            if (sign.Ancient) return "STARÁ RYTINA";
+            if (sign.ByAncient) return sign.Carved ? "RYTINA PRADÁVNÉHO" : "ZNAČKA PRADÁVNÉHO";
+            return sign.Carved ? "RYTINA" : "ZNAČKA";
         }
 
         private string Describe(SignView sign)

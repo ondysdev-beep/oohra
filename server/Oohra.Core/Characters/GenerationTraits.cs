@@ -19,10 +19,24 @@ public sealed record GenerationTraits(
 {
     public bool IsAncient => Generation == 0;
 
-    /// <summary>Generace po smrti: vždy Nový, o jednu výš, nejvýš strop (prototyp nextGen).</summary>
+    /// <summary>
+    /// Generace po smrti podle prototypu (nextGen): vždy Nový, o jednu výš, nejvýš strop. Server ji nepoužívá,
+    /// po smrti se rodí podle generace světa (WorldGeneration), aby se evoluce nedala nafarmit umíráním.
+    /// </summary>
     public static int NextAfterDeath(int generation)
     {
         return Math.Min(GameData.Generations.Cap, Math.Max(1, generation + 1));
+    }
+
+    /// <summary>
+    /// Generace světa (návrh 8.2): počítadlo patří světu, ne hráči. Roste o jednu každých monthsPerGeneration
+    /// měsíců kalendáře, začíná na 1 (první Noví), nejvýš strop. Kdo zemře, narodí se jako tahle generace.
+    /// </summary>
+    public static int WorldGeneration(double calendarMonths)
+    {
+        var rules = GameData.Generations;
+        var passed = (int)Math.Floor(Math.Max(0, calendarMonths) / rules.MonthsPerGeneration);
+        return Math.Min(rules.Cap, 1 + passed);
     }
 
     public static GenerationTraits For(int generation)

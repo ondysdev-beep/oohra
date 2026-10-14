@@ -50,6 +50,19 @@ public class SignTests
         Assert.Equal(2, signs.Version);
     }
 
+    /// <summary>Značka si pamatuje, že ji nakreslil Pradávný (návrh 8.6, rytiny pro věky).</summary>
+    [Fact]
+    public void RemembersAncientAuthor()
+    {
+        var signs = new Signs();
+        var (rx, ry) = Tile(TileType.Rock);
+
+        Assert.Equal(SignResult.Drawn, signs.Draw(_island, 1, rx, ry, rx, ry, Dot(), 0, byAncient: true));
+
+        Assert.True(signs.All[0].ByAncient);
+        Assert.False(signs.All[0].Ancient);
+    }
+
     [Fact]
     public void CannotDrawIntoWater()
     {

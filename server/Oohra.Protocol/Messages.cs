@@ -64,6 +64,7 @@ public sealed record PlayerInfo(int Id, string Nickname, int Generation);
 /// <summary>
 /// Stav vlastního těla: pruhy, příznaky, spánek a dovednosti. Skryté hodnoty (toxin, horečka) se neposílají.
 /// SkillLevels: úroveň každé dovednosti (index = SkillKind), PendingSkills: bity dovedností, jejichž nácvik čeká na spánek.
+/// WorldGeneration: generace světa (jako jaká generace se teď narodí každý, kdo zemře, návrh 8.2).
 /// </summary>
 public sealed record SelfState(
     float Satiety,
@@ -79,7 +80,8 @@ public sealed record SelfState(
     bool Sheltered,
     bool Sleeping,
     byte[] SkillLevels,
-    byte PendingSkills);
+    byte PendingSkills,
+    int WorldGeneration = 1);
 
 /// <summary>Hromádka v batohu. U materiálu (klacek, kámen) se údaje o rostlině nepoužívají. Spoiled: zkažené (zapáchá).</summary>
 public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count, bool Spoiled);
@@ -134,7 +136,7 @@ public sealed record VocabularyView(WordEntryView[] Entries, byte[] LastHeard);
 /// </summary>
 public sealed record SignView(
     int Id, float X, float Y, byte[] Bits, int AuthorId, double CreatedAt, double WeathersAt, bool Carved, bool Ancient,
-    int RecordSpeciesId, byte[] RecordName, CarvingTag[] RecordTags, byte[]? SignatureName = null, byte[]? SignatureMark = null);
+    int RecordSpeciesId, byte[] RecordName, CarvingTag[] RecordTags, byte[]? SignatureName = null, byte[]? SignatureMark = null, bool ByAncient = false);
 
 /// <summary>
 /// Hláška pro hráče: co se stalo s tělem, se sběrem, s pitím, s lovem... U nové úrovně dovednosti nese dovednost
@@ -559,6 +561,7 @@ public static class Messages
             PutBytes(w, s.RecordTags.Select(t => (byte)t).ToArray());
             PutBytes(w, s.SignatureName ?? []);
             PutBytes(w, s.SignatureMark ?? []);
+            w.Put(s.ByAncient);
         }
     }
 
@@ -566,7 +569,7 @@ public static class Messages
     {
         return ReadList(r, () => new SignView(
             r.GetInt(), r.GetFloat(), r.GetFloat(), GetBytes(r), r.GetInt(), r.GetDouble(), r.GetDouble(), r.GetBool(), r.GetBool(),
-            r.GetInt(), GetBytes(r), GetBytes(r).Select(b => (CarvingTag)b).ToArray(), GetBytes(r), GetBytes(r)));
+            r.GetInt(), GetBytes(r), GetBytes(r).Select(b => (CarvingTag)b).ToArray(), GetBytes(r), GetBytes(r), r.GetBool()));
     }
 
     private static void PutBytes(NetDataWriter w, byte[] bytes)
@@ -812,6 +815,7 @@ public static class Messages
         w.Put(s.Sleeping);
         w.PutBytesWithLength(s.SkillLevels);
         w.Put(s.PendingSkills);
+        w.Put(s.WorldGeneration);
     }
 
     public static SelfState ReadSelfState(NetDataReader r)
@@ -826,8 +830,9 @@ public static class Messages
         var sleeping = r.GetBool();
         var skillLevels = r.GetBytesWithLength();
         var pendingSkills = r.GetByte();
+        var worldGeneration = r.GetInt();
         return new SelfState(bars[0], bars[1], bars[2], bars[3], bars[4], symptoms, generation, dead,
-            cause == byte.MaxValue ? null : (DeathCause)cause, nearFire, sheltered, sleeping, skillLevels, pendingSkills);
+            cause == byte.MaxValue ? null : (DeathCause)cause, nearFire, sheltered, sleeping, skillLevels, pendingSkills, worldGeneration);
     }
 
     public static void WriteInventory(NetDataWriter w, InventoryView inventory)

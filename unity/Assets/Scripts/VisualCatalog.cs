@@ -126,6 +126,9 @@ namespace Oohra.Client
         [Tooltip("Animator může mít parametry Rychlost (Float, m/s), Spi (Bool) a Mrtvy (Bool). Části se SpeciesTint dostanou barvu generace.")]
         public GameObject Player;
 
+        [Tooltip("Pradávní (první generace): mohutnější, kožešinový plášť, ochra. Prázdné = model Player. Šířku a výšku podle generace i tak upraví hra.")]
+        public GameObject PlayerAncient;
+
         [Header("Oheň")]
         [Tooltip("Ohniště (kameny, polena), průměr asi 0,7 m, střed dole uprostřed. Použije se i u táborů.")]
         public GameObject Campfire;
