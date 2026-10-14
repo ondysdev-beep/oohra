@@ -54,6 +54,9 @@ namespace Oohra.Core.World
 
         /// <summary>V zásobách něco je, napřed je vyber.</summary>
         NotEmpty,
+
+        /// <summary>Tady se nedávno narodil cizí hráč: místo je ještě chráněné před stavbou.</summary>
+        BirthPlaceProtected,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>
