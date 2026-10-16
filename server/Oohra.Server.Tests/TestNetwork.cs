@@ -39,11 +39,11 @@ public sealed class TestNetwork : IDisposable
     public List<double> TickMilliseconds { get; } = [];
 
     /// <summary>Připojí klienta a počká na výsledek přihlášení.</summary>
-    public GameConnection Join(string nickname, string inviteCode = InviteCode)
+    public GameConnection Join(string nickname, string inviteCode = InviteCode, string playerKey = "")
     {
         var client = new GameConnection();
         _clients.Add(client);
-        client.Connect("127.0.0.1", Server.Port, inviteCode, nickname);
+        client.Connect("127.0.0.1", Server.Port, inviteCode, nickname, playerKey);
         Pump(() => client.LoggedIn && client.World is not null && client.Self is not null || client.LoginError.Length > 0);
         return client;
     }

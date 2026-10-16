@@ -80,4 +80,7 @@ public sealed class PlayerSession
 
     /// <summary>Kdy se současná postava narodila (herní minuty), kvůli délce života ve statistikách.</summary>
     public double BornAt { get; set; }
+
+    /// <summary>Otisk tajného klíče hráče (PlayerKeys). Null = postava zatím nikomu nepatří (správce ji odemkl).</summary>
+    public string? KeyHash { get; set; }
 }

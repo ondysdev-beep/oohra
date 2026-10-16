@@ -24,6 +24,7 @@ public sealed class GameConnection : IDisposable
     private NetPeer? _server;
     private string _inviteCode = string.Empty;
     private string _nickname = string.Empty;
+    private string _playerKey = string.Empty;
     private (float X, float Y) _lastInput;
 
     public GameConnection()
@@ -96,10 +97,15 @@ public sealed class GameConnection : IDisposable
 
     public IReadOnlyDictionary<int, PlayerInfo> Players => _players;
 
-    public void Connect(string host, int port, string inviteCode, string nickname)
+    /// <summary>
+    /// Připojí se a přihlásí. playerKey: tajný klíč hráče (hra si ho vytvoří a uloží na počítači). Kdo přijde se stejnou
+    /// přezdívkou a jiným klíčem, server ho nepustí. Bez klíče (testy) se počítá prázdný klíč.
+    /// </summary>
+    public void Connect(string host, int port, string inviteCode, string nickname, string playerKey = "")
     {
         _inviteCode = inviteCode;
         _nickname = nickname;
+        _playerKey = playerKey;
         _net.Connect(host, port, ProtocolInfo.ConnectionKey);
     }
 
@@ -372,7 +378,7 @@ public sealed class GameConnection : IDisposable
     private void OnConnected(NetPeer peer)
     {
         _server = peer;
-        Send(w => Messages.WriteLogin(w, _inviteCode, _nickname));
+        Send(w => Messages.WriteLogin(w, _inviteCode, _nickname, _playerKey));
     }
 
     private void Send(Action<NetDataWriter> write)

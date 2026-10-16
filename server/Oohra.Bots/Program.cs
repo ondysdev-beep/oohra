@@ -31,7 +31,7 @@ while (clock.Elapsed.TotalSeconds < seconds)
     // Roboti přicházejí postupně, jako lidé.
     if (joined < bots.Count && now >= joined * JoinEverySeconds)
     {
-        bots[joined].Connection.Connect(host, port, code, bots[joined].Nickname);
+        bots[joined].Connection.Connect(host, port, code, bots[joined].Nickname, "robot-" + bots[joined].Nickname);
         joined++;
     }
 
