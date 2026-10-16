@@ -637,9 +637,12 @@ namespace Oohra.Client
             "Nahlásit (tlačítko nahoře): problém nebo chyba ve hře",
         };
 
+        /// <summary>Řádek s cestou k souboru s chybami (pro testery).</summary>
+        public static string ErrorFileLine => "Chyby hry se zapisují do: " + ErrorLog.FilePath;
+
         private void DrawHelp(float width, float height)
         {
-            _helpRect = new Rect((width - 640) / 2, (height - 70 - Keys.Length * 26) / 2, 640, 70 + Keys.Length * 26);
+            _helpRect = new Rect((width - 640) / 2, (height - 110 - Keys.Length * 26) / 2, 640, 110 + Keys.Length * 26);
             GUI.Box(_helpRect, GUIContent.none);
             GUI.Box(_helpRect, GUIContent.none);
             var x = _helpRect.x + 14;
@@ -656,6 +659,8 @@ namespace Oohra.Client
                 GUI.Label(new Rect(x, y, 612, 24), line, _label);
                 y += 26;
             }
+
+            GUI.Label(new Rect(x, y, 612, 40), ErrorFileLine, _label);
         }
 
         private void DrawDeath(float width, float height)
