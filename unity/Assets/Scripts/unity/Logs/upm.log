@@ -1,4 +1,0 @@
-[2026-10-16T21:37:45.050Z][INFO] Command-line: 'C:\\Program Files\\Unity\\Hub\\Editor\\6000.6.5f1\\Editor\\Data\\Resources\\PackageManager\\Server\\UnityPackageManager.exe' server -s 18928 --ipc-path Unity-Upm-18928 -l 2 --log-file C:\\Users\\Ondra\\Desktop\\Oohra\\unity\\Assets\\Scripts/unity/Logs/upm.log
-[2026-10-16T21:37:45.091Z][INFO] IPC server started (IPC path=Unity-Upm-18928).
-[2026-10-16T21:37:45.091Z][INFO] Hint: To connect to this UPM instance, launch Unity with the command-line parameter -upmIpcPath Upm-18928.
-[2026-10-16T21:37:46.099Z][INFO] Shutting down UnityPackageManager.exe: parent process [18928] is no longer running.
