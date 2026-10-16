@@ -1,5 +1,6 @@
 using Oohra.Core.Data;
 using Oohra.Core.Items;
+using Oohra.Core.Persistence;
 using Oohra.Core.Social;
 
 namespace Oohra.Core.World;
@@ -77,6 +78,27 @@ public sealed class Corpses
         _corpses.Add(corpse);
         Version++;
         return corpse;
+    }
+
+    /// <summary>Těla s věcmi pro uložení světa.</summary>
+    public List<CorpseSave> Export()
+    {
+        return _corpses.Select(c => new CorpseSave(c.Id, c.X, c.Y, c.OwnerId, c.Generation, c.DiedAt, c.Items.Capacity, c.Items.Stacks.ToList(), c.Signature)).ToList();
+    }
+
+    public int NextId => _nextId;
+
+    public void Restore(IEnumerable<CorpseSave> saved, int nextId)
+    {
+        foreach (var c in saved)
+        {
+            var items = new Inventory(c.Capacity);
+            items.Restore(c.Items);
+            _corpses.Add(new Corpse(c.Id, c.X, c.Y, c.OwnerId, c.Generation, c.DiedAt, items, c.Signature));
+        }
+
+        _nextId = Math.Max(nextId, _corpses.Count == 0 ? 1 : _corpses.Max(c => c.Id) + 1);
+        Version++;
     }
 
     /// <summary>Smí hráč z těla brát? Mrtvý a jeho kmen hned, ostatní až po tribeOnlyHours.</summary>

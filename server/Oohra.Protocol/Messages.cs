@@ -1046,6 +1046,18 @@ public static class Messages
         return ReadList(r, () => new AnimalView(r.GetInt(), (AnimalKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), (AnimalState)r.GetByte()));
     }
 
+    /// <summary>Oznámení od správce serveru (třeba „za 5 minut restart“). Hráči ho uvidí v hláškách.</summary>
+    public static void WriteAnnouncement(NetDataWriter w, string text)
+    {
+        w.Put((byte)MessageType.Announcement);
+        w.Put(text);
+    }
+
+    public static string ReadAnnouncement(NetDataReader r)
+    {
+        return r.GetString(400);
+    }
+
     /// <summary>Cizinci v okolí hráče (posílá se jako zvířata, často a bez opakování).</summary>
     public static void WriteStrangers(NetDataWriter w, IReadOnlyList<StrangerView> strangers)
     {

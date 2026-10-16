@@ -1,5 +1,6 @@
 // Server Oohra. Spuštění: dotnet run --project Oohra.Server [cesta k server.json]
-// Ukončení: Ctrl+C.
+// Ukončení: Ctrl+C nebo příkaz konec (svět se uloží). Příkazy správce se píšou do okna serveru (pomoc).
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using Oohra.Core.Data;
@@ -21,10 +22,18 @@ if (config.StatsFile.Length > 0 && !Path.IsPathRooted(config.StatsFile))
     config.StatsFile = Path.Combine(configDirectory, config.StatsFile);
 }
 
+if (config.WorldFile.Length > 0 && !Path.IsPathRooted(config.WorldFile))
+{
+    config.WorldFile = Path.Combine(configDirectory, config.WorldFile);
+}
+
 using var server = new GameServer(config) { Log = message => Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {message}") };
 server.Start(config.Port);
 
 Console.WriteLine($"Server Oohra běží na portu {server.Port}. Svět č. {config.Seed}. Ukonči Ctrl+C.");
+Console.WriteLine(server.RestoredPlayers is { } restored
+    ? $"Načten uložený svět z {config.WorldFile} (hráčů: {restored}, vznikl {server.WorldCreatedUtc.ToLocalTime():d. M. yyyy})."
+    : config.WorldFile.Length > 0 ? $"Nový svět, bude se ukládat do {config.WorldFile}." : "Svět se neukládá (worldFile je prázdné).");
 Console.WriteLine($"Nahlášení od hráčů se zapisují do {config.ReportsFile}.");
 if (config.StatsFile.Length > 0)
 {
@@ -38,6 +47,20 @@ Console.CancelKeyPress += (_, e) =>
     running = false;
 };
 
+// Příkazy správce: čtou se z okna serveru na vlastním vlákně, provádí je hlavní smyčka (mezi ticky).
+var commands = new ConcurrentQueue<string>();
+if (!Console.IsInputRedirected)
+{
+    Console.WriteLine(GameServer.CommandHelp + " (napiš do tohoto okna a Enter).");
+    new Thread(() =>
+    {
+        while (Console.ReadLine() is { } line)
+        {
+            commands.Enqueue(line);
+        }
+    }) { IsBackground = true }.Start();
+}
+
 // Hlavní smyčka: pevný počet ticků za sekundu (settings.json, 30).
 // Každých StatsEverySeconds vypíše výkon (jak dlouho trvá tick, kolik dat odchází).
 var tickSeconds = 1.0 / GameData.Settings.TicksPerSecond;
@@ -48,6 +71,17 @@ var nextReport = config.StatsEverySeconds;
 while (running)
 {
     var workStart = clock.Elapsed;
+    while (commands.TryDequeue(out var command))
+    {
+        var answer = server.RunCommand(command);
+        if (answer.Length > 0)
+        {
+            Console.WriteLine(answer);
+        }
+
+        running &= !server.StopRequested;
+    }
+
     server.Poll();
     var now = clock.Elapsed.TotalSeconds;
     var ticked = now >= next;
@@ -82,4 +116,4 @@ while (running)
     }
 }
 
-Console.WriteLine("Server se vypíná.");
+Console.WriteLine("Server se vypíná, ukládám svět.");

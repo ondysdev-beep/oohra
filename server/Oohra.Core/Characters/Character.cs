@@ -1,5 +1,6 @@
 using Oohra.Core.Data;
 using Oohra.Core.Language;
+using Oohra.Core.Persistence;
 using Oohra.Core.Rng;
 using Oohra.Core.World;
 
@@ -329,6 +330,87 @@ public sealed class Character
         }
 
         return list;
+    }
+
+    /// <summary>Uloží celou postavu (uložení světa). Zprávy pro klienta se neukládají.</summary>
+    public CharacterSave ToSave()
+    {
+        return new CharacterSave
+        {
+            Generation = Traits.Generation,
+            RngState = Rng.State,
+            Satiety = Satiety,
+            Hydration = Hydration,
+            Energy = Energy,
+            Warmth = Warmth,
+            Health = Health,
+            LastAte = LastAte,
+            Toxin = Toxin,
+            Fever = Fever,
+            Infection = Infection,
+            TremorMinutes = TremorMinutes,
+            FaintMinutes = FaintMinutes,
+            StimulantMinutes = StimulantMinutes,
+            DiarrheaMinutes = DiarrheaMinutes,
+            PoisonProtected = PoisonProtected,
+            InToxinEpisode = InToxinEpisode,
+            FeverNoticed = FeverNoticed,
+            BlameMinutes = BlameMinutes,
+            IsDead = IsDead,
+            DeathCause = DeathCause,
+            Bleed = Bleed,
+            Limp = Limp,
+            StunSeconds = StunSeconds,
+            Sleeping = Sleeping,
+            SleepMinutes = SleepMinutes,
+            Scheduled = [.. _scheduled],
+            Blame = new Dictionary<DeathCause, double>(_blame),
+            SkillPoints = Skills.ExportPoints(),
+            SkillPending = Skills.ExportPending(),
+            Words = Vocabulary.Export(),
+            LastHeard = Vocabulary.LastHeard,
+        };
+    }
+
+    /// <summary>Postava z uloženého stavu (po restartu serveru pokračuje, jako by se nic nestalo).</summary>
+    public static Character FromSave(CharacterSave save)
+    {
+        var c = new Character(save.Generation, new Mulberry32(save.RngState))
+        {
+            Satiety = save.Satiety,
+            Hydration = save.Hydration,
+            Energy = save.Energy,
+            Warmth = save.Warmth,
+            Health = save.Health,
+            LastAte = save.LastAte,
+            Toxin = save.Toxin,
+            Fever = save.Fever,
+            Infection = save.Infection,
+            TremorMinutes = save.TremorMinutes,
+            FaintMinutes = save.FaintMinutes,
+            StimulantMinutes = save.StimulantMinutes,
+            DiarrheaMinutes = save.DiarrheaMinutes,
+            PoisonProtected = save.PoisonProtected,
+            InToxinEpisode = save.InToxinEpisode,
+            FeverNoticed = save.FeverNoticed,
+            BlameMinutes = save.BlameMinutes,
+            IsDead = save.IsDead,
+            DeathCause = save.DeathCause,
+            Bleed = save.Bleed,
+            Limp = save.Limp,
+            StunSeconds = save.StunSeconds,
+            Sleeping = save.Sleeping,
+            SleepMinutes = save.SleepMinutes,
+        };
+        c._scheduled.AddRange(save.Scheduled);
+        foreach (var (cause, amount) in save.Blame)
+        {
+            c._blame[cause] = amount;
+        }
+
+        c.Skills.Import(save.SkillPoints, save.SkillPending);
+        c.Vocabulary.Import(save.Words, save.LastHeard);
+        return c;
     }
 
     private static bool IsPoisonCause(DeathCause cause)

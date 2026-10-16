@@ -125,6 +125,11 @@ namespace Oohra.Client
                     Say(text, warn);
                 }
             }
+
+            foreach (var announcement in Connection.TakeAnnouncements())
+            {
+                Say("Oznámení správce: " + announcement, true);
+            }
         }
 
         public void Harvest(PlantPart part)

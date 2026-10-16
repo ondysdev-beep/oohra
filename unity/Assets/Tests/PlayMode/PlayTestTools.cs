@@ -35,6 +35,8 @@ namespace Oohra.Client.Tests
                 extraJson = extraJson.Length > 0 ? extraJson + ", \"animals\": false" : "\"animals\": false";
             }
 
+            // Každý test začíná v novém světě: svět ani statistiky se neukládají (jinak by se načetly v dalším testu).
+            extraJson += ", \"worldFile\": \"\", \"statsFile\": \"\"";
             var extra = ", " + extraJson;
             File.WriteAllText(config, "{ \"port\": " + port + ", \"seed\": 1, \"worldSize\": 84, \"inviteCodes\": [\"" + Invite + "\"]" + extra + " }");
             return Process.Start(new ProcessStartInfo("dotnet", "\"" + serverDll + "\" \"" + config + "\"")

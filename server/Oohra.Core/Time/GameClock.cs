@@ -68,6 +68,13 @@ public sealed class GameClock
         return gameMinutes * _dayLengthSeconds / MinutesPerDay;
     }
 
+    /// <summary>Nastaví čas z uloženého světa.</summary>
+    public void Restore(double totalMinutes, double calendarMonths)
+    {
+        TotalMinutes = totalMinutes;
+        CalendarMonths = calendarMonths;
+    }
+
     /// <summary>Posune čas o reálné sekundy. Vrací, kolik herních minut uplynulo.</summary>
     public double Advance(double realSeconds)
     {

@@ -38,6 +38,12 @@ public sealed class Inventory
 
     public IReadOnlyList<ItemStack> Stacks => _stacks;
 
+    /// <summary>Vloží hromádky z uloženého světa tak, jak byly (bez skládání a kontroly místa).</summary>
+    public void Restore(IEnumerable<ItemStack> stacks)
+    {
+        _stacks.AddRange(stacks);
+    }
+
     /// <summary>Přidá věc. Vrací false, když je batoh plný.</summary>
     public bool TryAdd(Item item)
     {
