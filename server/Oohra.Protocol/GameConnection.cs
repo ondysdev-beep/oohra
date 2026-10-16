@@ -40,6 +40,9 @@ public sealed class GameConnection : IDisposable
 
     public bool LoggedIn { get; private set; }
 
+    /// <summary>Hráč přišel poprvé (nová postava): klient pustí sen bez slov.</summary>
+    public bool NewCharacter { get; private set; }
+
     public bool Disconnected { get; private set; }
 
     /// <summary>Důvod, proč server přihlášení odmítl (nebo prázdný text).</summary>
@@ -304,6 +307,12 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteSetSignature(w, name, mark));
     }
 
+    /// <summary>Sen bez slov skončil: postava se probudí (server ji do té doby chrání).</summary>
+    public void DreamOver()
+    {
+        Send(Messages.WriteDreamOver);
+    }
+
     /// <summary>Ukázat ostatním věc z batohu (hráči ji uvidí v bublině, cizinec řekne, jestli se jí).</summary>
     public void ShowItem(int stackIndex)
     {
@@ -412,6 +421,7 @@ public sealed class GameConnection : IDisposable
                 LoggedIn = result.Ok;
                 LoginError = result.Reason;
                 PlayerId = result.PlayerId;
+                NewCharacter = result.NewCharacter;
                 break;
             case MessageType.World:
                 World = Messages.ReadWorld(reader);

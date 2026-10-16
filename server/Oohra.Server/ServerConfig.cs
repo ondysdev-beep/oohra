@@ -52,6 +52,11 @@ public sealed class ServerConfig
     /// </summary>
     public double LogoutLingerSeconds { get; set; } = 30;
 
+    /// <summary>
+    /// Nejdelší sen bez slov (sekundy): nový hráč je do té doby chráněný, i když klient nedá vědět, že sen skončil.
+    /// </summary>
+    public double DreamMaxSeconds { get; set; } = 90;
+
     /// <summary>Cizí kmeny (NPC) v táborech ostrova.</summary>
     public bool Strangers { get; set; } = true;
 

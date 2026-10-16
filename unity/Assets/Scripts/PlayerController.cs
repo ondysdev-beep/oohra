@@ -35,6 +35,12 @@ namespace Oohra.Client
 
         private void Update()
         {
+            // Během snu bez slov (nováček) se rozhraní neukazuje a hra nereaguje na ovládání.
+            if (DreamView.Active)
+            {
+                return;
+            }
+
             var self = _session?.Connection.SelfSnapshot();
             if (self == null || _session.Dead)
             {

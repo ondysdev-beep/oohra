@@ -31,6 +31,8 @@ public sealed class TestNetwork : IDisposable
             Strangers = false,
             // Po odpojení postava hned zmizí (test zůstávání si čas nastaví sám).
             LogoutLingerSeconds = 0,
+            // Nový hráč v testech nespí sen bez slov (test snu si ho zapne).
+            DreamMaxSeconds = 0,
         };
         configure?.Invoke(config);
         Server = new GameServer(config);

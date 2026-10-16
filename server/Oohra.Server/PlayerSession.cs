@@ -83,4 +83,7 @@ public sealed class PlayerSession
 
     /// <summary>Otisk tajného klíče hráče (PlayerKeys). Null = postava zatím nikomu nepatří (správce ji odemkl).</summary>
     public string? KeyHash { get; set; }
+
+    /// <summary>Do kdy postava spí sen bez slov (sekundy serveru): nehladoví a zvířata si jí nevšímají.</summary>
+    public double DreamUntil { get; set; } = double.NegativeInfinity;
 }

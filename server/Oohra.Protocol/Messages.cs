@@ -155,7 +155,8 @@ public sealed record GameEvent(EventKind Kind, byte Code, PlantPart Part, TasteN
 
 public readonly record struct PlantStateChange(int PlantId, PlantVisual Visual);
 
-public sealed record LoginResult(bool Ok, string Reason, int PlayerId);
+/// <summary>Výsledek přihlášení. NewCharacter: hráč přišel poprvé (klient mu pustí sen bez slov, návrh 4.2).</summary>
+public sealed record LoginResult(bool Ok, string Reason, int PlayerId, bool NewCharacter = false);
 
 /// <summary>Zápis a čtení zpráv. Server i klient používají stejné metody.</summary>
 public static class Messages
@@ -646,6 +647,12 @@ public static class Messages
         return new GestureView(playerId, gesture, x, y, stranger, item);
     }
 
+    /// <summary>Sen bez slov skončil (nebo ho hráč přeskočil): postava se probudí a začne žít.</summary>
+    public static void WriteDreamOver(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.DreamOver);
+    }
+
     /// <summary>Ukázat ostatním věc z hromádky v batohu (gesto ukázat předmět, návrh 9.3).</summary>
     public static void WriteShowItem(NetDataWriter w, int stackIndex)
     {
@@ -715,11 +722,12 @@ public static class Messages
         w.Put(result.Ok);
         w.Put(result.Reason);
         w.Put(result.PlayerId);
+        w.Put(result.NewCharacter);
     }
 
     public static LoginResult ReadLoginResult(NetDataReader r)
     {
-        return new LoginResult(r.GetBool(), r.GetString(), r.GetInt());
+        return new LoginResult(r.GetBool(), r.GetString(), r.GetInt(), r.GetBool());
     }
 
     public static void WriteWorld(NetDataWriter w, WorldView world)
