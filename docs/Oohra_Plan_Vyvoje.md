@@ -18,7 +18,7 @@
 ### Další kroky (pořadí)
 1. **Vyzkoušet hru sám:** nový hráč (sen bez slov), F1, zvuky, přežití první noci, cizinci, divočáci.
 2. **Dlouhý test s roboty** (třeba 5 hodin) s chytřejšími roboty, potom projít `stats.json`. Před testem s lidmi `stats.json` a `world.json` po robotech přesunout nebo smazat.
-3. **Webová stránka hry** (`web/`, koncept `docs/WEB_KONCEPT.md`): rozdělit na soubory, doplnit sdílení a přístupnost, nasadit (GitHub Pages).
+3. **Webová stránka hry** (`web/`, koncept `docs/WEB_KONCEPT.md`): rozdělená na soubory, sdílení, favicon, přístupnost, tlačítko Mlha a skutečný postup (84 %) jsou hotové. Zbývá nasazení (GitHub Pages, repozitář je soukromý: buď veřejný repozitář jen pro web, nebo placený GitHub) a nový zápis do deníku.
 4. **Zbytek fáze E:** server na internetu (VPS nebo otevřený port), balíček hry pro testery (zip s `Oohra.exe` a adresou serveru), kódy pozvánek pro každého testera zvlášť.
 5. **Fáze F:** alfa se 3 až 5 známými, pak test s 15 až 20 lidmi.
 

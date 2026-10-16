@@ -21,6 +21,7 @@ server/      C# řešení (Oohra.sln)
   Oohra.TestClient/      konzolový klient bez sítě (textová mapa a příkazy)
   Oohra.Bots/            zátěžový test: roboti jako rozumní hráči (jen Protocol): pijí z jezírek, pamatují si jedovaté rostliny, rozdělávají oheň, utíkají a loví, mluví, staví, vstupují do kmenů. dotnet run --project Oohra.Bots -port 9050 -count 20 -seconds 60. Výkon vypisuje server (statsEverySeconds), co roboti dělali, ukáže stats.json
 unity/       klient v Unity (Fáze B šedá krabice, Fáze C napojení na server)
+web/         webová stránka hry: statická (index.html, style.css, app.js, content.js), obsah se mění jen v content.js, návod web/README.md, koncept docs/WEB_KONCEPT.md. Nic na webu neprozrazuje složení rostlin
 ```
 
 ## Rozhodnutí (z dotazníků)

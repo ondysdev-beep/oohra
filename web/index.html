@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oohra · hra o přežití, kde nikdo neví, co je jedovaté</title>
+<meta name="description" content="Probudíš se na ostrově bez návodu. Co se naučíš, zemře s tebou, pokud to nepředáš dál. Hra o přežití v jednom trvalém světě, ve vývoji.">
+<meta name="theme-color" content="#080b09">
+<!-- Náhled při sdílení (Open Graph). Po nasazení dej do og:image a og:url celou adresu stránky (README.md). -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Oohra">
+<meta property="og:title" content="Oohra · hra o přežití, kde nikdo neví, co je jedovaté">
+<meta property="og:description" content="Probudíš se na ostrově bez návodu. Co se naučíš, zemře s tebou, pokud to nepředáš dál.">
+<meta property="og:locale" content="cs_CZ">
+<meta property="og:locale:alternate" content="en_GB">
+<meta property="og:image" content="img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=Spectral:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#hra" data-i="skip">Přeskočit na obsah</a>
+<canvas id="fog" aria-hidden="true"></canvas>
+
+<div class="page">
+  <header class="bar">
+    <div class="mark" data-name>Oohra</div>
+    <nav aria-label="Menu">
+      <a href="#hra" data-i="nav_game">Hra</a><a href="#generace" data-i="nav_gen">Generace</a><a href="#tajemstvi" data-i="nav_mys">Tajemství</a><a href="#postup" data-i="nav_prog">Postup</a><a href="#denik" data-i="nav_log">Deník</a>
+    </nav>
+    <div class="tools"><button type="button" class="fogbtn" id="fogBtn" aria-pressed="true" data-i="fog_btn">Mlha</button><div class="lang" role="group" aria-label="Jazyk / Language"><button type="button" data-lang="cs" aria-pressed="true">CS</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
+  </header>
+
+  <div class="hero">
+    <div class="mono" data-i="eyebrow">Hra o přežití · jeden trvalý svět · ve vývoji</div>
+    <h1 id="h1"></h1>
+    <p class="lede" data-i="lede"></p>
+    <div class="cta">
+      <a class="btn" href="#postup" data-i="cta1">Sledovat postup</a>
+      <a class="btn ghost" href="#denik" data-i="cta2">Číst zápisy</a>
+      <a class="btn ghost" id="lnkDemo" href="#" hidden data-i="demo">Zahrát si ukázku</a>
+      <a class="btn ghost" id="lnkDiscord" href="#" hidden>Discord</a>
+    </div>
+    <p class="soon" id="soon" data-i="soon"></p>
+    <p class="hint" data-i="hint"></p>
+  </div>
+
+  <section class="sec" id="hra">
+    <div class="lab"><svg data-sign="0" aria-hidden="true"></svg><div class="mono" data-i="nav_game">Hra</div></div>
+    <div class="body">
+      <div class="head"><h2 data-i="game_h"></h2><p data-i="game_p"></p></div>
+      <div class="list" id="rules"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="generace">
+    <div class="lab"><svg data-sign="1" aria-hidden="true"></svg><div class="mono" data-i="nav_gen">Generace</div></div>
+    <div class="body">
+      <div class="head"><h2 data-i="gen_h"></h2><p data-i="gen_p"></p></div>
+      <div class="duo">
+        <div class="side a"><svg class="pic" data-body="old" viewBox="0 0 120 150" aria-hidden="true"></svg><h3><span class="mono" data-i="gen_a_tag"></span><span data-i="gen_a"></span></h3><ul id="listA"></ul></div>
+        <div class="side b"><svg class="pic" data-body="new" viewBox="0 0 120 150" aria-hidden="true"></svg><h3><span class="mono" data-i="gen_b_tag"></span><span data-i="gen_b"></span></h3><ul id="listB"></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="tajemstvi">
+    <div class="lab"><svg data-sign="2" aria-hidden="true"></svg><div class="mono" data-i="nav_mys">Tajemství</div></div>
+    <div class="body">
+      <div class="head"><h2 data-i="mys_h"></h2><p data-i="mys_p"></p></div>
+      <div class="glyphs" id="glyphs"></div>
+      <div class="head" style="gap:14px">
+        <div class="mono" data-i="syl_h"></div>
+        <div class="syl" id="syl"></div>
+        <p data-i="syl_p"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="postup">
+    <div class="lab"><svg data-sign="3" aria-hidden="true"></svg><div class="mono" data-i="nav_prog">Postup</div></div>
+    <div class="body">
+      <div class="head"><h2 data-i="prog_h"></h2><p data-i="prog_p"></p></div>
+      <div class="score"><b id="pct">0 %</b><span class="mono" data-i="prog_rev"></span></div>
+      <div>
+        <div class="mapbox"><canvas id="map" width="720" height="360" role="img"></canvas></div>
+        <div class="legend"><span class="mono" data-i="prog_leg"></span></div>
+      </div>
+      <div>
+        <div class="segs" id="segs" role="img"></div>
+        <div class="segl" id="segl" aria-hidden="true"></div>
+      </div>
+      <ol class="road" id="road"></ol>
+    </div>
+  </section>
+
+  <section class="sec" id="denik">
+    <div class="lab"><svg data-sign="0" aria-hidden="true"></svg><div class="mono" data-i="nav_log">Deník</div></div>
+    <div class="body">
+      <div class="head"><h2 data-i="log_h"></h2><p data-i="log_p"></p></div>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="fragmenty">
+    <div class="lab"><svg data-sign="2" aria-hidden="true"></svg><div class="mono" data-i="nav_frag">Fragmenty</div></div>
+    <div class="body">
+      <div class="head"><h2 data-i="frag_h"></h2><p data-i="frag_p"></p></div>
+      <div class="plates" id="plates"></div>
+    </div>
+  </section>
+
+  <footer>
+    <span><span data-name>Oohra</span> <span data-i="foot1"></span></span>
+    <span data-i="foot2"></span>
+  </footer>
+</div>
+
+<script src="content.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
