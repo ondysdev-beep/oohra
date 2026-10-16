@@ -3,7 +3,7 @@
 // reálného času. Herní minuty jsou označené „Minutes“.
 {
   // Počty zvířat na ostrov 84 × 84 (prototyp). Na větší ostrov se přepočítají podle plochy.
-  "population": { "boar": 5, "rabbit": 12, "deer": 5, "wolf": 2, "referenceArea": 7056 },
+  "population": { "boar": 7, "rabbit": 12, "deer": 5, "wolf": 2, "referenceArea": 7056 },
   // Když zvířat ubude (lov), jedno chybějící se doplní za tolik herních minut.
   "respawnMinutes": 720,
   // Mrtvé zvíře (nestažené) zmizí za den.
@@ -13,16 +13,18 @@
   // Noc pro zvířata: denní světlo pod touto hodnotou (vlci loví, králíci spí).
   "nightDaylightBelow": 0.3,
 
+  // Divočák je nebezpečný (zvýšeno po prvním testu s roboty, na přání vývojáře): rozzuří se dřív a déle,
+  // méně varuje, výpad je rychlejší a delší, rána bolí víc a vydrží víc ran. Proti němu pomáhá kopí, oheň a kmen.
   "boar": {
-    "hp": 7, "meat": 3, "radius": 0.32, "spawnAvoid": 16,
+    "hp": 9, "meat": 3, "radius": 0.32, "spawnAvoid": 16,
     "wanderSpeed": 0.9, "wanderRange": 4,
     // Hráč blíž než aggroRange divočáka rozzuří na aggroSeconds. Zaměří se na hráče do alertRange.
-    "aggroRange": 3.4, "aggroSeconds": 12, "alertRange": 9,
+    "aggroRange": 5, "aggroSeconds": 20, "alertRange": 11,
     // Chvíle, kdy se zaměří (zkušený lovec ji vidí delší), výpad a vyčerpání po něm.
-    "alertSeconds": 0.9, "alertBonusPerHuntLevel": 0.12,
-    "chargeSpeed": 7, "chargeSeconds": 1.1, "exhaustSeconds": 2.4, "exhaustAfterHitSeconds": 2.5,
+    "alertSeconds": 0.7, "alertBonusPerHuntLevel": 0.12,
+    "chargeSpeed": 8, "chargeSeconds": 1.3, "exhaustSeconds": 2.0, "exhaustAfterHitSeconds": 2.5,
     // Zranění při zásahu: woundMin + náhoda × woundRange.
-    "woundMin": 18, "woundRange": 22,
+    "woundMin": 24, "woundRange": 26,
     // Rozzuřený divočák vzbudí spícího hráče do této vzdálenosti.
     "wakeSleeperRange": 7
   },

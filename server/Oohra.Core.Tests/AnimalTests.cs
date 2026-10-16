@@ -1,4 +1,5 @@
 using Oohra.Core.Characters;
+using Oohra.Core.Data;
 using Oohra.Core.Items;
 using Oohra.Core.Rng;
 using Oohra.Core.Time;
@@ -16,7 +17,8 @@ public class AnimalTests
     [Fact]
     public void PopulationMatchesPrototypeAndScalesWithIsland()
     {
-        Assert.Equal(5, Animals.TargetCount(_prototypeSize, AnimalKind.Boar));
+        // Divočáků je víc než v prototypu (5): jsou nebezpečnější, na přání vývojáře.
+        Assert.Equal(7, Animals.TargetCount(_prototypeSize, AnimalKind.Boar));
         Assert.Equal(12, Animals.TargetCount(_prototypeSize, AnimalKind.Rabbit));
         Assert.Equal(5, Animals.TargetCount(_prototypeSize, AnimalKind.Deer));
         Assert.Equal(2, Animals.TargetCount(_prototypeSize, AnimalKind.Wolf));
@@ -34,8 +36,8 @@ public class AnimalTests
 
         animals.Populate(_island, players);
 
-        // Ostrov 128 × 128: 12 divočáků, 28 králíků, 12 jelenů, 5 vlků.
-        Assert.Equal(57, animals.All.Count);
+        // Ostrov 128 × 128: 16 divočáků, 28 králíků, 12 jelenů, 5 vlků.
+        Assert.Equal(61, animals.All.Count);
         foreach (var a in animals.All)
         {
             Assert.True(Movement.CanStand(_island, a.X, a.Y, 0.2));
@@ -193,13 +195,17 @@ public class AnimalTests
         spear.TryAdd(Item.Spear);
 
         Assert.Equal(HuntResult.HitFist, animals.Attack(boar.Id, hunter, new Inventory(10), 0));
-        Assert.Equal(6, boar.Hp);
+        Assert.Equal(GameData.Animals.Boar.Hp - 1, boar.Hp);
         Assert.Equal(HuntResult.TooSoon, animals.Attack(boar.Id, hunter, spear, 0));
 
         animals.Update(_island, new Fires(), new PlantStates(), TestPlants.Clock(), 0.5, []);
         Assert.Equal(HuntResult.HitSpear, animals.Attack(boar.Id, hunter, spear, 0));
-        Assert.Equal(3, boar.Hp);
+        // Pěst ubere 1, kopí 3.
+        Assert.Equal(GameData.Animals.Boar.Hp - 4, boar.Hp);
 
+        // Divočák (9 životů) vydrží ještě jednu ránu kopím, druhá ho zabije.
+        animals.Update(_island, new Fires(), new PlantStates(), TestPlants.Clock(), 0.5, []);
+        Assert.Equal(HuntResult.HitSpear, animals.Attack(boar.Id, Player(1, boar.X - 1, boar.Y, hunter.Character), spear, 0));
         animals.Update(_island, new Fires(), new PlantStates(), TestPlants.Clock(), 0.5, []);
         Assert.Equal(HuntResult.Killed, animals.Attack(boar.Id, Player(1, boar.X - 1, boar.Y, hunter.Character), spear, 0));
         Assert.True(boar.IsDead);
