@@ -61,7 +61,8 @@ var ready = bots.Count(b => b.Ready && !b.Connection.Disconnected);
 Console.WriteLine();
 Console.WriteLine($"Konec. Ve hře zůstalo {ready}/{count} robotů. " +
                   $"Celkem utrženo {bots.Sum(b => b.Harvests)}, snědeno {bots.Sum(b => b.Meals)}, " +
-                  $"napito {bots.Sum(b => b.Drinks)}, úmrtí {bots.Sum(b => b.Deaths)}.");
+                  $"napito {bots.Sum(b => b.Drinks)}, úmrtí {bots.Sum(b => b.Deaths)}, ohňů {bots.Sum(b => b.Fires)}, úlovků {bots.Sum(b => b.Kills)}, " +
+                  $"slov {bots.Sum(b => b.Words)}, staveb {bots.Sum(b => b.Builds)}, darů od cizinců {bots.Sum(b => b.Gifts)}.");
 foreach (var bot in bots)
 {
     bot.Dispose();
