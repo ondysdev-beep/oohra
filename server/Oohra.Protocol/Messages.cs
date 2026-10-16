@@ -165,17 +165,19 @@ public static class Messages
 
     // ---------- klient → server ----------
 
-    public static void WriteLogin(NetDataWriter w, string inviteCode, string nickname)
+    /// <summary>Přihlášení: kód pozvánky, přezdívka a tajný klíč hráče (server si u přezdívky pamatuje jeho otisk).</summary>
+    public static void WriteLogin(NetDataWriter w, string inviteCode, string nickname, string playerKey)
     {
         w.Put((byte)MessageType.Login);
         w.Put(ProtocolInfo.Version);
         w.Put(inviteCode);
         w.Put(nickname);
+        w.Put(playerKey);
     }
 
-    public static (int Version, string InviteCode, string Nickname) ReadLogin(NetDataReader r)
+    public static (int Version, string InviteCode, string Nickname, string PlayerKey) ReadLogin(NetDataReader r)
     {
-        return (r.GetInt(), r.GetString(64), r.GetString(64));
+        return (r.GetInt(), r.GetString(64), r.GetString(64), r.GetString(128));
     }
 
     /// <summary>Směr chůze v souřadnicích mapy (x doprava, y dolů). (0, 0) = stůj.</summary>

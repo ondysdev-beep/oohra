@@ -39,7 +39,7 @@ namespace Oohra.Client
         }
 
         /// <summary>
-        /// Přihlášení z příkazové řádky, např. Oohra.exe -nick Petr (volitelně -server, -port, -code).
+        /// Přihlášení z příkazové řádky, např. Oohra.exe -nick Petr (volitelně -server, -port, -code, -key).
         /// Hodí se pro spuštění dvou oken bez vyplňování a pro ověření sestavené hry.
         /// </summary>
         private void Start()
@@ -84,7 +84,7 @@ namespace Oohra.Client
             PlayerPrefs.SetString(HostKey, host);
 
             _connection = new GameConnection();
-            _connection.Connect(host, port, inviteCode, nickname);
+            _connection.Connect(host, port, inviteCode, nickname, PlayerKey.Current());
             _session = new ClientSession(_connection);
             _connectStarted = Time.unscaledTime;
             _status = "Připojuji se k serveru…";

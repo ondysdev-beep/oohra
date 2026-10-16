@@ -259,9 +259,9 @@ public sealed partial class GameServer : IDisposable
 
     private void HandleLogin(NetPeer peer, NetDataReader reader)
     {
-        var (version, inviteCode, rawNickname) = Messages.ReadLogin(reader);
+        var (version, inviteCode, rawNickname, playerKey) = Messages.ReadLogin(reader);
         var nickname = rawNickname.Trim();
-        var error = LoginError(version, inviteCode, nickname);
+        var error = LoginError(version, inviteCode, nickname, playerKey);
         if (error is not null)
         {
             SendTo(peer, w => Messages.WriteLoginResult(w, new LoginResult(false, error, -1)));
@@ -269,6 +269,8 @@ public sealed partial class GameServer : IDisposable
         }
 
         var player = FindPlayer(nickname) ?? CreatePlayer(nickname);
+        // Nová postava (nebo odemčená správcem) si zapamatuje klíč toho, kdo přišel.
+        player.KeyHash ??= PlayerKeys.Hash(playerKey);
         player.Peer = peer;
         _byPeer[peer.Id] = player;
 
@@ -297,7 +299,7 @@ public sealed partial class GameServer : IDisposable
         Log?.Invoke($"{player.Nickname} přišel (hráčů ve hře: {_byPeer.Count}).");
     }
 
-    private string? LoginError(int version, string inviteCode, string nickname)
+    private string? LoginError(int version, string inviteCode, string nickname, string playerKey)
     {
         if (version != ProtocolInfo.Version)
         {
@@ -318,6 +320,11 @@ public sealed partial class GameServer : IDisposable
             || !nickname.All(ch => char.IsLetterOrDigit(ch) || ch is ' ' or '-' or '_'))
         {
             return $"Přezdívka musí mít {MinNicknameLength} až {MaxNicknameLength} písmen nebo číslic.";
+        }
+
+        if (FindPlayer(nickname) is { } existing && !PlayerKeys.Matches(existing.KeyHash, playerKey))
+        {
+            return "Tuhle přezdívku už má jiný hráč. Vyber si jinou.";
         }
 
         if (FindPlayer(nickname) is { Online: true })
