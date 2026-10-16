@@ -34,6 +34,7 @@ namespace Oohra.Client
         private Rect _menuRect;
         private Rect _backpackRect;
         private Rect _deathRect;
+        private Rect _helpRect;
         private Rect _backpackButtonRect;
         private Rect _buildButtonRect;
         private Rect _buildPanelRect;
@@ -44,6 +45,9 @@ namespace Oohra.Client
 
         /// <summary>Myš je nad rozhraním: kliknutí nemá posílat postavu na zem pod ním.</summary>
         public static bool MouseOverHud { get; private set; }
+
+        /// <summary>Přehled kláves (F1).</summary>
+        public bool HelpOpen { get; set; }
 
         public void Init(ClientSession session, PlayerViews players, Camera camera)
         {
@@ -71,10 +75,13 @@ namespace Oohra.Client
             if (keyboard.jKey.wasPressedThisFrame) _session.BackpackOpen = false;
             if (keyboard.nKey.wasPressedThisFrame) _session.ToggleSleep();
             if (keyboard.kKey.wasPressedThisFrame) _session.SkillsOpen = !_session.SkillsOpen;
+            if (keyboard.f1Key.wasPressedThisFrame) HelpOpen = !HelpOpen;
+            if (keyboard.f1Key.wasPressedThisFrame) HelpOpen = !HelpOpen;
             if (keyboard.spaceKey.wasPressedThisFrame && !BuildMode.IsActive) _session.Attack();
             if (keyboard.escapeKey.wasPressedThisFrame)
             {
                 _session.BackpackOpen = false;
+                HelpOpen = false;
                 _session.Menu = null;
                 _session.Selected = null;
             }
@@ -106,7 +113,7 @@ namespace Oohra.Client
             var width = Screen.width / scale;
             var height = Screen.height / scale;
 
-            _menuRect = _backpackRect = _deathRect = _buildPanelRect = _skillsRect = Rect.zero;
+            _menuRect = _backpackRect = _deathRect = _buildPanelRect = _skillsRect = _helpRect = Rect.zero;
             if (_session.Sleeping)
             {
                 DrawSleep(width, height);
@@ -134,13 +141,17 @@ namespace Oohra.Client
             {
                 DrawSkills(width);
             }
+            else if (HelpOpen)
+            {
+                DrawHelp(width, height);
+            }
 
             var mouse = Event.current.mousePosition;
             if (Event.current.type == EventType.Repaint)
             {
                 MouseOverHud = _menuRect.Contains(mouse) || _backpackRect.Contains(mouse)
                     || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
-                    || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse)
+                    || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse) || _helpRect.Contains(mouse)
                     || SpeechHud.Covers(mouse) || SignHud.Covers(mouse) || TribeHud.Covers(mouse)
                     || CorpseHud.Covers(mouse) || SignatureHud.Covers(mouse) || ReportHud.Covers(mouse);
             }
@@ -186,7 +197,7 @@ namespace Oohra.Client
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 980, 20),
-                "WASD / klik = chůze · mezerník rána · G stavět · B batoh · N spát · K dovednosti · T mluvit · V gesta · J slovník · H kreslit · P podpis · Q, E, kolečko = kamera", _label);
+                "WASD / klik = chůze · F1 = všechny klávesy", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>
@@ -610,6 +621,40 @@ namespace Oohra.Client
                 // Ukázat věc ostatním (návrh 9.3): řekni k tomu slovo, ať se ho naučí.
                 if (Button(ref buttons, "Ukázat")) connection.ShowItem(i);
                 y += rowHeight;
+            }
+        }
+
+        /// <summary>Přehled kláves (F1).</summary>
+        public static readonly string[] Keys =
+        {
+            "WASD nebo klik myší: chůze · klik na věc: jít k ní a otevřít nabídku",
+            "Mezerník: rána (zvíře poblíž) · Esc: zavřít nabídku",
+            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit) · N spát a vstát · K dovednosti",
+            "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
+            "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
+            "H nakreslit značku · P podpis (jméno ze slabik a znak)",
+            "Q a E otočit kamerou · kolečko přiblížit · F1 tento přehled",
+            "Nahlásit (tlačítko nahoře): problém nebo chyba ve hře",
+        };
+
+        private void DrawHelp(float width, float height)
+        {
+            _helpRect = new Rect((width - 640) / 2, (height - 70 - Keys.Length * 26) / 2, 640, 70 + Keys.Length * 26);
+            GUI.Box(_helpRect, GUIContent.none);
+            GUI.Box(_helpRect, GUIContent.none);
+            var x = _helpRect.x + 14;
+            var y = _helpRect.y + 10;
+            GUI.Label(new Rect(x, y, 400, 24), "OVLÁDÁNÍ", _title);
+            if (GUI.Button(new Rect(_helpRect.xMax - 94, y, 80, 26), "Zavřít"))
+            {
+                HelpOpen = false;
+            }
+
+            y += 34;
+            foreach (var line in Keys)
+            {
+                GUI.Label(new Rect(x, y, 612, 24), line, _label);
+                y += 26;
             }
         }
 

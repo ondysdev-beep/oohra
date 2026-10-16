@@ -25,7 +25,8 @@ namespace Oohra.Client
         /// <summary>Řekne slovo: u postavy ve světě (at), jinak u kamery.</summary>
         public static void Say(IReadOnlyList<byte> word, Tone tone, Vector3? at = null)
         {
-            if (Volume <= 0f || word == null || word.Count == 0)
+            // Mimo hru (testy v editoru) se nehraje, Unity tam zvuky „na jedno použití“ neumí.
+            if (!Application.isPlaying || Volume <= 0f || word == null || word.Count == 0)
             {
                 return;
             }
