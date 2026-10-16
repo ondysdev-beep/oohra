@@ -104,7 +104,7 @@ namespace Oohra.Client
                 return;
             }
 
-            if (_cameraRig == null && _players.Self != null)
+            if (_cameraRig == null && _players.Self != null && !DreamView.Active)
             {
                 _cameraRig = Camera.main.gameObject.AddComponent<CameraRig>();
                 _cameraRig.Init(_players.Self);
@@ -151,8 +151,28 @@ namespace Oohra.Client
 
             _worldBuilt = true;
             _status = string.Empty;
-            _session.Say("Jsi na ostrově. Nejdřív si najdi vodu.", false);
             Debug.Log("Oohra: ostrov postaven, hráč " + _nickname);
+            if (!_connection.NewCharacter)
+            {
+                _session.Say("Jsi na ostrově. Nejdřív si najdi vodu.", false);
+                return;
+            }
+
+            // Nový hráč: nejdřív sen bez slov (návrh 4.2), pak se probudí na ostrově.
+            if (DreamView.Disabled)
+            {
+                WakeUp();
+                return;
+            }
+
+            gameObject.AddComponent<DreamView>().Play(_session, WakeUp);
+        }
+
+        /// <summary>Konec snu: server přestane postavu chránit a hra začne.</summary>
+        private void WakeUp()
+        {
+            _connection.DreamOver();
+            _session.Say("Probudil ses. Nejdřív si najdi vodu. Světlejší modrá jsou jezírka, moře je slané.", false);
         }
 
         private void BuildScene()

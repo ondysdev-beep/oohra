@@ -35,6 +35,9 @@ namespace Oohra.Client.Tests
                 extraJson = extraJson.Length > 0 ? extraJson + ", \"animals\": false" : "\"animals\": false";
             }
 
+            // Nový hráč v testech nesní sen bez slov (test snu si ho zapne sám).
+            DreamView.Disabled = true;
+
             // Každý test začíná v novém světě: svět ani statistiky se neukládají (jinak by se načetly v dalším testu).
             extraJson += ", \"worldFile\": \"\", \"statsFile\": \"\"";
             var extra = ", " + extraJson;
@@ -91,10 +94,11 @@ namespace Oohra.Client.Tests
         /// Snímek z kamery (bez rozhraní OnGUI). WaitForEndOfFrame ani ScreenCapture v Unity bez okna
         /// (batch mode) nefungují, proto se kreslí přímo kamerou do textury.
         /// </summary>
-        public static IEnumerator SaveScreenshot(string fileName)
+        /// <summary>Snímek z kamery (výchozí hlavní kamera) do unity/Logs.</summary>
+        public static IEnumerator SaveScreenshot(string fileName, Camera from = null)
         {
             yield return null;
-            var camera = Camera.main;
+            var camera = from != null ? from : Camera.main;
             var target = new RenderTexture(1280, 720, 24);
             camera.targetTexture = target;
             camera.Render();

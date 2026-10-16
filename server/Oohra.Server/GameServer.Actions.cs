@@ -133,6 +133,9 @@ public sealed partial class GameServer
             case MessageType.Report:
                 Report(player, Messages.ReadReport(reader));
                 break;
+            case MessageType.DreamOver:
+                player.DreamUntil = double.NegativeInfinity;
+                break;
             case MessageType.ShowItem:
                 ShowItem(player, Messages.ReadShowItem(reader));
                 break;

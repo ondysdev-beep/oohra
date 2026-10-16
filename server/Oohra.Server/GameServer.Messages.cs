@@ -153,7 +153,8 @@ public sealed partial class GameServer
     /// <summary>Hráči ve hře, jak je vidí zvířata.</summary>
     private List<AnimalTarget> AnimalTargets()
     {
-        return InWorld.Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
+        // Postava ve snu bez slov (nováček) zvířata nezajímá.
+        return InWorld.Where(p => _seconds >= p.DreamUntil).Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
     }
 
     /// <summary>Každému hráči zvířata v jeho okolí (animalViewDistance), ať se neposílá celý ostrov.</summary>

@@ -167,7 +167,11 @@ public sealed partial class GameServer : IDisposable
         foreach (var player in InWorld.ToList())
         {
             Move(player, realSeconds);
-            Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
+            if (_seconds >= player.DreamUntil)
+            {
+                Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
+            }
+
             if (player.Character.IsDead && !player.BodyLeft)
             {
                 LeaveBody(player);
@@ -326,14 +330,21 @@ public sealed partial class GameServer : IDisposable
             return;
         }
 
+        var isNew = FindPlayer(nickname) is null;
         var player = FindPlayer(nickname) ?? CreatePlayer(nickname);
+        if (isNew)
+        {
+            // Sen bez slov (návrh 4.2): dokud se postava neprobudí, nehladoví a zvířata si jí nevšímají.
+            player.DreamUntil = _seconds + _config.DreamMaxSeconds;
+        }
+
         // Nová postava (nebo odemčená správcem) si zapamatuje klíč toho, kdo přišel.
         player.KeyHash ??= PlayerKeys.Hash(playerKey);
         player.Peer = peer;
         _lingering.Remove(player);
         _byPeer[peer.Id] = player;
 
-        SendTo(peer, w => Messages.WriteLoginResult(w, new LoginResult(true, string.Empty, player.Id)));
+        SendTo(peer, w => Messages.WriteLoginResult(w, new LoginResult(true, string.Empty, player.Id, isNew)));
         SendTo(peer, w => Messages.WriteWorld(w, _worldView));
         foreach (var other in InWorld)
         {

@@ -50,6 +50,12 @@ namespace Oohra.Client
 
         private void Update()
         {
+            // Během snu bez slov (nováček) se rozhraní neukazuje a hra nereaguje na ovládání.
+            if (DreamView.Active)
+            {
+                return;
+            }
+
             if (_session == null)
             {
                 return;
@@ -69,6 +75,12 @@ namespace Oohra.Client
 
         private void OnGUI()
         {
+            // Během snu bez slov (nováček) se rozhraní neukazuje a hra nereaguje na ovládání.
+            if (DreamView.Active)
+            {
+                return;
+            }
+
             if (_session == null || _session.Connection.Self == null)
             {
                 return;

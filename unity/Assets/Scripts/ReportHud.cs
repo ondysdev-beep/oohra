@@ -44,6 +44,12 @@ namespace Oohra.Client
 
         private void Update()
         {
+            // Během snu bez slov (nováček) se rozhraní neukazuje a hra nereaguje na ovládání.
+            if (DreamView.Active)
+            {
+                return;
+            }
+
             var keyboard = Keyboard.current;
             if (_session != null && keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
             {
@@ -53,6 +59,12 @@ namespace Oohra.Client
 
         private void OnGUI()
         {
+            // Během snu bez slov (nováček) se rozhraní neukazuje a hra nereaguje na ovládání.
+            if (DreamView.Active)
+            {
+                return;
+            }
+
             _panelRect = _buttonRect = Rect.zero;
             if (_session == null || _session.Connection.Self == null)
             {

@@ -88,6 +88,17 @@ namespace Oohra.Client
             return _rects.Any(r => r.Contains(mouse));
         }
 
+        /// <summary>Přidá slabiku do rozepsaného slova a potichu ji přehraje (hráč slyší, co skládá).</summary>
+        private void AddSyllable(byte syllable)
+        {
+            var before = Input.Count;
+            Input.Add(syllable);
+            if (Input.Count > before)
+            {
+                SyllableVoice.Say(new[] { syllable }, Tone);
+            }
+        }
+
         /// <summary>Řekne rozepsané slovo a vyprázdní ho.</summary>
         public void SayWord()
         {
@@ -122,6 +133,12 @@ namespace Oohra.Client
 
         private void Update()
         {
+            // Během snu bez slov (nováček) se rozhraní neukazuje a hra nereaguje na ovládání.
+            if (DreamView.Active)
+            {
+                return;
+            }
+
             if (_session == null)
             {
                 return;
@@ -159,7 +176,7 @@ namespace Oohra.Client
                 };
                 for (var digit = 0; digit < digits.Length; digit++)
                 {
-                    if (digits[digit].wasPressedThisFrame) Input.Add(SpeechInput.SyllableOfDigit(digit));
+                    if (digits[digit].wasPressedThisFrame) AddSyllable(SpeechInput.SyllableOfDigit(digit));
                 }
             }
 
@@ -181,7 +198,10 @@ namespace Oohra.Client
                     text += "\n(" + LanguageTexts.ConceptName(meaning.Value) + "?)";
                 }
 
-                _bubbles[BubbleKey(speech.PlayerId, speech.Stranger)] = new Bubble(text, LanguageTexts.ToneColor(speech.Tone), Time.time + WordSeconds);
+                var key = BubbleKey(speech.PlayerId, speech.Stranger);
+                _bubbles[key] = new Bubble(text, LanguageTexts.ToneColor(speech.Tone), Time.time + WordSeconds);
+                // Slovo je slyšet u toho, kdo ho řekl (zvuk slabik je stejný pro všechny, návrh 9.2).
+                SyllableVoice.Say(speech.Word, speech.Tone, BubblePosition(key));
             }
 
             foreach (var gesture in connection.TakeGestures())
@@ -217,6 +237,12 @@ namespace Oohra.Client
 
         private void OnGUI()
         {
+            // Během snu bez slov (nováček) se rozhraní neukazuje a hra nereaguje na ovládání.
+            if (DreamView.Active)
+            {
+                return;
+            }
+
             if (_session == null || _session.Connection.Self == null)
             {
                 return;
@@ -315,7 +341,7 @@ namespace Oohra.Client
                 var digit = (i + 1) % 10;
                 if (GUI.Button(new Rect(x + i * 42, y, 40, 30), Words.Syllables[i] + "\n" + digit, _small))
                 {
-                    Input.Add((byte)i);
+                    AddSyllable((byte)i);
                 }
             }
 
