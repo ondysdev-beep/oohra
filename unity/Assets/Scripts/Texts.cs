@@ -131,6 +131,14 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Název generace: Pradávný (0), Nový (1), od třetí generace jen pořadí („3. generace“).</summary>
+        public static string GenerationName(int generation)
+        {
+            if (generation <= 0) return "Pradávný";
+            if (generation == 1) return "Nový";
+            return (generation + 1) + ". generace";
+        }
+
         /// <summary>Text k výsledku nahlášení.</summary>
         public static string For(ReportResult result)
         {

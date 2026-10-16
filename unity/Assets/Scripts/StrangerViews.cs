@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Cizinci z cizích kmenů (NPC) podle zpráv serveru. Postava jako hráč generace 2 (GenerationLook) v barvě
+    /// Cizinci z cizích kmenů (NPC) podle zpráv serveru. Postava jako Nový (GenerationLook) v barvě
     /// svého kmene (prototyp: červený a modrý kmen). Kdo jí nebo pije, přikrčí se. Poloha se mezi zprávami
     /// plynule dopočítává. Na cizince jde kliknout (dát mu věc), mluví se s ním slovy a gesty.
     /// </summary>
@@ -17,8 +17,8 @@ namespace Oohra.Client
 
         private const float Smoothing = 12f;
 
-        // Generace, jak cizinci vypadají (čelenka, štíhlá postava).
-        private const int LookGeneration = 2;
+        // Cizinci vypadají jako Noví (štíhlá postava v prostém oděvu), poznají se podle barvy kmene.
+        private const int LookGeneration = 1;
 
         private readonly Dictionary<int, GameObject> _views = new Dictionary<int, GameObject>();
         private readonly HashSet<int> _seen = new HashSet<int>();

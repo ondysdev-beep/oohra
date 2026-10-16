@@ -40,16 +40,29 @@ public class GenerationTests
         Assert.Equal(-1.3 * 4, beyond.ColdBonus, 9);
     }
 
-    /// <summary>Generace světa (návrh 8.2): začíná na 1, roste s kalendářem, ne smrtí, a zastaví se na stropu.</summary>
+    /// <summary>
+    /// Generace světa (návrh 8.2): prvních půl roku skutečného času Pradávní (0), pak Noví (1), pak třetí generace (2),
+    /// roste s časem, ne smrtí, a zastaví se na stropu.
+    /// </summary>
     [Fact]
-    public void WorldGenerationGrowsWithCalendar()
+    public void WorldGenerationGrowsWithRealTime()
     {
-        var months = GameData.Generations.MonthsPerGeneration;
+        var days = GameData.Generations.DaysPerGeneration;
 
-        Assert.Equal(1, GenerationTraits.WorldGeneration(0));
-        Assert.Equal(1, GenerationTraits.WorldGeneration(months - 0.01));
-        Assert.Equal(2, GenerationTraits.WorldGeneration(months));
-        Assert.Equal(3, GenerationTraits.WorldGeneration(months * 2.5));
-        Assert.Equal(GameData.Generations.Cap, GenerationTraits.WorldGeneration(months * 100));
+        Assert.Equal(182.5, days);
+        Assert.Equal(0, GenerationTraits.WorldGeneration(0));
+        Assert.Equal(0, GenerationTraits.WorldGeneration(days - 0.01));
+        Assert.Equal(1, GenerationTraits.WorldGeneration(days));
+        Assert.Equal(2, GenerationTraits.WorldGeneration(days * 2.5));
+        Assert.Equal(GameData.Generations.Cap, GenerationTraits.WorldGeneration(days * 100));
+    }
+
+    /// <summary>Po smrti se status Pradávného ztrácí (8.6): i v době Pradávných se narodí Nový. Později generace světa.</summary>
+    [Fact]
+    public void AfterDeathAtLeastNew()
+    {
+        Assert.Equal(1, GenerationTraits.AfterDeath(0));
+        Assert.Equal(1, GenerationTraits.AfterDeath(1));
+        Assert.Equal(3, GenerationTraits.AfterDeath(3));
     }
 }

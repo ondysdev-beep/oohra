@@ -77,7 +77,7 @@ namespace Oohra.Client
 
             y += 26;
             var now = _session.Clock.TotalMinutes;
-            GUI.Label(new Rect(x, y, 380, 22), (corpse.Generation == 0 ? "Pradávný" : "Nový") + ", zemřel " + Texts.Ago(now - corpse.DiedAt) + ".", _label);
+            GUI.Label(new Rect(x, y, 380, 22), Texts.GenerationName(corpse.Generation) + ", zemřel " + Texts.Ago(now - corpse.DiedAt) + ".", _label);
             y += 22;
             var mayLoot = _session.MayLoot(corpse);
             var note = mayLoot ? "Věci si může vzít kdokoli z vás." : "Ještě " + Hours(corpse.TribeOnlyUntil - now) + " si věci smí vzít jen jeho kmen.";

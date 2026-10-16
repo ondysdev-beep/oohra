@@ -129,6 +129,9 @@ namespace Oohra.Client
         [Tooltip("Pradávní (první generace): mohutnější, kožešinový plášť, ochra. Prázdné = model Player. Šířku a výšku podle generace i tak upraví hra.")]
         public GameObject PlayerAncient;
 
+        [Tooltip("Třetí generace a další (rok od vzniku světa): tkaný oděv, páska přes hruď, čelenka s pírkem. Prázdné = model Player.")]
+        public GameObject PlayerThird;
+
         [Header("Oheň")]
         [Tooltip("Ohniště (kameny, polena), průměr asi 0,7 m, střed dole uprostřed. Použije se i u táborů.")]
         public GameObject Campfire;

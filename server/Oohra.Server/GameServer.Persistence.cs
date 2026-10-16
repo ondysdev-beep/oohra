@@ -9,7 +9,10 @@ namespace Oohra.Server;
 public sealed partial class GameServer
 {
     /// <summary>Kdy svět vznikl (skutečný čas, UTC). Po restartu se načte z uloženého světa.</summary>
-    public DateTime WorldCreatedUtc { get; private set; } = DateTime.UtcNow;
+    public DateTime WorldCreatedUtc { get; internal set; } = DateTime.UtcNow;
+
+    /// <summary>Generace světa podle skutečného času od jeho vzniku (návrh 8.2, generations.json).</summary>
+    public int WorldGeneration => GenerationTraits.WorldGeneration((DateTime.UtcNow - WorldCreatedUtc).TotalDays);
 
     /// <summary>Uloží svět hned (příkaz save, vypnutí serveru). Bez souboru (testy) nedělá nic.</summary>
     public void SaveWorld()

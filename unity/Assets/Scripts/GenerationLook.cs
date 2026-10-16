@@ -4,10 +4,13 @@ namespace Oohra.Client
 {
     /// <summary>
     /// Vzhled postavy podle generace (návrh 8.4), parametrický: pár čísel a doplňků, ne kreslená postava pro každou generaci.
-    /// Pradávní jsou mohutní, v kožešinovém plášti, s ochrou a kostěnými korálky. Noví jsou vyšší a štíhlejší,
-    /// v prostším oděvu, od generace 2 s čelenkou, od 4 s korálky a od 5 s malbou. Hra to nikde nevysvětluje.
+    /// Každá generace světa (půl roku) vypadá jinak. Pradávní (0) jsou mohutní, v kožešinovém plášti, s ochrou
+    /// a kostěnými korálky. Noví (1) jsou vyšší a štíhlejší, v prostém světlém oděvu. Třetí generace (2) je ještě
+    /// štíhlejší, v tkaném zeleném oděvu s páskou přes hruď a čelenkou s pírkem. Další generace k tomu přidají
+    /// korálky (od 4) a malbu (od 5). Hra to nikde nevysvětluje.
     /// Vlastní model z katalogu dostane jen postavu (šířku a výšku) a barvu generace (části se SpeciesTint),
-    /// doplňky z kódu jen tvar z kódu. Pradávní můžou mít v katalogu vlastní model (PlayerAncient).
+    /// doplňky z kódu jen tvar z kódu. V katalogu může mít vlastní model Pradávný (PlayerAncient) a třetí
+    /// generace (PlayerThird), ostatní Player.
     /// </summary>
     public static class GenerationLook
     {
@@ -23,6 +26,8 @@ namespace Oohra.Client
         private static readonly Color Headband = Palette.Hex("#8c3b2a");
         private static readonly Color Bead = Palette.Hex("#4f8fa6");
         private static readonly Color Paint = Palette.Hex("#ece6d6");
+        private static readonly Color Sash = Palette.Hex("#d9c38a");
+        private static readonly Color Feather = Palette.Hex("#f2efe6");
 
         /// <summary>Jak postava dané generace vypadá.</summary>
         public struct Look
@@ -42,6 +47,12 @@ namespace Oohra.Client
             public bool Headband;
             public bool Beads;
             public bool Paint;
+
+            /// <summary>Páska přes hruď (třetí generace a další).</summary>
+            public bool Sash;
+
+            /// <summary>Pírko za čelenkou (třetí generace a další).</summary>
+            public bool Feather;
         }
 
         public static Look For(int generation)
@@ -51,18 +62,25 @@ namespace Oohra.Client
                 return new Look { Width = 1.15f, Height = 0.97f, Body = Palette.Hex("#8a6a45"), Cloak = true, Ochre = true, BoneBeads = true };
             }
 
+            var third = generation >= 2;
             return new Look
             {
                 Width = 1f - 0.03f * Mathf.Min(generation, 3),
                 Height = 1f + 0.015f * Mathf.Min(generation, 4),
-                Body = Palette.Hex("#c5a97e"),
-                Headband = generation >= 2,
+                // Noví světlý prostý oděv, třetí generace a další tkaný zelený.
+                Body = third ? Palette.Hex("#6f8a6a") : Palette.Hex("#c5a97e"),
+                Headband = third,
+                Sash = third,
+                Feather = third,
                 Beads = generation >= 4,
                 Paint = generation >= 5,
             };
         }
 
-        /// <summary>Model z katalogu pro generaci: Pradávný má vlastní, když je vyplněný, jinak Player. Null = tvar z kódu.</summary>
+        /// <summary>
+        /// Model z katalogu pro generaci: Pradávný a třetí generace mají vlastní, když je vyplněný, jinak Player.
+        /// Null = tvar z kódu.
+        /// </summary>
         public static GameObject ModelFor(int generation)
         {
             var catalog = VisualCatalog.Current;
@@ -70,6 +88,11 @@ namespace Oohra.Client
             if (generation <= 0 && catalog.PlayerAncient != null)
             {
                 return catalog.PlayerAncient;
+            }
+
+            if (generation >= 2 && catalog.PlayerThird != null)
+            {
+                return catalog.PlayerThird;
             }
 
             return catalog.Player != null ? catalog.Player : null;
@@ -131,6 +154,17 @@ namespace Oohra.Client
                 Part(PrimitiveType.Cylinder, "Čelenka", figure, Headband, new Vector3(0f, 1.63f, 0f), new Vector3(0.57f, 0.025f, 0.57f));
             }
 
+            if (look.Sash)
+            {
+                // Tkaná páska šikmo přes hruď, z ramene k boku.
+                Part(PrimitiveType.Cube, "Páska", figure, Sash, new Vector3(0f, 1.12f, 0.27f), new Vector3(0.09f, 0.62f, 0.04f), Quaternion.Euler(0f, 0f, 38f));
+            }
+
+            if (look.Feather)
+            {
+                Part(PrimitiveType.Cube, "Pírko", figure, Feather, new Vector3(0.18f, 1.8f, -0.12f), new Vector3(0.04f, 0.3f, 0.03f), Quaternion.Euler(-20f, 0f, -18f));
+            }
+
             if (look.Beads)
             {
                 for (var i = 0; i < 4; i++)
@@ -146,11 +180,11 @@ namespace Oohra.Client
             }
         }
 
-        private static GameObject Part(PrimitiveType type, string name, Transform figure, Color color, Vector3 position, Vector3 scale)
+        private static GameObject Part(PrimitiveType type, string name, Transform figure, Color color, Vector3 position, Vector3 scale, Quaternion? rotation = null)
         {
             var part = IslandView.Primitive(type, name, figure, color);
             part.transform.localPosition = position;
-            part.transform.localRotation = Quaternion.identity;
+            part.transform.localRotation = rotation ?? Quaternion.identity;
             part.transform.localScale = scale;
             return part;
         }

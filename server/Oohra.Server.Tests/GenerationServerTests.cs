@@ -12,7 +12,7 @@ public class GenerationServerTests
     {
         using var net = new TestNetwork();
         var a = net.Join("Ondra");
-        Assert.True(net.Pump(() => a.Self is { Generation: 0, WorldGeneration: 1 }));
+        Assert.True(net.Pump(() => a.Self is { Generation: 0, WorldGeneration: 0 }));
 
         for (var life = 0; life < 2; life++)
         {
@@ -22,6 +22,23 @@ public class GenerationServerTests
         }
 
         Assert.Equal(1, net.Server.FindPlayer("Ondra")!.Character.Traits.Generation);
+    }
+
+    /// <summary>
+    /// Kdo přijde do starého světa, už není Pradávný: narodí se jako generace světa (po roce třetí generace).
+    /// Po smrti zase jako generace světa.
+    /// </summary>
+    [Fact]
+    public void LateComerIsBornAsWorldGeneration()
+    {
+        using var net = new TestNetwork();
+        net.Server.WorldCreatedUtc = DateTime.UtcNow.AddDays(-400);
+        var a = net.Join("Jana");
+
+        Assert.True(net.Pump(() => a.Self is { Generation: 2, WorldGeneration: 2 }));
+        Kill(net, a, "Jana");
+        a.Reborn();
+        Assert.True(net.Pump(() => a.Self is { Dead: false, Generation: 2 } && a.Players[a.PlayerId].Generation == 2));
     }
 
     /// <summary>Rytina Pradávného nese, že ji vyryl Pradávný. Po smrti už je hráč Nový.</summary>

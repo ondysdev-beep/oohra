@@ -74,7 +74,7 @@ public sealed partial class GameServer
             c.Sleeping,
             SkillKinds.Select(s => (byte)c.Skills.Level(s)).ToArray(),
             PendingSkills(c),
-            GenerationTraits.WorldGeneration(Clock.CalendarMonths));
+            WorldGeneration);
         SendTo(player.Peer, w => Messages.WriteSelfState(w, state));
     }
 
