@@ -13,6 +13,9 @@ public sealed class Mulberry32
         _state = seed;
     }
 
+    /// <summary>Vnitřní stav generátoru. new Mulberry32(State) pokračuje přesně odsud (uložení světa).</summary>
+    public int State => _state;
+
     /// <summary>Další číslo v rozsahu 0 (včetně) až 1 (bez 1), jako r() v prototypu.</summary>
     public double NextDouble()
     {

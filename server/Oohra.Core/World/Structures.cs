@@ -1,6 +1,7 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
+using Oohra.Core.Persistence;
 using Oohra.Core.Social;
 using Oohra.Core.Time;
 
@@ -181,6 +182,25 @@ public sealed class Structures
 
         Version++;
         return structure;
+    }
+
+    /// <summary>Všechny stavby pro uložení světa (u koše obsah, u pasti úlovek).</summary>
+    public List<StructureSave> Export()
+    {
+        return _byId.Values.OrderBy(s => s.Id).Select(s => new StructureSave(
+            s.Id, s.Kind, s.X, s.Y, s.Angle, s.Length, s.FrameId, s.OwnerId, s.DecorationId, s.Store?.Stacks.ToList(), s.Caught)).ToList();
+    }
+
+    /// <summary>Obnoví stavby z uloženého světa se stejnými čísly.</summary>
+    public void Restore(IEnumerable<StructureSave> saved)
+    {
+        foreach (var s in saved.OrderBy(s => s.Id))
+        {
+            _nextId = s.Id;
+            var structure = Place(s.Kind, s.X, s.Y, s.Angle, s.FrameId, s.Length, s.OwnerId, s.DecorationId);
+            structure.Store?.Restore(s.Store ?? []);
+            structure.Caught = s.Caught;
+        }
     }
 
     /// <summary>

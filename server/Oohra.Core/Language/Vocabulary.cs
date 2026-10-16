@@ -1,4 +1,5 @@
 using Oohra.Core.Data;
+using Oohra.Core.Persistence;
 
 namespace Oohra.Core.Language;
 
@@ -112,6 +113,28 @@ public sealed class Vocabulary
         }
 
         return best < 0 ? null : Words.GuessOf((SpeechContext)best);
+    }
+
+    /// <summary>Všechna slova pro uložení světa.</summary>
+    public List<WordSave> Export()
+    {
+        return _entries.Values.Select(e => new WordSave(e.Word, e.Heard, [.. e.Contexts], e.Meaning, e.OldVoice)).ToList();
+    }
+
+    /// <summary>Obnoví zápisník z uloženého světa.</summary>
+    public void Import(IEnumerable<WordSave> words, byte[]? lastHeard)
+    {
+        foreach (var word in words)
+        {
+            var entry = GetOrAdd(word.Word);
+            entry.Heard = word.Heard;
+            entry.Meaning = word.Meaning;
+            entry.OldVoice = word.OldVoice;
+            Array.Copy(word.Contexts, entry.Contexts, Math.Min(word.Contexts.Length, entry.Contexts.Length));
+        }
+
+        LastHeard = lastHeard;
+        Version++;
     }
 
     private VocabularyEntry GetOrAdd(byte[] word)

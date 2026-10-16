@@ -1,4 +1,5 @@
 using Oohra.Core.Data;
+using Oohra.Core.Persistence;
 
 namespace Oohra.Core.Social;
 
@@ -15,6 +16,23 @@ public sealed class Tribes
 
     /// <summary>Roste s každou změnou členství (server podle toho pošle členům, kdo k nim patří).</summary>
     public int Version { get; private set; }
+
+    /// <summary>Kdo patří do kterého kmene (uložení světa). Pozvánky se neukládají, za chvíli by stejně vypršely.</summary>
+    public TribesSave Export()
+    {
+        return new TribesSave { TribeOf = new Dictionary<int, int>(_tribeOf), NextTribe = _nextTribe };
+    }
+
+    public void Restore(TribesSave saved)
+    {
+        foreach (var (player, tribe) in saved.TribeOf)
+        {
+            _tribeOf[player] = tribe;
+        }
+
+        _nextTribe = Math.Max(_nextTribe, saved.NextTribe);
+        Version++;
+    }
 
     /// <summary>Číslo kmene hráče, nebo null.</summary>
     public int? TribeOf(int playerId)

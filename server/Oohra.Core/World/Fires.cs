@@ -1,6 +1,7 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Items;
+using Oohra.Core.Persistence;
 using Oohra.Core.Plants;
 
 namespace Oohra.Core.World;
@@ -45,6 +46,22 @@ public sealed class Fires
     public Fire? Find(int fireId)
     {
         return _fires.Find(f => f.Id == fireId);
+    }
+
+    /// <summary>Ohně hráčů pro uložení světa (ohniště táborů nejsou v seznamu, hoří pořád).</summary>
+    public List<FireSave> Export()
+    {
+        return _fires.Select(f => new FireSave(f.Id, f.X, f.Y, f.BurnMinutes)).ToList();
+    }
+
+    public int NextId => _nextId;
+
+    /// <summary>Obnoví ohně z uloženého světa.</summary>
+    public void Restore(IEnumerable<FireSave> saved, int nextId)
+    {
+        _fires.AddRange(saved.Select(f => new Fire(f.Id, f.X, f.Y, f.BurnMinutes)));
+        _nextId = Math.Max(nextId, _fires.Count == 0 ? 1 : _fires.Max(f => f.Id) + 1);
+        Version++;
     }
 
     /// <summary>Ohně hoří a ubývá jim dřevo.</summary>

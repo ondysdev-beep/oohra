@@ -25,6 +25,8 @@ public sealed class TestNetwork : IDisposable
             Animals = false,
             // Statistiky se v testech jen počítají, do souboru se neukládají.
             StatsFile = string.Empty,
+            // Svět se v testech neukládá (test ukládání si soubor nastaví sám).
+            WorldFile = string.Empty,
             // Cizinci by odpovídali na slova a gesta v testech jazyka. Testy cizinců si je zapnou.
             Strangers = false,
             // Po odpojení postava hned zmizí (test zůstávání si čas nastaví sám).

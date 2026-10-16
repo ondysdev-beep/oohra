@@ -1,3 +1,5 @@
+using Oohra.Core.Persistence;
+
 namespace Oohra.Core.World;
 
 /// <summary>Co se s rostlinou ve světě stalo: kdy jí dorostou listy a plody, do kdy je pryč (vykopaná).</summary>
@@ -29,6 +31,20 @@ public sealed class PlantStates
         }
 
         return state;
+    }
+
+    /// <summary>Sklizené rostliny pro uložení světa.</summary>
+    public List<PlantStateSave> Export()
+    {
+        return _states.Select(p => new PlantStateSave(p.Key, p.Value.LeavesAt, p.Value.FruitAt, p.Value.GoneUntil)).ToList();
+    }
+
+    public void Restore(IEnumerable<PlantStateSave> saved)
+    {
+        foreach (var p in saved)
+        {
+            _states[p.PlantId] = new PlantState { LeavesAt = p.LeavesAt, FruitAt = p.FruitAt, GoneUntil = p.GoneUntil };
+        }
     }
 
     public bool IsGone(int plantId, double now)

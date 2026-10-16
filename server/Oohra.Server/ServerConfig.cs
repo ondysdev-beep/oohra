@@ -61,6 +61,17 @@ public sealed class ServerConfig
     /// <summary>Nejkratší doba mezi dvěma nahlášeními jednoho hráče (sekundy).</summary>
     public double ReportCooldownSeconds { get; set; } = 30;
 
+    /// <summary>Uložený svět (prázdné = neukládat). Po startu se načte, když existuje.</summary>
+    public string WorldFile { get; set; } = "world.json";
+
+    /// <summary>Jak často se svět ukládá (skutečné sekundy). Uloží se i při vypnutí serveru.</summary>
+    public double WorldSaveSeconds { get; set; } = 120;
+
+    /// <summary>Jak často se dělá záloha světa do složky zalohy (minuty) a kolik posledních záloh zůstane.</summary>
+    public double BackupEveryMinutes { get; set; } = 60;
+
+    public int BackupsKept { get; set; } = 48;
+
     /// <summary>Kam se ukládají statistiky hraní pro ladění (prázdné = neukládat).</summary>
     public string StatsFile { get; set; } = "stats.json";
 

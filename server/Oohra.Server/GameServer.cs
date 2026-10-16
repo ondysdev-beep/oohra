@@ -37,7 +37,7 @@ public sealed partial class GameServer : IDisposable
     // Odpojení hráči, jejichž postava ještě chvíli zůstává ve světě (do kdy, sekundy serveru).
     private readonly Dictionary<PlayerSession, double> _lingering = [];
     private readonly Dictionary<string, PlayerSession> _byNickname = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Mulberry32 _rng;
+    private Mulberry32 _rng;
     private readonly PlantVisual[] _sentVisuals;
     private int _nextPlayerId = 1;
     private long _tick;
@@ -51,6 +51,10 @@ public sealed partial class GameServer : IDisposable
 
     // Kdy se příště uloží statistiky hraní (sekundy od startu serveru).
     private double _nextStatsSaveAt;
+
+    // Uložený svět (world.json) a kdy se příště uloží.
+    private readonly WorldStore _worldStore;
+    private double _nextWorldSaveAt;
     private string _stockSpoilage = string.Empty;
 
     public GameServer(ServerConfig config)
@@ -76,6 +80,15 @@ public sealed partial class GameServer : IDisposable
             Animals.Populate(Island, []);
         }
 
+        // Uložený svět: na čerstvý ostrov ze seedu se vrátí změny, hráči a čas.
+        _worldStore = new WorldStore(config.WorldFile, config.BackupEveryMinutes, config.BackupsKept);
+        _nextWorldSaveAt = config.WorldSaveSeconds;
+        if (_worldStore.Load() is { } save)
+        {
+            RestoreWorld(save);
+            RestoredPlayers = save.Players.Count;
+        }
+
         var listener = new EventBasedNetListener();
         listener.ConnectionRequestEvent += OnConnectionRequest;
         listener.PeerDisconnectedEvent += (peer, info) => OnDisconnected(peer);
@@ -89,6 +102,12 @@ public sealed partial class GameServer : IDisposable
     public int Port => _net.LocalPort;
 
     public int OnlinePlayers => _byPeer.Count;
+
+    /// <summary>Kolik hráčů server načetl z uloženého světa (null = svět je nový).</summary>
+    public int? RestoredPlayers { get; private set; }
+
+    /// <summary>Soubor s uloženým světem (prázdné = neukládá se).</summary>
+    public string WorldFile => _worldStore.Path;
 
     /// <summary>Kolik bajtů server celkem odeslal (pro měření zátěže).</summary>
     public long BytesSent => _net.Statistics.BytesSent;
@@ -138,6 +157,8 @@ public sealed partial class GameServer : IDisposable
             _nextStatsSaveAt = _seconds + _config.StatsSaveSeconds;
             PlayStats.Save();
         }
+
+        SaveWorldWhenDue();
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
         Fires.Burn(minutes);
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
@@ -236,6 +257,7 @@ public sealed partial class GameServer : IDisposable
     {
         _net.Stop();
         PlayStats.Save();
+        SaveWorld();
     }
 
     internal PlayerSession? FindPlayer(string nickname)
@@ -348,7 +370,7 @@ public sealed partial class GameServer : IDisposable
             return "Neplatný kód pozvánky.";
         }
 
-        if (_config.BannedNicknames.Contains(nickname, StringComparer.OrdinalIgnoreCase))
+        if (IsBanned(nickname))
         {
             return "Správce tě z testu vyloučil.";
         }

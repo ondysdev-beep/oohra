@@ -20,6 +20,7 @@ public sealed class GameConnection : IDisposable
     private readonly Queue<GameEvent> _events = new();
     private readonly Queue<SpeechView> _speech = new();
     private readonly Queue<GestureView> _gestures = new();
+    private readonly Queue<string> _announcements = new();
     private readonly Queue<int> _invites = new();
     private NetPeer? _server;
     private string _inviteCode = string.Empty;
@@ -345,6 +346,14 @@ public sealed class GameConnection : IDisposable
         return gestures;
     }
 
+    /// <summary>Oznámení od správce serveru od posledního volání.</summary>
+    public List<string> TakeAnnouncements()
+    {
+        var announcements = _announcements.ToList();
+        _announcements.Clear();
+        return announcements;
+    }
+
     /// <summary>Upéct jeden kus z hromádky u ohně.</summary>
     public void Bake(int stackIndex)
     {
@@ -445,6 +454,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Strangers:
                 Strangers = Messages.ReadStrangers(reader);
+                break;
+            case MessageType.Announcement:
+                _announcements.Enqueue(Messages.ReadAnnouncement(reader));
                 break;
             case MessageType.Structures:
                 Structures = Messages.ReadStructures(reader);

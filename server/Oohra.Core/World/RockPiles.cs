@@ -1,4 +1,5 @@
 using Oohra.Core.Data;
+using Oohra.Core.Persistence;
 using Oohra.Core.Rng;
 
 namespace Oohra.Core.World;
@@ -63,6 +64,27 @@ public sealed class RockPiles
 
     /// <summary>Roste s každou změnou (server podle toho pošle hromady znovu).</summary>
     public int Version { get; private set; }
+
+    /// <summary>Hromady, ze kterých někdo bral (ostatní jsou plné jako na začátku).</summary>
+    public List<RockPileSave> Export()
+    {
+        return _piles.Values.Where(p => p.Stones != p.MaxStones).OrderBy(p => p.TileIndex)
+            .Select(p => new RockPileSave(p.TileIndex, p.Stones, p.RegrowAt)).ToList();
+    }
+
+    public void Restore(IEnumerable<RockPileSave> saved)
+    {
+        foreach (var s in saved)
+        {
+            if (_piles.TryGetValue(s.TileIndex, out var pile))
+            {
+                pile.Stones = Math.Min(s.Stones, pile.MaxStones);
+                pile.RegrowAt = s.RegrowAt;
+            }
+        }
+
+        Version++;
+    }
 
     public RockPile? At(int tileIndex)
     {

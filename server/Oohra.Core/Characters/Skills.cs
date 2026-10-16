@@ -26,6 +26,32 @@ public sealed class Skills
         return _pending.GetValueOrDefault(skill);
     }
 
+    /// <summary>Utvrzené body všech dovedností (uložení světa).</summary>
+    public Dictionary<SkillKind, double> ExportPoints()
+    {
+        return new Dictionary<SkillKind, double>(_points);
+    }
+
+    /// <summary>Nácvik čekající na spánek (uložení světa).</summary>
+    public Dictionary<SkillKind, double> ExportPending()
+    {
+        return new Dictionary<SkillKind, double>(_pending);
+    }
+
+    /// <summary>Obnoví dovednosti z uloženého světa.</summary>
+    public void Import(IReadOnlyDictionary<SkillKind, double> points, IReadOnlyDictionary<SkillKind, double> pending)
+    {
+        foreach (var (skill, value) in points)
+        {
+            _points[skill] = value;
+        }
+
+        foreach (var (skill, value) in pending)
+        {
+            _pending[skill] = value;
+        }
+    }
+
     /// <summary>Úroveň 0 až maxLevel: odmocnina z bodů / levelDivisor, dolů.</summary>
     public int Level(SkillKind skill)
     {

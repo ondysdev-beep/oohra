@@ -1,5 +1,6 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
+using Oohra.Core.Persistence;
 using Oohra.Core.Social;
 
 namespace Oohra.Core.World;
@@ -154,6 +155,23 @@ public sealed class Signs
         foreach (var carving in RuinCarvings.For(island))
         {
             Add(new Sign(_nextId++, carving.X, carving.Y, carving.Bits, -1, 0, carved: true, ancient: true, carving.Record));
+        }
+    }
+
+    /// <summary>Značky hráčů pro uložení světa (staré rytiny vzniknou znovu ze seedu).</summary>
+    public List<SignSave> Export()
+    {
+        return _signs.Where(s => !s.Ancient)
+            .Select(s => new SignSave(s.Id, s.X, s.Y, s.Bits, s.AuthorId, s.CreatedAt, s.Carved, s.Signature, s.ByAncient)).ToList();
+    }
+
+    /// <summary>Vrátí značky hráčů z uloženého světa (po AddAncient, se stejnými čísly).</summary>
+    public void Restore(IEnumerable<SignSave> saved)
+    {
+        foreach (var s in saved)
+        {
+            Add(new Sign(s.Id, s.X, s.Y, s.Bits, s.AuthorId, s.CreatedAt, s.Carved, signature: s.Signature, byAncient: s.ByAncient));
+            _nextId = Math.Max(_nextId, s.Id + 1);
         }
     }
 

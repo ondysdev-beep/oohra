@@ -16,6 +16,12 @@ public sealed class BirthGuards
 
     public IReadOnlyList<BirthGuard> All => _guards;
 
+    /// <summary>Vrátí ochrany z uloženého světa.</summary>
+    public void Restore(IEnumerable<BirthGuard> saved)
+    {
+        _guards.AddRange(saved);
+    }
+
     /// <summary>Hráč se narodil na (x, y). Jeho starší ochrana (z minulého života) končí.</summary>
     public void Add(double x, double y, int playerId, double now)
     {
