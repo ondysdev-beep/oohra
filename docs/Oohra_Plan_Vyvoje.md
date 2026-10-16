@@ -8,6 +8,24 @@
 - **Fáze E z větší části:** ukládání světa (soubor JSON se zálohami místo SQLite, pro 20 hráčů stačí), tajný klíč hráče, příkazy správce, statistiky hraní, záznam chyb u testerů. Návod: `docs/Provoz.md`.
 - **Zbývá do alfy:** server na internetu (VPS nebo otevřený port), balíček hry pro testery, kódy pozvánek po lidech.
 
+### Rozhodnutí z posledních sezení (17. 10. 2026)
+- **Generace podle skutečného času:** každého půl roku nová generace (`daysPerGeneration` 182,5). Prvních 6 měsíců Pradávní, pak Noví, pak třetí generace s vlastním vzhledem (tkaný zelený oděv, páska přes hruď, čelenka s pírkem) a tak dál. Kdo přijde později, narodí se jako aktuální generace.
+- **Po smrti v době Pradávných** se hráč narodí jako Nový (status Pradávného se smrtí ztrácí, návrh 8.6). Kdyby to mělo být jinak, změní se `GenerationTraits.AfterDeath`.
+- **Přezdívky** můžou být jakékoli, jen ne sprosté (seznam `blocked_words.json`).
+- **Divočáci jsou nebezpečnější** (víc kusů, rozzuří se dřív, silnější výpad a rány, víc životů).
+- **Ukládání světa do souboru JSON** místo SQLite (pro 20 hráčů stačí, dá se přečíst, přejít na databázi jde později).
+
+### Další kroky (pořadí)
+1. **Vyzkoušet hru sám:** nový hráč (sen bez slov), F1, zvuky, přežití první noci, cizinci, divočáci.
+2. **Dlouhý test s roboty** (třeba 5 hodin) s chytřejšími roboty, potom projít `stats.json`. Před testem s lidmi `stats.json` a `world.json` po robotech přesunout nebo smazat.
+3. **Webová stránka hry** (`web/`, koncept `docs/WEB_KONCEPT.md`): rozdělit na soubory, doplnit sdílení a přístupnost, nasadit (GitHub Pages).
+4. **Zbytek fáze E:** server na internetu (VPS nebo otevřený port), balíček hry pro testery (zip s `Oohra.exe` a adresou serveru), kódy pozvánek pro každého testera zvlášť.
+5. **Fáze F:** alfa se 3 až 5 známými, pak test s 15 až 20 lidmi.
+
+### Neověřeno (zkontrolovat při hraní)
+- Vzhled třetí generace (ve hře nastane až za rok, zatím hlídají jen testy).
+- Zvuky (slabiky, oheň, kroky, divočák, vlk): testy kontrolují jen to, že existují.
+
 ## Zásadní změna oproti verzi 1
 
 Prohlížečový prototyp **už nedoladíváme**. Slouží jako zdroj pravidel a čísel (rostliny, otravy, potřeby, generace, jazyk). Zbytek se ověřuje rovnou v C# a v Unity, protože v prohlížeči nejde otestovat server, síť, výkon ani kameru.
