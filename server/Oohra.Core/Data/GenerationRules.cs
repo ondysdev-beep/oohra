@@ -7,7 +7,7 @@ public sealed record GenerationRules(
     GenerationValues NewPerGeneration,
     int ColdGenerationCap,
     double SpeedMultiplierMax,
-    double MonthsPerGeneration);
+    double DaysPerGeneration);
 
 public sealed record GenerationValues(
     double ToxinMultiplier,

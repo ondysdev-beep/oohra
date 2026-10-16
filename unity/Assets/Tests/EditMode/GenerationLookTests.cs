@@ -25,7 +25,25 @@ namespace Oohra.Client.Tests
             Assert.AreNotEqual(ancient.Body, first.Body);
         }
 
-        /// <summary>Doplňky Nových přibývají s generací: čelenka od 2, korálky od 4, malba od 5.</summary>
+        /// <summary>
+        /// Třetí generace vypadá jinak než Noví: tkaný oděv jiné barvy, páska přes hruď, čelenka s pírkem.
+        /// Další generace přidají korálky (od 4) a malbu (od 5).
+        /// </summary>
+        [Test]
+        public void ThirdGenerationLooksDifferent()
+        {
+            var newOnes = GenerationLook.For(1);
+            var third = GenerationLook.For(2);
+
+            Assert.IsFalse(newOnes.Headband || newOnes.Sash || newOnes.Feather);
+            Assert.IsTrue(third.Headband && third.Sash && third.Feather);
+            Assert.AreNotEqual(newOnes.Body, third.Body);
+            Assert.AreNotEqual(GenerationLook.For(0).Body, third.Body);
+            Assert.AreEqual("3. generace", Texts.GenerationName(2));
+            Assert.AreEqual("Nový", Texts.GenerationName(1));
+            Assert.AreEqual("Pradávný", Texts.GenerationName(0));
+        }
+
         [Test]
         public void NewGenerationsGainAccessories()
         {

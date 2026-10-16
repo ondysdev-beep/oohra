@@ -375,7 +375,7 @@ public sealed partial class GameServer
     }
 
     /// <summary>
-    /// Po smrti: Nový aktuální generace světa (návrh 8.2), s prázdným batohem. Narodí se v divočině daleko od místa smrti,
+    /// Po smrti: aktuální generace světa, aspoň Nový (návrh 8.2 a 8.6), s prázdným batohem. Narodí se v divočině daleko od místa smrti,
     /// nebo, když si to hráč vybral, na okraji území svého kmene (návrh 4.1).
     /// </summary>
     private void Reborn(PlayerSession player, BirthPlace place)
@@ -385,7 +385,7 @@ public sealed partial class GameServer
             return;
         }
 
-        var generation = GenerationTraits.WorldGeneration(Clock.CalendarMonths);
+        var generation = GenerationTraits.AfterDeath(WorldGeneration);
         var deathPlace = new Position(player.X, player.Y);
         player.Lives++;
         player.Character = NewCharacter(generation);

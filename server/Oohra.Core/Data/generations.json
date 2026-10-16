@@ -30,8 +30,9 @@
   "coldGenerationCap": 4,
   // Noví jsou rychlejší, ale nejvýš o 10 %.
   "speedMultiplierMax": 1.1,
-  // Generace světa (návrh 8.2): po smrti se postava narodí jako aktuální generace světa, ne o jednu výš.
-  // Generace světa roste o jednu každých monthsPerGeneration měsíců kalendáře (měsíc je 9 reálných hodin,
-  // 6 měsíců jsou asi 2 a čtvrt dne). Začíná na 1, strop je cap.
-  "monthsPerGeneration": 6
+  // Generace světa (návrh 8.2): roste o jednu každých daysPerGeneration skutečných dní od vzniku světa
+  // (182,5 dne = půl roku). Prvních půl roku jsou to Pradávní (0), pak Noví (1), pak třetí generace (2)…, strop je cap.
+  // Kdo do světa přijde poprvé, narodí se jako aktuální generace. Po smrti jako aktuální generace, ale aspoň Nový
+  // (status Pradávného se smrtí ztrácí navždy, návrh 8.6).
+  "daysPerGeneration": 182.5
 }

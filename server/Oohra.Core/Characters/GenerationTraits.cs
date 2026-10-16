@@ -29,14 +29,24 @@ public sealed record GenerationTraits(
     }
 
     /// <summary>
-    /// Generace světa (návrh 8.2): počítadlo patří světu, ne hráči. Roste o jednu každých monthsPerGeneration
-    /// měsíců kalendáře, začíná na 1 (první Noví), nejvýš strop. Kdo zemře, narodí se jako tahle generace.
+    /// Generace světa (návrh 8.2): počítadlo patří světu, ne hráči. Roste o jednu každých daysPerGeneration
+    /// skutečných dní od vzniku světa (asi půl roku). Prvních půl roku je 0 (Pradávní), pak 1 (Noví), pak 2 (třetí
+    /// generace) a tak dál, nejvýš strop. Kdo do světa přijde poprvé, narodí se jako tahle generace.
     /// </summary>
-    public static int WorldGeneration(double calendarMonths)
+    public static int WorldGeneration(double realDaysSinceStart)
     {
         var rules = GameData.Generations;
-        var passed = (int)Math.Floor(Math.Max(0, calendarMonths) / rules.MonthsPerGeneration);
-        return Math.Min(rules.Cap, 1 + passed);
+        var passed = (int)Math.Floor(Math.Max(0, realDaysSinceStart) / rules.DaysPerGeneration);
+        return Math.Min(rules.Cap, passed);
+    }
+
+    /// <summary>
+    /// Generace po smrti: generace světa, ale aspoň Nový. Status Pradávného se smrtí ztrácí navždy (návrh 8.6),
+    /// i když svět je ještě v době Pradávných.
+    /// </summary>
+    public static int AfterDeath(int worldGeneration)
+    {
+        return Math.Max(1, worldGeneration);
     }
 
     public static GenerationTraits For(int generation)

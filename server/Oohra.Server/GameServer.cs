@@ -399,10 +399,11 @@ public sealed partial class GameServer : IDisposable
         return null;
     }
 
-    /// <summary>Nový hráč: první život je Pradávný, narodí se v divočině u vody.</summary>
+    /// <summary>Nový hráč: narodí se jako generace světa (prvních půl roku Pradávný) v divočině u vody.</summary>
     private PlayerSession CreatePlayer(string nickname)
     {
-        var character = NewCharacter(0);
+        // První život: aktuální generace světa (prvních půl roku Pradávní, kdo přijde později, je už z mladší generace).
+        var character = NewCharacter(WorldGeneration);
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: true);
         var player = new PlayerSession(_nextPlayerId++, nickname, character, NewInventory(character), spawn.X, spawn.Y);
         _byNickname[nickname] = player;

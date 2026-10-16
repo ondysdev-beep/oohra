@@ -169,7 +169,7 @@ namespace Oohra.Client
             var minute = (int)((clock.Hour - hour) * 60);
             var players = _session.Connection.Players.Count;
             var text = $"Den {clock.Day + 1}, {hour:00}:{minute:00} · {Texts.SeasonName(clock.Season)}, {clock.MonthOfYear + 1}. měsíc\n"
-                + (self.Generation == 0 ? "Pradávný" : $"Nový · generace {self.Generation + 1}")
+                + Texts.GenerationName(self.Generation)
                 + $" · hráčů na ostrově: {players}";
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
@@ -610,14 +610,14 @@ namespace Oohra.Client
 
             var x = _deathRect.x + 16;
             var y = _deathRect.y + 14;
-            // Narodí se jako aktuální generace světa (návrh 8.2), ne o jednu výš.
+            // Narodí se jako aktuální generace světa (návrh 8.2), aspoň Nový (status Pradávného smrtí končí).
             var next = System.Math.Max(1, self.WorldGeneration);
             GUI.Label(new Rect(x, y, 480, 26), "ZEMŘEL JSI", _title);
             GUI.Label(new Rect(x, y + 30, 488, 22), self.DeathCause.HasValue ? Texts.For(self.DeathCause.Value) : "Zemřel jsi.", _warn);
             GUI.Label(new Rect(x, y + 58, 488, 66),
                 "Postava zapomněla, co věděla. Věci zůstaly u tvého těla: můžeš si pro ně dojít,\n"
                 + "prvních 24 hodin je smí vzít jen tvůj kmen, potom kdokoli.\n"
-                + $"Narodíš se jako Nový, generace {next + 1}." + (self.Generation == 0 ? " Status Pradávného je navždy pryč." : string.Empty),
+                + $"Narodíš se jako {Texts.GenerationName(next)}." + (self.Generation == 0 ? " Status Pradávného je navždy pryč." : string.Empty),
                 _label);
             if (!_session.HasTribe)
             {
