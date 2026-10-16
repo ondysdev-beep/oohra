@@ -12,9 +12,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- Nastavení serveru se kopíruje vedle programu. -->
+  <!-- Nastavení serveru a seznam zakázaných slov se kopírují vedle programu. -->
   <ItemGroup>
     <None Update="server.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="blocked_words.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

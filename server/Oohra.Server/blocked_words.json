@@ -1,0 +1,20 @@
+// Sprostá a urážlivá slova, která nesmí být v přezdívce. Správce může seznam rozšířit (pak restart serveru).
+// Porovnává se bez diakritiky, malými písmeny, bez mezer a znaků a s přepisem čísel na písmena
+// (0 = o, 1 = i, 3 = e, 4 = a, 5 = s, 7 = t, 8 = b, @ = a, $ = s). Opakovaná písmena se slijí (kuuurva = kurva).
+// Stačí kořen slova: „kurv“ zachytí kurva, kurvo i kurvy. Pozor na krátké kořeny, mohou zakázat i nevinná jména.
+// „allowed“ jsou nevinná slova, ve kterých se zakázaný kořen náhodou skrývá (Picasso obsahuje „pica“).
+{
+  "blocked": [
+    // čeština
+    "kurv", "kurev", "pica", "pico", "picus", "picovin", "picak", "curak", "kokot", "zmrd", "mrdat", "mrdka", "mrdk",
+    "jebat", "jebal", "jebn", "jebk", "vyjeb", "pojeb", "zajeb", "sukat", "sukal", "kunda", "hovno", "hovna",
+    "prdel", "sracka", "sraci", "posrany", "chcan", "buzerant", "buzna", "teplous", "negr", "cigos", "cikanisk",
+    "debil", "kreten", "mamrd",
+    // angličtina
+    "fuck", "shit", "cunt", "bitch", "dick", "pussy", "nigger", "nigga", "fagot", "faget", "whore", "slut",
+    "asshole", "bastard", "retard", "porn", "penis", "vagina",
+    // nenávist
+    "hitler", "nazi", "heil"
+  ],
+  "allowed": [ "picasso", "spica", "epica", "pikachu" ]
+}

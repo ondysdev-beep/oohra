@@ -62,6 +62,9 @@ public sealed class ServerConfig
     /// <summary>Jak často se statistiky ukládají (skutečné sekundy). Uloží se i při vypnutí serveru.</summary>
     public double StatsSaveSeconds { get; set; } = 300;
 
+    /// <summary>Seznam sprostých slov, která nesmí být v přezdívce (vedle programu, NicknameFilter).</summary>
+    public string BlockedWordsFile { get; set; } = "blocked_words.json";
+
     /// <summary>Vyloučení hráči (přezdívky). Správce je sem dopíše po nahlášení, server je nepustí do hry.</summary>
     public List<string> BannedNicknames { get; set; } = [];
 
