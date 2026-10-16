@@ -38,7 +38,11 @@ public sealed record WarmthRules(
     double AmbientFactor,
     double ApproachPerMinute,
     double[] SeasonAmbient,
-    double DaylightSwing);
+    double DaylightSwing,
+    NewbornWarmthRules Newborn);
+
+/// <summary>Ochrana nováčka v zimě a instinkt na zimu (návrh 4.1).</summary>
+public sealed record NewbornWarmthRules(double WarmHours, double InstinctDays, double InstinctBelow, double InstinctEveryMinutes);
 
 public sealed record FeverRules(
     double ToxinAbove,

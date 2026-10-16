@@ -29,6 +29,12 @@ public sealed class CharacterSave
 
     public double LastAte { get; init; }
 
+    public double WarmUntil { get; init; } = double.NegativeInfinity;
+
+    public double ColdInstinctUntil { get; init; } = double.NegativeInfinity;
+
+    public double LastColdInstinct { get; init; } = double.NegativeInfinity;
+
     public double Toxin { get; init; }
 
     public double Fever { get; init; }

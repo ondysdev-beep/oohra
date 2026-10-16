@@ -404,6 +404,7 @@ public sealed partial class GameServer : IDisposable
     {
         // První život: aktuální generace světa (prvních půl roku Pradávní, kdo přijde později, je už z mladší generace).
         var character = NewCharacter(WorldGeneration);
+        character.BornAsNewcomer(Clock.TotalMinutes);
         var spawn = SpawnPoint.PickWild(Island, _rng, firstLife: true);
         var player = new PlayerSession(_nextPlayerId++, nickname, character, NewInventory(character), spawn.X, spawn.Y);
         _byNickname[nickname] = player;
