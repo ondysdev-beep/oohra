@@ -28,6 +28,7 @@ public sealed partial class GameServer : IDisposable
     private const int MaxNicknameLength = 16;
 
     private readonly ServerConfig _config;
+    private readonly NicknameFilter _nicknames;
     private readonly WorldView _worldView;
     private readonly NetManager _net;
     private readonly NetDataWriter _writer = new();
@@ -62,6 +63,7 @@ public sealed partial class GameServer : IDisposable
         _commonWords = CommonWords.For(config.Seed);
         Island.Signs.AddAncient(Island);
         Reports = new ReportLog(config.ReportsFile);
+        _nicknames = NicknameFilter.Load(Path.IsPathRooted(config.BlockedWordsFile) ? config.BlockedWordsFile : Path.Combine(AppContext.BaseDirectory, config.BlockedWordsFile));
         PlayStats = new PlayStats(config.StatsFile);
         _nextStatsSaveAt = config.StatsSaveSeconds;
         Strangers = new Strangers(config.Seed, Island);
@@ -320,6 +322,11 @@ public sealed partial class GameServer : IDisposable
             || !nickname.All(ch => char.IsLetterOrDigit(ch) || ch is ' ' or '-' or '_'))
         {
             return $"Přezdívka musí mít {MinNicknameLength} až {MaxNicknameLength} písmen nebo číslic.";
+        }
+
+        if (_nicknames.IsBlocked(nickname))
+        {
+            return "Tahle přezdívka nejde, obsahuje sprosté nebo urážlivé slovo. Vyber si jinou.";
         }
 
         if (FindPlayer(nickname) is { } existing && !PlayerKeys.Matches(existing.KeyHash, playerKey))
