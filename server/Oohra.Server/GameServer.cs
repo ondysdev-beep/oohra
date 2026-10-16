@@ -33,6 +33,9 @@ public sealed partial class GameServer : IDisposable
     private readonly NetManager _net;
     private readonly NetDataWriter _writer = new();
     private readonly Dictionary<int, PlayerSession> _byPeer = [];
+
+    // Odpojení hráči, jejichž postava ještě chvíli zůstává ve světě (do kdy, sekundy serveru).
+    private readonly Dictionary<PlayerSession, double> _lingering = [];
     private readonly Dictionary<string, PlayerSession> _byNickname = new(StringComparer.OrdinalIgnoreCase);
     private readonly Mulberry32 _rng;
     private readonly PlantVisual[] _sentVisuals;
@@ -140,10 +143,9 @@ public sealed partial class GameServer : IDisposable
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
         UpdateStrangers(realSeconds);
 
-        foreach (var player in _byPeer.Values)
+        foreach (var player in InWorld.ToList())
         {
             Move(player, realSeconds);
-            PlayStats.Online(player.Nickname, realSeconds, DateTime.UtcNow);
             Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
             if (player.Character.IsDead && !player.BodyLeft)
             {
@@ -151,6 +153,13 @@ public sealed partial class GameServer : IDisposable
             }
 
             SendBodyEvents(player);
+            if (player.Peer is null)
+            {
+                // Odpojený hráč, jehož postava ještě chvíli zůstává ve světě: počítá se, ale nic se mu neposílá.
+                continue;
+            }
+
+            PlayStats.Online(player.Nickname, realSeconds, DateTime.UtcNow);
             if (player.Character.Vocabulary.Version != player.SentVocabularyVersion)
             {
                 SendVocabulary(player);
@@ -159,6 +168,7 @@ public sealed partial class GameServer : IDisposable
             SendTribeState(player);
         }
 
+        EndLingering();
         if (Fires.Version != _sentFiresVersion)
         {
             _sentFiresVersion = Fires.Version;
@@ -255,8 +265,32 @@ public sealed partial class GameServer : IDisposable
 
         player.Peer = null;
         player.InputX = player.InputY = 0;
+        if (_config.LogoutLingerSeconds > 0 && !player.Character.IsDead)
+        {
+            // Postava ještě chvíli zůstane ve světě, aby se odpojením nedalo utéct před vlkem.
+            _lingering[player] = _seconds + _config.LogoutLingerSeconds;
+            Log?.Invoke($"{player.Nickname} odešel (postava zůstane ve světě ještě {_config.LogoutLingerSeconds:0} s).");
+            return;
+        }
+
         Broadcast(w => Messages.WritePlayerLeft(w, player.Id));
         Log?.Invoke($"{player.Nickname} odešel.");
+    }
+
+    /// <summary>Hráči ve světě: připojení a odpojení, jejichž postava tu ještě chvíli zůstává.</summary>
+    private IEnumerable<PlayerSession> InWorld => _byPeer.Values.Concat(_lingering.Keys);
+
+    /// <summary>Postavám odpojených hráčů vypršel čas ve světě: zmizí (bezpečně uložené na místě).</summary>
+    private void EndLingering()
+    {
+        foreach (var (player, until) in _lingering.ToList())
+        {
+            if (_seconds >= until)
+            {
+                _lingering.Remove(player);
+                Broadcast(w => Messages.WritePlayerLeft(w, player.Id));
+            }
+        }
     }
 
     private void HandleLogin(NetPeer peer, NetDataReader reader)
@@ -274,11 +308,12 @@ public sealed partial class GameServer : IDisposable
         // Nová postava (nebo odemčená správcem) si zapamatuje klíč toho, kdo přišel.
         player.KeyHash ??= PlayerKeys.Hash(playerKey);
         player.Peer = peer;
+        _lingering.Remove(player);
         _byPeer[peer.Id] = player;
 
         SendTo(peer, w => Messages.WriteLoginResult(w, new LoginResult(true, string.Empty, player.Id)));
         SendTo(peer, w => Messages.WriteWorld(w, _worldView));
-        foreach (var other in _byPeer.Values)
+        foreach (var other in InWorld)
         {
             SendTo(peer, w => Messages.WritePlayerJoined(w, InfoOf(other)));
         }

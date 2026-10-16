@@ -27,6 +27,8 @@ public sealed class TestNetwork : IDisposable
             StatsFile = string.Empty,
             // Cizinci by odpovídali na slova a gesta v testech jazyka. Testy cizinců si je zapnou.
             Strangers = false,
+            // Po odpojení postava hned zmizí (test zůstávání si čas nastaví sám).
+            LogoutLingerSeconds = 0,
         };
         configure?.Invoke(config);
         Server = new GameServer(config);

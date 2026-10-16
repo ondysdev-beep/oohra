@@ -240,7 +240,7 @@ public sealed partial class GameServer
     /// <summary>Kde stojí hráči ve hře (zeď se nesmí postavit na nikoho z nich).</summary>
     private List<Position> PlayerPositions()
     {
-        return _byPeer.Values.Select(p => new Position(p.X, p.Y)).ToList();
+        return InWorld.Select(p => new Position(p.X, p.Y)).ToList();
     }
 
     private void GatherMaterial(PlayerSession player, MessageType type, (int TileX, int TileY) tile)
@@ -431,7 +431,7 @@ public sealed partial class GameServer
             return home;
         }
 
-        return _byPeer.Values
+        return InWorld
             .Where(p => p.Id != player.Id && members.Contains(p.Id) && !p.Character.IsDead)
             .OrderBy(p => p.Id)
             .Select(p => new Position(p.X, p.Y))

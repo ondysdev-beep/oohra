@@ -47,6 +47,11 @@ public sealed class ServerConfig
     /// <summary>Do jaké vzdálenosti (metry) hráč dostává polohy zvířat.</summary>
     public double AnimalViewDistance { get; set; } = 40;
 
+    /// <summary>
+    /// Jak dlouho (skutečné sekundy) zůstane postava ve světě po odpojení. Odpojením se tak nedá utéct před vlkem.
+    /// </summary>
+    public double LogoutLingerSeconds { get; set; } = 30;
+
     /// <summary>Cizí kmeny (NPC) v táborech ostrova.</summary>
     public bool Strangers { get; set; } = true;
 
