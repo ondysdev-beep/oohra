@@ -63,6 +63,22 @@ public sealed class Character
 
     public double Health { get; set; }
 
+    /// <summary>Do kdy je nováček v teple od narození (herní minuty): zima mu zatím neubližuje (návrh 4.1).</summary>
+    public double WarmUntil { get; set; } = double.NegativeInfinity;
+
+    /// <summary>Do kdy má nováček instinkt na zimu (herní minuty): zebe ho dřív, než zima ubližuje.</summary>
+    public double ColdInstinctUntil { get; set; } = double.NegativeInfinity;
+
+    public double LastColdInstinct { get; set; } = double.NegativeInfinity;
+
+    /// <summary>Nováček: první hodiny v teple a pár dní instinkt na zimu (první život, návrh 4.1).</summary>
+    public void BornAsNewcomer(double now)
+    {
+        var rules = GameData.Body.Warmth.Newborn;
+        WarmUntil = now + rules.WarmHours * 60;
+        ColdInstinctUntil = now + rules.InstinctDays * 1440;
+    }
+
     /// <summary>Kdy naposledy jedl nebo ochutnával (herní minuty), pro souvislost „u jídla“ v jazyce.</summary>
     public double LastAte { get; set; } = double.NegativeInfinity;
 
@@ -345,6 +361,9 @@ public sealed class Character
             Warmth = Warmth,
             Health = Health,
             LastAte = LastAte,
+            WarmUntil = WarmUntil,
+            ColdInstinctUntil = ColdInstinctUntil,
+            LastColdInstinct = LastColdInstinct,
             Toxin = Toxin,
             Fever = Fever,
             Infection = Infection,
@@ -383,6 +402,9 @@ public sealed class Character
             Warmth = save.Warmth,
             Health = save.Health,
             LastAte = save.LastAte,
+            WarmUntil = save.WarmUntil,
+            ColdInstinctUntil = save.ColdInstinctUntil,
+            LastColdInstinct = save.LastColdInstinct,
             Toxin = save.Toxin,
             Fever = save.Fever,
             Infection = save.Infection,

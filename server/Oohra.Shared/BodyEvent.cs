@@ -79,6 +79,9 @@ public enum BodyEvent
 
     /// <summary>Pradávný snědl zkažené jídlo a železný žaludek to zvládl.</summary>
     IronStomach,
+
+    /// <summary>Instinkt na zimu (nováček, návrh 4.1): zebe ho, ještě než mu zima začne ubližovat.</summary>
+    ColdInstinct,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>

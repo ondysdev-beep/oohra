@@ -62,6 +62,24 @@ public static class Physiology
         return rules.SeasonAmbient[(int)clock.Season] + rules.DaylightSwing * (clock.Daylight - 0.5);
     }
 
+    /// <summary>
+    /// Nováček (návrh 4.1): dokud je v teple od narození, teplo těla neklesne pod hranici, kdy zima škodí.
+    /// Dokud má instinkt na zimu, zebe ho dřív, než zima začne ubližovat (hláška ColdInstinct).
+    /// </summary>
+    private static void NewbornWarmth(Character c, double now, NewbornWarmthRules rules)
+    {
+        if (now < c.WarmUntil)
+        {
+            c.Warmth = Math.Max(c.Warmth, GameData.Body.Damage.ColdBelow + 1);
+        }
+
+        if (now < c.ColdInstinctUntil && c.Warmth < rules.InstinctBelow && now - c.LastColdInstinct >= rules.InstinctEveryMinutes)
+        {
+            c.LastColdInstinct = now;
+            c.Report(now, BodyEvent.ColdInstinct);
+        }
+    }
+
     private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, bool sheltered, WarmthRules rules)
     {
         var ambient = AmbientTemperature(clock, rules);
@@ -70,6 +88,7 @@ public static class Physiology
         var sleeping = c.Sleeping ? GameData.Body.Sleep.WarmthBonus : 0;
         var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor + fire + shelter + sleeping, 0, 100);
         c.Warmth += (target - c.Warmth) * Math.Min(1, rules.ApproachPerMinute * minutes);
+        NewbornWarmth(c, clock.TotalMinutes, rules.Newborn);
     }
 
     /// <summary>

@@ -347,6 +347,7 @@ namespace Oohra.Client
                 case BodyEvent.BoarAlert: return "Divočák se na tebe zaměřil. Až se rozběhne, uhni na stranu.";
                 case BodyEvent.WoundInflamed: return "Rána se zanítila. Pálí a je ti horko.";
                 case BodyEvent.IronStomach: return "Železný žaludek to zvládl.";
+                case BodyEvent.ColdInstinct: return "Zebe tě do kostí. Tělo ti říká: najdi oheň nebo úkryt, než přijde mráz.";
                 default: return "Zemřel jsi.";
             }
         }

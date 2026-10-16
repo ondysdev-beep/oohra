@@ -27,7 +27,11 @@
     "approachPerMinute": 0.004,
     // Teplota okolí podle ročního období (jaro, léto, podzim, zima), ve dne o trochu víc.
     "seasonAmbient": [10, 22, 8, -4],
-    "daylightSwing": 8
+    "daylightSwing": 8,
+    // Nováček (první život, návrh 4.1): rodí se v teple, prvních warmHours herních hodin mu zima neubližuje
+    // (teplo těla neklesne pod hranici, kdy zima škodí). Prvních instinctDays dní ho zebe, když teplo klesne
+    // pod instinctBelow (instinkt na zimu), nejvýš jednou za instinctEveryMinutes.
+    "newborn": { "warmHours": 6, "instinctDays": 3, "instinctBelow": 28, "instinctEveryMinutes": 90 }
   },
 
   // Horečka se blíží cíli z toxinu a zánětu.
