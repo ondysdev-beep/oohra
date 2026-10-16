@@ -69,6 +69,9 @@ namespace Oohra.Client
 
         public IReadOnlyList<LogLine> Log => _log;
 
+        /// <summary>Každá hláška ze serveru (nápovědy a oslavy „poprvé“ podle ní poznají, co se stalo).</summary>
+        public event System.Action<GameEvent> EventReceived;
+
         public bool BackpackOpen { get; set; }
 
         /// <summary>Panel dovedností (klávesa K).</summary>
@@ -118,6 +121,7 @@ namespace Oohra.Client
 
             foreach (var gameEvent in Connection.TakeEvents())
             {
+                EventReceived?.Invoke(gameEvent);
                 bool warn;
                 var text = Texts.For(gameEvent, out warn);
                 if (text != null)
