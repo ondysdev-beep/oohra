@@ -27,7 +27,7 @@ public sealed partial class GameServer
             return;
         }
 
-        var players = _byPeer.Values.Where(p => !p.Character.IsDead).Select(p => new Position(p.X, p.Y)).ToList();
+        var players = InWorld.Where(p => !p.Character.IsDead).Select(p => new Position(p.X, p.Y)).ToList();
         Strangers.Update(Island, Plants, Animals.All, Clock, realSeconds, players);
         foreach (var act in Strangers.TakeActs())
         {

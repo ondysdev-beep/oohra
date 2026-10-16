@@ -99,7 +99,7 @@ public sealed partial class GameServer
 
     private void BroadcastSnapshot()
     {
-        var players = _byPeer.Values
+        var players = InWorld
             .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping))
             .ToArray();
         var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players);
@@ -153,7 +153,7 @@ public sealed partial class GameServer
     /// <summary>Hráči ve hře, jak je vidí zvířata.</summary>
     private List<AnimalTarget> AnimalTargets()
     {
-        return _byPeer.Values.Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
+        return InWorld.Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
     }
 
     /// <summary>Každému hráči zvířata v jeho okolí (animalViewDistance), ať se neposílá celý ostrov.</summary>
