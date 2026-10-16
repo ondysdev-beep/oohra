@@ -39,6 +39,14 @@ h3{font-size:24px;line-height:1.15}
 .lang{display:flex;border:1px solid var(--line)}
 .lang button{font:500 11.5px var(--mono);letter-spacing:.14em;background:transparent;color:var(--dim);border:0;padding:7px 11px;cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--lichen);color:var(--lichen-fg)}
+/* nástroje v hlavičce: mlha a jazyk */
+.tools{display:flex;gap:10px;align-items:center}
+.fogbtn{font:500 11.5px var(--mono);letter-spacing:.14em;text-transform:uppercase;background:transparent;color:var(--dim);border:1px solid var(--line);padding:7px 11px;cursor:pointer}
+.fogbtn[aria-pressed="true"]{color:var(--fg)}
+.fogbtn[aria-pressed="false"]{text-decoration:line-through}
+/* odkaz pro klávesnici: viditelný jen po Tabu */
+.skip{position:absolute;left:16px;top:-60px;z-index:10;background:var(--lichen);color:var(--lichen-fg);font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:10px 14px;text-decoration:none}
+.skip:focus{top:10px}
 
 @media(min-width:900px){.bar{position:sticky;top:env(safe-area-inset-top,0px)}}
 /* hero */
@@ -76,7 +84,8 @@ h3{font-size:24px;line-height:1.15}
 .side li{display:flex;gap:12px;color:var(--dim);align-items:baseline}
 .side li::before{content:"";flex:none;width:6px;height:6px;background:var(--c);transform:translateY(-2px)}
 .side.a{--c:var(--blood)}.side.b{--c:var(--lichen)}
-.side.a .mono{color:var(--blood)}.side.b .mono{color:var(--lichen)}
+/* štítek Pradávného: krev zesvětlená textem, aby malé písmo mělo dost kontrastu i v tmavém motivu */
+.side.a .mono{color:color-mix(in srgb,var(--blood) 70%,var(--fg))}.side.b .mono{color:var(--lichen)}
 .side .pic{height:150px;display:block;width:100%}
 
 /* signs */

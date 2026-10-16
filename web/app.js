@@ -20,9 +20,13 @@ function signSvg(shape,fill){
   return '<svg viewBox="0 0 12 12" fill="'+fill+'" shape-rendering="crispEdges" aria-hidden="true">'+r+'</svg>';
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function setMeta(sel,value){var m=document.querySelector(sel);if(m)m.setAttribute('content',value)}
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim()}
 
 var LANG='cs';
+/* Mlha: zapnutá, pokud ji návštěvník tlačítkem nevypnul. STILL = systém chce omezený pohyb (nastaví mlha). */
+var FOG=true,STILL=false;
+try{FOG=localStorage.getItem('oohra-fog')!=='off'}catch(e){}
 try{var sv=localStorage.getItem('oohra-lang');if(sv==='cs'||sv==='en')LANG=sv;else LANG=/^(cs|sk)/i.test(navigator.language||'')?'cs':'en'}catch(e){LANG=/^(cs|sk)/i.test(navigator.language||'')?'cs':'en'}
 
 /* ===== STATICKÁ GRAFIKA ===== */
@@ -58,7 +62,15 @@ function render(){
   document.getElementById('h1').innerHTML=T.h1;
   try{if(matchMedia('(hover: none)').matches)document.querySelector('.hint').textContent=T.hint_touch}catch(e){}
   document.querySelectorAll('.lang button').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-lang')===LANG?'true':'false')});
-  document.title=CONFIG.name;
+  /* Titulek a popis stránky podle jazyka (i pro sdílení, když prohlížeč stránku sdílí sám). */
+  document.title=CONFIG.name+' · '+T.meta_title;
+  setMeta('meta[name="description"]',T.meta_desc);
+  setMeta('meta[property="og:title"]',document.title);
+  setMeta('meta[property="og:description"]',T.meta_desc);
+  setMeta('meta[property="og:locale"]',LANG==='cs'?'cs_CZ':'en_GB');
+  /* Mlha: tlačítko a nápověda (bez mlhy nebo při omezeném pohybu nemá „pohni myší“ smysl). */
+  document.getElementById('fogBtn').setAttribute('aria-pressed',FOG?'true':'false');
+  document.querySelector('.hint').hidden=!FOG||STILL;
   var h='';T.rules.forEach(function(r){h+='<div class="it"><h3>'+esc(r[0])+'</h3><p>'+esc(r[1])+'</p></div>'});
   document.getElementById('rules').innerHTML=h;
   document.getElementById('listA').innerHTML=T.A.map(function(x){return '<li>'+esc(x)+'</li>'}).join('');
@@ -68,7 +80,7 @@ function render(){
   document.getElementById('glyphs').innerHTML=g;
   /* zápisy */
   var l='<article class="entry empty"><div class="mono">···</div><div class="tx"><h3>'+esc(T.next_entry)+'</h3></div></article>';
-  POSTS.forEach(function(p){l+='<article class="entry"><div class="mono">'+esc(fmtDate(p.d))+'</div><div class="tx"><h3>'+esc(p.t[LANG])+'</h3><p>'+esc(p.b[LANG])+'</p>'+(p.img?'<img src="'+esc(p.img)+'" alt="">':'')+'</div></article>'});
+  POSTS.forEach(function(p){l+='<article class="entry"><div class="mono">'+esc(fmtDate(p.d))+'</div><div class="tx"><h3>'+esc(p.t[LANG])+'</h3><p>'+esc(p.b[LANG])+'</p>'+(p.img?'<img src="'+esc(p.img)+'" alt="'+esc(p.t[LANG])+'">':'')+'</div></article>'});
   document.getElementById('log').innerHTML=l;
   /* fragmenty */
   var pl='';
@@ -161,7 +173,7 @@ new MutationObserver(function(){setTimeout(drawMap,30)}).observe(document.docume
 (function(){
   var cv=document.getElementById('fog'),c=cv.getContext('2d'),W=0,H=0,CS=14,cols=0,rows=0,dpr=1,t0=0;
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var mx=.7,my=.28,tx=.7,ty=.28,lastMove=-1e9,ghosts=[],colM='#2b3a33',colG='#b8c64c',lastCol=0;
+  var mx=.7,my=.28,tx=.7,ty=.28,lastMove=-1e9,ghosts=[],colM='#2b3a33',colG='#b8c64c',lastCol=-1e9,running=false;
   function hash(x,y){var h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263);h=Math.imul(h^h>>>13,1274126177);return((h^h>>>16)>>>0)/4294967296}
   function vn(x,y){var ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
     var a=hash(ix,iy),b=hash(ix+1,iy),c2=hash(ix,iy+1),d=hash(ix+1,iy+1);return a+(b-a)*fx+(c2-a)*fy+(a-b-c2+d)*fx*fy}
@@ -174,6 +186,8 @@ new MutationObserver(function(){setTimeout(drawMap,30)}).observe(document.docume
   function colors(){colM=cssVar('--mist')||colM;colG=cssVar('--ghost')||colG}
   var lastDraw=0;
   function frame(ts){
+    /* Mlha vypnutá tlačítkem (slabší zařízení): plátno je prázdné a smyčka stojí. */
+    if(!FOG){c.clearRect(0,0,W,H);running=false;return}
     if(!still&&ts-lastDraw<30){requestAnimationFrame(frame);return}
     lastDraw=ts;
     var t=ts/1000;
@@ -198,19 +212,32 @@ new MutationObserver(function(){setTimeout(drawMap,30)}).observe(document.docume
     var g=c.createRadialGradient(px,py,0,px,py,R*.9);
     g.addColorStop(0,colG);g.addColorStop(1,'rgba(0,0,0,0)');
     c.globalAlpha=.07;c.fillStyle=g;c.fillRect(px-R,py-R,R*2,R*2);c.globalAlpha=1;
-    /* skryté slabiky */
+    /* skryté slabiky (při omezeném pohybu se neukazují) */
     c.fillStyle=colG;c.textBaseline='middle';
-    for(var i=0;i<ghosts.length;i++){
+    for(var i=0;!still&&i<ghosts.length;i++){
       var gh=ghosts[i],gx=gh.x*W,gy=gh.y*H,gd=Math.hypot(gx-px,gy-py)/(R*.95),al=gd>=1?0:(1-gd)*(1-gd)*gh.a*.55;
       if(al>.01){c.globalAlpha=al;c.font='500 '+Math.round(gh.z)+'px "IBM Plex Mono",ui-monospace,monospace';c.fillText(gh.s,gx,gy)}
     }
     c.globalAlpha=1;
     if(!still)requestAnimationFrame(frame);
+    else running=false;
+  }
+  function start(){
+    if(running)return;
+    running=true;
+    if(still){colors();frame(0)}else requestAnimationFrame(frame);
   }
   size();
-  window.addEventListener('resize',function(){size();if(still)frame(0)});
+  window.addEventListener('resize',function(){size();if(still&&FOG)frame(0)});
   window.addEventListener('pointermove',function(e){tx=e.clientX/W;ty=e.clientY/H;lastMove=performance.now()},{passive:true});
-  if(still){colors();frame(0)}else requestAnimationFrame(frame);
+  /* Tlačítko Mlha v hlavičce: zapne a vypne mlhu, volba se pamatuje. */
+  document.getElementById('fogBtn').addEventListener('click',function(){
+    FOG=!FOG;try{localStorage.setItem('oohra-fog',FOG?'on':'off')}catch(x){}
+    render();
+    if(FOG)start();else frame(0);
+  });
+  STILL=still;
+  start();
 })();
 
 render();

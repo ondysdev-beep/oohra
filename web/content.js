@@ -6,11 +6,11 @@ var CONFIG={name:'Oohra',demo:'',discord:''};
 /* Postup: váha = plánovaný počet týdnů, pct = kolik je hotovo (0 až 100). Uprav pct, mapa i pruh se přepočítají. */
 var PHASES=[
  {k:'0',w:7,pct:100,st:'done',n:{cs:'Základ',en:'Foundation'},d:{cs:'Návrh, prototyp v prohlížeči, nástroje',en:'Design, browser prototype, tools'}},
- {k:'A',w:5,pct:5,st:'now',n:{cs:'Jádro hry',en:'Game core'},d:{cs:'Svět, rostliny, potřeby a otravy v C#, zatím v konzoli',en:'World, plants, needs and poison in C#, console only for now'}},
- {k:'B',w:5,pct:0,st:'next',n:{cs:'Svět v Unity',en:'World in Unity'},d:{cs:'Postava, kamera shora, první obraz',en:'Character, top-down camera, first image'}},
- {k:'C',w:6,pct:0,st:'next',n:{cs:'Síť',en:'Network'},d:{cs:'Server a dva hráči, kteří se vidí',en:'A server and two players who can see each other'}},
- {k:'D',w:17,pct:0,st:'next',n:{cs:'Systémy',en:'Systems'},d:{cs:'Oheň, stavby, jazyk, zvířata, kmeny',en:'Fire, building, language, animals, tribes'}},
- {k:'E',w:5,pct:0,st:'next',n:{cs:'Provoz',en:'Operations'},d:{cs:'Ukládání světa, server, účty',en:'World saving, server, accounts'}},
+ {k:'A',w:5,pct:100,st:'done',n:{cs:'Jádro hry',en:'Game core'},d:{cs:'Svět, rostliny, potřeby a otravy v C#',en:'World, plants, needs and poison in C#'}},
+ {k:'B',w:5,pct:100,st:'done',n:{cs:'Svět v Unity',en:'World in Unity'},d:{cs:'Postava, kamera shora, první obraz',en:'Character, top-down camera, first image'}},
+ {k:'C',w:6,pct:100,st:'done',n:{cs:'Síť',en:'Network'},d:{cs:'Server a dva hráči, kteří se vidí',en:'A server and two players who can see each other'}},
+ {k:'D',w:17,pct:100,st:'done',n:{cs:'Systémy',en:'Systems'},d:{cs:'Oheň, stavby, jazyk, zvířata, kmeny',en:'Fire, building, language, animals, tribes'}},
+ {k:'E',w:5,pct:70,st:'now',n:{cs:'Provoz',en:'Operations'},d:{cs:'Ukládání světa, server, účty',en:'World saving, server, accounts'}},
  {k:'F',w:7,pct:0,st:'next',n:{cs:'Alfa',en:'Alpha'},d:{cs:'Prvních patnáct až dvacet testerů',en:'The first fifteen to twenty testers'}}
 ];
 
@@ -56,6 +56,9 @@ cs:{nav_game:'Hra',nav_gen:'Generace',nav_mys:'Tajemství',nav_prog:'Postup',nav
         ['Paměť umírá','Co ses naučil, nepřejde na další postavu samo. Zbývají poznámky, značky na zemi, příběh u ohně a lidé, kteří si tě pamatují.']],
  A:['Širší a těžší, každá rána ho zraňuje méně','Železný žaludek: jed a zkažené jídlo snáší lépe','V zimě mrzne méně','Chodí pomaleji a učí se pomaleji než ti noví'],
  B:['Štíhlejší a vyšší, s každou generací víc','Učí se rychleji a rychleji běhá','Jed ho zasáhne tvrději a zima je pro něj krutější','Spoléhá na to, co mu předali ti před ním'],
+ skip:'Přeskočit na obsah',fog_btn:'Mlha',
+ meta_title:'hra o přežití, kde nikdo neví, co je jedovaté',
+ meta_desc:'Probudíš se na ostrově bez návodu. Co se naučíš, zemře s tebou, pokud to nepředáš dál. Hra o přežití v jednom trvalém světě, ve vývoji.',
  aria_prog:function(p){return 'Odkryto '+p+' % cesty k prvnímu testu'}},
 en:{nav_game:'The game',nav_gen:'Generations',nav_mys:'Mysteries',nav_prog:'Progress',nav_log:'Journal',nav_frag:'Fragments',
  eyebrow:'Survival game · one persistent world · in development',
@@ -80,5 +83,8 @@ en:{nav_game:'The game',nav_gen:'Generations',nav_mys:'Mysteries',nav_prog:'Prog
         ['Memory dies','What you learned does not pass to the next character on its own. What remains: notes, marks on the ground, a story by the fire, and people who remember you.']],
  A:['Broader and heavier; blows hurt him less','Iron stomach: handles poison and spoiled food better','Feels the cold less','Walks slower and learns slower than the later-born'],
  B:['Slimmer and taller, more so each generation','Learns faster and runs faster','Poison hits harder and the cold is crueler','Relies on what those before him passed on'],
+ skip:'Skip to content',fog_btn:'Fog',
+ meta_title:'a survival game where nobody knows what is poisonous',
+ meta_desc:'You wake on an island with no instructions. What you learn dies with you, unless you pass it on. A survival game in one persistent world, in development.',
  aria_prog:function(p){return p+' % of the road to the first test revealed'}}
 };

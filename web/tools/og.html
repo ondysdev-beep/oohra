@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<title>Oohra: náhled pro sdílení</title>
+<!-- Předloha obrázku img/og.png (1200 × 630) pro náhled odkazu na sociálních sítích. Postup v README.md. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Forum&family=Spectral:wght@300&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root{--bg:#080b09;--fg:#d6d3c4;--dim:#8a9486;--lichen:#b8c64c;--mist:#2b3a33;--line:#1f2923}
+html,body{margin:0;width:1200px;height:630px;overflow:hidden;background:var(--bg)}
+canvas{position:absolute;inset:0}
+.card{position:absolute;left:88px;top:92px;right:88px;display:flex;flex-direction:column;gap:26px;color:var(--fg)}
+.mono{font:500 18px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+h1{font:400 112px/1 'Forum',Georgia,serif;margin:0;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--lichen)}
+p{font:300 30px/1.4 'Spectral',Georgia,serif;margin:0;max-width:26em}
+.sign{position:absolute;right:88px;bottom:72px;width:120px;height:120px}
+</style>
+</head>
+<body>
+<canvas id="fog" width="1200" height="630"></canvas>
+<div class="card">
+  <div class="mono">Oohra · hra o přežití · ve vývoji</div>
+  <h1>Nikdo neví, co je <em>jedovaté.</em></h1>
+  <p>Probudíš se na ostrově bez návodu. Co se naučíš, zemře s tebou, pokud to nepředáš dál.</p>
+</div>
+<svg class="sign" id="sign" viewBox="0 0 12 12" fill="#b8c64c" shape-rendering="crispEdges"></svg>
+<script>
+// Stejná pixelová mlha a značka jako na stránce (app.js), jen nehybná.
+function hash(x,y){var h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263);h=Math.imul(h^h>>>13,1274126177);return((h^h>>>16)>>>0)/4294967296}
+function vn(x,y){var ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+  var a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy}
+var cv=document.getElementById('fog'),c=cv.getContext('2d'),CS=14,px=360,py=300,R=420;
+c.fillStyle='#2b3a33';
+for(var y=0;y<Math.ceil(630/CS);y++)for(var x=0;x<Math.ceil(1200/CS);x++){
+  var n=vn(x*.11,y*.13)*.6+vn(x*.27,y*.29)*.4,dx=x*CS-px,dy=y*CS-py,d=Math.sqrt(dx*dx+dy*dy)/R,clear=d>=1?1:d*d*(3-2*d);
+  var a=Math.round(Math.max(0,n-.32)*.55*clear*7)/7;if(a>.02){c.globalAlpha=a;c.fillRect(x*CS,y*CS,CS-1,CS-1)}
+}
+var r='';
+for(var yy=0;yy<12;yy++)for(var xx=0;xx<12;xx++){var ddx=xx-5.5,ddy=yy-5.5,rr=Math.hypot(ddx,ddy),an=Math.atan2(ddy,ddx);
+  if((rr<1.5)||(rr<5.3&&rr>1.9&&Math.cos(an*4)>.15))r+='<rect x="'+xx+'" y="'+yy+'" width="1.03" height="1.03"/>'}
+document.getElementById('sign').innerHTML=r;
+</script>
+</body>
+</html>
