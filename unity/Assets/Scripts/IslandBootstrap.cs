@@ -199,6 +199,7 @@ namespace Oohra.Client
             gameObject.AddComponent<SignatureHud>().Init(_session);
             gameObject.AddComponent<ReportHud>().Init(_session);
             gameObject.AddComponent<Hints>().Init(_session, _nickname);
+            gameObject.AddComponent<Ambience>().Init(_connection, _players);
             new GameObject("Těla").AddComponent<CorpseViews>().Init(_connection);
             new GameObject("Značky").AddComponent<SignViews>().Init(_connection);
         }
