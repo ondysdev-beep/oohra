@@ -13,6 +13,7 @@
 - **Po smrti v době Pradávných** se hráč narodí jako Nový (status Pradávného se smrtí ztrácí, návrh 8.6). Kdyby to mělo být jinak, změní se `GenerationTraits.AfterDeath`.
 - **Přezdívky** můžou být jakékoli, jen ne sprosté (seznam `blocked_words.json`).
 - **Divočáci jsou nebezpečnější** (víc kusů, rozzuří se dřív, silnější výpad a rány, víc životů).
+- **Temnější vzhled hry i webu** (17. 10.): web je jen tmavý, s tmou kolem pochodně, mlhou, jiskrami a šeptanými větami. Hra má jít stejným směrem (temnější noci, víc tmy a mlhy, méně světlých ploch), až se bude ladit grafika.
 - **Ukládání světa do souboru JSON** místo SQLite (pro 20 hráčů stačí, dá se přečíst, přejít na databázi jde později).
 
 ### Další kroky (pořadí)

@@ -1,24 +1,21 @@
 /* Layout: a dark page that is mostly fog. A pixel mist drifts behind everything and thins around the pointer, exposing ghost syllables.
    Sections are asymmetric: a narrow label column with a pixel sign on the left, the content on the right.
    The development progress is drawn as an island in fog of war: the more is finished, the more of it is revealed. */
+/* Jen tmavý motiv: hra i stránka jsou temné (rozhodnuto 17. 10. 2026). Barvy jen tady. */
 :root{
-  --bg:#080b09;--bg2:#0e1310;--fg:#d6d3c4;--dim:#8a9486;--line:#1f2923;
-  --lichen:#b8c64c;--lichen-fg:#0b0f06;--blood:#a2402c;--mist:#2b3a33;--ghost:#b8c64c;
-  --m-deep:#0b1416;--m-shallow:#112326;--m-sand:#4a4a37;--m-grass:#29402a;--m-forest:#1a3220;--m-rock:#494b46;--m-fog:#060908;--m-fog2:#0c120e;
+  --bg:#040605;--bg2:#0a0e0b;--fg:#d2cebb;--dim:#9ea897;--line:#18201b;
+  --lichen:#b8c64c;--lichen-fg:#0b0f06;--blood:#a2402c;--mist:#1f2b24;--ghost:#b8c64c;
+  /* žár pochodně a ohně */
+  --ember:#d0782f;--ember-hot:#f2b03f;
+  --m-deep:#09121a;--m-shallow:#0f1f22;--m-sand:#3e3d2e;--m-grass:#223822;--m-forest:#15291a;--m-rock:#3c3e3a;--m-fog:#030504;--m-fog2:#080c09;
   --display:'Forum',Georgia,'Times New Roman',serif;--body:'Spectral',Georgia,serif;--mono:'IBM Plex Mono',ui-monospace,monospace;
+  /* kde je pochodeň (nastavuje app.js podle myši) */
+  --tx:70%;--ty:28%;
   color-scheme:dark;
 }
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
-  --bg:#dde1d6;--bg2:#e8ebe1;--fg:#12170f;--dim:#4a5446;--line:#bcc3b1;
-  --lichen:#4c5b0c;--lichen-fg:#f3f6e6;--blood:#8f2f1d;--mist:#f6f8ef;--ghost:#3d4a0a;
-  --m-deep:#9bb3b1;--m-shallow:#b3c6c0;--m-sand:#cdc8a6;--m-grass:#96ad85;--m-forest:#728e6c;--m-rock:#a6a89f;--m-fog:#c7cbbc;--m-fog2:#d2d6c8;color-scheme:light}}
-:root[data-theme="light"]{
-  --bg:#dde1d6;--bg2:#e8ebe1;--fg:#12170f;--dim:#4a5446;--line:#bcc3b1;
-  --lichen:#4c5b0c;--lichen-fg:#f3f6e6;--blood:#8f2f1d;--mist:#f6f8ef;--ghost:#3d4a0a;
-  --m-deep:#9bb3b1;--m-shallow:#b3c6c0;--m-sand:#cdc8a6;--m-grass:#96ad85;--m-forest:#728e6c;--m-rock:#a6a89f;--m-fog:#c7cbbc;--m-fog2:#d2d6c8;color-scheme:light}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--fg);font:19px/1.62 var(--body);margin:0;padding-inline:16px;padding-block:0 40px}
+body{background:radial-gradient(ellipse 90% 60% at 50% -10%,#0d1510 0%,transparent 70%) fixed,var(--bg);color:var(--fg);font:19px/1.62 var(--body);margin:0;padding-inline:16px;padding-block:0 40px}
 p{margin:0}
 a{color:inherit}
 #fog{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;display:block}
@@ -144,3 +141,67 @@ details p{color:var(--dim);font-size:17px;padding-top:8px}
 .plate figcaption{color:var(--dim);font-size:16px}
 footer{border-top:1px solid var(--line);padding-block:30px;display:flex;flex-wrap:wrap;gap:8px 32px;justify-content:space-between;color:var(--dim);font-size:16px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* ===== ATMOSFÉRA: tma, pochodeň, zrno, mlha, rytiny ===== */
+/* Tma kolem pochodně: okraje obrazovky tonou ve tmě, kolem ukazatele (pochodně) je vidět nejlíp. */
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:3;
+  background:
+    radial-gradient(circle 560px at var(--tx) var(--ty),color-mix(in srgb,var(--ember) 7%,transparent) 0%,transparent 60%),
+    radial-gradient(circle 900px at var(--tx) var(--ty),transparent 35%,rgba(0,0,0,.24) 100%),
+    radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.5) 100%)}
+/* Filmové zrno přes celou stránku (staré, ohmatané). */
+body::before{content:"";position:fixed;inset:-50%;pointer-events:none;z-index:4;opacity:.07;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 1.2s steps(5) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+html.nofog body::after{background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+html.nofog body::before{animation:none}
+
+/* Nadpis svítí slabě jako v šeru, „jedovaté“ chorobně zeleně. */
+.hero{position:relative}
+.hero h1{text-shadow:0 0 42px rgba(0,0,0,.9)}
+.hero h1 em{text-shadow:0 0 28px color-mix(in srgb,var(--lichen) 45%,transparent),0 0 2px color-mix(in srgb,var(--lichen) 60%,transparent)}
+.lede{color:color-mix(in srgb,var(--fg) 88%,var(--dim))}
+/* Velká vybledlá značka za nadpisem, pomalu dýchá. */
+.omen{position:absolute;right:-2%;top:12%;width:min(46vw,520px);height:auto;opacity:.035;fill:var(--lichen);pointer-events:none;z-index:-1;animation:breathe 9s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.025;transform:scale(1)}50%{opacity:.05;transform:scale(1.02)}}
+.btn{transition:box-shadow .4s,background .4s}
+.btn:hover{box-shadow:0 0 24px color-mix(in srgb,var(--lichen) 35%,transparent)}
+.btn.ghost:hover{box-shadow:0 0 22px color-mix(in srgb,var(--ember) 25%,transparent)}
+
+/* Dělicí čára mezi sekcemi mizí do tmy na krajích. */
+.sec{border-top:0;position:relative}
+.sec::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--line) 20%,color-mix(in srgb,var(--line) 70%,var(--lichen)) 50%,var(--line) 80%,transparent)}
+.lab svg{filter:drop-shadow(0 0 8px color-mix(in srgb,var(--lichen) 30%,transparent))}
+
+/* Šeptané věty mezi sekcemi. */
+.whisper{font:italic 300 clamp(18px,2.2vw,22px)/1.5 var(--body);color:color-mix(in srgb,var(--dim) 80%,transparent);letter-spacing:.02em;max-width:34em}
+.whisper::before{content:"\2014\00a0";color:var(--blood)}
+
+/* Značky jako rytiny v kameni: po najetí chytí žár. */
+.gl svg{background:radial-gradient(circle at 40% 30%,#121813,#070a08 75%);box-shadow:inset 0 0 22px #000,inset 0 0 2px #000;border-color:#141b16;transition:filter .5s}
+.gl svg rect{fill:color-mix(in srgb,var(--fg) 55%,var(--bg))}
+.gl:hover svg{filter:drop-shadow(0 0 12px color-mix(in srgb,var(--ember) 55%,transparent))}
+.gl:hover svg rect{fill:var(--ember-hot)}
+.side .pic{filter:drop-shadow(0 0 18px rgba(0,0,0,.8))}
+.side:hover .pic{filter:drop-shadow(0 0 16px color-mix(in srgb,var(--c) 45%,transparent))}
+
+/* Mapa jako stará karta ve tmě. */
+.mapbox{box-shadow:inset 0 0 60px #000,0 0 0 1px #000;border-color:#141b16}
+.score b{text-shadow:0 0 30px color-mix(in srgb,var(--lichen) 35%,transparent)}
+.seg i{box-shadow:0 0 10px color-mix(in srgb,var(--lichen) 40%,transparent)}
+
+/* Fragmenty: tmavé rámy jako zaprášené desky. */
+.plate .fr{background:radial-gradient(circle at 50% 40%,#0e130f,#050706 80%);box-shadow:inset 0 0 40px #000}
+.plate img{filter:sepia(.25) saturate(.8) brightness(.85);transition:filter .6s}
+.plate:hover img{filter:none}
+
+/* Obsah vystupuje z mlhy, když na něj dojde řada (app.js přidá .reveal a pak .seen). */
+.reveal{opacity:0;filter:blur(7px);transform:translateY(16px);transition:opacity 1.5s ease,filter 1.8s ease,transform 1.5s ease}
+.reveal.seen{opacity:1;filter:none;transform:none}
+
+footer{position:relative;flex-direction:column;align-items:flex-start;gap:14px}
+footer .last{font:italic 300 20px/1.5 var(--body);color:var(--dim)}
+@media(prefers-reduced-motion:reduce){body::before{animation:none}.omen{animation:none}.reveal{opacity:1;filter:none;transform:none}}
+/* slabiky jako vyryté kamínky */
+.syl span{background:radial-gradient(circle at 40% 30%,#121813,#070a08 80%);box-shadow:inset 0 0 10px #000;color:var(--lichen);text-shadow:0 0 10px color-mix(in srgb,var(--lichen) 35%,transparent)}

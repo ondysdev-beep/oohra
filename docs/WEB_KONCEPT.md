@@ -36,6 +36,8 @@ Hra v jedné větě: perzistentní souostroví, sběr a otravy skrytým složen�
 
 ## 3. Vizuální identita (neměnit bez dohody)
 
+> **Změna 17. 10. 2026 (dohoda s autorem):** stránka i hra mají být temnější a tajemnější. Web je jen tmavý (světlý motiv zrušen), přibyla tma kolem pochodně u ukazatele, filmové zrno, hustší valící se mlha, jiskry z ohně, žár pochodně (`--ember`, `--ember-hot`), obsah vystupuje z mlhy, nadpisy se „rozluští“ ze slabik, značky jako rytiny v kameni a šeptané věty mezi sekcemi. Tlumený text je světlejší (`--dim` #9ea897), aby měl i ve tmě kontrast aspoň 4,5 : 1. Tabulka níže platí pro tmavý motiv, světlé barvy už se nepoužívají.
+
 | Prvek | Hodnota |
 |---|---|
 | Nálada | temná, záhadná, mlha, lišejník, stará kronika |

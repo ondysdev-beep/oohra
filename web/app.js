@@ -71,6 +71,8 @@ function render(){
   /* Mlha: tlačítko a nápověda (bez mlhy nebo při omezeném pohybu nemá „pohni myší“ smysl). */
   document.getElementById('fogBtn').setAttribute('aria-pressed',FOG?'true':'false');
   document.querySelector('.hint').hidden=!FOG||STILL;
+  /* Bez mlhy nebo při omezeném pohybu: tma bez pochodně a zrno stojí (style.css, html.nofog). */
+  document.documentElement.classList.toggle('nofog',!FOG||STILL);
   var h='';T.rules.forEach(function(r){h+='<div class="it"><h3>'+esc(r[0])+'</h3><p>'+esc(r[1])+'</p></div>'});
   document.getElementById('rules').innerHTML=h;
   document.getElementById('listA').innerHTML=T.A.map(function(x){return '<li>'+esc(x)+'</li>'}).join('');
@@ -78,6 +80,8 @@ function render(){
   /* značky */
   var g='';for(var i=0;i<4;i++)g+='<div class="gl">'+signSvg(i,'var(--fg)').replace('<svg ','<svg role="img" aria-label="'+T.sign+' '+(i+1)+'" ')+'<div class="mono">'+T.sign+' '+(i+1)+'</div><details><summary>'+T.where+'</summary><p>'+esc(NOTES[LANG][i])+'</p></details></div>';
   document.getElementById('glyphs').innerHTML=g;
+  /* všech deset slabik (v předloze se nevypisovaly) */
+  document.getElementById('syl').innerHTML=SYL.map(function(s){return '<span>'+esc(s)+'</span>'}).join('');
   /* zápisy */
   var l='<article class="entry empty"><div class="mono">···</div><div class="tx"><h3>'+esc(T.next_entry)+'</h3></div></article>';
   POSTS.forEach(function(p){l+='<article class="entry"><div class="mono">'+esc(fmtDate(p.d))+'</div><div class="tx"><h3>'+esc(p.t[LANG])+'</h3><p>'+esc(p.b[LANG])+'</p>'+(p.img?'<img src="'+esc(p.img)+'" alt="'+esc(p.t[LANG])+'">':'')+'</div></article>'});
@@ -166,30 +170,35 @@ function drawMap(){
   c.globalAlpha=.35;c.fillRect(cx-S*.5,cy-S*.5,S*2,S*2);c.globalAlpha=1;
   document.getElementById('map').setAttribute('aria-label',I18N[LANG].aria_prog(Math.round(PCT)));
 }
-try{matchMedia('(prefers-color-scheme: light)').addEventListener('change',function(){setTimeout(drawMap,30)})}catch(e){}
-new MutationObserver(function(){setTimeout(drawMap,30)}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
-/* ===== MLHA A POCHODEŇ ===== */
+/* ===== MLHA, POCHODEŇ A JISKRY ===== */
+/* Hustá pixelová mlha se pomalu valí. Kolem pochodně (ukazatel myši, jinak se pomalu toulá) řídne a odhaluje
+   duchy slabik. Pochodeň mihotavě svítí do tmy, z ohně dole stoupají jiskry. Tmu na okrajích kreslí style.css
+   (body::after) podle --tx a --ty. Při omezeném pohybu nic nehýbe, bez mlhy (tlačítko Mlha) je plátno prázdné. */
 (function(){
-  var cv=document.getElementById('fog'),c=cv.getContext('2d'),W=0,H=0,CS=14,cols=0,rows=0,dpr=1,t0=0;
+  var cv=document.getElementById('fog'),c=cv.getContext('2d'),W=0,H=0,CS=14,cols=0,rows=0;
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var mx=.7,my=.28,tx=.7,ty=.28,lastMove=-1e9,ghosts=[],colM='#2b3a33',colG='#b8c64c',lastCol=-1e9,running=false;
+  var mx=.7,my=.28,tx=.7,ty=.28,lastMove=-1e9,ghosts=[],embers=[],colM='#1f2b24',colG='#b8c64c',colE='#d0782f',colH='#f2b03f',lastCol=-1e9,running=false;
+  var root=document.documentElement,rnd=mulberry32(4242);
   function hash(x,y){var h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263);h=Math.imul(h^h>>>13,1274126177);return((h^h>>>16)>>>0)/4294967296}
   function vn(x,y){var ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
     var a=hash(ix,iy),b=hash(ix+1,iy),c2=hash(ix,iy+1),d=hash(ix+1,iy+1);return a+(b-a)*fx+(c2-a)*fy+(a-b-c2+d)*fx*fy}
   function size(){
-    dpr=1;W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);cv.width=W;cv.height=H;
+    W=Math.max(1,innerWidth);H=Math.max(1,innerHeight);cv.width=W;cv.height=H;
     CS=W<640?12:14;cols=Math.ceil(W/CS);rows=Math.ceil(H/CS);
     var r=mulberry32(77),n=W<640?10:20;ghosts=[];
     for(var i=0;i<n;i++)ghosts.push({s:SYL[Math.floor(r()*SYL.length)],x:r(),y:r(),z:46+r()*70,a:.2+r()*.5});
+    embers=[];for(var k=0;k<(W<640?14:28);k++)embers.push(newEmber(true));
   }
-  function colors(){colM=cssVar('--mist')||colM;colG=cssVar('--ghost')||colG}
-  var lastDraw=0;
+  /* Jiskra: stoupá od spodního okraje, kolébá se a hasne. */
+  function newEmber(anywhere){return {x:rnd()*W,y:anywhere?rnd()*H:H+rnd()*40,v:12+rnd()*26,w:rnd()*6.28,s:rnd()<.3?3:2,life:.4+rnd()*.6}}
+  function colors(){colM=cssVar('--mist')||colM;colG=cssVar('--ghost')||colG;colE=cssVar('--ember')||colE;colH=cssVar('--ember-hot')||colH}
+  var lastDraw=0,lastTs=0;
   function frame(ts){
     /* Mlha vypnutá tlačítkem (slabší zařízení): plátno je prázdné a smyčka stojí. */
     if(!FOG){c.clearRect(0,0,W,H);running=false;return}
     if(!still&&ts-lastDraw<30){requestAnimationFrame(frame);return}
-    lastDraw=ts;
+    var dt=Math.min(.1,(ts-lastTs)/1000);lastTs=ts;lastDraw=ts;
     var t=ts/1000;
     if(ts-lastCol>1500){colors();lastCol=ts}
     if(!still){
@@ -197,26 +206,39 @@ new MutationObserver(function(){setTimeout(drawMap,30)}).observe(document.docume
       mx+=(tx-mx)*.06;my+=(ty-my)*.06;
     }
     var px=mx*W,py=my*H,R=Math.min(W,H)*.34+40;
+    root.style.setProperty('--tx',Math.round(px)+'px');root.style.setProperty('--ty',Math.round(py)+'px');
     c.clearRect(0,0,W,H);
     c.fillStyle=colM;
     for(var y=0;y<rows;y++)for(var x=0;x<cols;x++){
-      var n=vn(x*.11+t*.035,y*.13-t*.02)*.6+vn(x*.27-t*.05,y*.29+t*.03)*.4;
+      /* Tři vrstvy šumu: velké valící se chuchvalce a jemnější cáry. */
+      var n=vn(x*.06+t*.02,y*.08-t*.012)*.45+vn(x*.11+t*.035,y*.13-t*.02)*.35+vn(x*.27-t*.05,y*.29+t*.03)*.2;
       var dx=(x*CS+CS/2-px),dy=(y*CS+CS/2-py),d=Math.sqrt(dx*dx+dy*dy)/R;
       var clear=d>=1?1:d*d*(3-2*d);
-      var a=Math.max(0,n-.32)*.55*clear;
+      var a=Math.max(0,n-.26)*.8*clear;
       a=Math.round(a*7)/7;
-      if(a>0.02){c.globalAlpha=a;c.fillRect(x*CS,y*CS,CS-1,CS-1)}
+      if(a>0.02){c.globalAlpha=Math.min(.85,a);c.fillRect(x*CS,y*CS,CS-1,CS-1)}
     }
     c.globalAlpha=1;
-    /* pochodeň */
-    var g=c.createRadialGradient(px,py,0,px,py,R*.9);
-    g.addColorStop(0,colG);g.addColorStop(1,'rgba(0,0,0,0)');
-    c.globalAlpha=.07;c.fillStyle=g;c.fillRect(px-R,py-R,R*2,R*2);c.globalAlpha=1;
+    /* pochodeň: teplé světlo, které se mihotá */
+    var flick=still?1:.88+Math.sin(t*13.1)*.05+Math.sin(t*7.3+1)*.05+Math.sin(t*23.7)*.02;
+    var g=c.createRadialGradient(px,py,0,px,py,R*.95*flick);
+    g.addColorStop(0,colH);g.addColorStop(.35,colE);g.addColorStop(1,'rgba(0,0,0,0)');
+    c.globalAlpha=.09*flick;c.fillStyle=g;c.fillRect(px-R,py-R,R*2,R*2);c.globalAlpha=1;
     /* skryté slabiky (při omezeném pohybu se neukazují) */
     c.fillStyle=colG;c.textBaseline='middle';
     for(var i=0;!still&&i<ghosts.length;i++){
       var gh=ghosts[i],gx=gh.x*W,gy=gh.y*H,gd=Math.hypot(gx-px,gy-py)/(R*.95),al=gd>=1?0:(1-gd)*(1-gd)*gh.a*.55;
       if(al>.01){c.globalAlpha=al;c.font='500 '+Math.round(gh.z)+'px "IBM Plex Mono",ui-monospace,monospace';c.fillText(gh.s,gx,gy)}
+    }
+    /* jiskry stoupají od ohně dole a hasnou */
+    for(var k=0;!still&&k<embers.length;k++){
+      var e=embers[k];
+      e.y-=e.v*dt;e.x+=Math.sin(t*1.7+e.w)*.35;e.life-=dt*.06;
+      if(e.y<-10||e.life<=0){embers[k]=newEmber(false);continue}
+      var hot=.5+.5*Math.sin(t*9+e.w*3);
+      c.globalAlpha=Math.max(0,Math.min(1,e.life))*(.35+.5*hot)*(1-e.y/H*.6);
+      c.fillStyle=hot>.6?colH:colE;
+      c.fillRect(Math.round(e.x),Math.round(e.y),e.s,e.s);
     }
     c.globalAlpha=1;
     if(!still)requestAnimationFrame(frame);
@@ -239,5 +261,47 @@ new MutationObserver(function(){setTimeout(drawMap,30)}).observe(document.docume
   STILL=still;
   start();
 })();
+
+/* ===== VYNOŘENÍ Z MLHY ===== */
+/* Části stránky se objeví, až k nim návštěvník dojde (z rozostření, jako z mlhy). Nadpisy sekcí se při tom
+   „rozluští“: chvíli se v nich střídají písmena slabik, pak se ustálí. Při omezeném pohybu se nic nehýbe. */
+(function(){
+  if(STILL||!('IntersectionObserver' in window))return;
+  var parts=document.querySelectorAll('.hero > :not(.omen), .sec .lab, .sec .head, .sec .list, .duo, .glyphs, .score, .mapbox, .segs, .road, .log, .plates, .whisper, footer');
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(!en.isIntersecting)return;
+      en.target.classList.add('seen');
+      io.unobserve(en.target);
+      var h=en.target.querySelector&&en.target.querySelector('h2');
+      if(h)decipher(h);
+    });
+  },{rootMargin:'0px 0px -8% 0px',threshold:.08});
+  parts.forEach(function(el,i){
+    el.classList.add('reveal');
+    if(el.parentElement&&el.parentElement.classList.contains('hero'))el.style.transitionDelay=(i*.18)+'s';
+    io.observe(el);
+  });
+})();
+
+function decipher(el){
+  /* Text se bere z I18N při každém kroku, aby přepnutí jazyka uprostřed nevrátilo starý text. */
+  var key=el.getAttribute('data-i'),letters=SYL.join('').toUpperCase()+SYL.join(''),steps=14,n=0;
+  function text(){return key&&I18N[LANG][key]?I18N[LANG][key]:el.textContent}
+  var final=text();
+  if(!final)return;
+  el.setAttribute('aria-label',final);
+  var timer=setInterval(function(){
+    n++;
+    final=text();
+    var shown=Math.floor(final.length*n/steps),out='';
+    for(var i=0;i<final.length;i++){
+      var ch=final.charAt(i);
+      out+=i<shown||ch===' '?ch:letters.charAt(Math.floor(Math.random()*letters.length));
+    }
+    el.textContent=out;
+    if(n>=steps){clearInterval(timer);el.textContent=final;el.removeAttribute('aria-label')}
+  },55);
+}
 
 render();
