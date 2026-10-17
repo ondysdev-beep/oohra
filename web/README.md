@@ -51,6 +51,12 @@ sítí, kteří JavaScript nespouštějí).
 Po nasazení na internet dej do `index.html` k `og:image` celou adresu (např. `https://…/img/og.png`) a přidej
 `<meta property="og:url" content="https://…/">`. Sociální sítě relativní adresu obrázku nenačtou.
 
+## Atmosféra
+- Stránka je jen tmavá. Barvy jsou v `:root` ve `style.css` (žár pochodně `--ember`, `--ember-hot`).
+- Tma kolem pochodně a filmové zrno: `body::after` a `body::before` ve `style.css`, polohu pochodně posílá `app.js` (`--tx`, `--ty`).
+- Šeptané věty mezi sekcemi: klíče `wh_...` a `foot_last` v `I18N` (`content.js`).
+- Vynoření z mlhy a „luštění“ nadpisů: konec `app.js`.
+
 ## Mlha a přístupnost
 - Tlačítko **Mlha** v hlavičce mlhu vypne (pro slabší zařízení), volba se pamatuje.
 - Když systém chce omezený pohyb (`prefers-reduced-motion`), mlha se nehýbe a slabiky se neukazují.
