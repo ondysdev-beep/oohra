@@ -860,7 +860,7 @@ public sealed class Animals
 
         var tile = island.TileAt(tx, ty);
         var prey = kind is AnimalKind.Rabbit or AnimalKind.Deer;
-        return tile == TileType.Grass || tile == TileType.Forest || (prey && tile == TileType.Sand);
+        return tile is TileType.Grass or TileType.Forest or TileType.Highland || (prey && tile == TileType.Sand);
     }
 
     // ---------- pomůcky ----------

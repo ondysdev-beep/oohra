@@ -90,6 +90,11 @@ public static class GameData
 
     public static WeatherRules Weather => _weather.Value;
 
+    private static readonly Lazy<WorldGenRules> _worldGen =
+        new(() => Load<WorldGenRules>("worldgen.json"));
+
+    public static WorldGenRules WorldGen => _worldGen.Value;
+
     private static readonly Lazy<StrangerRules> _strangers =
         new(() => Load<StrangerRules>("strangers.json"));
 

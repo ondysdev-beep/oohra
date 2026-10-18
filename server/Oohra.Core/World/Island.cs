@@ -34,12 +34,14 @@ public sealed class Island
         IReadOnlyList<Tree> trees,
         IReadOnlyList<PlantInstance> plants,
         IReadOnlyList<PlantSpecies> species,
-        IReadOnlyList<SpeciesSecret> speciesSecrets)
+        IReadOnlyList<SpeciesSecret> speciesSecrets,
+        RegionKind[]? regions = null)
     {
         Seed = seed;
         Width = width;
         Height = height;
         Tiles = tiles;
+        Regions = regions ?? tiles.Select(RegionOf).ToArray();
         Shore = shore;
         Camps = camps;
         RuinSpots = ruinSpots;
@@ -59,6 +61,9 @@ public sealed class Island
 
     /// <summary>Dlaždice po řádcích: index = y * Width + x.</summary>
     public TileType[] Tiles { get; }
+
+    /// <summary>Oblast každé dlaždice (les, louka, vrchovina…), index jako u Tiles.</summary>
+    public RegionKind[] Regions { get; }
 
     /// <summary>Mořská dlaždice u pevniny (kreslí se světleji).</summary>
     public bool[] Shore { get; }
@@ -128,5 +133,26 @@ public sealed class Island
         }
 
         return false;
+    }
+
+    public RegionKind RegionAt(int x, int y)
+    {
+        return Regions[y * Width + x];
+    }
+
+    /// <summary>Oblast podle dlaždice, pro starý ostrov z prototypu (ten oblasti nemá).</summary>
+    private static RegionKind RegionOf(TileType tile)
+    {
+        return tile switch
+        {
+            TileType.Sea => RegionKind.Sea,
+            TileType.Sand => RegionKind.Coast,
+            TileType.Forest => RegionKind.Forest,
+            TileType.Rock or TileType.Highland or TileType.LayeredRock => RegionKind.Highland,
+            TileType.Bog => RegionKind.Marsh,
+            TileType.Pond => RegionKind.Lake,
+            TileType.Ford => RegionKind.River,
+            _ => RegionKind.Meadow,
+        };
     }
 }

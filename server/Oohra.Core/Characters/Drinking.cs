@@ -28,6 +28,7 @@ public static class Drinking
         switch (island.TileAt(tileX, tileY))
         {
             case TileType.Pond:
+            case TileType.Ford:
                 c.Hydration = Math.Min(100, c.Hydration + rules.CleanHydration);
                 return DrinkResult.Clean;
             case TileType.Bog:
@@ -42,7 +43,7 @@ public static class Drinking
 
     public static bool IsWater(TileType tile)
     {
-        return tile is TileType.Pond or TileType.Bog or TileType.Sea;
+        return tile is TileType.Pond or TileType.Ford or TileType.Bog or TileType.Sea;
     }
 
     private static DrinkResult DrinkMuddy(Character c, double now, WaterRules rules)

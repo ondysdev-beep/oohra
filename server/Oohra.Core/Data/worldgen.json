@@ -1,0 +1,39 @@
+// Nový generátor světa (návrh 0.8, kap. 1). Velikost světa je v settings.json.
+// Podíly oblastí se neřídí náhodnými hranicemi, ale pořadím: třeba 15 % nejvyšších míst souše je vrchovina.
+// Tak každý seed dá stejné podíly a jen jiný tvar.
+{
+  // Kolik mapy je souš (ostrov uprostřed, kolem moře). Malé ostrůvky mimo hlavní ostrov se zatopí.
+  "landShare": 0.55,
+  // Tvar pobřeží: velikost zálivů a výběžků (metry) a jak moc je pobřeží rozeklané.
+  "shapeScale": 90,
+  "shapeNoise": 0.9,
+  // Vlny terénu uvnitř ostrova (metry), podle nich leží jezero a bažiny.
+  "detailScale": 40,
+  // Pláž: do kolika metrů od moře.
+  "beachWidth": 3,
+  // Podíly oblastí z celé souše. Zbytek (asi 25 %) je louka, pláž je asi 5 až 10 %.
+  "shares": { "highland": 0.15, "marsh": 0.10, "forest": 0.35, "lake": 0.03 },
+  // Vrchovina: podíl skal a z nich podíl vrstvené skály, velikost skalních ploch (metry).
+  "highland": { "rockShare": 0.45, "layeredShare": 0.15, "rockScale": 9, "layeredScale": 6 },
+  // Les: velikost lesů a luk (metry), kolik lesa jsou světliny a jak jsou velké.
+  "forest": { "regionScale": 45, "clearingShare": 0.12, "clearingScale": 12 },
+  // Bažina: vlhkost (velikost skvrn v metrech), přednost mají místa do marshWaterDistance metrů od řeky a jezera.
+  "moistureScale": 35,
+  "marshWaterBonus": 0.3,
+  "marshWaterDistance": 20,
+  // Jezero je aspoň tolik metrů od moře.
+  "lake": { "minCoastDistance": 25 },
+  // Řeka: šířka u pramene a u ústí (metry). Kroutí se podle šumu „údolí“: velikost zákrut (metry) a jak moc
+  // se jim řeka drží (meander). Brod každých fordEvery metrů (ne u pramene a ústí).
+  "river": { "minWidth": 2, "maxWidth": 5, "wobbleScale": 30, "meander": 6, "fordEvery": 40, "fordSkipEnds": 8 },
+  // Malá jezírka s pitnou vodou v lese a na louce.
+  "ponds": { "count": 14, "minRadius": 2, "maxRadius": 4 },
+  // Tábory cizinců: kolik, jak daleko od sebe (metry) a do kolika metrů musí mít sladkou vodu.
+  "camps": { "count": 2, "minDistance": 110, "waterWithin": 14 },
+  // Zříceniny Pradávných se starými rytinami.
+  "ruins": { "count": 6, "minDistance": 45, "campDistance": 30 },
+  // Šance na strom na dlaždici. Míň stromů než ve starém světě (les 0,42), ale budou vyšší.
+  "treeChance": { "Forest": 0.2, "Grass": 0.01, "Bog": 0.04, "Highland": 0.04 },
+  // Šance na rostlinu na dlaždici.
+  "plantChance": { "Forest": 0.08, "Grass": 0.07, "Bog": 0.10, "Sand": 0.025, "Rock": 0.01, "Highland": 0.03 }
+}

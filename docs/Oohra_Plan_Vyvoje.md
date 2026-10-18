@@ -35,12 +35,14 @@ Rozhodnuto 18. 10. 2026: další kolo je **návrh 0.8 Svět a logika** (`docs/Oo
 Zadání: `docs/Oohra_0.8_Svet_a_logika.md`. Odhad etap 1 až 5 je 9 až 14 týdnů. Každý krok má vlastní větev, testy a sloučení.
 
 ### Etapa 1: Svět 384 × 384 a oblasti (2 až 3 týdny)
-- [ ] Tvar a výška terénu: nový generátor vedle starého (výšková mapa a vlhkost ze seedu, jeden celistvý ostrov s pobřežím). Testy: stejný seed = stejný svět, ostrov v jednom kuse.
-- [ ] Oblasti podle výšky a vlhkosti: les, bažina, skalnatá vrchovina, louka, jezero nebo řeka. Test poměru ploch, oblasti vidět v textové mapě konzolového klienta.
-- [ ] Rozmístění: stromy (zatím jako dnes, jen řidší a podle oblasti), rostliny, skály (i vrstvená skála s pazourkem), pitná a bahenní voda, tábory cizinců a ruiny na souši, místa narození. Testy: nic na vodě, tábory na souši.
+- [x] Tvar a výška terénu (18. 10., `WorldGenerator`, `worldgen.json`): nový generátor vedle starého (výšková mapa a vlhkost ze seedu, jeden celistvý ostrov s pobřežím). Testy: stejný seed = stejný svět, ostrov v jednom kuse.
+- [x] Oblasti podle výšky a vlhkosti: les, bažina, skalnatá vrchovina, louka, jezero **i řeka** (z vrchoviny do jezera a do moře, s brody). Test poměru ploch, oblasti v konzolovém klientovi (`-- 1 384 novy`, příkaz `oblasti`).
+- [x] Rozmístění: stromy (řidší, podle dlaždice), rostliny, skály (i vrstvená skála), pitná a bahenní voda, **2 tábory** cizinců (každý v jiné oblasti, u vody, aspoň 110 m od sebe) a **6 zřícenin** na souši. Testy: nic na vodě, tábory na souši. Místa narození zkontrolovat se serverem (další krok).
 - [ ] Server: výchozí velikost 384, nový svět, velikost úvodní zprávy s mapou, ukládání. 20 robotů na nové mapě a server stíhá.
 - [ ] Unity: zem pro 384 m (rozlišení terénu, případně víc dílů), textury oblastí, výkon trávy a stromů (nekreslit, co je daleko). Snímek z testu ukáže oblasti.
 - [ ] Úklid: golden testy ostrova a starý generátor pryč (testy náhody `mulberry32` a `hash2` zůstávají), roboti a cizinci fungují.
+
+Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, podíly les 35 %, louka asi 25 až 33 %, vrchovina 15 %, bažina 10 %, jezero 3 %, řeka a pláž zbytek.
 
 ### Etapa 2: Stromy a kácení (2 až 3 týdny)
 - [ ] Stromy jako objekty: pět druhů, výška ze seedu, `trees.json`, vzhled podle druhu v katalogu.
@@ -55,7 +57,7 @@ Zadání: `docs/Oohra_0.8_Svet_a_logika.md`. Odhad etap 1 až 5 je 9 až 14 týd
 - [ ] Ruce: dvě místa. Batoh je věc, která místa přidá. Nováček začíná bez ničeho (upravit nápovědy a roboty).
 - [ ] Recepty jako data (`recipes.json`), u postavy seznam odemčených receptů, smrtí se ztratí.
 - [ ] Nářadí: sekera, nůž, oštěp, opotřebení a oprava, pazourek jako lepší kámen.
-- [ ] Lýko, kůže (divočák, jelen jako nové zvíře, králík), mršiny v lese, syrová kůže zahnije za 2 dny, činění popelem u vody (popel z ohniště).
+- [ ] Lýko, kůže (divočák, jelen, králík), mršiny v lese, syrová kůže zahnije za 2 dny, činění popelem u vody (popel z ohniště).
 - [ ] Malý a velký batoh.
 - [ ] Deník: věc s obsahem (kresby 12 × 12 a poznámky), ukládá se, zůstane u těla.
 - [ ] Kosti: jehla a háček (zbytek později).

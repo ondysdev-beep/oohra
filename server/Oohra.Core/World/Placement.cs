@@ -27,7 +27,7 @@ public static class Placement
         }
 
         var tile = island.TileAt(tx, ty);
-        return tile != TileType.Sea && tile != TileType.Pond;
+        return tile != TileType.Sea && tile != TileType.Pond && tile != TileType.Ford;
     }
 
     /// <summary>Celá úsečka leží na suché zemi.</summary>

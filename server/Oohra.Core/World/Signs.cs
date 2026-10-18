@@ -103,7 +103,7 @@ public sealed class Signs
             return SignResult.TooMany;
         }
 
-        var carved = island.TileAt(tx, ty) == TileType.Rock;
+        var carved = island.TileAt(tx, ty) is TileType.Rock or TileType.LayeredRock;
         Add(new Sign(_nextId++, x, y, (byte[])bits.Clone(), authorId, now, carved, signature: signature, byAncient: byAncient));
         return SignResult.Drawn;
     }
