@@ -95,8 +95,11 @@ public sealed record SelfState(
 /// <summary>Hromádka v batohu, jak ji vidí klient. Uses: kolik použití zbývá nástroji, Tree: z jakého stromu je klad.</summary>
 public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count, bool Spoiled, int Uses = 0, TreeKind Tree = TreeKind.Oak);
 
-/// <summary>Strom, který nestojí celý: padá (úhel pádu), nebo zbyl pařez.</summary>
-public readonly record struct TreeStateView(int TileIndex, TreeState State, float Angle);
+/// <summary>
+/// Strom, který není celý ze seedu: padá (úhel pádu), pařez, mladý strom (druh, výška, až doroste, růst 0 až 1),
+/// nebo dorostlý strom (druh a výška).
+/// </summary>
+public readonly record struct TreeStateView(int TileIndex, TreeState State, float Angle, TreeKind Kind = TreeKind.Oak, float Height = 0, float Growth = 1);
 
 /// <summary>Dřevo na zemi: kmen nebo klad, druh stromu, střed, směr (radiány) a délka (metry).</summary>
 public readonly record struct TimberView(int Id, TimberKind Kind, TreeKind Tree, float X, float Y, float Angle, int Length);
@@ -1106,12 +1109,15 @@ public static class Messages
             w.Put(t.TileIndex);
             w.Put((byte)t.State);
             w.Put(t.Angle);
+            w.Put((byte)t.Kind);
+            w.Put((byte)Math.Round(t.Height * 10));
+            w.Put((byte)Math.Round(t.Growth * 100));
         }
     }
 
     public static TreeStateView[] ReadTreeStates(NetDataReader r)
     {
-        return ReadList(r, () => new TreeStateView(r.GetInt(), (TreeState)r.GetByte(), r.GetFloat()));
+        return ReadList(r, () => new TreeStateView(r.GetInt(), (TreeState)r.GetByte(), r.GetFloat(), (TreeKind)r.GetByte(), r.GetByte() / 10f, r.GetByte() / 100f));
     }
 
     /// <summary>Všechno dřevo na zemi (kmeny a klady). Posílá se po přihlášení a při každé změně.</summary>

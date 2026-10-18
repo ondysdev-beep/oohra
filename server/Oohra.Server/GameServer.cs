@@ -169,7 +169,7 @@ public sealed partial class GameServer : IDisposable
         CurrentWeather = WeatherNow();
         Fires.Burn(minutes * Weather.BurnMultiplier(CurrentWeather));
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
-        Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock.TotalMinutes);
+        Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock);
         UpdateStrangers(realSeconds);
 
         foreach (var player in InWorld.ToList())

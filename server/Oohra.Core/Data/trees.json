@@ -13,5 +13,9 @@
   ],
   // U sladké vody (jezero, řeka, jezírko) do waterDistance metrů roste místo jiného stromu vrba se šancí willowNearWater.
   "waterDistance": 3,
-  "willowNearWater": 0.6
+  "willowNearWater": 0.6,
+  // Obnova lesa: za každý pokácený strom vyroste mladý strom stejného druhu minDistance až maxDistance metrů od pařezu
+  // (z pařezu nic neroste) a dospěje za growYears herních let (rok jsou 4 až 5 skutečných dní). Od blocksFrom (podíl
+  // růstu) už mladý strom překáží. Do structureClearance metrů od stavby hráče strom nevyroste, mladý tam uschne.
+  "regrowth": { "minDistance": 3, "maxDistance": 8, "growYears": 2, "blocksFrom": 0.5, "structureClearance": 5, "stages": 10 }
 }

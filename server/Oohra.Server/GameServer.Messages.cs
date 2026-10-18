@@ -198,7 +198,7 @@ public sealed partial class GameServer
 
     private TreeStateView[] TreeStateViews()
     {
-        return Island.Forestry.TreeStates().Select(t => new TreeStateView(t.TileIndex, t.State, (float)t.Angle)).ToArray();
+        return Island.Forestry.TreeStates().Select(t => new TreeStateView(t.TileIndex, t.State, (float)t.Angle, t.Kind, (float)t.Height, (float)t.Growth)).ToArray();
     }
 
     private TimberView[] TimberViews()
