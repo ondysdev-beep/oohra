@@ -3,7 +3,7 @@
 Hráč a vývojář mluví česky. Všechny odpovědi, komentáře v kódu a dokumenty piš česky, názvy v kódu anglicky.
 
 ## O projektu
-Oohra je multiplayerová hra o přežití pro PC (Unity klient, vlastní autoritativní C# server, jeden trvalý svět ostrovů). Zásadní prvky: skryté složení rostlin (hráč ho zjišťuje pokusem), otravy se zpožděním, generace (Pradávní a Noví), jazyk ze slabik, znalosti se ztrácejí smrtí. Podrobný návrh je v `docs/Oohra_0.7.md` (to je zadání), plán v `docs/Oohra_Plan_Vyvoje.md`.
+Oohra je multiplayerová hra o přežití pro PC (Unity klient, vlastní autoritativní C# server, jeden trvalý svět ostrovů). Zásadní prvky: skryté složení rostlin (hráč ho zjišťuje pokusem), otravy se zpožděním, generace (Pradávní a Noví), jazyk ze slabik, znalosti se ztrácejí smrtí. Podrobný návrh je v `docs/Oohra_0.7.md` (to je zadání) a `docs/Oohra_0.8_Svet_a_logika.md` (svět, stromy, nářadí, nebezpečí; kde se liší, platí 0.8), plán v `docs/Oohra_Plan_Vyvoje.md`.
 
 Vývojář je hobby programátor začátečník v C# a Unity. Vysvětluj stručně a srozumitelně, bez zbytečného žargonu. Neprováděj velké změny, které nebyly domluvené.
 
@@ -28,7 +28,7 @@ web/         webová stránka hry: statická (index.html, style.css, app.js, con
 - Cíl .NET 10 (LTS), C# s `<Nullable>enable</Nullable>`, testy xUnit.
 - Názvy tříd, metod a proměnných anglicky, komentáře česky.
 - Čísla hry (rostliny, potřeby, účinky, časy) v datových souborech JSON v `Oohra.Core/Data/`, ne natvrdo v kódu.
-- Generátor ostrova se přepíše přesně z prototypu (`prototype/src/part1.js`), aby stejný seed dal stejný svět. Velikost světa je parametr. Prototyp má 84 × 84 a golden testy běží na 84 × 84. První test hry bude 128 × 128, výchozí hodnota v nastavení je 128.
+- Generátor ostrova (návrh 0.8, kap. 1): **nový**, už ne přesný přepis z prototypu. Ostrov 384 × 384 (velikost je parametr v nastavení) s oblastmi ze seedu podle pravidel: les, bažina, skalnatá vrchovina, louka, jezero nebo řeka, pobřeží a pláže zůstávají. Stejný seed = stejný svět. Prototyp zůstává zdrojem pravidel a čísel (rostliny, otravy, potřeby), ne mapy. Dokud nový generátor není hotový (etapa 1), běží starý přepis z prototypu (`prototype/src/part1.js`) s golden testy na 84 × 84.
 - Server počítá 30 ticků za sekundu (hodnota v nastavení, ne konstanta v kódu).
 - Den 90 minut, rok 4 až 5 reálných dní (v nastavení).
 - Přihlášení kódem pozvánky a přezdívkou, tlačítko Nahlásit, statistiky hraní pro ladění (až ve fázi provozu).
@@ -37,7 +37,7 @@ web/         webová stránka hry: statická (index.html, style.css, app.js, con
 ## Pravidla kódu
 - Determinismus: žádný `System.Random` ve světě. Použij vlastní generátor `mulberry32` a `hash2` přepsané z prototypu.
 - Pozor na rozdíly JavaScriptu a C#: `Math.imul` je násobení `int` s přetečením (v C# `unchecked`), `>>>` je posun u `uint`, `|0` je přetypování na `int`, čísla v JS jsou `double`. Pořadí průchodu `Map` v JS je pořadí vkládání.
-- Každé pravidlo hry má test. Test z prototypu: golden data v `server/Oohra.Core.Tests/golden/golden_world.json` (seedy 1, 12345 a 987654321).
+- Každé pravidlo hry má test. Golden data z prototypu (`server/Oohra.Core.Tests/golden/`) zůstávají pro generátor náhody (`mulberry32`, `hash2`); druhy rostlin a jejich skryté složení se dál tvoří podle prototypu. Golden testy mapy (dlaždice, pobřeží, tábory, ruiny, stromy) se s novým generátorem odstraní a nahradí testy: stejný seed = stejný svět, ostrov celistvý, poměr ploch oblastí, nic nestojí na vodě, tábory a ruiny na souši, stromy ne na vodě ani na skále.
 - Malé, čitelné metody. Žádná předčasná obecnost.
 
 ## Unity a síť (Fáze B a C)
@@ -82,5 +82,6 @@ web/         webová stránka hry: statická (index.html, style.css, app.js, con
 ## Stav vývoje
 - Fáze A (jádro v C#), B (Unity), C (síť) a D (herní systémy prvního testu) jsou hotové, včetně nováčků (sen, nápovědy, zvuk).
 - Fáze E (provoz) z větší části: ukládání světa do JSON se zálohami, tajný klíč hráče, příkazy správce, statistiky, nahlášení, záznam chyb u testerů. Zbývá server na internetu (VPS nebo otevřený port), balíček hry pro testery a kódy pozvánek po lidech.
-- Potom fáze F: alfa se známými (3 až 5 lidí), pak test s 15 až 20 lidmi.
+- Další kolo: návrh 0.8 po etapách (plán vývoje, kapitola „Kolo 0.8“): 1 svět 384 × 384 a oblasti, 2 stromy a kácení, 3 nářadí, ruce, batoh a deník, 4 nebezpečí a nemoci, 5 sezónní nebezpečí, stopy, uzení. Jeskyně, patra se statikou a mapa jako věc až potom.
+- Potom fáze F: alfa se známými (3 až 5 lidí) po etapě 3, pak test s 15 až 20 lidmi.
 - Odloženo až po testu (návrh 0.7): zemědělství, nádoby, pasti a rybaření ve větším, posvátná místa, Síň předků, Pamětníci, plná offline postava, PvP.
