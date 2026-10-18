@@ -57,6 +57,13 @@ namespace Oohra.Client
         [Tooltip("Klad (kus kmene 1 m) na zemi a na rameni postavy: model podél osy X, hra ho srovná na 1 m.")]
         public GameObject LogPiece;
 
+        [Header("Batohy na zádech postavy (prázdné = kvádr z kódu)")]
+        [Tooltip("Malý batoh z lýka. Přední strana (k zádům) míří k -Z modelu, hra ho srovná na výšku 0,4 m.")]
+        public GameObject SmallBag;
+
+        [Tooltip("Velký batoh z kůže. Hra ho srovná na výšku 0,6 m.")]
+        public GameObject LargeBag;
+
         [Header("Rostliny podle tvaru druhu: políčka 0 až 3 (víc tvarů druhy nemají)")]
         [Tooltip("Index = tvar druhu. Model se obarví barvou druhu (části se SpeciesTint, jinak celý), ať jdou druhy poznat.")]
         public GameObject[] Plants = new GameObject[4];

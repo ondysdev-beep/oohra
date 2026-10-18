@@ -30,6 +30,33 @@ namespace Oohra.Core.Items
 
         /// <summary>Klad (kus kmene 1 m). Nosí se jen jeden a postava s ním jde pomaleji.</summary>
         LogPiece = 9,
+
+        /// <summary>Malý batoh z lýka a klacků: přidá místa k rukám.</summary>
+        SmallBag = 10,
+
+        /// <summary>Velký batoh z kůže a kostí.</summary>
+        LargeBag = 11,
+
+        /// <summary>Lýko: vnitřní kůra stromu (nožem z ležícího kmene). Na batoh a opravy.</summary>
+        Bast = 12,
+
+        /// <summary>Syrová kůže ze zvířete. Do pár dnů zahnije, vyčiní se popelem u vody.</summary>
+        Hide = 13,
+
+        /// <summary>Vyčiněná kůže: nehnije, na velký batoh (později oblečení a deník).</summary>
+        TannedHide = 14,
+
+        /// <summary>Kost ze zvířete: nůž, později jehla a háček.</summary>
+        Bone = 15,
+
+        /// <summary>Popel z ohniště: na činění kůže.</summary>
+        Ash = 16,
+
+        /// <summary>Nůž (kámen, pazourek nebo kost): loupání lýka, velký batoh. Opotřebuje se.</summary>
+        Knife = 17,
+
+        /// <summary>Pazourek z vrstvené skály: nejlepší nářadí.</summary>
+        Flint = 18,
     }
 
     /// <summary>
@@ -49,6 +76,14 @@ namespace Oohra.Core.Items
         public static readonly Item Wood = new Item(ItemKind.Wood);
 
         public static readonly Item Splinter = new Item(ItemKind.Splinter);
+
+        public static readonly Item Bast = new Item(ItemKind.Bast);
+
+        public static readonly Item Bone = new Item(ItemKind.Bone);
+
+        public static readonly Item Ash = new Item(ItemKind.Ash);
+
+        public static readonly Item Flint = new Item(ItemKind.Flint);
 
         /// <summary>Maso nebo ryba (IsFlesh).</summary>
         public bool IsFlesh => Kind == ItemKind.Meat || Kind == ItemKind.Fish;

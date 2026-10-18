@@ -13,6 +13,8 @@
   "startHour": 7,
   "startSticks": 0,
   "startStones": 0,
+  // Jen pro zkoušení a roboty: nová postava dostane malý batoh. Ve hře false (nováček má jen dvě ruce).
+  "startBag": false,
   // Jen pro zkoušení: vynucené počasí (jasno, mlha, dest, bourka). Prázdné = počasí jde samo (ze seedu a času).
   // Za běhu jde změnit příkazem pocasi v okně serveru.
   "forceWeather": "",

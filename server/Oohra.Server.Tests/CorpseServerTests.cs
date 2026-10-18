@@ -26,7 +26,9 @@ public class CorpseServerTests
         Assert.True(net.Pump(() => b.Corpses.Length == 1 && a.Self!.Dead));
         var corpse = b.Corpses[0];
         Assert.Equal(a.PlayerId, corpse.OwnerId);
-        Assert.Equal(3, corpse.Contents.Stacks.Sum(s => s.Count));
+        // 2 klacky, kámen a batoh ze zad (testy dávají nováčkovi malý batoh).
+        Assert.Equal(4, corpse.Contents.Stacks.Sum(s => s.Count));
+        Assert.Contains(corpse.Contents.Stacks, s => s.Kind == ItemKind.SmallBag);
         Assert.True(corpse.TribeOnlyUntil > corpse.DiedAt);
 
         // Petr stojí u těla, ale není z kmene: nic si nevezme.
@@ -44,7 +46,7 @@ public class CorpseServerTests
         player.Y = corpse.Y;
         a.TakeFromCorpse(corpse.Id, 0);
         Assert.True(net.Pump(() => a.Inventory.Stacks.Any(s => s.Kind == ItemKind.Stick)));
-        Assert.True(net.Pump(() => b.Corpses[0].Contents.Stacks.Length == 1));
+        Assert.True(net.Pump(() => b.Corpses[0].Contents.Stacks.Length == 2));
     }
 
     [Fact]

@@ -129,15 +129,16 @@ public class GatheringTests
         Assert.Null(inventory.TakeOne(5));
     }
 
+    /// <summary>Noví mají v batohu místa navíc podle generace (bez batohu jen ruce).</summary>
     [Theory]
-    [InlineData(0, 10)]
-    [InlineData(1, 10)]
-    [InlineData(2, 11)]
-    [InlineData(6, 13)]
-    [InlineData(20, 13)]
-    public void LaterGenerationsCarryMore(int generation, int slots)
+    [InlineData(0, 0)]
+    [InlineData(1, 0)]
+    [InlineData(2, 1)]
+    [InlineData(6, 3)]
+    [InlineData(20, 3)]
+    public void LaterGenerationsCarryMoreInBag(int generation, int bonus)
     {
-        Assert.Equal(slots, Inventory.SlotsFor(generation));
+        Assert.Equal(bonus, Inventory.BagBonusFor(generation));
     }
 
     [Fact]

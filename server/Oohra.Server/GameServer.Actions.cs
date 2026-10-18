@@ -112,7 +112,29 @@ public sealed partial class GameServer
                 WoodAction(player, () => Forestry.SplitWood(player.Inventory, wood));
                 break;
             case MessageType.MakeAxe:
-                WoodAction(player, () => Crafting.MakeAxe(player.Inventory, player.Character));
+                CraftAction(player, "axe");
+                break;
+            case MessageType.Craft:
+                CraftAction(player, Messages.ReadCraft(reader));
+                break;
+            case MessageType.WearBag:
+                player.Inventory.WearBag(Messages.ReadStackAction(reader));
+                SendInventory(player);
+                break;
+            case MessageType.TakeOffBag:
+                player.Inventory.TakeOffBag();
+                SendInventory(player);
+                break;
+            case MessageType.Combine:
+                CombineAction(player, Messages.ReadCombine(reader));
+                break;
+            case MessageType.StripBark:
+                var bark = Messages.ReadTimberAction(reader);
+                WoodAction(player, () => Island.Forestry.StripBark(bark, player.X, player.Y, player.Inventory));
+                break;
+            case MessageType.TakeAsh:
+                var ashFire = Messages.ReadTimberAction(reader);
+                FireAction(player, () => Fires.TakeAsh(ashFire, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
                 break;
             case MessageType.FeedFire:
                 var fireId = Messages.ReadFeedFire(reader);
@@ -138,7 +160,7 @@ public sealed partial class GameServer
                 HuntAction(player, corpse, () => Animals.Butcher(corpse, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
                 break;
             case MessageType.MakeSpear:
-                HuntAction(player, -1, () => Crafting.MakeSpear(player.Inventory, player.Character));
+                CraftAction(player, "spear");
                 break;
             case MessageType.Fish:
                 var (waterX, waterY) = Messages.ReadTileAction(reader);
@@ -259,6 +281,61 @@ public sealed partial class GameServer
         SendEvent(player, new GameEvent(EventKind.Hunt, (byte)result, default, [], Subject: (byte)kind));
         SendInventory(player);
         SendSelfState(player);
+    }
+
+    /// <summary>Výroba podle receptu (i neznámého: může se nepovést). V hlášce je číslo receptu.</summary>
+    private void CraftAction(PlayerSession player, string recipeId)
+    {
+        var recipe = GameData.Crafting.Find(recipeId);
+        if (player.Character.IsDead || recipe is null)
+        {
+            return;
+        }
+
+        var result = Crafting.Make(recipe, player.Inventory, player.Character, PlaceOf(player));
+        SendCraftResult(player, result, recipe);
+    }
+
+    /// <summary>Zkoušení: spojit vybrané hromádky. Když z nich nejde žádný recept, nic se nestane.</summary>
+    private void CombineAction(PlayerSession player, int[] stackIndices)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var (result, recipe) = Crafting.Combine(stackIndices, player.Inventory, player.Character, PlaceOf(player));
+        SendCraftResult(player, result, recipe);
+    }
+
+    private void SendCraftResult(PlayerSession player, CraftResult result, Recipe? recipe)
+    {
+        var subject = recipe is null ? (byte)255 : (byte)GameData.Crafting.IndexOf(recipe);
+        SendEvent(player, new GameEvent(EventKind.Craft, (byte)result, default, [], Subject: subject));
+        SendInventory(player);
+        SendRecipes(player);
+    }
+
+    /// <summary>Kde hráč stojí: u sladké nebo bahenní vody (činění) a u ohně.</summary>
+    private CraftPlace PlaceOf(PlayerSession player)
+    {
+        var reach = GameData.Gathering.Reach.Water;
+        var nearWater = false;
+        var (cx, cy) = ((int)Math.Floor(player.X), (int)Math.Floor(player.Y));
+        for (var y = cy - 2; y <= cy + 2 && !nearWater; y++)
+        {
+            for (var x = cx - 2; x <= cx + 2; x++)
+            {
+                if (Island.InBounds(x, y) && Island.TileAt(x, y) is TileType.Pond or TileType.Ford or TileType.Bog
+                    && Math.Sqrt((x + 0.5 - player.X) * (x + 0.5 - player.X) + (y + 0.5 - player.Y) * (y + 0.5 - player.Y)) <= reach)
+                {
+                    nearWater = true;
+                    break;
+                }
+            }
+        }
+
+        return new CraftPlace(nearWater, Fires.WarmsAt(Island, player.X, player.Y), Clock.TotalMinutes);
     }
 
     /// <summary>Kácení, dřevo a sekera. Stav stromů a dřeva na zemi se všem pošle v příštím ticku.</summary>
@@ -453,6 +530,7 @@ public sealed partial class GameServer
         player.Character = NewCharacter(generation);
         player.BodyLeft = false;
         player.SentVocabularyVersion = -1;
+        player.SentRecipes = null;
         player.Inventory = NewInventory(player.Character);
         var atHome = place == BirthPlace.Tribe ? SpawnPoint.PickNearTribe(Island, _rng, TribeHome(player)) : null;
         var spawn = atHome ?? SpawnPoint.PickWild(Island, _rng, firstLife: false, avoid: deathPlace);

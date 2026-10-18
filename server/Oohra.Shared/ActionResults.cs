@@ -1,5 +1,43 @@
 namespace Oohra.Core.World
 {
+    /// <summary>Jak dopadla výroba nebo zkoušení receptu (spojit věci z batohu).</summary>
+    public enum CraftResult
+    {
+        /// <summary>Vyrobil to (recept už znal).</summary>
+        Made,
+
+        /// <summary>Poprvé se to povedlo: recept teď umí.</summary>
+        Learned,
+
+        /// <summary>Recept ještě neumí a nepovedlo se: kus materiálu přišel vniveč.</summary>
+        Failed,
+
+        /// <summary>Z těchhle věcí nic nebude (žádný recept).</summary>
+        NothingCame,
+
+        NeedMaterials,
+
+        /// <summary>Chybí nástroj (třeba nůž).</summary>
+        NeedTool,
+
+        /// <summary>Tohle se dělá u vody.</summary>
+        NeedWater,
+
+        /// <summary>Tohle se dělá u ohně.</summary>
+        NeedFire,
+
+        /// <summary>Tuhle věc už má (stačí jedna).</summary>
+        AlreadyHave,
+
+        /// <summary>Oprava: nástroj není, nebo je celý.</summary>
+        NothingToRepair,
+
+        /// <summary>Syrová kůže už zahnila.</summary>
+        Rotten,
+
+        InventoryFull,
+    }
+
     /// <summary>Jak dopadlo kácení, sekání kmene, štípání, nošení kladu nebo výroba sekery.</summary>
     public enum WoodResult
     {
@@ -40,6 +78,15 @@ namespace Oohra.Core.World
 
         /// <summary>Celý kmen jeden člověk neunese, napřed ho rozsekej na klady.</summary>
         TooHeavy,
+
+        /// <summary>Sloupl nožem lýko z kůry.</summary>
+        BastStripped,
+
+        /// <summary>Kůra už je sloupaná (nebo strom lýko nedá).</summary>
+        NoBark,
+
+        /// <summary>Bez nože to nepůjde.</summary>
+        NeedKnife,
 
         /// <summary>Nic nenese (položit).</summary>
         NotCarrying,
@@ -95,6 +142,10 @@ namespace Oohra.Core.World
         GotSticks,
 
         GotStone,
+
+        /// <summary>Z vrstvené skály se odloupl pazourek.</summary>
+        GotFlint,
+
         TooFar,
 
         /// <summary>Spadlé větve jsou pryč, dorostou zítra.</summary>
@@ -165,6 +216,12 @@ namespace Oohra.Core.World
 
         /// <summary>Zapálil pochodeň od ohně (klacek z batohu).</summary>
         TorchLit,
+
+        /// <summary>Nabral popel z ohniště.</summary>
+        AshTaken,
+
+        /// <summary>Popel tu ještě není (oheň hořel krátce), nebo už je dnes vybraný.</summary>
+        NoAsh,
 
         /// <summary>Pochodeň už hoří.</summary>
         TorchAlreadyLit,

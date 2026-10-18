@@ -52,8 +52,8 @@ public sealed class WorldView
     }
 }
 
-/// <summary>Poloha jednoho hráče ve snímku. Torch: drží zapálenou pochodeň, Carry: nese klad.</summary>
-public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping, bool Torch = false, bool Carry = false);
+/// <summary>Poloha jednoho hráče ve snímku. Torch: drží zapálenou pochodeň, Carry: nese klad, Bag: batoh na zádech.</summary>
+public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping, bool Torch = false, bool Carry = false, ItemKind? Bag = null);
 
 /// <summary>
 /// Snímek světa: čas, počasí (druh, síla 0 až 1, vítr 0 až 1) a polohy všech hráčů. Posílá se mnohokrát za sekundu.
@@ -96,6 +96,12 @@ public sealed record SelfState(
 public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count, bool Spoiled, int Uses = 0, TreeKind Tree = TreeKind.Oak);
 
 /// <summary>
+/// Recept, který postava umí (jen ty, neznámé klient nedostane): číslo (Subject v hlášce Craft), id, název,
+/// materiál, nástroj (nebo null), kde se dělá a jestli je to oprava.
+/// </summary>
+public sealed record RecipeView(int Index, string Id, string Name, (ItemKind Kind, int Count)[] Inputs, ItemKind? Tool, bool NearWater, bool NearFire, bool Repair);
+
+/// <summary>
 /// Strom, který není celý ze seedu: padá (úhel pádu), pařez, mladý strom (druh, výška, až doroste, růst 0 až 1),
 /// nebo dorostlý strom (druh a výška).
 /// </summary>
@@ -131,7 +137,8 @@ public sealed record CorpseView(
 /// <summary>Zvíře v okolí hráče: poloha, směr pohledu (radiány) a co dělá. Životy se neposílají.</summary>
 public readonly record struct AnimalView(int Id, AnimalKind Kind, float X, float Y, float Dir, AnimalState State);
 
-public sealed record InventoryView(int Capacity, StackView[] Stacks);
+/// <summary>Věci (batoh, zásoby, tělo): počet míst, hromádky a u hráče batoh na zádech (null = jen ruce).</summary>
+public sealed record InventoryView(int Capacity, StackView[] Stacks, ItemKind? Bag = null);
 
 /// <summary>Obsah zásob kmene (koše) podle čísla stavby.</summary>
 public sealed record StockpileView(int StructureId, InventoryView Contents);
@@ -270,6 +277,87 @@ public static class Messages
     public static void WriteMakeAxe(NetDataWriter w)
     {
         w.Put((byte)MessageType.MakeAxe);
+    }
+
+    /// <summary>Vyrobit podle receptu (id z crafting.json).</summary>
+    public static void WriteCraft(NetDataWriter w, string recipeId)
+    {
+        w.Put((byte)MessageType.Craft);
+        w.Put(recipeId);
+    }
+
+    public static string ReadCraft(NetDataReader r)
+    {
+        return r.GetString(64);
+    }
+
+    /// <summary>Zkusit spojit vybrané hromádky z batohu (najde recept, který z nich jde).</summary>
+    public static void WriteCombine(NetDataWriter w, IReadOnlyList<int> stackIndices)
+    {
+        w.Put((byte)MessageType.Combine);
+        w.Put((byte)stackIndices.Count);
+        foreach (var index in stackIndices)
+        {
+            w.Put((byte)index);
+        }
+    }
+
+    public static int[] ReadCombine(NetDataReader r)
+    {
+        var count = Math.Min((int)r.GetByte(), 8);
+        var indices = new int[count];
+        for (var i = 0; i < count; i++)
+        {
+            indices[i] = r.GetByte();
+        }
+
+        return indices;
+    }
+
+    /// <summary>Recepty, které postava umí. Posílá se po přihlášení a když se nějaký naučí (nebo zemře).</summary>
+    public static void WriteRecipes(NetDataWriter w, IReadOnlyList<RecipeView> recipes)
+    {
+        w.Put((byte)MessageType.Recipes);
+        w.Put(recipes.Count);
+        foreach (var recipe in recipes)
+        {
+            w.Put(recipe.Index);
+            w.Put(recipe.Id);
+            w.Put(recipe.Name);
+            w.Put((byte)recipe.Inputs.Length);
+            foreach (var (kind, count) in recipe.Inputs)
+            {
+                w.Put((byte)kind);
+                w.Put((byte)count);
+            }
+
+            w.Put(recipe.Tool.HasValue ? (byte)recipe.Tool.Value : (byte)255);
+            w.Put(recipe.NearWater);
+            w.Put(recipe.NearFire);
+            w.Put(recipe.Repair);
+        }
+    }
+
+    public static RecipeView[] ReadRecipes(NetDataReader r)
+    {
+        return ReadList(r, () =>
+        {
+            var (index, id, name) = (r.GetInt(), r.GetString(64), r.GetString(128));
+            var inputs = new (ItemKind, int)[r.GetByte()];
+            for (var i = 0; i < inputs.Length; i++)
+            {
+                inputs[i] = ((ItemKind)r.GetByte(), r.GetByte());
+            }
+
+            var tool = r.GetByte();
+            return new RecipeView(index, id, name, inputs, tool == 255 ? null : (ItemKind)tool, r.GetBool(), r.GetBool(), r.GetBool());
+        });
+    }
+
+    /// <summary>Sundat batoh ze zad do rukou.</summary>
+    public static void WriteTakeOffBag(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.TakeOffBag);
     }
 
     /// <summary>Položit nesený klad.</summary>
@@ -904,7 +992,13 @@ public static class Messages
             w.Put(p.Sleeping);
             w.Put(p.Torch);
             w.Put(p.Carry);
+            w.Put(p.Bag.HasValue ? (byte)p.Bag.Value : (byte)255);
         }
+    }
+
+    private static ItemKind? BagOf(byte value)
+    {
+        return value == 255 ? null : (ItemKind)value;
     }
 
     public static Snapshot ReadSnapshot(NetDataReader r)
@@ -912,7 +1006,7 @@ public static class Messages
         var minutes = r.GetDouble();
         var months = r.GetDouble();
         var (weather, intensity, wind) = ((WeatherKind)r.GetByte(), r.GetFloat(), r.GetFloat());
-        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool(), r.GetBool(), r.GetBool()));
+        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool(), r.GetBool(), r.GetBool(), BagOf(r.GetByte())));
         return new Snapshot(minutes, months, players, weather, intensity, wind);
     }
 
@@ -1013,13 +1107,16 @@ public static class Messages
         {
             PutStack(w, s);
         }
+
+        w.Put(inventory.Bag.HasValue ? (byte)inventory.Bag.Value : (byte)255);
     }
 
     private static InventoryView GetInventory(NetDataReader r)
     {
         var capacity = r.GetInt();
         var stacks = ReadList(r, () => GetStack(r));
-        return new InventoryView(capacity, stacks);
+        var bag = r.GetByte();
+        return new InventoryView(capacity, stacks, bag == 255 ? null : (ItemKind)bag);
     }
 
     private static void PutStack(NetDataWriter w, StackView s)

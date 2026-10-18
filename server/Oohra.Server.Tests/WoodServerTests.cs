@@ -24,8 +24,8 @@ public class WoodServerTests
         player.Inventory.TryAdd(Item.Stone);
 
         a.MakeAxe();
-        Assert.True(net.Pump(() => a.Inventory.Stacks.Any(s => s.Kind == ItemKind.Axe && s.Uses == GameData.Wood.Axe.Uses)));
-        Assert.Contains(a.TakeEvents(), e => e.Kind == EventKind.Wood && e.Code == (byte)WoodResult.AxeMade);
+        Assert.True(net.Pump(() => a.Inventory.Stacks.Any(s => s.Kind == ItemKind.Axe && s.Uses == GameData.Crafting.Find("axe")!.Uses)));
+        Assert.Contains(a.TakeEvents(), e => e.Kind == EventKind.Craft && e.Code == (byte)CraftResult.Made);
 
         // Seká v rytmu, dokud strom nepadne (pád trvá warnSeconds).
         var hits = GameData.Trees.For(tree.Kind).Hits;

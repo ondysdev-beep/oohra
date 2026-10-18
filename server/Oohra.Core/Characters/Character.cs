@@ -41,6 +41,15 @@ public sealed class Character
         Traits = GenerationTraits.For(generation);
         Rng = rng;
         var start = GameData.Body.Start;
+        if (Traits.Generation == 0)
+        {
+            // Pradávní znají základní recepty od narození (kopí, sekera, nůž).
+            foreach (var recipe in GameData.Crafting.Recipes.Where(r => r.KnownByAncients))
+            {
+                _recipes.Add(recipe.Id);
+            }
+        }
+
         Satiety = start.Satiety;
         Hydration = start.Hydration;
         Energy = start.Energy;
@@ -78,6 +87,27 @@ public sealed class Character
 
     /// <summary>Hráč už dostal upozornění, že pochodeň dohořívá.</summary>
     public bool TorchWarned { get; set; }
+
+    private readonly HashSet<string> _recipes = [];
+
+    /// <summary>Recepty, které postava umí (zkoušením nebo od narození). Smrtí se ztratí.</summary>
+    public IReadOnlyCollection<string> Recipes => _recipes;
+
+    /// <summary>Roste o 1, když se postava naučí nový recept (pro poslání hráči).</summary>
+    public int RecipesVersion { get; private set; }
+
+    public bool Knows(string recipeId)
+    {
+        return _recipes.Contains(recipeId);
+    }
+
+    public void Learn(string recipeId)
+    {
+        if (_recipes.Add(recipeId))
+        {
+            RecipesVersion++;
+        }
+    }
 
     /// <summary>Nováček: první hodiny v teple a pár dní instinkt na zimu (první život, návrh 4.1).</summary>
     public void BornAsNewcomer(double now)
@@ -388,6 +418,7 @@ public sealed class Character
             LastColdInstinct = LastColdInstinct,
             TorchMinutes = TorchMinutes,
             TorchWarned = TorchWarned,
+            Recipes = [.. _recipes],
             Toxin = Toxin,
             Fever = Fever,
             Infection = Infection,
@@ -454,6 +485,12 @@ public sealed class Character
         foreach (var (cause, amount) in save.Blame)
         {
             c._blame[cause] = amount;
+        }
+
+        c._recipes.Clear();
+        foreach (var recipe in save.Recipes)
+        {
+            c._recipes.Add(recipe);
         }
 
         c.Skills.Import(save.SkillPoints, save.SkillPending);

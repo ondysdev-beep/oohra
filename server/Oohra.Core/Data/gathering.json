@@ -7,9 +7,9 @@
     "fruitMinutes": 1440,
     "rootMinutes": 5760
   },
-  // Batoh: základní počet míst, Noví mají každé dvě generace jedno místo navíc (nejvýš 3).
+  // Batoh: Noví mají v batohu každé dvě generace jedno místo navíc (nejvýš 3). Ruce a batohy jsou v crafting.json.
+  // stackSize: kolik stejných věcí je na jedné hromádce (jedno místo).
   "inventory": {
-    "baseSlots": 10,
     "maxBonusSlots": 3,
     "generationsPerBonusSlot": 2,
     "stackSize": 9

@@ -26,6 +26,8 @@ namespace Oohra.Client
         {
             { "fire", new[] { "První oheň", "Teplo a světlo. Noc je o něco méně strašná." } },
             { "torch", new[] { "První pochodeň", "Světlo, které neseš s sebou. Vlci se drží dál." } },
+            { "craft", new[] { "Nový recept", "Co umíš vyrobit, si pamatuješ, dokud žiješ. Najdeš to v batohu (B)." } },
+            { "bag", new[] { "První batoh", "Teď uneseš víc než dvě věci." } },
             { "axe", new[] { "První sekera", "Teď padne i strom. Ale padá na stranu od tebe, kdo stojí za ním, dostane ránu." } },
             { "tree", new[] { "První pokácený strom", "Kmen rozsekej na klady, klad rozštípej na dřevo. Dřevo hoří dlouho." } },
             { "spear", new[] { "První kopí", "Ostrý kámen na klacku mění lov." } },
@@ -53,6 +55,7 @@ namespace Oohra.Client
             { "sick", "Je ti zle. Něco z toho, co jsi jedl, ti neudělalo dobře. Pij vodu a odpočívej." },
             { "word", "Někdo poblíž mluví. Slova se objevují v zápisníku (J). Co znamenají, musíš odhadnout sám." },
             { "stranger", "Cizinci mluví svým jazykem. Sleduj, co dělají, když něco říkají. Zkus jim ukázat rostlinu." },
+            { "hands", "Máš jen dvě ruce: uneseš dvě hromádky věcí. Batoh si vyrobíš. V batohu (B) zaškrtni věci a zkus je spojit." },
             { "fog", "Padá mlha. Ztratit se je snadné. Drž se míst, která znáš." },
             { "rain", "Prší. Mokrý promrzneš, oheň hoří rychleji. Schovej se do úkrytu ze zdí." },
             { "storm", "Bouřka. Déšť tě promáčí do kostí a pochodeň i oheň hoří rychle. Najdi úkryt." },
@@ -145,8 +148,8 @@ namespace Oohra.Client
                 case EventKind.Fire when (FireResult)e.Code is FireResult.TorchLit:
                     Milestone("torch");
                     break;
-                case EventKind.Wood when (WoodResult)e.Code is WoodResult.AxeMade:
-                    Milestone("axe");
+                case EventKind.Craft when (CraftResult)e.Code is CraftResult.Learned:
+                    Milestone("craft");
                     break;
                 case EventKind.Wood when (WoodResult)e.Code is WoodResult.TreeFalling:
                     Milestone("tree");
@@ -194,6 +197,10 @@ namespace Oohra.Client
             }
 
             if (self.Hydration < 45) Tip("thirst");
+            var inventory = _session.Connection.Inventory;
+            if (!inventory.Bag.HasValue && inventory.Stacks.Length >= inventory.Capacity) Tip("hands");
+            if (inventory.Bag.HasValue) Milestone("bag");
+            if (_session.Count(ItemKind.Axe) > 0) Milestone("axe");
             if (self.Satiety < 45) Tip("hunger");
             if (self.Energy < 25) Tip("tired");
             if (self.Sheltered) Milestone("shelter");

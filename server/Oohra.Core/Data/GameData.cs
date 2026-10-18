@@ -105,6 +105,11 @@ public static class GameData
 
     public static WoodRules Wood => _wood.Value;
 
+    private static readonly Lazy<CraftingRules> _crafting =
+        new(() => Load<CraftingRules>("crafting.json"));
+
+    public static CraftingRules Crafting => _crafting.Value;
+
     private static readonly Lazy<StrangerRules> _strangers =
         new(() => Load<StrangerRules>("strangers.json"));
 

@@ -126,6 +126,15 @@ postava kruh o poloměru 28 cm, takže model by neměl být o moc širší.
 
 Prázdné políčko = válec z kódu v barvě kůry podle druhu stromu (bříza světlá, suchý strom šedý).
 
+## Batohy na zádech
+
+| Políčko | Velikost | Poznámka |
+|---|---|---|
+| **SmallBag** (malý batoh z lýka) | hra ho srovná na výšku 0,4 m | Nosí se na zádech, vidí ho všichni. Strana, která přiléhá k zádům, ať míří k **-Z** modelu (záda postavy). |
+| **LargeBag** (velký batoh z kůže) | hra ho srovná na výšku 0,6 m | Stejně jako malý. |
+
+Prázdné políčko = kvádr z kódu v barvě batohu.
+
 ## Oheň
 
 | Políčko | Co to je |

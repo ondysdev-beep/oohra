@@ -14,7 +14,9 @@
     "bake": 0.8,
     "wall": 1,
     "doorFrame": 1.5,
-    "door": 1.5
+    "door": 1.5,
+    // Výroba podle receptu (kopí, sekera, nůž, batoh…).
+    "craft": 2
   },
   // Co úrovně dávají.
   "effects": {

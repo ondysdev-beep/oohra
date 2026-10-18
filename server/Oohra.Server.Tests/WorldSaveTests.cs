@@ -54,6 +54,8 @@ public sealed class WorldSaveTests : IDisposable
             // Skrytý stav postavy: jed v těle a otrava, která se teprve projeví.
             ondra.Character.Toxin = 12.5;
             ondra.Character.TorchMinutes = 9999;
+            ondra.Character.Learn("smallBag");
+            ondra.Inventory.TryAdd(new Oohra.Core.Items.Item(Oohra.Core.Items.ItemKind.LargeBag));
 
             // Kácení: rozsekaný strom (jedno seknutí) se uloží.
             var island = net.Server.Island;
@@ -75,6 +77,8 @@ public sealed class WorldSaveTests : IDisposable
         Assert.Equal(before.CreatedUtc, restarted.Server.WorldCreatedUtc);
         Assert.Equal(12.5, restarted.Server.FindPlayer("Ondra")!.Character.Toxin);
         Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.TorchLit);
+        Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.Knows("smallBag"));
+        Assert.Equal(Oohra.Core.Items.ItemKind.LargeBag, restarted.Server.FindPlayer("Ondra")!.Inventory.Bag!.Kind);
         Assert.Contains(restarted.Server.Island.Trees, t => restarted.Server.Island.Forestry.HitsOf(t.TileIndex) == 1);
         Assert.Single(restarted.Server.FindPlayer("Ondra")!.Character.Scheduled);
         Assert.True(restarted.Server.FindPlayer("Petr")!.Character.IsDead);

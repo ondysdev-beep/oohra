@@ -28,6 +28,7 @@ Rozhodnuto 18. 10. 2026: další kolo je **návrh 0.8 Svět a logika** (`docs/Oo
 ### Neověřeno (zkontrolovat při hraní)
 - Vzhled třetí generace (ve hře nastane až za rok, zatím hlídají jen testy).
 - Zvuky (slabiky, oheň, kroky, divočák, vlk, déšť, hrom): testy kontrolují jen to, že existují.
+- Ruce a recepty: jestli nováček pochopí, že má jen dvě ruce a že se recepty hledají spojováním věcí (zatím jediná nápověda), a jestli 40 % neúspěchu není moc.
 - Kácení: jestli je počet seknutí a opotřebení sekery rozumné, jak vypadá pád stromu a kmen z kódu (pro vlastní modely políčka Stump, Log, LogPiece v katalogu).
 - Nový svět 384 × 384: jestli je ostrov hezký na procházení (vzdálenosti, kde se rodí nováček, jak daleko je voda), brod (postava stojí kousek nad vodou), hodně hromad kamenů ve vrchovině, plynulost na grafické kartě.
 - Počasí a pochodeň: jestli není mlha moc hustá, déšť moc studený, bouřka moc častá a noc moc tmavá (čísla v `weather.json`, světlo v `DayNightLight`, dohled ve `WeatherView`). Snímky z testů: `unity/Logs/bourka.png`, `mlha.png`.
@@ -56,11 +57,11 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 - [x] Obnova (18. 10.): za pokácený strom vyroste 3 až 8 m od pařezu mladý strom stejného druhu (z pařezu nic), dospěje za 2 herní roky (asi 9 skutečných dní), od poloviny růstu překáží, dorostlý jde zase kácet. Do 5 m od stavby hráče nevyroste, mladý tam uschne (`regrowth` v `trees.json`). **Etapa 2 hotová.**
 
 ### Etapa 3: Nářadí, ruce, batoh, deník (2 až 3 týdny)
-- [ ] Ruce: dvě místa. Batoh je věc, která místa přidá. Nováček začíná bez ničeho (upravit nápovědy a roboty).
-- [ ] Recepty jako data (`recipes.json`), u postavy seznam odemčených receptů, smrtí se ztratí.
-- [ ] Nářadí: sekera, nůž, oštěp, opotřebení a oprava, pazourek jako lepší kámen.
-- [ ] Lýko, kůže (divočák, jelen, králík), mršiny v lese, syrová kůže zahnije za 2 dny, činění popelem u vody (popel z ohniště).
-- [ ] Malý a velký batoh.
+- [x] Ruce (19. 10.): dvě místa (hromádky). Batoh se nosí na zádech (nezabírá místo, vidí ho ostatní), malý +6, velký +12, Noví k tomu bonus generace. Nováček začíná bez ničeho (nápověda „Máš jen dvě ruce“). Roboti a testy: `startBag` v server.json.
+- [x] Recepty jako data (`crafting.json`), u postavy seznam receptů (`Character.Recipes`, smrtí se ztratí, Pradávní znají kopí, sekeru a nůž). Zkoušení: v batohu zaškrtnout věci a „Zkusit spojit“, neznámý recept se napoprvé může nepovést (40 %, kus materiálu vniveč), přednost má recept, který postava ještě neumí. Umíné recepty jsou tlačítka v batohu.
+- [x] Nářadí: sekera (kámen 60, pazourek 130 seknutí), nůž (kámen, pazourek, kost), kopí, opotřebení a oprava (sekera kámen a lýko, nůž kámen). Pazourek padá z vrstvené skály (35 %).
+- [x] Lýko nožem z kůry ležícího kmene nebo kladu (vrba 3, bříza 2, ostatní 1 na metr, jen jednou). Kůže a kosti z divočáka a jelena (králík a vlk jen kost), syrová kůže zahnije za 2 dny, činění popelem u vody, popel z ohniště (jednou za den). **Mršiny v lese zatím ne.**
+- [x] Malý batoh (4 lýka, 2 klacky) a velký batoh (2 vyčiněné kůže, 2 kosti, lýko, nůž), v katalogu políčka SmallBag a LargeBag.
 - [ ] Deník: věc s obsahem (kresby 12 × 12 a poznámky), ukládá se, zůstane u těla.
 - [ ] Kosti: jehla a háček (zbytek později).
 - [ ] Ukázání receptu jiným hráčem.

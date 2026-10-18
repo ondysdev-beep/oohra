@@ -26,6 +26,12 @@ public sealed class Fire
     /// <summary>Kolik herních minut ještě bude hořet.</summary>
     public double BurnMinutes { get; set; }
 
+    /// <summary>Kolik herních minut už celkem hořel (popel je až po ashAfterMinutes).</summary>
+    public double Burned { get; set; }
+
+    /// <summary>Herní den, kdy se naposledy bral popel (jednou za den).</summary>
+    public int AshDay { get; set; } = -1;
+
     public bool Burning => BurnMinutes > 0;
 }
 
@@ -51,7 +57,7 @@ public sealed class Fires
     /// <summary>Ohně hráčů pro uložení světa (ohniště táborů nejsou v seznamu, hoří pořád).</summary>
     public List<FireSave> Export()
     {
-        return _fires.Select(f => new FireSave(f.Id, f.X, f.Y, f.BurnMinutes)).ToList();
+        return _fires.Select(f => new FireSave(f.Id, f.X, f.Y, f.BurnMinutes, f.Burned, f.AshDay)).ToList();
     }
 
     public int NextId => _nextId;
@@ -59,7 +65,7 @@ public sealed class Fires
     /// <summary>Obnoví ohně z uloženého světa.</summary>
     public void Restore(IEnumerable<FireSave> saved, int nextId)
     {
-        _fires.AddRange(saved.Select(f => new Fire(f.Id, f.X, f.Y, f.BurnMinutes)));
+        _fires.AddRange(saved.Select(f => new Fire(f.Id, f.X, f.Y, f.BurnMinutes) { Burned = f.Burned, AshDay = f.AshDay }));
         _nextId = Math.Max(nextId, _fires.Count == 0 ? 1 : _fires.Max(f => f.Id) + 1);
         Version++;
     }
@@ -74,6 +80,7 @@ public sealed class Fires
                 continue;
             }
 
+            fire.Burned += Math.Min(minutes, fire.BurnMinutes);
             fire.BurnMinutes = Math.Max(0, fire.BurnMinutes - minutes);
             if (!fire.Burning)
             {
@@ -145,6 +152,33 @@ public sealed class Fires
         fire.BurnMinutes = rules.RelightMinutes;
         Version++;
         return FireResult.Relit;
+    }
+
+    /// <summary>
+    /// Nabere popel z ohniště: oheň musel hořet aspoň ashAfterMinutes (crafting.json), jednou za herní den.
+    /// Popel je na činění kůže.
+    /// </summary>
+    public FireResult TakeAsh(int fireId, Inventory inventory, double playerX, double playerY, double now)
+    {
+        var fire = Find(fireId);
+        if (fire is null || Distance(fire.X, fire.Y, playerX, playerY) > GameData.Fire.Reach.Fire)
+        {
+            return FireResult.TooFar;
+        }
+
+        var day = Time.GameClock.DayOf(now);
+        if (fire.Burned < GameData.Crafting.AshAfterMinutes || fire.AshDay == day)
+        {
+            return FireResult.NoAsh;
+        }
+
+        if (!inventory.TryAdd(Item.Ash))
+        {
+            return FireResult.InventoryFull;
+        }
+
+        fire.AshDay = day;
+        return FireResult.AshTaken;
     }
 
     /// <summary>V daném okruhu hoří oheň (hráče nebo ohniště tábora).</summary>

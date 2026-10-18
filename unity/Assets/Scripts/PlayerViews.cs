@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Oohra.Core.Items;
 using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
@@ -28,6 +29,8 @@ namespace Oohra.Client
         private readonly Dictionary<int, Animator> _animators = new Dictionary<int, Animator>();
         private readonly Dictionary<int, HandTorch> _torches = new Dictionary<int, HandTorch>();
         private readonly Dictionary<int, GameObject> _carried = new Dictionary<int, GameObject>();
+        private readonly Dictionary<int, GameObject> _bags = new Dictionary<int, GameObject>();
+        private readonly Dictionary<int, ItemKind?> _bagKinds = new Dictionary<int, ItemKind?>();
         private GameConnection _connection;
 
         /// <summary>Kapsle vlastní postavy (sleduje ji kamera).</summary>
@@ -80,6 +83,7 @@ namespace Oohra.Client
 
                 ShowTorch(player.Id, view, player.Torch && !player.Dead && !player.Sleeping);
                 ShowCarried(player.Id, view, player.Carry && !player.Dead && !player.Sleeping);
+                ShowBag(player.Id, view, player.Dead ? null : player.Bag);
             }
 
             RemoveMissing(seen);
@@ -144,6 +148,8 @@ namespace Oohra.Client
                 _animators.Remove(id);
                 _torches.Remove(id);
                 _carried.Remove(id);
+                _bags.Remove(id);
+                _bagKinds.Remove(id);
             }
         }
 
@@ -202,6 +208,62 @@ namespace Oohra.Client
             }
 
             piece.SetActive(carrying);
+        }
+
+        /// <summary>Batoh na zádech: model z katalogu (SmallBag, LargeBag), jinak kvádr v barvě batohu.</summary>
+        private void ShowBag(int id, GameObject view, ItemKind? bag)
+        {
+            ItemKind? shown;
+            if (_bagKinds.TryGetValue(id, out shown) && shown == bag)
+            {
+                return;
+            }
+
+            GameObject old;
+            if (_bags.TryGetValue(id, out old) && old != null)
+            {
+                Destroy(old);
+            }
+
+            _bagKinds[id] = bag;
+            _bags.Remove(id);
+            if (!bag.HasValue)
+            {
+                return;
+            }
+
+            _bags[id] = CreateBag(view.transform, bag.Value);
+        }
+
+        /// <summary>Batoh na zádech postavy (kořen postavy je v půlce výšky, záda jsou na -Z).</summary>
+        public static GameObject CreateBag(Transform figure, ItemKind bag)
+        {
+            var large = bag == ItemKind.LargeBag;
+            var height = large ? 0.6f : 0.4f;
+            var prefab = large ? VisualCatalog.Current.LargeBag : VisualCatalog.Current.SmallBag;
+            GameObject go;
+            if (prefab != null)
+            {
+                go = VisualCatalog.Spawn(prefab, figure, "Batoh", height: height);
+                go.transform.localPosition = new Vector3(0f, 0.05f, -0.24f);
+                go.transform.localRotation = Quaternion.identity;
+            }
+            else
+            {
+                go = IslandView.Primitive(PrimitiveType.Cube, "Batoh", figure, Palette.Material(bag));
+                go.transform.localPosition = new Vector3(0f, 0.15f, -0.27f);
+                go.transform.localRotation = Quaternion.identity;
+                go.transform.localScale = new Vector3(large ? 0.42f : 0.34f, height, large ? 0.22f : 0.16f);
+            }
+
+            return go;
+        }
+
+        /// <summary>Jaký batoh má hráč na zádech (vidět ve scéně), pro testy.</summary>
+        public ItemKind? BagOf(int playerId)
+        {
+            ItemKind? bag;
+            return _bagKinds.TryGetValue(playerId, out bag) ? bag : null;
         }
 
         /// <summary>Nese hráč klad (vidět ve scéně)? Pro testy.</summary>

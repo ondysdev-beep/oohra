@@ -5,7 +5,7 @@ public sealed record GatheringRules(RegrowRules Regrow, InventoryRules Inventory
 
 public sealed record RegrowRules(double LeafMinutes, double FruitMinutes, double RootMinutes);
 
-public sealed record InventoryRules(int BaseSlots, int MaxBonusSlots, int GenerationsPerBonusSlot, int StackSize);
+public sealed record InventoryRules(int MaxBonusSlots, int GenerationsPerBonusSlot, int StackSize);
 
 public sealed record ReachRules(double Plant, double Water);
 

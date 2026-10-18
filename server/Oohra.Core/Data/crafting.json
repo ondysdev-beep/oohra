@@ -1,0 +1,44 @@
+// Ruce, batohy, výroba a znalost receptů (návrh 0.8, kap. 3).
+{
+  // Nováček nemá nic: unese jen to, co má v rukou (hands míst, na každém hromádka stejných věcí).
+  // Batoh přidá místa (bagSlots podle druhu batohu), Noví k tomu svůj bonus podle generace (gathering.json).
+  // Počítá se jen největší batoh, víc batohů se nesčítá.
+  "hands": 2,
+  "bagSlots": { "SmallBag": 6, "LargeBag": 12 },
+
+  // Dokud postava recept neumí, výroba se může nepovést (failChance): jeden kus materiálu přijde vniveč.
+  // Povede-li se, recept umí (smrtí to zapomene). Pradávní znají recepty s knownByAncients od narození.
+  "failChance": 0.4,
+
+  // Recepty. inputs: co se spotřebuje. tool: nástroj, který se při výrobě opotřebuje (nespotřebuje).
+  // output: co vznikne, uses: kolik použití nástroj vydrží. repairs: oprava nástroje (přidá repairUses, nejvýš do maxUses).
+  // nearWater, nearFire: kde se dá vyrábět. unique: jen jeden kus v batohu.
+  "recipes": [
+    { "id": "spear", "name": "Kopí", "inputs": { "Stick": 1, "Stone": 1 }, "output": "Spear", "unique": true, "knownByAncients": true },
+    { "id": "axe", "name": "Kamenná sekera", "inputs": { "Stick": 1, "Stone": 2 }, "output": "Axe", "uses": 60, "unique": true, "knownByAncients": true },
+    { "id": "flintAxe", "name": "Pazourková sekera", "inputs": { "Stick": 1, "Flint": 2 }, "output": "Axe", "uses": 130, "unique": true },
+    { "id": "knife", "name": "Kamenný nůž", "inputs": { "Stone": 2 }, "output": "Knife", "uses": 40, "unique": true, "knownByAncients": true },
+    { "id": "flintKnife", "name": "Pazourkový nůž", "inputs": { "Flint": 1, "Stone": 1 }, "output": "Knife", "uses": 100, "unique": true },
+    { "id": "boneKnife", "name": "Kostěný nůž", "inputs": { "Bone": 1, "Stone": 1 }, "output": "Knife", "uses": 60, "unique": true },
+    { "id": "repairAxe", "name": "Opravit sekeru", "inputs": { "Stone": 1, "Bast": 1 }, "repairs": "Axe", "repairUses": 30, "maxUses": 130 },
+    { "id": "repairKnife", "name": "Naostřit nůž", "inputs": { "Stone": 1 }, "repairs": "Knife", "repairUses": 25, "maxUses": 100 },
+    { "id": "smallBag", "name": "Malý batoh z lýka", "inputs": { "Bast": 4, "Stick": 2 }, "output": "SmallBag", "unique": true },
+    { "id": "tanHide", "name": "Vyčinit kůži", "inputs": { "Hide": 1, "Ash": 1 }, "output": "TannedHide", "nearWater": true },
+    { "id": "largeBag", "name": "Velký batoh z kůže", "inputs": { "TannedHide": 2, "Bone": 2, "Bast": 1 }, "tool": "Knife", "output": "LargeBag", "unique": true }
+  ],
+
+  // Pazourek: z vrstvené skály je místo kamene pazourek s touto šancí.
+  "flintChance": 0.35,
+  // Lýko z kůry ležícího kmene nebo kladu (nožem), kolik na metr dřeva podle druhu stromu. Kůra jde sloupnout jen jednou.
+  "bastPerMeter": { "Willow": 3, "Birch": 2, "Oak": 1, "Conifer": 1, "Dead": 0 },
+  // Ze zvířete: kůže a kosti (k masu). Syrová kůže zahnije za hideRotDays dní.
+  "carcass": {
+    "Boar": { "hides": 2, "bones": 2 },
+    "Deer": { "hides": 2, "bones": 2 },
+    "Rabbit": { "hides": 0, "bones": 1 },
+    "Wolf": { "hides": 0, "bones": 1 }
+  },
+  "hideRotDays": 2,
+  // Popel: z ohniště, které hořelo aspoň ashAfterMinutes herních minut, jednou za herní den.
+  "ashAfterMinutes": 60
+}

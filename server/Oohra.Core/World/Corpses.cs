@@ -68,6 +68,8 @@ public sealed class Corpses
     /// <summary>Hráč zemřel: věci z batohu se přesunou k jeho tělu (batoh zůstane prázdný).</summary>
     public Corpse Add(double x, double y, int ownerId, int generation, double now, Inventory backpack, Signature? signature)
     {
+        // I batoh ze zad (sundá se a přesune k tělu s ostatním).
+        backpack.TakeOffBag();
         var items = new Inventory(Math.Max(backpack.Capacity, backpack.Stacks.Count));
         while (backpack.Stacks.Count > 0)
         {
