@@ -19,7 +19,7 @@ public sealed class TestNetwork : IDisposable
         {
             Port = 0,
             Seed = 12345,
-            WorldSize = 84,
+            WorldSize = 128,
             InviteCodes = [InviteCode],
             TimeSpeed = timeSpeed,
             Animals = false,

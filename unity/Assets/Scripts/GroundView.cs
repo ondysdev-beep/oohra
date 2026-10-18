@@ -43,13 +43,13 @@ namespace Oohra.Client
             return terrain;
         }
 
-        /// <summary>Vrstvy textur v pořadí GroundLayout (tráva, písek, les, skála, bažina).</summary>
+        /// <summary>Vrstvy textur v pořadí GroundLayout (tráva, písek, les, skála, bažina, kamenitá půda).</summary>
         private static TerrainLayer[] Layers(VisualCatalog catalog)
         {
             var colors = new[]
             {
                 Palette.Tile(TileType.Grass, false), Palette.Tile(TileType.Sand, false), Palette.Tile(TileType.Forest, false),
-                Palette.Tile(TileType.Rock, false), Palette.Tile(TileType.Bog, false),
+                Palette.Tile(TileType.Rock, false), Palette.Tile(TileType.Bog, false), Palette.Tile(TileType.Highland, false),
             };
             var layers = new TerrainLayer[GroundLayout.LayerCount];
             var tileSize = Mathf.Max(0.5f, catalog.GroundTextureSize);

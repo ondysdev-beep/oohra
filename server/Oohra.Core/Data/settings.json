@@ -1,7 +1,7 @@
-// Nastavení světa. Prototyp má ostrov 84 × 84, první test hry bude 128 × 128.
+// Nastavení světa. Prototyp má ostrov 84 × 84, nový svět s oblastmi (návrh 0.8) má 384 × 384.
 {
-  "worldWidth": 128,
-  "worldHeight": 128,
+  "worldWidth": 384,
+  "worldHeight": 384,
   // Kalendář: měsíců v roce (prototyp YEAR_DAYS), roční období mají po třech.
   "monthsPerYear": 12,
   // Kolikrát za sekundu server počítá svět.

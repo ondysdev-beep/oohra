@@ -61,7 +61,7 @@ public sealed partial class GameServer : IDisposable
     {
         _config = config;
         var size = config.WorldSize > 0 ? config.WorldSize : GameData.Settings.WorldWidth;
-        Island = IslandGenerator.Build(config.Seed, size, size);
+        Island = WorldGenerator.Build(config.Seed, size, size);
         Clock = GameClock.FromSettings(config.StartHour * 60);
         Plants = new PlantStates();
         _worldView = WorldViews.From(Island);

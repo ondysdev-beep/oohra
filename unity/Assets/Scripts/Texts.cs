@@ -473,7 +473,7 @@ namespace Oohra.Client
 
         public static string WaterName(TileType tile)
         {
-            return tile == TileType.Bog ? "Bahno" : tile == TileType.Pond ? "Voda" : "Moře";
+            return tile == TileType.Bog ? "Bahno" : tile == TileType.Pond ? "Voda" : tile == TileType.Ford ? "Brod" : "Moře";
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Oohra.Client.Tests
             yield return WaitFor(() => bootstrap.Session != null, 15f, "Unity se nepřipojilo k serveru.");
 
             var session = bootstrap.Session;
-            Assert.AreEqual(84 * 84, session.Connection.World.Tiles.Length);
+            Assert.AreEqual(128 * 128, session.Connection.World.Tiles.Length);
             yield return WaitFor(() => GameObject.Find("Postava") != null, 5f, "Vlastní postava se neobjevila.");
 
             _second = new GameConnection();

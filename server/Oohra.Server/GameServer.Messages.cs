@@ -157,7 +157,10 @@ public sealed partial class GameServer
         return InWorld.Where(p => _seconds >= p.DreamUntil).Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
     }
 
-    /// <summary>Každému hráči zvířata v jeho okolí (animalViewDistance), ať se neposílá celý ostrov.</summary>
+    /// <summary>
+    /// Každému hráči zvířata v jeho okolí (animalViewDistance), ať se neposílá celý ostrov. Posílá se rychle
+    /// (bez opakování), takže zpráva musí být v jednom paketu: když je zvířat víc, dostane jen ta nejbližší.
+    /// </summary>
     private void SendAnimals()
     {
         if (!_config.Animals)
@@ -173,8 +176,11 @@ public sealed partial class GameServer
                 continue;
             }
 
+            var fits = (player.Peer.GetMaxSinglePacketSize(DeliveryMethod.Sequenced) - Messages.AnimalsHeaderBytes) / Messages.AnimalViewBytes;
             var near = Animals.All
                 .Where(a => Math.Abs(a.X - player.X) < range && Math.Abs(a.Y - player.Y) < range)
+                .OrderBy(a => (a.X - player.X) * (a.X - player.X) + (a.Y - player.Y) * (a.Y - player.Y))
+                .Take(fits)
                 .Select(a => new AnimalView(a.Id, a.Kind, (float)a.X, (float)a.Y, (float)a.Dir, a.State))
                 .ToArray();
             SendTo(player.Peer, w => Messages.WriteAnimals(w, near), DeliveryMethod.Sequenced);
@@ -222,10 +228,19 @@ public sealed partial class GameServer
         return new PlayerInfo(player.Id, player.Nickname, player.Character.Traits.Generation);
     }
 
+    /// <summary>
+    /// Pošle zprávu. Rychlá zpráva (Sequenced, Unreliable) se musí vejít do jednoho paketu, jinak LiteNetLib
+    /// vyhodí chybu: větší se proto pošle spolehlivě (ReliableOrdered), ta se umí rozdělit.
+    /// </summary>
     private void SendTo(NetPeer peer, Action<NetDataWriter> write, DeliveryMethod method = DeliveryMethod.ReliableOrdered)
     {
         _writer.Reset();
         write(_writer);
+        if (method is DeliveryMethod.Sequenced or DeliveryMethod.Unreliable && _writer.Length > peer.GetMaxSinglePacketSize(method))
+        {
+            method = DeliveryMethod.ReliableOrdered;
+        }
+
         peer.Send(_writer, method);
     }
 

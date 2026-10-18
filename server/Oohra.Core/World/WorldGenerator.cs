@@ -427,16 +427,17 @@ public sealed class WorldGenerator
         var water = DistanceFrom(i => _tiles[i] is TileType.Pond or TileType.Ford, i => true);
         var rng = new Mulberry32(_seed ^ 0x7B1B);
         var camps = new List<GridPoint>();
-        for (var pass = 0; pass < 4 && camps.Count < rules.Count; pass++)
+        // Na malé mapě (testy) by se tábory daleko od sebe nevešly: poslední pokus jen čtvrtinu šířky mapy.
+        for (var pass = 0; pass < 5 && camps.Count < rules.Count; pass++)
         {
-            var minDistance = pass < 3 ? rules.MinDistance : rules.MinDistance / 2;
+            var minDistance = pass < 3 ? rules.MinDistance : pass == 3 ? rules.MinDistance / 2 : Math.Min(rules.MinDistance / 2, _width / 4);
             for (var n = 0; n < 20000 && camps.Count < rules.Count; n++)
             {
                 var x = 4 + rng.NextInt(_width - 8);
                 var y = 4 + rng.NextInt(_height - 8);
                 var i = y * _width + x;
                 var region = _regions[i];
-                if (region is not (RegionKind.Meadow or RegionKind.Forest)
+                if ((pass < 4 && region is not (RegionKind.Meadow or RegionKind.Forest))
                     || !AreaIsDryLand(x, y, 2)
                     || (pass < 2 && water[i] > rules.WaterWithin)
                     || (pass == 0 && camps.Any(c => _regions[c.Y * _width + c.X] == region))

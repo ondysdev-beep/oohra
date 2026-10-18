@@ -19,7 +19,24 @@ public sealed partial class GameServer
 {
     // ---------- úmysly hráčů ----------
 
+    /// <summary>
+    /// Zpráva od klienta. Chyba při jejím zpracování (třeba poškozená zpráva) se jen zapíše do konzole,
+    /// server kvůli ní nespadne a ostatní hrají dál.
+    /// </summary>
     private void OnReceive(NetPeer peer, NetDataReader reader)
+    {
+        try
+        {
+            HandleMessage(peer, reader);
+        }
+        catch (Exception error)
+        {
+            var who = _byPeer.TryGetValue(peer.Id, out var player) ? player.Nickname : "spojení " + peer.Id;
+            Log?.Invoke($"Chyba při zprávě od {who}: {error}");
+        }
+    }
+
+    private void HandleMessage(NetPeer peer, NetDataReader reader)
     {
         var type = (MessageType)reader.GetByte();
         if (type == MessageType.Login)

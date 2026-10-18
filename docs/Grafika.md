@@ -163,6 +163,7 @@ V katalogu jsou políčka pro textury:
 | **ForestTexture** | les (zem pod stromy) |
 | **RockTexture** | skála |
 | **BogTexture** | bažina a bahnité dno jezírek |
+| **HighlandTexture** | kamenitá půda skalnaté vrchoviny (mezi skalami). Vrstvená skála má zatím texturu skály, brod písečné dno |
 
 - Textura musí jít **opakovat bez švů** (anglicky „seamless“ nebo „tileable“). Takové najdeš třeba na
   [ambientCG](https://ambientcg.com) nebo [Poly Haven](https://polyhaven.com) (zdarma, CC0).

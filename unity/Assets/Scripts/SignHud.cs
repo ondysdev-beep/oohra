@@ -175,7 +175,7 @@ namespace Oohra.Client
         {
             var place = DrawPlace();
             var world = _session.Connection.World;
-            var rock = place.HasValue && world.TileAt(Mathf.FloorToInt(place.Value.x), Mathf.FloorToInt(place.Value.y)) == TileType.Rock;
+            var rock = place.HasValue && world.TileAt(Mathf.FloorToInt(place.Value.x), Mathf.FloorToInt(place.Value.y)) is TileType.Rock or TileType.LayeredRock;
             return rock ? "Stojíš u skály. Rytina vydrží." : "Kreslíš do hlíny. Za pár dní zvětrá.";
         }
 
