@@ -120,22 +120,25 @@ public sealed class Island
     /// <summary>Kácení a dřevo na zemi (stromy, které padají nebo z nich zbyl pařez, kmeny, klady).</summary>
     public Forestry Forestry { get; } = new();
 
-    /// <summary>Strom ze seedu na dlaždici (i pokácený), nebo null.</summary>
+    /// <summary>Strom na dlaždici (ze seedu, i pokácený, nebo dorostlý mladý strom), nebo null.</summary>
     public Tree? TreeAt(int tileIndex)
     {
-        return _treeByTile.TryGetValue(tileIndex, out var tree) ? tree : null;
+        return _treeByTile.TryGetValue(tileIndex, out var tree) ? tree : Forestry.GrownAt(tileIndex);
     }
 
-    /// <summary>Na dlaždici stojí strom (ne padající a ne pařez): jde z něj sbírat a kácet.</summary>
+    /// <summary>Na dlaždici stojí strom (ne padající, ne pařez, ne mladý): jde z něj sbírat a kácet.</summary>
     public bool HasTree(int tileIndex)
     {
-        return _treeTiles.Contains(tileIndex) && Forestry.IsStanding(tileIndex);
+        return (_treeTiles.Contains(tileIndex) || Forestry.GrownAt(tileIndex) is not null) && Forestry.IsStanding(tileIndex);
     }
 
-    /// <summary>Na dlaždici je kmen, do kterého se naráží: stojící strom, padající strom, nebo pařez.</summary>
+    /// <summary>
+    /// Na dlaždici je kmen, do kterého se naráží: stojící nebo padající strom, pařez, nebo mladý strom,
+    /// který už povyrostl (blocksFrom v trees.json).
+    /// </summary>
     public bool HasTrunk(int tileIndex)
     {
-        return _treeTiles.Contains(tileIndex);
+        return _treeTiles.Contains(tileIndex) || Forestry.HasYoungTrunk(tileIndex);
     }
 
     /// <summary>V okolí (čtverec o poloměru radius) je jezírko.</summary>

@@ -326,12 +326,12 @@ namespace Oohra.Client
             Connection.MakeAxe();
         }
 
-        /// <summary>Strom na dlaždici stojí (nepadá a není z něj pařez).</summary>
+        /// <summary>Strom na dlaždici stojí (nepadá, není z něj pařez a není to mladý strom). Dorostlý mladý strom stojí.</summary>
         public bool TreeStanding(int tileIndex)
         {
             foreach (var state in Connection.TreeStates)
             {
-                if (state.TileIndex == tileIndex) return false;
+                if (state.TileIndex == tileIndex) return state.State == TreeState.Grown;
             }
 
             return true;

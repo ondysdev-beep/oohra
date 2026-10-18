@@ -58,11 +58,16 @@ namespace Oohra.Core.World
         CannotSplit,
     }
 
-    /// <summary>Stav stromu, který už nestojí celý: padá, nebo zbyl jen pařez.</summary>
+    /// <summary>
+    /// Stav stromu, který není ze seedu celý: padá, zbyl z něj pařez, roste nový mladý strom (Sapling, s růstem),
+    /// nebo mladý strom už dorostl (Grown, je to normální strom).
+    /// </summary>
     public enum TreeState
     {
         Falling = 1,
         Stump = 2,
+        Sapling = 3,
+        Grown = 4,
     }
 
     /// <summary>Dřevo ležící ve světě: celý kmen (blokuje cestu, seká se na klady), nebo klad (1 m).</summary>

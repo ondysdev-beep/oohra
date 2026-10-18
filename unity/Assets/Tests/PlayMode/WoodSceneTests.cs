@@ -13,7 +13,7 @@ namespace Oohra.Client.Tests
 {
     /// <summary>
     /// Kácení ve hře: postava si vyrobí sekeru, dojde ke stromu, kácí ho, strom spadne (zbude pařez a ležící kmen),
-    /// odsekne klad, zvedne ho a nese na rameni. Snímek unity/Logs/kaceni.png.
+    /// poblíž vyroste mladý stromek, postava odsekne klad, zvedne ho a nese na rameni. Snímek unity/Logs/kaceni.png.
     /// </summary>
     public class WoodSceneTests
     {
@@ -71,6 +71,7 @@ namespace Oohra.Client.Tests
             Assert.IsNotNull(trees.StumpAt(tree.TileIndex), "Strom nespadl. Hlášky: " + string.Join(" | ", session.Log.Select(l => l.Text)));
             Assert.IsFalse(trees.TreeAt(tree.TileIndex).activeSelf);
             yield return WaitFor(() => timbers.Count == 1, 3f, "Ležící kmen se neobjevil.");
+            yield return WaitFor(() => trees.YoungCount == 1, 3f, "Za pokácený strom nevyrostl mladý stromek.");
             yield return SaveScreenshot("kaceni.png");
 
             var trunk = connection.Timbers.Single();

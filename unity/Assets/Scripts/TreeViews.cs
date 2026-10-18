@@ -24,6 +24,10 @@ namespace Oohra.Client
         private readonly Dictionary<int, GameObject> _trees = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, Felling> _falling = new Dictionary<int, Felling>();
         private readonly Dictionary<int, GameObject> _stumps = new Dictionary<int, GameObject>();
+
+        // Stromy, které nejsou ze seedu (mladé a dorostlé): dlaždice → druh a jak vysoký je teď nakreslený.
+        private readonly Dictionary<int, TreeStateView> _young = new Dictionary<int, TreeStateView>();
+        private readonly Dictionary<int, TreeKind> _kinds = new Dictionary<int, TreeKind>();
         private WorldView _world;
         private SeeThrough _crowns;
         private GameConnection _connection;
@@ -34,6 +38,12 @@ namespace Oohra.Client
             public float Started;
             public Vector3 Direction;
             public Quaternion Upright;
+        }
+
+        /// <summary>Kolik mladých a dorostlých stromů (ne ze seedu) je ve scéně, pro testy.</summary>
+        public int YoungCount
+        {
+            get { return _young.Count; }
         }
 
         /// <summary>Pařez na dlaždici (pro testy), nebo null.</summary>
@@ -63,6 +73,7 @@ namespace Oohra.Client
             foreach (var tree in world.Trees)
             {
                 _trees[tree.TileIndex] = Build(tree);
+                _kinds[tree.TileIndex] = tree.Kind;
             }
         }
 
@@ -71,16 +82,83 @@ namespace Oohra.Client
             if (_connection != null && _connection.TreeStates != _lastStates)
             {
                 _lastStates = _connection.TreeStates;
+                var young = new HashSet<int>();
                 foreach (var state in _lastStates)
                 {
-                    if (state.State == TreeState.Falling) StartFalling(state.TileIndex, state.Angle);
-                    else Stump(state.TileIndex);
+                    switch (state.State)
+                    {
+                        case TreeState.Falling:
+                            StartFalling(state.TileIndex, state.Angle);
+                            break;
+                        case TreeState.Stump:
+                            Stump(state.TileIndex);
+                            break;
+                        default:
+                            young.Add(state.TileIndex);
+                            ShowYoung(state);
+                            break;
+                    }
                 }
+
+                RemoveWithered(young);
             }
 
             foreach (var pair in _falling)
             {
                 Animate(_trees[pair.Key].transform, pair.Value);
+            }
+        }
+
+        /// <summary>
+        /// Mladý strom roste po stupních (server pošle každý stupeň), nakreslí se tak vysoký, jak je teď.
+        /// Dorostlý (Grown) je normální strom v plné výšce: jde na něj kliknout a kácet ho.
+        /// </summary>
+        private void ShowYoung(TreeStateView state)
+        {
+            TreeStateView shown;
+            if (_young.TryGetValue(state.TileIndex, out shown) && shown.Equals(state))
+            {
+                return;
+            }
+
+            if (_falling.ContainsKey(state.TileIndex) || _stumps.ContainsKey(state.TileIndex))
+            {
+                return;
+            }
+
+            GameObject old;
+            if (_trees.TryGetValue(state.TileIndex, out old))
+            {
+                Destroy(old);
+            }
+
+            var growth = state.State == TreeState.Grown ? 1f : state.Growth;
+            var height = Mathf.Max(0.4f, state.Height * growth);
+            var variant = (state.TileIndex * 37 % 100) / 100f;
+            _trees[state.TileIndex] = Build(new TreeView(state.TileIndex, variant, state.Kind, height));
+            _kinds[state.TileIndex] = state.Kind;
+            _young[state.TileIndex] = state;
+        }
+
+        /// <summary>Mladý strom, který server už neposílá (uschl u stavby), zmizí.</summary>
+        private void RemoveWithered(HashSet<int> young)
+        {
+            foreach (var tile in new List<int>(_young.Keys))
+            {
+                if (young.Contains(tile) || _stumps.ContainsKey(tile) || _falling.ContainsKey(tile))
+                {
+                    continue;
+                }
+
+                GameObject tree;
+                if (_trees.TryGetValue(tile, out tree))
+                {
+                    Destroy(tree);
+                    _trees.Remove(tile);
+                }
+
+                _crowns.Remove(tile);
+                _young.Remove(tile);
             }
         }
 
@@ -141,12 +219,9 @@ namespace Oohra.Client
             _crowns.Remove(tileIndex);
             var x = tileIndex % _world.Width + 0.5;
             var y = tileIndex / _world.Width + 0.5;
-            var kind = TreeKind.Oak;
-            foreach (var view in _world.Trees)
-            {
-                if (view.TileIndex == tileIndex) kind = view.Kind;
-            }
-
+            TreeKind kind;
+            if (!_kinds.TryGetValue(tileIndex, out kind)) kind = TreeKind.Oak;
+            _young.Remove(tileIndex);
             _stumps[tileIndex] = CreateStump(transform, kind, x, y);
         }
 

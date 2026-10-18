@@ -182,6 +182,65 @@ public class ForestryTests
         Assert.Equal(island.Forestry.Timbers.Select(t => (t.Id, t.Kind, t.X, t.Length)), again.Forestry.Timbers.Select(t => (t.Id, t.Kind, t.X, t.Length)));
     }
 
+    /// <summary>Za pokácený strom vyroste kousek od pařezu mladý strom stejného druhu, za dva herní roky je z něj strom.</summary>
+    [Fact]
+    public void FelledTreeIsReplacedBySaplingThatGrowsUp()
+    {
+        var island = World();
+        var tree = OpenTree(island);
+        var chopper = new AnimalTarget(1, tree.X - 1, tree.Y, Person());
+        Fell(island, tree, chopper, new Animals(1), [chopper]);
+
+        var sapling = Assert.Single(island.Forestry.Saplings());
+        var (sx, sy) = (sapling.TileIndex % island.Width + 0.5, sapling.TileIndex / island.Width + 0.5);
+        var distance = Math.Sqrt((sx - tree.X) * (sx - tree.X) + (sy - tree.Y) * (sy - tree.Y));
+        var rules = GameData.Trees.Regrowth;
+        Assert.Equal(tree.Kind, sapling.Kind);
+        Assert.InRange(distance, rules.MinDistance - 1, rules.MaxDistance + 1);
+        Assert.False(island.HasTree(sapling.TileIndex), "Mladý strom se ještě nekácí.");
+        Assert.False(island.HasTrunk(sapling.TileIndex), "Malý stromek nepřekáží.");
+
+        var clock = TestPlants.Clock();
+        // Herní rok ve skutečných sekundách (měsíc má v TestPlants.Clock 32 400 s).
+        var year = 32400.0 * GameData.Settings.MonthsPerYear;
+        clock.Advance(year * rules.GrowYears * rules.BlocksFrom + 60);
+        island.Forestry.Update(island, new Animals(1), [], 0.1, clock);
+        Assert.True(island.HasTrunk(sapling.TileIndex), "Povyrostlý mladý strom překáží.");
+        Assert.Contains(island.Forestry.TreeStates(), t => t.TileIndex == sapling.TileIndex && t.State == TreeState.Sapling && t.Growth >= rules.BlocksFrom);
+
+        clock.Advance(year * rules.GrowYears);
+        island.Forestry.Update(island, new Animals(1), [], 0.1, clock);
+        Assert.Empty(island.Forestry.Saplings());
+        Assert.True(island.HasTree(sapling.TileIndex));
+        Assert.Equal(tree.Kind, island.TreeAt(sapling.TileIndex)!.Value.Kind);
+        Assert.Contains(island.Forestry.TreeStates(), t => t.TileIndex == sapling.TileIndex && t.State == TreeState.Grown);
+
+        // Dorostlý strom se uloží a jde zase kácet.
+        var again = World();
+        again.Forestry.Restore(again, island.Forestry.Export());
+        Assert.True(again.HasTree(sapling.TileIndex));
+        Assert.Equal(WoodResult.Chopped, again.Forestry.Chop(again, (int)sx, (int)sy, 1, sx - 1, sy, WithAxe()));
+    }
+
+    /// <summary>U stavby hráče mladý strom uschne.</summary>
+    [Fact]
+    public void SaplingNearStructureDies()
+    {
+        var island = World();
+        var tree = OpenTree(island);
+        var chopper = new AnimalTarget(1, tree.X - 1, tree.Y, Person());
+        Fell(island, tree, chopper, new Animals(1), [chopper]);
+        var sapling = island.Forestry.Saplings().Single();
+        var (sx, sy) = (sapling.TileIndex % island.Width + 0.5, sapling.TileIndex / island.Width + 0.5);
+        island.Structures.Restore([new StructureSave(1, BuildKind.StickWall, sx + 2, sy, 0, 1, 0, 7, string.Empty, null, null)]);
+
+        var clock = TestPlants.Clock();
+        clock.Advance(32400 * 3);
+        island.Forestry.Update(island, new Animals(1), [], 0.1, clock);
+
+        Assert.Empty(island.Forestry.Saplings());
+    }
+
     // ---------- pomůcky ----------
 
     private static Island World() => WorldGenerator.Build(1, 128, 128);
@@ -201,19 +260,19 @@ public class ForestryTests
         var result = WoodResult.Chopped;
         while (result != WoodResult.TreeFalling)
         {
-            island.Forestry.Update(island, animals, players, 1, 0);
+            island.Forestry.Update(island, animals, players, 1, TestPlants.Clock());
             result = island.Forestry.Chop(island, Tx(tree), Ty(tree), chopper.Id, chopper.X, chopper.Y, inventory);
             Assert.Contains(result, new[] { WoodResult.Chopped, WoodResult.TreeFalling });
         }
 
         Assert.False(island.HasTree(tree.TileIndex), "Padající strom už nejde kácet.");
-        island.Forestry.Update(island, animals, players, GameData.Wood.WarnSeconds + 0.1, 0);
+        island.Forestry.Update(island, animals, players, GameData.Wood.WarnSeconds + 0.1, TestPlants.Clock());
     }
 
     /// <summary>Počká na další seknutí (rytmus sekání).</summary>
     private static void Swing(Island island)
     {
-        island.Forestry.Update(island, new Animals(1), [], 1, 0);
+        island.Forestry.Update(island, new Animals(1), [], 1, TestPlants.Clock());
     }
 
     private static Inventory WithAxe(int capacity = 10)

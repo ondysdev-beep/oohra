@@ -142,7 +142,14 @@ public sealed class ForestrySave
     public List<TimberSave> Timbers { get; init; } = [];
 
     public int NextTimberId { get; init; } = 1;
+
+    /// <summary>Mladé stromy (kdy zasazené, měsíce kalendáře) a dorostlé stromy (PlantedMonths se nepoužije).</summary>
+    public List<SaplingSave> Saplings { get; init; } = [];
+
+    public List<SaplingSave> Grown { get; init; } = [];
 }
+
+public sealed record SaplingSave(int TileIndex, TreeKind Kind, double Height, double PlantedMonths);
 
 public sealed record TimberSave(int Id, TimberKind Kind, TreeKind Tree, double X, double Y, double Angle, int Length);
 

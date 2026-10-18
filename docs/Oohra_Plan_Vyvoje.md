@@ -53,7 +53,7 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 - [x] Kácení: seknutí v rytmu (počet podle druhu v `trees.json`), strom praská 1,5 s a padá od sekáče, kdo je v pruhu pádu (hráč i zvíře), je zraněný, zbude pařez a ležící kmen, který blokuje cestu i stavění.
 - [x] Klady po 1 m (z kmene od špičky), klad na 2 až 4 díly dřeva podle druhu, díl dřeva na 4 třísky. Díl dřeva hoří v ohni 3× déle než klacek, tříska zapálí pochodeň.
 - [x] Nošení kladu: jeden v batohu, postava jde na 60 % rychlosti, ostatní vidí klad na rameni (`PlayerSnapshot.Carry`), Položit z batohu. Kmen pro víc nosičů odložen.
-- [ ] Obnova: mladé stromy rostou herní roky, kolem staveb strom nevyroste.
+- [x] Obnova (18. 10.): za pokácený strom vyroste 3 až 8 m od pařezu mladý strom stejného druhu (z pařezu nic), dospěje za 2 herní roky (asi 9 skutečných dní), od poloviny růstu překáží, dorostlý jde zase kácet. Do 5 m od stavby hráče nevyroste, mladý tam uschne (`regrowth` v `trees.json`). **Etapa 2 hotová.**
 
 ### Etapa 3: Nářadí, ruce, batoh, deník (2 až 3 týdny)
 - [ ] Ruce: dvě místa. Batoh je věc, která místa přidá. Nováček začíná bez ničeho (upravit nápovědy a roboty).
