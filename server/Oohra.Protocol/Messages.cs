@@ -52,11 +52,19 @@ public sealed class WorldView
     }
 }
 
-/// <summary>Poloha jednoho hráče ve snímku.</summary>
-public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping);
+/// <summary>Poloha jednoho hráče ve snímku. Torch: drží zapálenou pochodeň.</summary>
+public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping, bool Torch = false);
 
-/// <summary>Snímek světa: čas a polohy všech hráčů. Posílá se mnohokrát za sekundu.</summary>
-public sealed record Snapshot(double TotalMinutes, double CalendarMonths, PlayerSnapshot[] Players);
+/// <summary>
+/// Snímek světa: čas, počasí (druh, síla 0 až 1, vítr 0 až 1) a polohy všech hráčů. Posílá se mnohokrát za sekundu.
+/// </summary>
+public sealed record Snapshot(
+    double TotalMinutes,
+    double CalendarMonths,
+    PlayerSnapshot[] Players,
+    WeatherKind Weather = WeatherKind.Clear,
+    float WeatherIntensity = 0,
+    float Wind = 0);
 
 /// <summary>Hráč ve světě (jméno a generace). Posílá se při příchodu a novém narození.</summary>
 public sealed record PlayerInfo(int Id, string Nickname, int Generation);
@@ -653,6 +661,12 @@ public static class Messages
         w.Put((byte)MessageType.DreamOver);
     }
 
+    /// <summary>Zapálit pochodeň od ohně poblíž (klacek z batohu).</summary>
+    public static void WriteLightTorch(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.LightTorch);
+    }
+
     /// <summary>Ukázat ostatním věc z hromádky v batohu (gesto ukázat předmět, návrh 9.3).</summary>
     public static void WriteShowItem(NetDataWriter w, int stackIndex)
     {
@@ -808,6 +822,9 @@ public static class Messages
         w.Put((byte)MessageType.Snapshot);
         w.Put(snapshot.TotalMinutes);
         w.Put(snapshot.CalendarMonths);
+        w.Put((byte)snapshot.Weather);
+        w.Put(snapshot.WeatherIntensity);
+        w.Put(snapshot.Wind);
         w.Put(snapshot.Players.Length);
         foreach (var p in snapshot.Players)
         {
@@ -817,6 +834,7 @@ public static class Messages
             w.Put(p.Facing);
             w.Put(p.Dead);
             w.Put(p.Sleeping);
+            w.Put(p.Torch);
         }
     }
 
@@ -824,8 +842,9 @@ public static class Messages
     {
         var minutes = r.GetDouble();
         var months = r.GetDouble();
-        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool()));
-        return new Snapshot(minutes, months, players);
+        var (weather, intensity, wind) = ((WeatherKind)r.GetByte(), r.GetFloat(), r.GetFloat());
+        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool(), r.GetBool()));
+        return new Snapshot(minutes, months, players, weather, intensity, wind);
     }
 
     public static void WritePlayerJoined(NetDataWriter w, PlayerInfo info)

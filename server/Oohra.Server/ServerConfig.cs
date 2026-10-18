@@ -41,6 +41,12 @@ public sealed class ServerConfig
     /// <summary>Kolik kamenů dostane nová postava do batohu (jen pro zkoušení ohně, ve hře 0).</summary>
     public int StartStones { get; set; }
 
+    /// <summary>
+    /// Vynucené počasí od startu (jen pro zkoušení): jasno, mlha, dest, bourka. Prázdné = počasí jde samo.
+    /// Za běhu jde změnit příkazem pocasi.
+    /// </summary>
+    public string ForceWeather { get; set; } = string.Empty;
+
     /// <summary>Zvířata na ostrově. Testy serveru je vypínají, ať je náhodný divočák nerozhodí.</summary>
     public bool Animals { get; set; } = true;
 

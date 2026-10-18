@@ -17,7 +17,7 @@ public sealed partial class GameServer
 
     public const string CommandHelp =
         "Příkazy: hraci | ulozit | oznamit <text> | vyhodit <přezdívka> | vyloucit <přezdívka> | povolit <přezdívka> "
-        + "| odemknout <přezdívka> | konec";
+        + "| odemknout <přezdívka> | pocasi <jasno|mlha|dest|bourka|auto> | konec";
 
     /// <summary>Provede příkaz správce a vrátí odpověď.</summary>
     public string RunCommand(string line)
@@ -39,6 +39,7 @@ public sealed partial class GameServer
             "vyloucit" or "ban" => Ban(argument),
             "povolit" or "unban" => Unban(argument),
             "odemknout" or "unlock" => Unlock(argument),
+            "pocasi" or "weather" => ForceWeather(argument),
             "konec" or "quit" or "exit" => Stop(),
             _ => "Neznámý příkaz. " + CommandHelp,
         };

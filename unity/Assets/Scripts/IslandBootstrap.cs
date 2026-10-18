@@ -184,7 +184,9 @@ namespace Oohra.Client
             var camera = Camera.main;
             island.GetComponentInChildren<SeeThrough>().Follow(_players, camera);
             gameObject.AddComponent<PlayerController>().Init(_session, camera);
-            gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun());
+            var weather = gameObject.AddComponent<WeatherView>();
+            weather.Init(_connection, _session.Clock, _players, camera);
+            gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun(), weather);
             gameObject.AddComponent<BuildMode>().Init(_session, camera);
             new GameObject("Kruh výběru").AddComponent<SelectionRing>().Init(_session);
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);

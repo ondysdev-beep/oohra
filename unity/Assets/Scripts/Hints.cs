@@ -25,6 +25,7 @@ namespace Oohra.Client
         public static readonly Dictionary<string, string[]> Milestones = new Dictionary<string, string[]>
         {
             { "fire", new[] { "První oheň", "Teplo a světlo. Noc je o něco méně strašná." } },
+            { "torch", new[] { "První pochodeň", "Světlo, které neseš s sebou. Vlci se drží dál." } },
             { "spear", new[] { "První kopí", "Ostrý kámen na klacku mění lov." } },
             { "food", new[] { "První jídlo", "Snědl jsi něco a zatím ti není zle. Zapamatuj si to, otrava může přijít později." } },
             { "poison", new[] { "První otrava", "Takhle se učí hranice. Vzpomeň si, co jsi jedl." } },
@@ -45,11 +46,14 @@ namespace Oohra.Client
             { "thirst", "Máš žízeň. Klikni na jezírko (světlejší modrá) a napij se. Moře je slané." },
             { "hunger", "Máš hlad. Klikni na rostlinu a utrhni list, plod nebo vykopej kořen. Nejdřív jen ochutnej (B batoh)." },
             { "backpack", "V batohu (B) můžeš věc ochutnat. Chuť napoví, ale nic nezaručí. Otrava přichází se zpožděním." },
-            { "evening", "Blíží se noc. V noci je zima a chodí vlci. Nasbírej klacky u stromu a kámen na skále a rozdělej oheň (G)." },
+            { "evening", "Blíží se noc. V noci je zima a chodí vlci. Nasbírej klacky u stromu a kámen na skále a rozdělej oheň (G). U ohně si zapálíš pochodeň." },
             { "tired", "Jsi unavený. Lehni si ke spánku (N), nejlépe u ohně nebo v úkrytu ze zdí." },
             { "sick", "Je ti zle. Něco z toho, co jsi jedl, ti neudělalo dobře. Pij vodu a odpočívej." },
             { "word", "Někdo poblíž mluví. Slova se objevují v zápisníku (J). Co znamenají, musíš odhadnout sám." },
             { "stranger", "Cizinci mluví svým jazykem. Sleduj, co dělají, když něco říkají. Zkus jim ukázat rostlinu." },
+            { "fog", "Padá mlha. Ztratit se je snadné. Drž se míst, která znáš." },
+            { "rain", "Prší. Mokrý promrzneš, oheň hoří rychleji. Schovej se do úkrytu ze zdí." },
+            { "storm", "Bouřka. Déšť tě promáčí do kostí a pochodeň i oheň hoří rychle. Najdi úkryt." },
             { "animal", "Zvíře poblíž. Divočák se rozběhne, když se k němu přiblížíš: uhni na stranu a bij, když je vyčerpaný." },
         };
 
@@ -136,6 +140,9 @@ namespace Oohra.Client
                 case EventKind.Fire when (FireResult)e.Code is FireResult.Lit:
                     Milestone("fire");
                     break;
+                case EventKind.Fire when (FireResult)e.Code is FireResult.TorchLit:
+                    Milestone("torch");
+                    break;
                 case EventKind.Hunt when (HuntResult)e.Code is HuntResult.SpearMade:
                     Milestone("spear");
                     break;
@@ -191,7 +198,22 @@ namespace Oohra.Client
 
             if (_session.NearestStranger(12f).HasValue) Tip("stranger");
             if (AnimalNear(8f)) Tip("animal");
+            CheckWeather();
             CheckTime();
+        }
+
+        /// <summary>Rada při první mlze, prvním dešti a první bouřce.</summary>
+        private void CheckWeather()
+        {
+            var snapshot = _session.Connection.Snapshot;
+            if (snapshot == null || snapshot.WeatherIntensity < 0.4f)
+            {
+                return;
+            }
+
+            if (snapshot.Weather == WeatherKind.Fog) Tip("fog");
+            if (snapshot.Weather == WeatherKind.Rain) Tip("rain");
+            if (snapshot.Weather == WeatherKind.Storm) Tip("storm");
         }
 
         /// <summary>Večer rada, ráno oslava přežité noci, na jaře oslava přežité zimy.</summary>

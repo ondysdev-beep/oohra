@@ -82,6 +82,12 @@ public enum BodyEvent
 
     /// <summary>Instinkt na zimu (nováček, návrh 4.1): zebe ho, ještě než mu zima začne ubližovat.</summary>
     ColdInstinct,
+
+    /// <summary>Pochodeň dohořívá.</summary>
+    TorchLow,
+
+    /// <summary>Pochodeň dohořela (nebo ji uhasil déšť).</summary>
+    TorchOut,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>

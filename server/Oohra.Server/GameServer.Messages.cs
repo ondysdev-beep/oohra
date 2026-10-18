@@ -100,9 +100,9 @@ public sealed partial class GameServer
     private void BroadcastSnapshot()
     {
         var players = InWorld
-            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping))
+            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping, p.Character.TorchLit))
             .ToArray();
-        var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players);
+        var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players, CurrentWeather.Kind, (float)CurrentWeather.Intensity, (float)CurrentWeather.Wind);
         Broadcast(w => Messages.WriteSnapshot(w, snapshot), DeliveryMethod.Sequenced);
     }
 

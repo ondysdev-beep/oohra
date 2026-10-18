@@ -5,8 +5,8 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Ohně ve scéně podle zpráv serveru: ohniště, plamen (oboje jde vyměnit v katalogu vzhledu) a oranžové
-    /// světlo, které mihotá.
+    /// Ohně ve scéně podle zpráv serveru: ohniště, plamen (oboje jde vyměnit v katalogu vzhledu), kouř, který
+    /// odnáší vítr, a oranžové světlo, které mihotá.
     /// Vyhaslý oheň je jen popel (bez plamene a světla). Ohniště táborů hoří pořád.
     /// </summary>
     public class FireViews : MonoBehaviour
@@ -117,6 +117,8 @@ namespace Oohra.Client
                 ball.transform.localPosition = new Vector3(0f, 0.22f, 0f);
                 ball.transform.localScale = new Vector3(0.3f, 0.4f, 0.3f);
             }
+
+            ParticleLook.CreateSmoke(flame.transform, new Vector3(0f, 0.6f, 0f), 1f);
 
             var light = new GameObject("Světlo ohně").AddComponent<Light>();
             light.transform.SetParent(flame.transform);

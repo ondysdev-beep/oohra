@@ -122,6 +122,12 @@ postava kruh o poloměru 28 cm, takže model by neměl být o moc širší.
 | **Campfire** | ohniště (kameny kolem, polena), průměr asi 0,7 m, střed dole uprostřed. Použije se u ohňů hráčů, u táborů kmenů i jako náhled v režimu stavby. |
 | **Flame** | plamen. Ukáže se jen, když oheň hoří. Hodí se částicový systém (Particle System) s materiálem, který svítí sám. Oranžové mihotavé světlo přidá hra. |
 
+Kouř nad ohněm přidá hra sama (částice `ParticleLook.CreateSmoke`, sklání se po větru). Pochodeň v ruce (`HandTorch`) je zatím tvar z kódu: klacek, plamínek, kouř a světlo.
+
+## Počasí a světlo
+
+Počasí posílá server (mlha, déšť, bouřka, síla a vítr). Ve scéně ho kreslí `WeatherView`: mlha je Unity fog (od kamery, dohled podle počasí, pozadí kamery má barvu mlhy), déšť jsou částice kolem postavy, v bouřce blýská a hřmí. Slunce a okolní světlo tlumí `DayNightLight` (svět je i ve dne ponurý, v mlze skoro bez stínů). Materiály částic jsou kopie `OohraFoam.mat` (URP/Particles/Simple Lit) s měkkou texturou z kódu, takže je osvětlí oheň a v noci nesvítí. Zkoušení: příkaz `pocasi` v okně serveru.
+
 ## Dekorace (lavice, totem, cokoli dalšího)
 
 Dekorace jsou v seznamu **`server/Oohra.Core/Data/decorations.json`**. Novou dekoraci přidáš takto:

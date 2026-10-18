@@ -71,6 +71,14 @@ public sealed class Character
 
     public double LastColdInstinct { get; set; } = double.NegativeInfinity;
 
+    /// <summary>Kolik herních minut ještě hoří pochodeň v ruce (0 = nemá zapálenou).</summary>
+    public double TorchMinutes { get; set; }
+
+    public bool TorchLit => TorchMinutes > 0;
+
+    /// <summary>Hráč už dostal upozornění, že pochodeň dohořívá.</summary>
+    public bool TorchWarned { get; set; }
+
     /// <summary>Nováček: první hodiny v teple a pár dní instinkt na zimu (první život, návrh 4.1).</summary>
     public void BornAsNewcomer(double now)
     {
@@ -289,6 +297,7 @@ public sealed class Character
 
         IsDead = true;
         Sleeping = false;
+        TorchMinutes = 0;
         DeathCause = _blame.Count == 0
             ? Characters.DeathCause.Hunger
             : _blame.OrderByDescending(b => b.Value).First().Key;
@@ -364,6 +373,8 @@ public sealed class Character
             WarmUntil = WarmUntil,
             ColdInstinctUntil = ColdInstinctUntil,
             LastColdInstinct = LastColdInstinct,
+            TorchMinutes = TorchMinutes,
+            TorchWarned = TorchWarned,
             Toxin = Toxin,
             Fever = Fever,
             Infection = Infection,
@@ -405,6 +416,8 @@ public sealed class Character
             WarmUntil = save.WarmUntil,
             ColdInstinctUntil = save.ColdInstinctUntil,
             LastColdInstinct = save.LastColdInstinct,
+            TorchMinutes = save.TorchMinutes,
+            TorchWarned = save.TorchWarned,
             Toxin = save.Toxin,
             Fever = save.Fever,
             Infection = save.Infection,

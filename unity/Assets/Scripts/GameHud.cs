@@ -536,6 +536,7 @@ namespace Oohra.Client
             GUI.Label(titleRect, fire.Value.Burning ? "OHEŇ" : "POPEL", _title);
             if (Button(ref buttonRect, fire.Value.Burning ? "Přiložit klacek" : "Zapálit znovu")) _session.FeedFire();
             if (fire.Value.Burning && Button(ref buttonRect, "Péct (batoh)")) _session.BackpackOpen = true;
+            if (fire.Value.Burning && !_session.TorchLit && Button(ref buttonRect, "Zapálit pochodeň")) _session.LightTorch();
         }
 
         private bool HasFruit(int plantId)

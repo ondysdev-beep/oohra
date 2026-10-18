@@ -60,6 +60,8 @@ public sealed class Bot : IDisposable
 
     public int Fires { get; private set; }
 
+    public int Torches { get; private set; }
+
     public int Kills { get; private set; }
 
     public int Words { get; private set; }
@@ -125,6 +127,9 @@ public sealed class Bot : IDisposable
                     break;
                 case EventKind.Fire when e.Code == (byte)FireResult.Lit:
                     Fires++;
+                    break;
+                case EventKind.Fire when e.Code == (byte)FireResult.TorchLit:
+                    Torches++;
                     break;
                 case EventKind.Hunt when e.Code is (byte)HuntResult.Killed or (byte)HuntResult.CaughtSmall:
                     Kills++;
@@ -234,6 +239,13 @@ public sealed class Bot : IDisposable
         var night = Hour() >= 19 || Hour() < 6 || me.Warmth < 30;
         if (night && !me.NearFire && MakeFire(x, y))
         {
+            return true;
+        }
+
+        // U ohně si v noci občas zapálí pochodeň (na cestu tmou, vlci se jí bojí).
+        if (night && me.NearFire && Connection.SelfSnapshot() is { Torch: false } && Count(ItemKind.Stick) >= 1 && _random.NextDouble() < 0.2)
+        {
+            Connection.LightTorch();
             return true;
         }
 
