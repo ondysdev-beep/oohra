@@ -8,8 +8,8 @@ public class IslandTests
     [Fact]
     public void SameSeedGivesSameIsland()
     {
-        var first = IslandGenerator.Build(777, 128, 128);
-        var second = IslandGenerator.Build(777, 128, 128);
+        var first = WorldGenerator.Build(777, 128, 128);
+        var second = WorldGenerator.Build(777, 128, 128);
 
         Assert.Equal(first.Tiles, second.Tiles);
         Assert.Equal(first.Plants, second.Plants);
@@ -29,7 +29,7 @@ public class IslandTests
     [Fact]
     public void LargeIslandHasLandCampsAndPlants()
     {
-        var island = IslandGenerator.Build(12345, 128, 128);
+        var island = WorldGenerator.Build(12345, 128, 128);
 
         Assert.Equal(2, island.Camps.Count);
         Assert.NotEmpty(island.Plants);
@@ -45,7 +45,7 @@ public class IslandTests
     [Fact]
     public void BorderOfIslandIsSea()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
 
         for (var x = 0; x < island.Width; x++)
         {

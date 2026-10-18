@@ -12,7 +12,7 @@ namespace Oohra.Core.Tests;
 /// <summary>Sběr rostlin, batoh a pití (prototyp pluck, addItem a drinkKind).</summary>
 public class GatheringTests
 {
-    private static readonly Island _island = IslandGenerator.Build(12345, 84, 84);
+    private static readonly Island _island = WorldGenerator.Build(12345, 128, 128);
 
     [Fact]
     public void PickedLeafGoesToInventoryAndRegrowsLater()

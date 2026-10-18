@@ -10,7 +10,7 @@ public class TribeBirthTests
     [Fact]
     public void BornAtEdgeOfTribeHomeOutsideHouses()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
         var home = SpawnPoint.PickWild(island, new Mulberry32(3), firstLife: true);
         island.Structures.Place(BuildKind.Stockpile, home.X, home.Y, 0, ownerId: 1);
         var rules = GameData.Tribes.Birth;
@@ -30,7 +30,7 @@ public class TribeBirthTests
     [Fact]
     public void NoHomeMeansNoPlace()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
 
         Assert.Null(SpawnPoint.PickNearTribe(island, new Mulberry32(1), []));
     }
@@ -39,7 +39,7 @@ public class TribeBirthTests
     [Fact]
     public void NoPlaceInTheSea()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
 
         Assert.Null(SpawnPoint.PickNearTribe(island, new Mulberry32(1), [new Position(-40, -40)]));
     }

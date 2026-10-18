@@ -77,7 +77,7 @@ public class CorpseTests
     [Fact]
     public void SignKeepsAuthorSignature()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var grass = Enumerable.Range(0, island.Tiles.Length).First(i => island.Tiles[i] == TileType.Grass && !island.HasTree(i));
         var (x, y) = (grass % island.Width + 0.5, grass / island.Width + 0.5);
         var bits = SignBits.Empty();

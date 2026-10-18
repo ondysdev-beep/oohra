@@ -104,7 +104,7 @@ public class TribeTests
     [Fact]
     public void StockpileIsShared()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var (x, y) = OpenSpot(island);
         var tribes = new Tribes();
         var ondrasBag = Sticks(5);
@@ -168,7 +168,7 @@ public class TribeTests
     [Fact]
     public void TribeMemberErasesSign()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var (x, y) = OpenSpot(island);
         var tribes = new Tribes();
         var bits = SignBits.Empty();

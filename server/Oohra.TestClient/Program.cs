@@ -1,7 +1,6 @@
 // Konzolový klient pro zkoušení pravidel bez Unity.
-// Spuštění: dotnet run --project Oohra.TestClient -- [seed] [velikost] [novy]
+// Spuštění: dotnet run --project Oohra.TestClient -- [seed] [velikost]
 // Bez parametrů použije seed 1 a velikost ostrova z nastavení (settings.json).
-// „novy“ = nový generátor světa s oblastmi (návrh 0.8), jinak starý ostrov z prototypu.
 using System.Text;
 using Oohra.Core.Data;
 using Oohra.Core.Plants;
@@ -13,7 +12,7 @@ Console.InputEncoding = Encoding.UTF8;
 
 var seed = args.Length > 0 && int.TryParse(args[0], out var s) ? s : 1;
 var size = args.Length > 1 && int.TryParse(args[1], out var z) ? z : GameData.Settings.WorldWidth;
-var island = args.Contains("novy") ? WorldGenerator.Build(seed, size, size) : IslandGenerator.Build(seed, size, size);
+var island = WorldGenerator.Build(seed, size, size);
 var session = new PlayerSession(island);
 
 Console.WriteLine($"Oohra TestClient · svět č. {seed} · ostrov {size} × {size}");

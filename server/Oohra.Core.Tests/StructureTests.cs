@@ -308,7 +308,7 @@ public class StructureTests
 
     private static Island NewIsland()
     {
-        return IslandGenerator.Build(12345, 84, 84);
+        return WorldGenerator.Build(12345, 128, 128);
     }
 
     private static Inventory Sticks(int count)

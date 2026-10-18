@@ -7,7 +7,7 @@ namespace Oohra.Core.Tests;
 
 public class MovementTests
 {
-    private static readonly Island _island = IslandGenerator.Build(12345, 84, 84);
+    private static readonly Island _island = WorldGenerator.Build(12345, 128, 128);
 
     [Fact]
     public void SeaPondAndTreesBlock()
@@ -167,8 +167,9 @@ public class MovementTests
         var bog = Array.IndexOf(_island.Tiles, TileType.Bog);
         var grassIndex = Array.IndexOf(_island.Tiles, TileType.Grass);
 
-        Assert.Equal(0.72, Movement.TerrainSpeed(_island, bog % 84 + 0.5, bog / 84 + 0.5));
-        Assert.Equal(1, Movement.TerrainSpeed(_island, grassIndex % 84 + 0.5, grassIndex / 84 + 0.5));
+        var width = _island.Width;
+        Assert.Equal(0.72, Movement.TerrainSpeed(_island, bog % width + 0.5, bog / width + 0.5));
+        Assert.Equal(1, Movement.TerrainSpeed(_island, grassIndex % width + 0.5, grassIndex / width + 0.5));
     }
 
     [Fact]
@@ -213,8 +214,8 @@ public class MovementTests
     [Fact]
     public void SpawnIsNeverEnclosed()
     {
-        var island = IslandGenerator.Build(1, 84, 84);
-        Assert.True(SpawnPoint.OpenTiles(island, 68, 59, 40) < 40, "Uzavřené místo z chyby už není uzavřené, test je potřeba upravit.");
+        // Ve starém ostrově z prototypu bylo u (68, 59) uzavřené místo, kde se hráč narodil a nemohl odejít.
+        var island = WorldGenerator.Build(1, 128, 128);
 
         for (var seed = 1; seed <= 300; seed++)
         {

@@ -11,8 +11,8 @@ namespace Oohra.Core.Tests;
 public class AnimalTests
 {
     // Velký ostrov s volnými loukami (pro pohyb zvířat). Počty z prototypu se kontrolují na ostrově 84 × 84.
-    private static readonly Island _island = IslandGenerator.Build(1, 128, 128);
-    private static readonly Island _prototypeSize = IslandGenerator.Build(12345, 84, 84);
+    private static readonly Island _island = WorldGenerator.Build(1, 128, 128);
+    private static readonly Island _prototypeSize = WorldGenerator.Build(12345, 84, 84);
 
     [Fact]
     public void PopulationMatchesPrototypeAndScalesWithIsland()
@@ -23,7 +23,7 @@ public class AnimalTests
         Assert.Equal(5, Animals.TargetCount(_prototypeSize, AnimalKind.Deer));
         Assert.Equal(2, Animals.TargetCount(_prototypeSize, AnimalKind.Wolf));
 
-        var big = IslandGenerator.Build(1, 128, 128);
+        var big = WorldGenerator.Build(1, 128, 128);
         Assert.Equal(28, Animals.TargetCount(big, AnimalKind.Rabbit));
     }
 

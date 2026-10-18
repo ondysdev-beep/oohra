@@ -6,7 +6,7 @@ namespace Oohra.Core.Tests;
 public class SignTests
 {
     private const double Day = 1440;
-    private static readonly Island _island = IslandGenerator.Build(1, 128, 128);
+    private static readonly Island _island = WorldGenerator.Build(1, 128, 128);
 
     /// <summary>Kresby tvarů rostlin stejné jako bitsForShape v prototypu.</summary>
     [Theory]
@@ -19,17 +19,22 @@ public class SignTests
         Assert.Equal(expected, SignBits.ToText(RuinCarvings.ShapeBits(shape)));
     }
 
-    /// <summary>Staré rytiny jako makeRuins v prototypu (svět 84 × 84): rostlina, jméno a poznámky.</summary>
+    /// <summary>
+    /// Staré rytiny jako makeRuins v prototypu: rostlina, jméno a poznámky závisí jen na seedu a počtu zřícenin (6),
+    /// takže sedí s prototypem i v novém světě. Polohy jsou zříceniny nového světa.
+    /// </summary>
     [Theory]
-    [InlineData(1, "47.5,27.5:0:7-6:Vomit|37.5,54.5:0:6-5:Filling|52.5,58.5:0:7-5:Faint|33.5,20.5:0:4-3:Vomit|75.5,33.5:4:0-7:Bitter+Fever|22.5,67.5:3:7-6:Filling")]
-    [InlineData(12345, "20.5,54.5:2:4-3:Filling+Bitter+Fever|36.5,19.5:0:2-6:Filling|52.5,14.5:3:3-6:Filling|36.5,57.5:0:6-3:|66.5,29.5:6:9-5:Fever+Tremor+Faint|22.5,32.5:6:1-9:Tremor")]
+    [InlineData(1, "0:7-6:Vomit|0:6-5:Filling|0:7-5:Faint|0:4-3:Vomit|4:0-7:Bitter+Fever|3:7-6:Filling")]
+    [InlineData(12345, "2:4-3:Filling+Bitter+Fever|0:2-6:Filling|3:3-6:Filling|0:6-3:|6:9-5:Fever+Tremor+Faint|6:1-9:Tremor")]
     public void RuinCarvingsMatchPrototype(int seed, string expected)
     {
-        var island = IslandGenerator.Build(seed, 84, 84);
-        var text = string.Join("|", RuinCarvings.For(island).Select(c =>
-            FormattableString.Invariant($"{c.X},{c.Y}:{c.Record.SpeciesId}:{c.Record.Name[0]}-{c.Record.Name[1]}:{string.Join("+", c.Record.Tags)}")));
+        var island = WorldGenerator.Build(seed);
+        var carvings = RuinCarvings.For(island);
+        var text = string.Join("|", carvings.Select(c =>
+            FormattableString.Invariant($"{c.Record.SpeciesId}:{c.Record.Name[0]}-{c.Record.Name[1]}:{string.Join("+", c.Record.Tags)}")));
 
         Assert.Equal(expected, text);
+        Assert.Equal(island.RuinSpots, carvings.Select(c => new Position(c.X, c.Y)));
     }
 
     [Fact]

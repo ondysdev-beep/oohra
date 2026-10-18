@@ -9,7 +9,7 @@ namespace Oohra.Core.Tests;
 /// <summary>Klacky, kameny, oheň, teplo u ohně a pečení (prototyp makeFire, nearFire a cook).</summary>
 public class FireTests
 {
-    private static readonly Island _island = IslandGenerator.Build(12345, 84, 84);
+    private static readonly Island _island = WorldGenerator.Build(12345, 128, 128);
 
     [Fact]
     public void TreeGivesSticksThreeTimesADay()
@@ -49,7 +49,7 @@ public class FireTests
     [Fact]
     public void StoneFromRock()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
         var pile = island.Rocks.All.First();
         var (rockX, rockY) = (pile.TileIndex % island.Width, pile.TileIndex / island.Width);
         var inventory = new Inventory(10);
@@ -143,7 +143,7 @@ public class FireTests
     [Fact]
     public void FireNotOnWall()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
         var (x, y) = SpotWithFreeEast();
         island.Structures.Place(x + 1, y, Math.PI / 2);
 
