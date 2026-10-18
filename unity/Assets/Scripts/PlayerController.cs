@@ -101,6 +101,16 @@ namespace Oohra.Client
             _moveTo = _target == null ? new Vector2((float)x, (float)y) : (Vector2?)null;
         }
 
+        /// <summary>Jde k cíli a otevře jeho nabídku, stejně jako po kliknutí myší (pro testy).</summary>
+        public void WalkTo(InteractionTarget target)
+        {
+            _session.Menu = null;
+            _stuckTime = 0;
+            _target = target;
+            _session.Selected = target;
+            _moveTo = null;
+        }
+
         /// <summary>
         /// Objekt pod kurzorem: první věc s Pickable, kterou paprsek z kamery protne (koruna stromu, rostlina,
         /// hromada kamenů…). Když paprsek nic netrefí, rozhodne místo na zemi (PickTarget).
@@ -171,7 +181,7 @@ namespace Oohra.Client
             }
 
             var tile = world.TileAt(tx, ty);
-            if (TreeTiles.Contains(ty * world.Width + tx)) return InteractionTarget.ForTile(TargetKind.Tree, tx, ty);
+            if (TreeTiles.Contains(ty * world.Width + tx) && _session.TreeStanding(ty * world.Width + tx)) return InteractionTarget.ForTile(TargetKind.Tree, tx, ty);
             if (IsWater(tile)) return InteractionTarget.ForTile(TargetKind.Water, tx, ty);
             // Skála bez hromady kamenů nic nedá: klik na ni je obyčejná chůze.
             if ((tile == TileType.Rock || tile == TileType.LayeredRock) && _session.RockPileAt(tx, ty) != null) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);

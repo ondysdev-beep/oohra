@@ -70,8 +70,9 @@ namespace Oohra.Client.Tests
                 var target = PlayerController.PickObject(new Ray(new Vector3(box.center.x, start, box.center.z), Vector3.down));
                 Assert.IsNotNull(target, "Paprsek netrefil " + kind + ".");
                 Assert.AreEqual(kind, target.Kind);
-                // Koruny v lese se překrývají: shora se může trefit i sousední strom, ale vždy je to strom kousek vedle.
-                Assert.LessOrEqual(System.Math.Abs(pickable.TileX - target.TileX), 3);
+                // Koruny v lese se překrývají: shora se může trefit i sousední strom (stromy mají až 8 m a široké koruny),
+                // ale vždy je to strom kousek vedle.
+                Assert.LessOrEqual(System.Math.Abs(pickable.TileX - target.TileX), 5);
             }
 
             // Souš je ve výšce 0, dno vody pod hladinou.

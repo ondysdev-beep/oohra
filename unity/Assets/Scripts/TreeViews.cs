@@ -9,16 +9,39 @@ namespace Oohra.Client
     /// Stromy ostrova podle druhu a výšky ze serveru (návrh 0.8, kap. 2). Vlastní model z katalogu vzhledu
     /// (políčko druhu, jinak společný seznam Trees), jinak tvar z kódu podle druhu: dub s kulatou korunou,
     /// štíhlý vysoký jehličnan, bříza se světlým kmenem, nízká široká vrba, suchý strom bez listí.
-    /// Každý strom je jeden objekt podle čísla dlaždice, aby šel později pokácet.
+    /// Každý strom je jeden objekt podle čísla dlaždice. Pokácený strom (stav ze serveru) chvíli praská a kymácí se,
+    /// pak spadne na stranu od sekáče a zbude pařez (model Stump z katalogu, jinak nízký válec). Ležící kmen kreslí TimberViews.
     /// </summary>
     public class TreeViews : MonoBehaviour
     {
         // Kmen v tvaru z kódu má tloušťku kolize na serveru (treeTrunkRadius 0,12 v movement.json).
         private const float TrunkWidth = 0.24f;
 
+        // Jak dlouho strom před dopadem praská (jako warnSeconds ve woodcutting.json) a kolik z toho se jen kymácí.
+        private const float WarnSeconds = 1.5f;
+        private const float ShakeSeconds = 0.6f;
+
         private readonly Dictionary<int, GameObject> _trees = new Dictionary<int, GameObject>();
+        private readonly Dictionary<int, Felling> _falling = new Dictionary<int, Felling>();
+        private readonly Dictionary<int, GameObject> _stumps = new Dictionary<int, GameObject>();
         private WorldView _world;
         private SeeThrough _crowns;
+        private GameConnection _connection;
+        private TreeStateView[] _lastStates;
+
+        private sealed class Felling
+        {
+            public float Started;
+            public Vector3 Direction;
+            public Quaternion Upright;
+        }
+
+        /// <summary>Pařez na dlaždici (pro testy), nebo null.</summary>
+        public GameObject StumpAt(int tileIndex)
+        {
+            GameObject stump;
+            return _stumps.TryGetValue(tileIndex, out stump) ? stump : null;
+        }
 
         /// <summary>Strom na dlaždici (pro testy a kácení), nebo null.</summary>
         public GameObject TreeAt(int tileIndex)
@@ -32,14 +55,120 @@ namespace Oohra.Client
             get { return _trees.Count; }
         }
 
-        public void Init(WorldView world, SeeThrough crowns)
+        public void Init(WorldView world, SeeThrough crowns, GameConnection connection = null)
         {
             _world = world;
             _crowns = crowns;
+            _connection = connection;
             foreach (var tree in world.Trees)
             {
                 _trees[tree.TileIndex] = Build(tree);
             }
+        }
+
+        private void Update()
+        {
+            if (_connection != null && _connection.TreeStates != _lastStates)
+            {
+                _lastStates = _connection.TreeStates;
+                foreach (var state in _lastStates)
+                {
+                    if (state.State == TreeState.Falling) StartFalling(state.TileIndex, state.Angle);
+                    else Stump(state.TileIndex);
+                }
+            }
+
+            foreach (var pair in _falling)
+            {
+                Animate(_trees[pair.Key].transform, pair.Value);
+            }
+        }
+
+        /// <summary>Strom začal padat (server): zapraská a začne se kymácet.</summary>
+        private void StartFalling(int tileIndex, float angle)
+        {
+            GameObject tree;
+            if (_falling.ContainsKey(tileIndex) || !_trees.TryGetValue(tileIndex, out tree) || !tree.activeSelf)
+            {
+                return;
+            }
+
+            _falling[tileIndex] = new Felling
+            {
+                Started = Time.time,
+                Direction = new Vector3(Mathf.Cos(angle), 0f, -Mathf.Sin(angle)),
+                Upright = tree.transform.rotation,
+            };
+            Ambience.PlayAt(Ambience.Creak(), tree.transform.position + Vector3.up * 2f, 0.8f);
+        }
+
+        /// <summary>Kymácení a pak pád (nakloní se od svislice ke směru pádu, pomalu a pak čím dál rychleji).</summary>
+        private static void Animate(Transform tree, Felling felling)
+        {
+            var t = Time.time - felling.Started;
+            var down = Quaternion.FromToRotation(Vector3.up, felling.Direction);
+            if (t < ShakeSeconds)
+            {
+                var wobble = Mathf.Sin(t * 40f) * 1.5f;
+                tree.rotation = Quaternion.Slerp(Quaternion.identity, down, wobble / 90f) * felling.Upright;
+                return;
+            }
+
+            var fall = Mathf.Clamp01((t - ShakeSeconds) / (WarnSeconds - ShakeSeconds));
+            tree.rotation = Quaternion.Slerp(Quaternion.identity, down, fall * fall * 0.97f) * felling.Upright;
+        }
+
+        /// <summary>Ze stromu zbyl pařez: strom zmizí (kmen na zemi kreslí TimberViews), na jeho místě je pařez.</summary>
+        private void Stump(int tileIndex)
+        {
+            if (_stumps.ContainsKey(tileIndex))
+            {
+                return;
+            }
+
+            GameObject tree;
+            if (_trees.TryGetValue(tileIndex, out tree))
+            {
+                if (_falling.ContainsKey(tileIndex))
+                {
+                    Ambience.PlayAt(Ambience.Crash(), tree.transform.position, 1f);
+                }
+
+                tree.SetActive(false);
+            }
+
+            _falling.Remove(tileIndex);
+            _crowns.Remove(tileIndex);
+            var x = tileIndex % _world.Width + 0.5;
+            var y = tileIndex / _world.Width + 0.5;
+            var kind = TreeKind.Oak;
+            foreach (var view in _world.Trees)
+            {
+                if (view.TileIndex == tileIndex) kind = view.Kind;
+            }
+
+            _stumps[tileIndex] = CreateStump(transform, kind, x, y);
+        }
+
+        /// <summary>Pařez: model z katalogu (Stump, srovná se na výšku 0,6 m), jinak nízký válec v barvě kůry.</summary>
+        public static GameObject CreateStump(Transform parent, TreeKind kind, double x, double y)
+        {
+            const float height = 0.6f;
+            var prefab = VisualCatalog.Current.Stump;
+            GameObject stump;
+            if (prefab != null)
+            {
+                stump = VisualCatalog.Spawn(prefab, parent, "Pařez", height: height);
+                stump.transform.position = WorldCoords.ToUnity(x, y);
+            }
+            else
+            {
+                stump = IslandView.Primitive(PrimitiveType.Cylinder, "Pařez", parent, TimberViews.BarkColor(kind));
+                stump.transform.position = WorldCoords.ToUnity(x, y, height / 2);
+                stump.transform.localScale = new Vector3(TrunkWidth * 1.4f, height / 2, TrunkWidth * 1.4f);
+            }
+
+            return stump;
         }
 
         private GameObject Build(TreeView tree)

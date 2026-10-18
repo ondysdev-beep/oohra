@@ -385,8 +385,20 @@ namespace Oohra.Client
                     if (tile != TileType.Bog && _session.Count(ItemKind.Spear) > 0 && Button(ref buttonRect, "Rybařit")) _session.Fish();
                     break;
                 case TargetKind.Tree:
-                    GUI.Label(titleRect, "STROM", _title);
+                    if (!_session.TreeStanding(target.TileY * _session.Connection.World.Width + target.TileX))
+                    {
+                        // Strom padá nebo z něj zbyl pařez: nabídka se zavře.
+                        _session.Menu = null;
+                        _session.Selected = null;
+                        break;
+                    }
+
+                    GUI.Label(titleRect, TreeTitle(target), _title);
                     if (Button(ref buttonRect, "Nasbírat klacky")) _session.GatherMaterial();
+                    if (_session.Count(ItemKind.Axe) > 0 && Button(ref buttonRect, "Kácet (sekera)")) _session.ChopTree();
+                    break;
+                case TargetKind.Timber:
+                    DrawTimberMenu(titleRect, ref buttonRect);
                     break;
                 case TargetKind.Rock:
                     var pile = _session.RockPileAt(target.TileX, target.TileY);
@@ -523,6 +535,44 @@ namespace Oohra.Client
         }
 
         /// <summary>U ohně: přiložit (vyhaslý znovu zapálit) a batoh na pečení.</summary>
+        /// <summary>Název stromu podle druhu (DUB, BŘÍZA…).</summary>
+        private string TreeTitle(InteractionTarget target)
+        {
+            var index = target.TileY * _session.Connection.World.Width + target.TileX;
+            foreach (var tree in _session.Connection.World.Trees)
+            {
+                if (tree.TileIndex == index) return Texts.TreeName(tree.Kind).ToUpper();
+            }
+
+            return "STROM";
+        }
+
+        /// <summary>Kmen: odseknout klad. Klad: rozštípat na dřevo, nebo vzít a nést.</summary>
+        private void DrawTimberMenu(Rect titleRect, ref Rect buttonRect)
+        {
+            var timber = _session.MenuTimber();
+            if (timber == null)
+            {
+                _session.Menu = null;
+                _session.Selected = null;
+                return;
+            }
+
+            var axe = _session.Count(ItemKind.Axe) > 0;
+            var wood = Texts.TreeName(timber.Value.Tree).ToLower();
+            if (timber.Value.Kind == TimberKind.Trunk)
+            {
+                GUI.Label(titleRect, "KMEN (" + wood + ", " + timber.Value.Length + " m)", _title);
+                if (axe && Button(ref buttonRect, "Odseknout klad")) _session.ChopTimber();
+                if (!axe) GUI.Label(new Rect(buttonRect.x, buttonRect.y + 4, 480, 22), "Kmen se rozseká na klady sekerou (B batoh: vyrobit sekeru).", _label);
+                return;
+            }
+
+            GUI.Label(titleRect, "KLAD (" + wood + ")", _title);
+            if (axe && Button(ref buttonRect, "Rozštípat")) _session.ChopTimber();
+            if (Button(ref buttonRect, "Vzít")) _session.PickUpTimber();
+        }
+
         private void DrawFireMenu(Rect titleRect, ref Rect buttonRect)
         {
             var fire = _session.MenuFire();
@@ -584,6 +634,12 @@ namespace Oohra.Client
                 _session.MakeSpear();
             }
 
+            var canMakeAxe = _session.Count(ItemKind.Axe) == 0 && _session.Count(ItemKind.Stick) > 0 && _session.Count(ItemKind.Stone) > 1;
+            if (canMakeAxe && GUI.Button(new Rect(_backpackRect.xMax - 484, y, 192, 26), "Vyrobit sekeru (klacek, 2 kameny)"))
+            {
+                _session.MakeAxe();
+            }
+
             y += 36;
             if (inventory.Stacks.Length == 0)
             {
@@ -617,8 +673,10 @@ namespace Oohra.Client
                 if (food && Button(ref buttons, "Ochutnat")) connection.Taste(i);
                 if (food && Button(ref buttons, "Sníst")) connection.Eat(i);
                 if (canBake && Button(ref buttons, "Upéct")) _session.Bake(i);
+                if (stack.Kind == ItemKind.Wood && _session.Count(ItemKind.Axe) > 0 && Button(ref buttons, "Naštípat")) connection.SplitWood(i);
                 buttons.x = x + 270 + 3 * (buttons.width + 8);
-                if (Button(ref buttons, "Zahodit")) connection.Drop(i);
+                // Klad se nezahazuje, ale pokládá na zem.
+                if (Button(ref buttons, stack.Kind == ItemKind.LogPiece ? "Položit" : "Zahodit")) connection.Drop(i);
                 // Ukázat věc ostatním (návrh 9.3): řekni k tomu slovo, ať se ho naučí.
                 if (Button(ref buttons, "Ukázat")) connection.ShowItem(i);
                 y += rowHeight;
@@ -630,7 +688,7 @@ namespace Oohra.Client
         {
             "WASD nebo klik myší: chůze · klik na věc: jít k ní a otevřít nabídku",
             "Mezerník: rána (zvíře poblíž) · Esc: zavřít nabídku",
-            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit) · N spát a vstát · K dovednosti",
+            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit, vyrobit kopí a sekeru, naštípat) · N spát a vstát · K dovednosti",
             "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
             "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
             "H nakreslit značku · P podpis (jméno ze slabik a znak)",

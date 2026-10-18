@@ -88,6 +88,9 @@ public enum BodyEvent
 
     /// <summary>Pochodeň dohořela (nebo ji uhasil déšť).</summary>
     TorchOut,
+
+    /// <summary>Zasáhl ho padající strom.</summary>
+    HitByTree,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -124,6 +127,9 @@ public enum DeathCause
 
     /// <summary>Zemřel na následky zranění od zvířete.</summary>
     Wound,
+
+    /// <summary>Zabil ho padající strom.</summary>
+    FallingTree,
 }
 
 /// <summary>Viditelný příznak ve stavu těla.</summary>

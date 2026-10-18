@@ -235,6 +235,24 @@ public sealed class Animals
         return spear ? HuntResult.HitSpear : HuntResult.HitFist;
     }
 
+    /// <summary>Padající strom: zvířata v pruhu (do halfWidth od úsečky) dostanou ránu, slabší zvíře zabije.</summary>
+    public void Crush(double x1, double y1, double x2, double y2, double halfWidth, int damage, double now)
+    {
+        foreach (var animal in _animals.Where(a => !a.IsDead).ToList())
+        {
+            if (Geometry.DistanceToSegment(animal.X, animal.Y, x1, y1, x2, y2) > halfWidth)
+            {
+                continue;
+            }
+
+            animal.Hp -= damage;
+            if (animal.Hp <= 0)
+            {
+                Kill(animal, now);
+            }
+        }
+    }
+
     /// <summary>Stáhne maso z mrtvého zvířete (prototyp meatQty). Zvíře pak zmizí.</summary>
     public HuntResult Butcher(int animalId, Inventory inventory, double playerX, double playerY, double now)
     {

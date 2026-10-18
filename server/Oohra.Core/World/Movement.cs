@@ -16,7 +16,7 @@ public static class Movement
     /// </summary>
     public static bool IsBlocked(Island island, int tx, int ty)
     {
-        return IsImpassable(island, tx, ty) || island.HasTree(island.Index(tx, ty));
+        return IsImpassable(island, tx, ty) || island.HasTrunk(island.Index(tx, ty));
     }
 
     /// <summary>
@@ -31,7 +31,8 @@ public static class Movement
             && !IsImpassable(island, Floor(x + radius), Floor(y + radius))
             && !HitsTrunk(island, x, y, radius)
             && !island.Structures.Blocks(x, y, radius)
-            && !island.Rocks.Blocks(island, x, y, radius);
+            && !island.Rocks.Blocks(island, x, y, radius)
+            && !island.Forestry.Blocks(x, y, radius);
     }
 
     /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko.</summary>
@@ -61,7 +62,7 @@ public static class Movement
         {
             for (var xx = tx - 1; xx <= tx + 1; xx++)
             {
-                if (!island.InBounds(xx, yy) || !island.HasTree(island.Index(xx, yy)))
+                if (!island.InBounds(xx, yy) || !island.HasTrunk(island.Index(xx, yy)))
                 {
                     continue;
                 }
@@ -94,6 +95,12 @@ public static class Movement
         }
 
         return GameData.Movement.TerrainSpeed.TryGetValue(island.TileAt(tx, ty), out var speed) ? speed : 1;
+    }
+
+    /// <summary>S kladem v náruči jde postava pomaleji (carrySpeed ve woodcutting.json).</summary>
+    public static double CarryMultiplier(Items.Inventory inventory)
+    {
+        return inventory.Count(Items.ItemKind.LogPiece) > 0 ? GameData.Wood.CarrySpeed : 1;
     }
 
     /// <summary>Násobek rychlosti podle stavu těla a generace (otrava a horečka zpomalí, povzbuzení zrychlí).</summary>
@@ -181,7 +188,7 @@ public static class Movement
         {
             for (var xx = tx - 1; xx <= tx + 1; xx++)
             {
-                if (!island.InBounds(xx, yy) || !island.HasTree(island.Index(xx, yy)))
+                if (!island.InBounds(xx, yy) || !island.HasTrunk(island.Index(xx, yy)))
                 {
                     continue;
                 }

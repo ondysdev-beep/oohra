@@ -321,6 +321,63 @@ namespace Oohra.Client
             Connection.MakeSpear();
         }
 
+        public void MakeAxe()
+        {
+            Connection.MakeAxe();
+        }
+
+        /// <summary>Strom na dlaždici stojí (nepadá a není z něj pařez).</summary>
+        public bool TreeStanding(int tileIndex)
+        {
+            foreach (var state in Connection.TreeStates)
+            {
+                if (state.TileIndex == tileIndex) return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>Seknout sekerou do stromu, u kterého je otevřená nabídka.</summary>
+        public void ChopTree()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Tree)
+            {
+                Connection.ChopTree(Menu.TileX, Menu.TileY);
+            }
+        }
+
+        /// <summary>Dřevo z nabídky (kmen nebo klad), nebo null, když už na zemi není.</summary>
+        public TimberView? MenuTimber()
+        {
+            if (Menu == null || Menu.Kind != TargetKind.Timber)
+            {
+                return null;
+            }
+
+            foreach (var timber in Connection.Timbers)
+            {
+                if (timber.Id == Menu.Id) return timber;
+            }
+
+            return null;
+        }
+
+        /// <summary>Sekerou do dřeva z nabídky: z kmene odsekne klad, klad rozštípe na dřevo.</summary>
+        public void ChopTimber()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Timber) Connection.ChopTimber(Menu.Id);
+        }
+
+        public void PickUpTimber()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Timber)
+            {
+                Connection.PickUpTimber(Menu.Id);
+                Menu = null;
+                Selected = null;
+            }
+        }
+
         /// <summary>Rybařit s kopím u vody, u které je otevřená nabídka.</summary>
         public void Fish()
         {

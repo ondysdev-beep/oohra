@@ -116,6 +116,16 @@ postava kruh o poloměru 28 cm, takže model by neměl být o moc širší.
 - Když model nemá parametr `Spi` (nebo `Mrtvy`), hra ho při spánku (nebo smrti) prostě položí na zem.
 - Tělo mrtvého hráče (zůstane na zemi 4 dny s jeho věcmi) použije stejný model, položený na záda.
 
+## Kácení: pařez, kmen a klad
+
+| Políčko | Velikost | Střed | Poznámka |
+|---|---|---|---|
+| **Stump** (pařez) | hra ho srovná na výšku 0,6 m | na středu nezáleží | Zůstane po pokáceném stromu (všech druhů). |
+| **Log** (ležící kmen) | model **podél osy X**, hra ho srovná na 1 m (nejdelší rozměr) a natáhne na délku kmene (3 až 7 m) | na středu nezáleží | Tloušťka by měla odpovídat asi 0,44 m (na serveru kmen blokuje jako válec o poloměru 22 cm). Konce kmene se při natažení protáhnou, hodí se jednoduchý válec s kůrou. |
+| **LogPiece** (klad) | model **podél osy X**, hra ho srovná na 1 m | na středu nezáleží | Kus kmene 1 m: leží na zemi a postava ho nese na rameni. |
+
+Prázdné políčko = válec z kódu v barvě kůry podle druhu stromu (bříza světlá, suchý strom šedý).
+
 ## Oheň
 
 | Políčko | Co to je |

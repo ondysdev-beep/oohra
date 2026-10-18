@@ -41,6 +41,7 @@ public sealed partial class GameServer
                 NextFireId = Fires.NextId,
                 Plants = Plants.Export(),
                 Rocks = Island.Rocks.Export(),
+                Forestry = Island.Forestry.Export(),
                 Signs = Island.Signs.Export(),
                 Corpses = Island.Corpses.Export(),
                 NextCorpseId = Island.Corpses.NextId,
@@ -72,6 +73,7 @@ public sealed partial class GameServer
         Fires.Restore(save.Island.Fires, save.Island.NextFireId);
         Plants.Restore(save.Island.Plants);
         Island.Rocks.Restore(save.Island.Rocks);
+        Island.Forestry.Restore(Island, save.Island.Forestry);
         Island.Signs.Restore(save.Island.Signs);
         Island.Corpses.Restore(save.Island.Corpses, save.Island.NextCorpseId);
         Island.BirthGuards.Restore(save.Island.BirthGuards);

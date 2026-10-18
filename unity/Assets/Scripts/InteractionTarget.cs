@@ -18,6 +18,9 @@ namespace Oohra.Client
 
         /// <summary>Člověk z cizího kmene (NPC).</summary>
         Stranger,
+
+        /// <summary>Dřevo na zemi: ležící kmen nebo klad (číslo dřeva).</summary>
+        Timber,
     }
 
     /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
@@ -70,6 +73,7 @@ namespace Oohra.Client
                     case TargetKind.Animal: return 1.4;
                     case TargetKind.Player: return 2.5;
                     case TargetKind.Stranger: return 2.2;
+                    case TargetKind.Timber: return 1.5;
                     default: return 1.3;
                 }
             }
@@ -120,6 +124,12 @@ namespace Oohra.Client
         public static InteractionTarget ForStranger(int strangerId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Stranger, strangerId, 0, 0, x, y);
+        }
+
+        /// <summary>Kmen nebo klad na zemi (číslo dřeva). (x, y) je jeho střed.</summary>
+        public static InteractionTarget ForTimber(int timberId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Timber, timberId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
         }
 
         /// <summary>Dlaždice: voda, strom nebo skála.</summary>

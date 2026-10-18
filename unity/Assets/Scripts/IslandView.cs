@@ -24,7 +24,11 @@ namespace Oohra.Client
             rocks.AddComponent<RockPileViews>().Init(connection, world);
             var trees = new GameObject("Stromy");
             trees.transform.SetParent(root.transform);
-            trees.AddComponent<TreeViews>().Init(world, seeThrough);
+            trees.AddComponent<TreeViews>().Init(world, seeThrough, connection);
+
+            var timbers = new GameObject("Dřevo");
+            timbers.transform.SetParent(root.transform);
+            timbers.AddComponent<TimberViews>().Init(connection);
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);
             BuildRuins(world, root.transform);

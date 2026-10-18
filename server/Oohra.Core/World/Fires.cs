@@ -117,7 +117,10 @@ public sealed class Fires
         return FireResult.Lit;
     }
 
-    /// <summary>Přiloží klacek. Hořící oheň hoří déle, vyhaslý znovu chytí.</summary>
+    /// <summary>
+    /// Přiloží dřevo: díl dřeva (hoří déle, woodBurnMultiplier), jinak klacek, jinak třísku.
+    /// Hořící oheň hoří déle, vyhaslý znovu chytí.
+    /// </summary>
     public FireResult Feed(int fireId, Inventory inventory, double playerX, double playerY)
     {
         var fire = Find(fireId);
@@ -126,7 +129,8 @@ public sealed class Fires
             return FireResult.TooFar;
         }
 
-        if (!inventory.TryRemove(ItemKind.Stick, 1))
+        var log = inventory.TryRemove(ItemKind.Wood, 1);
+        if (!log && !inventory.TryRemove(ItemKind.Stick, 1) && !inventory.TryRemove(ItemKind.Splinter, 1))
         {
             return FireResult.NoStick;
         }
@@ -134,7 +138,7 @@ public sealed class Fires
         var rules = GameData.Fire.Fire;
         if (fire.Burning)
         {
-            fire.BurnMinutes += rules.FeedMinutes;
+            fire.BurnMinutes += rules.FeedMinutes * (log ? GameData.Wood.WoodBurnMultiplier : 1);
             return FireResult.Fed;
         }
 

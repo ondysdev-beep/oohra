@@ -32,4 +32,34 @@ public static class Crafting
         maker.Practice(SkillKind.Craft, GameData.Animals.Hunt.PracticeSpear);
         return HuntResult.SpearMade;
     }
+
+    /// <summary>
+    /// Kamenná sekera (návrh 0.8, kap. 3): klacek a kameny (woodcutting.json). Jedna stačí.
+    /// Opotřebuje se seknutím (uses). Procvičí řemeslo jako kopí.
+    /// </summary>
+    public static WoodResult MakeAxe(Inventory inventory, Character maker)
+    {
+        var rules = GameData.Wood.Axe;
+        if (inventory.Count(ItemKind.Axe) > 0)
+        {
+            return WoodResult.AlreadyHasAxe;
+        }
+
+        if (inventory.Count(ItemKind.Stick) < rules.Sticks || inventory.Count(ItemKind.Stone) < rules.Stones)
+        {
+            return WoodResult.NeedMaterials;
+        }
+
+        inventory.TryRemove(ItemKind.Stick, rules.Sticks);
+        inventory.TryRemove(ItemKind.Stone, rules.Stones);
+        if (!inventory.TryAdd(new Item(ItemKind.Axe, Uses: rules.Uses)))
+        {
+            for (var i = 0; i < rules.Sticks; i++) inventory.TryAdd(Item.Stick);
+            for (var i = 0; i < rules.Stones; i++) inventory.TryAdd(Item.Stone);
+            return WoodResult.InventoryFull;
+        }
+
+        maker.Practice(SkillKind.Craft, GameData.Animals.Hunt.PracticeSpear);
+        return WoodResult.AxeMade;
+    }
 }

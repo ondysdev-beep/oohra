@@ -134,8 +134,23 @@ public sealed class Character
     public void Wound(double severity, AnimalKind from, double now)
     {
         var rules = GameData.Animals.Wounds;
-        severity *= (1 - rules.HuntReductionPerLevel * Skills.Level(SkillKind.Hunt)) * Traits.WoundMultiplier;
-        TakeDamage(severity * rules.HealthFactor, Characters.DeathCause.Wound);
+        severity *= 1 - rules.HuntReductionPerLevel * Skills.Level(SkillKind.Hunt);
+        ApplyWound(severity, now, Characters.DeathCause.Wound);
+        Report(now, from == AnimalKind.Wolf ? BodyEvent.WoundedByWolf : BodyEvent.WoundedByBoar);
+    }
+
+    /// <summary>Zasáhl ho padající strom: zranění jako od zvířete (krvácení, kulhání, zánět), jiná příčina smrti.</summary>
+    public void HitByTree(double severity, double now)
+    {
+        ApplyWound(severity, now, Characters.DeathCause.FallingTree);
+        Report(now, BodyEvent.HitByTree);
+    }
+
+    private void ApplyWound(double severity, double now, DeathCause cause)
+    {
+        var rules = GameData.Animals.Wounds;
+        severity *= Traits.WoundMultiplier;
+        TakeDamage(severity * rules.HealthFactor, cause);
         Bleed = Math.Min(rules.MaxBleed, Bleed + severity * rules.BleedPerSeverity);
         Limp = Math.Min(rules.MaxLimp, Limp + severity * rules.LimpPerSeverity);
         StunSeconds = rules.StunSeconds;
@@ -144,8 +159,6 @@ public sealed class Character
         {
             Schedule(now + rules.InfectionDelayMin + Rng.NextDouble() * rules.InfectionDelayRange, EffectType.WoundInfection, severity * rules.InfectionFactor);
         }
-
-        Report(now, from == AnimalKind.Wolf ? BodyEvent.WoundedByWolf : BodyEvent.WoundedByBoar);
     }
 
     /// <summary>Dovednosti postavy. Smrtí se ztratí (nová postava začíná od nuly).</summary>

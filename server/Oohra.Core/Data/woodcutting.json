@@ -1,0 +1,24 @@
+// Kácení a dřevo (návrh 0.8, kap. 2). Počet seknutí a dřeva podle druhu stromu je v trees.json.
+{
+  // Kamenná sekera: z čeho je a kolik seknutí vydrží, než se rozpadne.
+  "axe": { "sticks": 1, "stones": 2, "uses": 60 },
+  // Jak blízko musí postava být ke stromu a ke dřevu na zemi (metry) a jak rychle jde sekat po sobě (sekundy).
+  "reach": 1.7,
+  "chopCooldownSeconds": 0.7,
+  // Strom před pádem zapraská a padá tolik sekund. Pak dopadne: kdo je v pruhu pádu, je zraněný.
+  "warnSeconds": 1.5,
+  // Pruh pádu: šířka (metry) a délka podle výšky stromu. Síla zranění hráče a zvířete (body života zvířete).
+  "fallWidth": 1.4,
+  "fallSeverity": 40,
+  "fallAnimalDamage": 5,
+  // Pařez: kolik metrů stromu zůstane stát. Zbytek je ležící kmen, z každého celého metru je jeden klad.
+  "stumpHeight": 0.6,
+  // Ležící kmen blokuje cestu jako válec o tomto poloměru (metry). Klad na zemi neblokuje.
+  "trunkRadius": 0.22,
+  // Kolik třísek dá jeden díl dřeva.
+  "splintersPerWood": 4,
+  // S kladem v náruči jde postava pomaleji (násobek rychlosti).
+  "carrySpeed": 0.6,
+  // Díl dřeva v ohni hoří tolikrát déle než klacek.
+  "woodBurnMultiplier": 3
+}

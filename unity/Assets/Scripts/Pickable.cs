@@ -63,6 +63,7 @@ namespace Oohra.Client
                 case TargetKind.Player: return InteractionTarget.ForPlayer(Id, X, Y);
                 case TargetKind.Corpse: return InteractionTarget.ForCorpse(Id, X, Y);
                 case TargetKind.Stranger: return InteractionTarget.ForStranger(Id, X, Y);
+                case TargetKind.Timber: return InteractionTarget.ForTimber(Id, X, Y);
                 default: return InteractionTarget.ForTile(Kind, TileX, TileY);
             }
         }

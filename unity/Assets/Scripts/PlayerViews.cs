@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
 
@@ -26,6 +27,7 @@ namespace Oohra.Client
         private readonly Dictionary<int, int> _shownGeneration = new Dictionary<int, int>();
         private readonly Dictionary<int, Animator> _animators = new Dictionary<int, Animator>();
         private readonly Dictionary<int, HandTorch> _torches = new Dictionary<int, HandTorch>();
+        private readonly Dictionary<int, GameObject> _carried = new Dictionary<int, GameObject>();
         private GameConnection _connection;
 
         /// <summary>Kapsle vlastní postavy (sleduje ji kamera).</summary>
@@ -77,6 +79,7 @@ namespace Oohra.Client
                 }
 
                 ShowTorch(player.Id, view, player.Torch && !player.Dead && !player.Sleeping);
+                ShowCarried(player.Id, view, player.Carry && !player.Dead && !player.Sleeping);
             }
 
             RemoveMissing(seen);
@@ -140,6 +143,7 @@ namespace Oohra.Client
             {
                 _animators.Remove(id);
                 _torches.Remove(id);
+                _carried.Remove(id);
             }
         }
 
@@ -172,6 +176,39 @@ namespace Oohra.Client
             {
                 torch.gameObject.SetActive(lit);
             }
+        }
+
+        /// <summary>Klad na rameni (model LogPiece z katalogu, jinak válec), když hráč nese klad.</summary>
+        private void ShowCarried(int id, GameObject view, bool carrying)
+        {
+            GameObject piece;
+            _carried.TryGetValue(id, out piece);
+            if (carrying == (piece != null && piece.activeSelf))
+            {
+                return;
+            }
+
+            if (piece == null)
+            {
+                var timber = new TimberView(0, TimberKind.Piece, TreeKind.Oak, 0f, 0f, 0f, 1);
+                piece = TimberViews.Create(view.transform, timber);
+                // Na kliknutí není: je to jen ukázka toho, co hráč nese.
+                foreach (var collider in piece.GetComponentsInChildren<Collider>()) Destroy(collider);
+                Destroy(piece.GetComponent<Pickable>());
+                piece.name = "Nesený klad";
+                piece.transform.localPosition = new Vector3(0.15f, BodyHeight / 2 - 0.2f, 0f);
+                piece.transform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+                _carried[id] = piece;
+            }
+
+            piece.SetActive(carrying);
+        }
+
+        /// <summary>Nese hráč klad (vidět ve scéně)? Pro testy.</summary>
+        public bool IsCarrying(int playerId)
+        {
+            GameObject piece;
+            return _carried.TryGetValue(playerId, out piece) && piece != null && piece.activeSelf;
         }
 
         /// <summary>Drží hráč zapálenou pochodeň (vidět ve scéně)? Pro testy.</summary>

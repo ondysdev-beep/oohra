@@ -92,6 +92,28 @@ public sealed partial class GameServer
             case MessageType.TakeStone:
                 GatherMaterial(player, type, Messages.ReadTileAction(reader));
                 break;
+            case MessageType.ChopTree:
+                var tree = Messages.ReadTileAction(reader);
+                WoodAction(player, () => Island.Forestry.Chop(Island, tree.TileX, tree.TileY, player.Id, player.X, player.Y, player.Inventory));
+                break;
+            case MessageType.ChopTimber:
+                var timber = Messages.ReadTimberAction(reader);
+                WoodAction(player, () => Island.Forestry.ChopTimber(timber, player.Id, player.X, player.Y, player.Inventory));
+                break;
+            case MessageType.PickUpTimber:
+                var piece = Messages.ReadTimberAction(reader);
+                WoodAction(player, () => Island.Forestry.PickUp(piece, player.X, player.Y, player.Inventory));
+                break;
+            case MessageType.DropTimber:
+                WoodAction(player, () => Island.Forestry.Drop(Island, player.Inventory, player.X, player.Y, player.Facing));
+                break;
+            case MessageType.SplitWood:
+                var wood = Messages.ReadStackAction(reader);
+                WoodAction(player, () => Forestry.SplitWood(player.Inventory, wood));
+                break;
+            case MessageType.MakeAxe:
+                WoodAction(player, () => Crafting.MakeAxe(player.Inventory, player.Character));
+                break;
             case MessageType.FeedFire:
                 var fireId = Messages.ReadFeedFire(reader);
                 FireAction(player, () => Fires.Feed(fireId, player.Inventory, player.X, player.Y));
@@ -237,6 +259,19 @@ public sealed partial class GameServer
         SendEvent(player, new GameEvent(EventKind.Hunt, (byte)result, default, [], Subject: (byte)kind));
         SendInventory(player);
         SendSelfState(player);
+    }
+
+    /// <summary>Kácení, dřevo a sekera. Stav stromů a dřeva na zemi se všem pošle v příštím ticku.</summary>
+    private void WoodAction(PlayerSession player, Func<WoodResult> action)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = action();
+        SendEvent(player, new GameEvent(EventKind.Wood, (byte)result, default, []));
+        SendInventory(player);
     }
 
     /// <summary>Stavba: postavit nebo rozebrat. Seznam staveb se všem pošle v příštím ticku.</summary>
@@ -386,6 +421,10 @@ public sealed partial class GameServer
                 break;
             case MessageType.Taste when item is not null:
                 Eating.Taste(player.Character, item, Island.SpeciesSecrets[item.SpeciesId], Clock, spoiled);
+                break;
+            case MessageType.Drop when stack.Kind == ItemKind.LogPiece:
+                // Klad nezmizí, položí se na zem.
+                WoodAction(player, () => Island.Forestry.Drop(Island, inventory, player.X, player.Y, player.Facing));
                 break;
             case MessageType.Drop:
                 inventory.Drop(index);
