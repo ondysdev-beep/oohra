@@ -4,7 +4,7 @@
 
 ## Stav (říjen 2026)
 
-- **Hotovo:** fáze 0, A (jádro v C#), B (Unity), C (síť, 20 robotů) a D (všechny systémy prvního testu: oheň a noc, zdi a úkryt, jazyk ze slabik a gesta s pomůckami, značky, zvířata, kmeny a zásoby, těla a podpisy, Pradávní a Noví s generacemi podle skutečného času, cizí kmeny, tlačítko Nahlásit). Navíc pro nováčky sen bez slov, nápovědy, ochrana v zimě a zvuky.
+- **Hotovo:** fáze 0, A (jádro v C#), B (Unity), C (síť, 20 robotů) a D (všechny systémy prvního testu: oheň a noc, počasí (mlha, déšť, bouřka) a pochodeň, zdi a úkryt, jazyk ze slabik a gesta s pomůckami, značky, zvířata, kmeny a zásoby, těla a podpisy, Pradávní a Noví s generacemi podle skutečného času, cizí kmeny, tlačítko Nahlásit). Navíc pro nováčky sen bez slov, nápovědy, ochrana v zimě a zvuky.
 - **Fáze E z větší části:** ukládání světa (soubor JSON se zálohami místo SQLite, pro 20 hráčů stačí), tajný klíč hráče, příkazy správce, statistiky hraní, záznam chyb u testerů. Návod: `docs/Provoz.md`.
 - **Zbývá do alfy:** server na internetu (VPS nebo otevřený port), balíček hry pro testery, kódy pozvánek po lidech.
 
@@ -14,6 +14,7 @@
 - **Přezdívky** můžou být jakékoli, jen ne sprosté (seznam `blocked_words.json`).
 - **Divočáci jsou nebezpečnější** (víc kusů, rozzuří se dřív, silnější výpad a rány, víc životů).
 - **Temnější vzhled hry i webu** (17. 10.): web je jen tmavý, s tmou kolem pochodně, mlhou, jiskrami a šeptanými větami. Hra má jít stejným směrem (temnější noci, víc tmy a mlhy, méně světlých ploch), až se bude ladit grafika.
+- **Ponuré počasí** (18. 10.): mlha nejčastěji ráno (5 až 10 h), přes den občas, déšť méně často než mlha, bouřka vzácně (víc deště a mlhy na podzim, méně v létě). Počasí je pro všechny stejné, počítá ho server ze seedu a času (`weather.json`). V dešti bez úkrytu je zima a oheň hoří rychleji. Kouř z ohňů, pochodeň (klacek zapálený u ohně, hoří 4 herní hodiny, v dešti kratší, svítí, vlci se jí bojí jako ohně). Den i noc jsou tmavší.
 - **Ukládání světa do souboru JSON** místo SQLite (pro 20 hráčů stačí, dá se přečíst, přejít na databázi jde později).
 
 ### Další kroky (pořadí)
@@ -25,7 +26,8 @@
 
 ### Neověřeno (zkontrolovat při hraní)
 - Vzhled třetí generace (ve hře nastane až za rok, zatím hlídají jen testy).
-- Zvuky (slabiky, oheň, kroky, divočák, vlk): testy kontrolují jen to, že existují.
+- Zvuky (slabiky, oheň, kroky, divočák, vlk, déšť, hrom): testy kontrolují jen to, že existují.
+- Počasí a pochodeň: jestli není mlha moc hustá, déšť moc studený, bouřka moc častá a noc moc tmavá (čísla v `weather.json`, světlo v `DayNightLight`, dohled ve `WeatherView`). Snímky z testů: `unity/Logs/bourka.png`, `mlha.png`.
 
 ## Zásadní změna oproti verzi 1
 

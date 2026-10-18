@@ -25,6 +25,7 @@ namespace Oohra.Client
         private readonly Dictionary<int, GameObject> _views = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, int> _shownGeneration = new Dictionary<int, int>();
         private readonly Dictionary<int, Animator> _animators = new Dictionary<int, Animator>();
+        private readonly Dictionary<int, HandTorch> _torches = new Dictionary<int, HandTorch>();
         private GameConnection _connection;
 
         /// <summary>Kapsle vlastní postavy (sleduje ji kamera).</summary>
@@ -74,6 +75,8 @@ namespace Oohra.Client
                 {
                     Animate(animator, player, before, view.transform.position);
                 }
+
+                ShowTorch(player.Id, view, player.Torch && !player.Dead && !player.Sleeping);
             }
 
             RemoveMissing(seen);
@@ -136,6 +139,7 @@ namespace Oohra.Client
             else
             {
                 _animators.Remove(id);
+                _torches.Remove(id);
             }
         }
 
@@ -147,6 +151,34 @@ namespace Oohra.Client
             AnimatorTools.SetFloat(animator, SpeedParameter, player.Dead || player.Sleeping ? 0f : speed);
             AnimatorTools.SetBool(animator, SleepParameter, player.Sleeping);
             AnimatorTools.SetBool(animator, DeadParameter, player.Dead);
+        }
+
+        /// <summary>Pochodeň v ruce: přidá se, až ji postava poprvé zapálí. Spící a mrtvá postava ji nedrží.</summary>
+        private void ShowTorch(int id, GameObject view, bool lit)
+        {
+            HandTorch torch;
+            if (!_torches.TryGetValue(id, out torch))
+            {
+                if (!lit)
+                {
+                    return;
+                }
+
+                torch = HandTorch.Attach(view.transform);
+                _torches[id] = torch;
+            }
+
+            if (torch.gameObject.activeSelf != lit)
+            {
+                torch.gameObject.SetActive(lit);
+            }
+        }
+
+        /// <summary>Drží hráč zapálenou pochodeň (vidět ve scéně)? Pro testy.</summary>
+        public bool HasLitTorch(int playerId)
+        {
+            HandTorch torch;
+            return _torches.TryGetValue(playerId, out torch) && torch.Lit;
         }
 
         private int GenerationOf(int id)

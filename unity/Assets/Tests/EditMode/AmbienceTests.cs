@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Oohra.Client.Tests
 {
-    /// <summary>Zvuky okolí složené v kódu: oheň, krok, divočák, vlk.</summary>
+    /// <summary>Zvuky okolí složené v kódu: oheň, krok, divočák, vlk, déšť a hrom.</summary>
     public class AmbienceTests
     {
         [Test]
@@ -14,6 +14,8 @@ namespace Oohra.Client.Tests
             Check(Ambience.Step(), 0.03f, 0.2f);
             Check(Ambience.Grunt(), 0.2f, 1f);
             Check(Ambience.Howl(), 1f, 3f);
+            Check(Ambience.Rain(), 2f, 4f);
+            Check(Ambience.Thunder(), 2f, 6f);
         }
 
         private static void Check(AudioClip clip, float minSeconds, float maxSeconds)

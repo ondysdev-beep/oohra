@@ -75,6 +75,11 @@ public sealed partial class GameServer : IDisposable
         _nextStatsSaveAt = config.StatsSaveSeconds;
         Strangers = new Strangers(config.Seed, Island);
         Animals = new Animals(config.Seed) { Enabled = config.Animals };
+        if (config.ForceWeather.Length > 0)
+        {
+            ForceWeather(config.ForceWeather);
+        }
+
         if (config.Animals)
         {
             Animals.Populate(Island, []);

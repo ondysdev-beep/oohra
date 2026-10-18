@@ -3,24 +3,30 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Slunce podle herních hodin: ráno vychází, v noci je tma a jen slabé modravé světlo (čas posílá server).
-    /// Ve tmě je vidět hlavně kolem ohňů (FireViews).
+    /// Slunce podle herních hodin: ráno vychází, v noci je skoro úplná tma a jen slabé modravé světlo (čas posílá server).
+    /// Svět je ponurý: i ve dne je světlo tlumené a studené, v mlze a dešti ještě víc (WeatherView.Overcast),
+    /// blesk ho na okamžik rozsvítí. Ve tmě je vidět hlavně kolem ohňů a pochodní.
     /// </summary>
     public class DayNightLight : MonoBehaviour
     {
-        [SerializeField] private float _dayIntensity = 1.2f;
-        [SerializeField] private float _nightIntensity = 0.02f;
-        [SerializeField] private float _nightAmbient = 0.08f;
+        [SerializeField] private float _dayIntensity = 0.95f;
+        [SerializeField] private float _nightIntensity = 0.012f;
+        [SerializeField] private float _dayAmbient = 0.75f;
+        [SerializeField] private float _nightAmbient = 0.045f;
 
-        private static readonly Color NightColor = new Color(0.55f, 0.65f, 1f);
+        private static readonly Color NightColor = new Color(0.5f, 0.6f, 1f);
+        private static readonly Color DayColor = new Color(0.9f, 0.92f, 0.95f);
+        private static readonly Color FlashColor = new Color(0.8f, 0.85f, 1f);
 
         private ClientClock _clock;
         private Light _sun;
+        private WeatherView _weather;
 
-        public void Init(ClientClock clock, Light sun)
+        public void Init(ClientClock clock, Light sun, WeatherView weather = null)
         {
             _clock = clock;
             _sun = sun;
+            _weather = weather;
         }
 
         private void Update()
@@ -34,9 +40,14 @@ namespace Oohra.Client
             var angle = (float)((_clock.Hour - 6) / 24 * 360);
             _sun.transform.rotation = Quaternion.Euler(angle, -30f, 0f);
             var daylight = (float)_clock.Daylight;
-            _sun.intensity = Mathf.Lerp(_nightIntensity, _dayIntensity, daylight);
-            RenderSettings.ambientIntensity = Mathf.Lerp(_nightAmbient, 1f, daylight);
-            _sun.color = Color.Lerp(NightColor, Color.white, daylight);
+            var overcast = _weather != null ? _weather.Overcast : 0f;
+            var flash = _weather != null ? _weather.Flash : 0f;
+            _sun.intensity = Mathf.Lerp(_nightIntensity, _dayIntensity, daylight) * (1f - 0.7f * overcast) + flash * 1.6f;
+            RenderSettings.ambientIntensity = Mathf.Lerp(_nightAmbient, _dayAmbient, daylight) * (1f - 0.35f * overcast) + flash * 0.7f;
+            // Pod mrakem a v mlze je světlo rozptýlené: stíny skoro zmizí.
+            _sun.shadowStrength = 1f - 0.85f * overcast;
+            var color = Color.Lerp(NightColor, DayColor, daylight);
+            _sun.color = Color.Lerp(Color.Lerp(color, new Color(0.7f, 0.74f, 0.8f), overcast), FlashColor, flash);
         }
     }
 }

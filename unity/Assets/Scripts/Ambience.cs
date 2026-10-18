@@ -7,7 +7,7 @@ namespace Oohra.Client
 {
     /// <summary>
     /// Zvuky okolí (prototyp sfx): praskání nejbližšího ohně, kroky postavy, zachrochtání divočáka, který se zaměřil,
-    /// a vytí vlka, který se plíží. Nahrávky hra nemá, zvuky se skládají v kódu (šum, tóny). Hlasitost podle
+    /// a vytí vlka, který se plíží (déšť a hrom hraje WeatherView). Nahrávky hra nemá, zvuky se skládají v kódu (šum, tóny). Hlasitost podle
     /// SyllableVoice.Volume.
     /// </summary>
     public class Ambience : MonoBehaviour
@@ -22,6 +22,8 @@ namespace Oohra.Client
         private static AudioClip _step;
         private static AudioClip _grunt;
         private static AudioClip _howl;
+        private static AudioClip _rain;
+        private static AudioClip _thunder;
 
         private readonly Dictionary<int, AnimalState> _animalStates = new Dictionary<int, AnimalState>();
         private GameConnection _connection;
@@ -219,6 +221,55 @@ namespace Oohra.Client
             }
 
             return _howl = Clip("Vlk", samples);
+        }
+
+        /// <summary>Déšť: hustý šum s ťukáním kapek (smyčka 3 s, konec navazuje na začátek).</summary>
+        public static AudioClip Rain()
+        {
+            if (_rain != null) return _rain;
+            var samples = new float[SampleRate * 3];
+            var seed = 4242;
+            var low = 0f;
+            var drop = 0f;
+            for (var n = 0; n < samples.Length; n++)
+            {
+                var noise = Noise(ref seed);
+                low = low * 0.75f + noise * 0.25f;
+                if (Noise(ref seed) > 0.996f) drop = 0.6f;
+                drop *= 0.96f;
+                samples[n] = low * 0.35f + noise * 0.05f + Noise(ref seed) * drop * 0.2f;
+            }
+
+            // Krátké prolnutí konce a začátku, ať smyčka necvaká.
+            var fade = SampleRate / 10;
+            for (var n = 0; n < fade; n++)
+            {
+                var u = (float)n / fade;
+                samples[n] = samples[n] * u + samples[samples.Length - fade + n] * (1f - u);
+            }
+
+            return _rain = Clip("Déšť", samples);
+        }
+
+        /// <summary>Hrom: prásknutí a dlouhé hluboké dunění, které slábne.</summary>
+        public static AudioClip Thunder()
+        {
+            if (_thunder != null) return _thunder;
+            var samples = new float[SampleRate * 4];
+            var seed = 99;
+            var low = 0f;
+            var lower = 0f;
+            for (var n = 0; n < samples.Length; n++)
+            {
+                var u = (float)n / samples.Length;
+                low = low * 0.97f + Noise(ref seed) * 0.03f;
+                lower = lower * 0.995f + low * 0.005f;
+                var crack = u < 0.04f ? Noise(ref seed) * (1f - u / 0.04f) * 0.5f : 0f;
+                var rumble = 0.7f + 0.3f * Mathf.Sin(u * 37f) * Mathf.Sin(u * 11f);
+                samples[n] = Mathf.Clamp(crack + (low * 6f + lower * 40f) * rumble * Mathf.Pow(1f - u, 1.5f), -1f, 1f);
+            }
+
+            return _thunder = Clip("Hrom", samples);
         }
 
         private static AudioClip Clip(string name, float[] samples)

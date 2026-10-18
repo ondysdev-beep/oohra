@@ -13,6 +13,9 @@
   "startHour": 7,
   "startSticks": 0,
   "startStones": 0,
+  // Jen pro zkoušení: vynucené počasí (jasno, mlha, dest, bourka). Prázdné = počasí jde samo (ze seedu a času).
+  // Za běhu jde změnit příkazem pocasi v okně serveru.
+  "forceWeather": "",
   // Jak často vypsat výkon serveru (sekundy, jen když někdo hraje). 0 = nevypisovat.
   "statsEverySeconds": 10,
   // Zvířata na ostrově a do jaké vzdálenosti (metry) hráč dostává jejich polohy.

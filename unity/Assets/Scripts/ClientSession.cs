@@ -178,6 +178,22 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Zapálit pochodeň od ohně (klacek z batohu). Musí být u hořícího ohně, rozhodne server.</summary>
+        public void LightTorch()
+        {
+            Connection.LightTorch();
+        }
+
+        /// <summary>Drží vlastní postava zapálenou pochodeň?</summary>
+        public bool TorchLit
+        {
+            get
+            {
+                var self = Connection.SelfSnapshot();
+                return self.HasValue && self.Value.Torch;
+            }
+        }
+
         /// <summary>Režim stavby: postavit stavbu se středem (x, y) a úhlem v radiánech. Rozhodne server.</summary>
         public void Place(BuildKind kind, double x, double y, float angle, float length = 1f, string decoration = "")
         {

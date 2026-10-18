@@ -40,7 +40,7 @@ namespace Oohra.Client
                     return For(material);
                 case EventKind.Fire:
                     var fire = (FireResult)e.Code;
-                    warn = fire != FireResult.Lit && fire != FireResult.Fed && fire != FireResult.Relit && fire != FireResult.Baked;
+                    warn = fire != FireResult.Lit && fire != FireResult.Fed && fire != FireResult.Relit && fire != FireResult.Baked && fire != FireResult.TorchLit;
                     return For(fire);
                 case EventKind.Hunt:
                     var hunt = (HuntResult)e.Code;
