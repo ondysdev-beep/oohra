@@ -95,6 +95,11 @@ public static class GameData
 
     public static WorldGenRules WorldGen => _worldGen.Value;
 
+    private static readonly Lazy<TreeRules> _trees =
+        new(() => Load<TreeRules>("trees.json"));
+
+    public static TreeRules Trees => _trees.Value;
+
     private static readonly Lazy<StrangerRules> _strangers =
         new(() => Load<StrangerRules>("strangers.json"));
 

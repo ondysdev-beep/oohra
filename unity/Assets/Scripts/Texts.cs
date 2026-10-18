@@ -471,6 +471,18 @@ namespace Oohra.Client
             return name;
         }
 
+        public static string TreeName(TreeKind kind)
+        {
+            switch (kind)
+            {
+                case TreeKind.Oak: return "Dub";
+                case TreeKind.Conifer: return "Jehličnan";
+                case TreeKind.Birch: return "Bříza";
+                case TreeKind.Willow: return "Vrba";
+                default: return "Suchý strom";
+            }
+        }
+
         public static string WaterName(TileType tile)
         {
             return tile == TileType.Bog ? "Bahno" : tile == TileType.Pond ? "Voda" : tile == TileType.Ford ? "Brod" : "Moře";

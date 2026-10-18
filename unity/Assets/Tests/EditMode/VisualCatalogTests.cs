@@ -129,17 +129,34 @@ namespace Oohra.Client.Tests
         public void TreeVariantPicksModel()
         {
             var catalog = ScriptableObject.CreateInstance<VisualCatalog>();
-            Assert.IsNull(catalog.Tree(0.5f));
+            Assert.IsNull(catalog.Tree(Oohra.Core.World.TreeKind.Oak, 0.5f));
 
             var first = new GameObject("A");
             var second = new GameObject("B");
             catalog.Trees = new[] { first, second };
-            Assert.AreSame(first, catalog.Tree(0.1f));
-            Assert.AreSame(second, catalog.Tree(0.9f));
-            Assert.AreSame(second, catalog.Tree(1f));
+            Assert.AreSame(first, catalog.Tree(Oohra.Core.World.TreeKind.Oak, 0.1f));
+            Assert.AreSame(second, catalog.Tree(Oohra.Core.World.TreeKind.Oak, 0.9f));
+            Assert.AreSame(second, catalog.Tree(Oohra.Core.World.TreeKind.Oak, 1f));
 
             Object.DestroyImmediate(first);
             Object.DestroyImmediate(second);
+        }
+
+        /// <summary>Druh s vlastním políčkem použije svůj model, druh bez něj společný seznam Trees.</summary>
+        [Test]
+        public void TreeSpeciesSlotWinsOverCommonList()
+        {
+            var catalog = ScriptableObject.CreateInstance<VisualCatalog>();
+            var common = new GameObject("Společný");
+            var pine = new GameObject("Borovice");
+            catalog.Trees = new[] { common };
+            catalog.ConiferTrees = new GameObject[] { null, pine };
+
+            Assert.AreSame(pine, catalog.Tree(Oohra.Core.World.TreeKind.Conifer, 0.3f));
+            Assert.AreSame(common, catalog.Tree(Oohra.Core.World.TreeKind.Willow, 0.3f));
+
+            Object.DestroyImmediate(common);
+            Object.DestroyImmediate(pine);
         }
 
         /// <summary>Zprůhlednění vlastního modelu nesmí smazat jeho materiál: po zneprůhlednění je zpátky původní.</summary>

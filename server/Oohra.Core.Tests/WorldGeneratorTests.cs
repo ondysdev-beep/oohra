@@ -130,6 +130,26 @@ public class WorldGeneratorTests
         }));
     }
 
+    /// <summary>Stromy mají druh podle oblasti a výšku v rozsahu druhu (trees.json), všech pět druhů roste.</summary>
+    [Theory]
+    [MemberData(nameof(Seeds))]
+    public void TreesHaveSpeciesByRegionAndHeight(int seed)
+    {
+        var world = World(seed);
+        var rules = GameData.Trees;
+
+        Assert.All(world.Trees, t =>
+        {
+            var species = rules.For(t.Kind);
+            Assert.InRange(t.Height, species.MinHeight, species.MaxHeight);
+        });
+        Assert.All(Enum.GetValues<TreeKind>(), kind => Assert.Contains(world.Trees, t => t.Kind == kind));
+        Assert.All(world.Trees.Where(t => world.Regions[t.TileIndex] == RegionKind.Highland), t =>
+            Assert.Contains(t.Kind, new[] { TreeKind.Conifer, TreeKind.Dead, TreeKind.Willow }));
+        Assert.DoesNotContain(world.Trees, t => world.Regions[t.TileIndex] == RegionKind.Marsh && t.Kind == TreeKind.Oak);
+        Assert.Equal(world.Trees, WorldGenerator.Build(seed, Size, Size).Trees);
+    }
+
     /// <summary>Brod: dá se po něm jít a pít z něj (čistá voda), stavět na něm nejde.</summary>
     [Fact]
     public void FordCanBeCrossedAndDrunkFrom()

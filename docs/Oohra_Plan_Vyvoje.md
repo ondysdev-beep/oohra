@@ -46,7 +46,7 @@ Zadání: `docs/Oohra_0.8_Svet_a_logika.md`. Odhad etap 1 až 5 je 9 až 14 týd
 Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, podíly les 35 %, louka asi 25 až 33 %, vrchovina 15 %, bažina 10 %, jezero 3 %, řeka a pláž zbytek.
 
 ### Etapa 2: Stromy a kácení (2 až 3 týdny)
-- [ ] Stromy jako objekty: pět druhů, výška ze seedu, `trees.json`, vzhled podle druhu v katalogu.
+- [x] Stromy jako objekty (18. 10.): pět druhů (dub, jehličnan, bříza, vrba, suchý), výška ze seedu, `trees.json` (druh podle oblasti, u vody vrba), protokol 27 posílá druh a výšku, v katalogu políčko pro každý druh (prázdné = společné `Trees`, pak tvar z kódu), Unity `TreeViews`. Rozhodnuto: nošení kmene ve více lidech odloženo.
 - [ ] Věci ležící ve světě (kmeny, klady, mršiny): poloha, ukládání, posílání hráčům v okolí.
 - [ ] Kamenná sekera (jednoduchý recept, opotřebení).
 - [ ] Kácení: rány na serveru, pád podle strany seknutí, zapraskání, zranění v pruhu pádu, ležící kmen blokuje, pařez.

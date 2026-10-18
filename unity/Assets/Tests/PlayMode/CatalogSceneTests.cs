@@ -48,7 +48,9 @@ namespace Oohra.Client.Tests
 
             var trees = GameObject.Find("Stromy").transform;
             Assert.AreEqual(world.Trees.Length, trees.childCount);
-            Assert.AreEqual("Strom", trees.GetChild(0).name);
+            // Strom z katalogu (ne tvar z kódu s kmenem a korunou), pojmenovaný podle dlaždice a druhu.
+            StringAssert.StartsWith("Strom ", trees.GetChild(0).name);
+            Assert.IsNull(trees.GetChild(0).Find("Kmen"));
             Assert.IsNotNull(IslandView.FindDeep(GameObject.Find("Rostlina 0").transform, "Listy"));
             Assert.Greater(Object.FindAnyObjectByType<GrassView>().Count, world.Width);
 

@@ -1,0 +1,16 @@
+// Stromy (návrh 0.8, kap. 2). Výška každého stromu je ze seedu v rozsahu druhu (metry).
+// weights: jak často druh roste v oblasti (poměr mezi druhy, v oblasti bez druhů stromy nerostou).
+// Kolik stromů na dlaždici, říká worldgen.json (treeChance).
+{
+  "seedSalt": 4421,
+  "species": [
+    { "kind": "Oak",     "minHeight": 5, "maxHeight": 8, "weights": { "Forest": 0.40, "Meadow": 0.55 } },
+    { "kind": "Conifer", "minHeight": 6, "maxHeight": 8, "weights": { "Forest": 0.30, "Highland": 0.85 } },
+    { "kind": "Birch",   "minHeight": 4, "maxHeight": 7, "weights": { "Forest": 0.25, "Meadow": 0.30, "Marsh": 0.30 } },
+    { "kind": "Willow",  "minHeight": 3, "maxHeight": 5, "weights": { "Marsh": 0.70 } },
+    { "kind": "Dead",    "minHeight": 3, "maxHeight": 6, "weights": { "Forest": 0.05, "Meadow": 0.15, "Highland": 0.15 } }
+  ],
+  // U sladké vody (jezero, řeka, jezírko) do waterDistance metrů roste místo jiného stromu vrba se šancí willowNearWater.
+  "waterDistance": 3,
+  "willowNearWater": 0.6
+}
