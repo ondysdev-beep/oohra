@@ -38,6 +38,9 @@ public sealed class Timber
 
     public int Length { get; set; }
 
+    /// <summary>Kůra už je sloupaná (lýko jde vzít jen jednou).</summary>
+    public bool Stripped { get; set; }
+
     /// <summary>Konce kmene (pro kolize a vzdálenost).</summary>
     public (double X1, double Y1, double X2, double Y2) Ends()
     {
@@ -232,6 +235,50 @@ public sealed class Forestry
 
         Version++;
         return WearAxe(inventory) ? WoodResult.AxeBroke : result;
+    }
+
+    /// <summary>
+    /// Sloupne nožem kůru z ležícího kmene nebo kladu: lýko podle druhu a délky (bastPerMeter v crafting.json).
+    /// Jde to jen jednou, nůž se opotřebuje. Z kmene sloupaného kmene zůstanou sloupané i klady.
+    /// </summary>
+    public WoodResult StripBark(int timberId, double playerX, double playerY, Inventory inventory)
+    {
+        var timber = Find(timberId);
+        if (timber is null)
+        {
+            return WoodResult.NotFound;
+        }
+
+        if (timber.DistanceTo(playerX, playerY) > GameData.Wood.Reach)
+        {
+            return WoodResult.TooFar;
+        }
+
+        if (inventory.Count(ItemKind.Knife) == 0)
+        {
+            return WoodResult.NeedKnife;
+        }
+
+        var bast = timber.Stripped ? 0 : GameData.Crafting.BastPerMeter.GetValueOrDefault(timber.Tree) * timber.Length;
+        if (bast <= 0)
+        {
+            return WoodResult.NoBark;
+        }
+
+        if (inventory.RoomFor(Item.Bast) < bast)
+        {
+            return WoodResult.InventoryFull;
+        }
+
+        for (var i = 0; i < bast; i++)
+        {
+            inventory.TryAdd(Item.Bast);
+        }
+
+        timber.Stripped = true;
+        inventory.WearOne(ItemKind.Knife);
+        Version++;
+        return WoodResult.BastStripped;
     }
 
     /// <summary>Zvedne klad ze země (jen jeden, kmen je moc těžký).</summary>
@@ -452,7 +499,7 @@ public sealed class Forestry
         {
             Hits = hits,
             Stumps = new Dictionary<int, double>(_stumps),
-            Timbers = _timbers.Select(t => new TimberSave(t.Id, t.Kind, t.Tree, t.X, t.Y, t.Angle, t.Length)).ToList(),
+            Timbers = _timbers.Select(t => new TimberSave(t.Id, t.Kind, t.Tree, t.X, t.Y, t.Angle, t.Length, t.Stripped)).ToList(),
             NextTimberId = _nextId,
             Saplings = _saplings.Select(s => new SaplingSave(s.Key, s.Value.Kind, s.Value.Height, s.Value.PlantedMonths)).ToList(),
             Grown = _grown.Values.Select(t => new SaplingSave(t.TileIndex, t.Kind, t.Height, 0)).ToList(),
@@ -474,7 +521,7 @@ public sealed class Forestry
             _stumps[tile] = at;
         }
 
-        _timbers.AddRange(save.Timbers.Select(t => new Timber(t.Id, t.Kind, t.Tree, t.X, t.Y, t.Angle, t.Length)));
+        _timbers.AddRange(save.Timbers.Select(t => new Timber(t.Id, t.Kind, t.Tree, t.X, t.Y, t.Angle, t.Length) { Stripped = t.Stripped }));
         foreach (var sapling in save.Saplings)
         {
             _saplings[sapling.TileIndex] = new Sapling { Kind = sapling.Kind, Height = sapling.Height, PlantedMonths = sapling.PlantedMonths, Stage = -1 };
@@ -529,7 +576,7 @@ public sealed class Forestry
 
         var (dx, dy) = (Math.Cos(trunk.Angle), Math.Sin(trunk.Angle));
         var tip = trunk.Length / 2.0;
-        _timbers.Add(new Timber(_nextId++, TimberKind.Piece, trunk.Tree, trunk.X + dx * (tip - 0.5), trunk.Y + dy * (tip - 0.5), trunk.Angle, 1));
+        _timbers.Add(new Timber(_nextId++, TimberKind.Piece, trunk.Tree, trunk.X + dx * (tip - 0.5), trunk.Y + dy * (tip - 0.5), trunk.Angle, 1) { Stripped = trunk.Stripped });
         trunk.Length--;
         trunk.X -= dx * 0.5;
         trunk.Y -= dy * 0.5;
@@ -561,21 +608,7 @@ public sealed class Forestry
     /// <summary>Sekera se seknutím opotřebuje. Vrací true, když se rozpadla.</summary>
     private static bool WearAxe(Inventory inventory)
     {
-        var index = inventory.Stacks.ToList().FindIndex(s => s.Item.Kind == ItemKind.Axe);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        var axe = inventory.Stacks[index].Item;
-        if (axe.Uses <= 1)
-        {
-            inventory.TakeOne(index);
-            return true;
-        }
-
-        inventory.ReplaceOne(index, axe with { Uses = axe.Uses - 1 });
-        return false;
+        return inventory.WearOne(ItemKind.Axe);
     }
 
     private static double Distance(double ax, double ay, double bx, double by)

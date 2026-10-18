@@ -158,6 +158,15 @@ namespace Oohra.Client
                 case Oohra.Core.Items.ItemKind.Wood: return Hex("#a07a4c");
                 case Oohra.Core.Items.ItemKind.Splinter: return Hex("#c4a374");
                 case Oohra.Core.Items.ItemKind.LogPiece: return Hex("#6b4e33");
+                case Oohra.Core.Items.ItemKind.SmallBag: return Hex("#9c8459");
+                case Oohra.Core.Items.ItemKind.LargeBag: return Hex("#7a5a3c");
+                case Oohra.Core.Items.ItemKind.Bast: return Hex("#c2a76e");
+                case Oohra.Core.Items.ItemKind.Hide: return Hex("#9a6a52");
+                case Oohra.Core.Items.ItemKind.TannedHide: return Hex("#b08a62");
+                case Oohra.Core.Items.ItemKind.Bone: return Hex("#e0d8c4");
+                case Oohra.Core.Items.ItemKind.Ash: return Hex("#7a7672");
+                case Oohra.Core.Items.ItemKind.Knife: return Hex("#8d8a80");
+                case Oohra.Core.Items.ItemKind.Flint: return Hex("#5d6470");
                 default: return Hex("#9a948a");
             }
         }

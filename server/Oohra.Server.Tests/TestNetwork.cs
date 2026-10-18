@@ -33,6 +33,8 @@ public sealed class TestNetwork : IDisposable
             LogoutLingerSeconds = 0,
             // Nový hráč v testech nespí sen bez slov (test snu si ho zapne).
             DreamMaxSeconds = 0,
+            // Nový hráč v testech má malý batoh (ve hře má nováček jen ruce, test rukou si to vypne).
+            StartBag = true,
         };
         configure?.Invoke(config);
         Server = new GameServer(config);

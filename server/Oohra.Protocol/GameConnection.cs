@@ -70,6 +70,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Dřevo na zemi (kmeny a klady).</summary>
     public TimberView[] Timbers { get; private set; } = [];
 
+    /// <summary>Recepty, které postava umí.</summary>
+    public RecipeView[] Recipes { get; private set; } = [];
+
     /// <summary>Stavby hráčů (zdi).</summary>
     public StructureView[] Structures { get; private set; } = [];
 
@@ -246,6 +249,42 @@ public sealed class GameConnection : IDisposable
     public void MakeAxe()
     {
         Send(Messages.WriteMakeAxe);
+    }
+
+    /// <summary>Vyrobit podle receptu. Výsledek přijde jako hláška Craft.</summary>
+    public void Craft(string recipeId)
+    {
+        Send(w => Messages.WriteCraft(w, recipeId));
+    }
+
+    /// <summary>Zkusit spojit hromádky z batohu (najít recept zkoušením).</summary>
+    public void Combine(IReadOnlyList<int> stackIndices)
+    {
+        Send(w => Messages.WriteCombine(w, stackIndices));
+    }
+
+    /// <summary>Sloupnout nožem lýko z ležícího kmene nebo kladu.</summary>
+    public void StripBark(int timberId)
+    {
+        Send(w => Messages.WriteTimberAction(w, MessageType.StripBark, timberId));
+    }
+
+    /// <summary>Nasadit batoh z hromádky na záda.</summary>
+    public void WearBag(int stackIndex)
+    {
+        Send(w => Messages.WriteStackAction(w, MessageType.WearBag, stackIndex));
+    }
+
+    /// <summary>Sundat batoh ze zad (pak se dá odložit nebo dát).</summary>
+    public void TakeOffBag()
+    {
+        Send(Messages.WriteTakeOffBag);
+    }
+
+    /// <summary>Nabrat popel z ohniště.</summary>
+    public void TakeAsh(int fireId)
+    {
+        Send(w => Messages.WriteTimberAction(w, MessageType.TakeAsh, fireId));
     }
 
     public void GatherSticks(int tileX, int tileY)
@@ -511,6 +550,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Timbers:
                 Timbers = Messages.ReadTimbers(reader);
+                break;
+            case MessageType.Recipes:
+                Recipes = Messages.ReadRecipes(reader);
                 break;
             case MessageType.Animals:
                 Animals = Messages.ReadAnimals(reader);

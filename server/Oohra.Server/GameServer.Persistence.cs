@@ -102,14 +102,18 @@ public sealed partial class GameServer
             Character = p.Character.ToSave(),
             InventoryCapacity = p.Inventory.Capacity,
             Inventory = p.Inventory.Stacks.ToList(),
+            Bag = p.Inventory.Bag,
         };
     }
 
     private static PlayerSession LoadPlayer(PlayerSave save)
     {
-        var inventory = new Inventory(save.InventoryCapacity);
+        // Místa se počítají z rukou a batohu (crafting.json), uložený počet míst je jen pro starší světy.
+        var character = Character.FromSave(save.Character);
+        var inventory = Inventory.For(character.Traits);
         inventory.Restore(save.Inventory);
-        return new PlayerSession(save.Id, save.Nickname, Character.FromSave(save.Character), inventory, save.X, save.Y)
+        inventory.RestoreBag(save.Bag);
+        return new PlayerSession(save.Id, save.Nickname, character, inventory, save.X, save.Y)
         {
             KeyHash = save.KeyHash,
             Facing = save.Facing,

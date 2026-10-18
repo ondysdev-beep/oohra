@@ -8,33 +8,103 @@ namespace Oohra.Core.Items;
 public sealed record ItemStack(Item Item, int Count);
 
 /// <summary>
-/// Batoh (prototyp S.inv, addItem, count a takeKind v part2.js). Stejné věci se skládají na hromádku,
-/// každá hromádka zabere jedno místo. Počet míst závisí na generaci.
+/// Věci postavy, zásoby nebo věci u těla (prototyp S.inv, addItem, count a takeKind v part2.js). Stejné věci
+/// se skládají na hromádku, každá hromádka zabere jedno místo.
+/// Postava (For) unese bez batohu jen to, co má v rukou (hands v crafting.json). Batoh nosí na zádech (Bag):
+/// nezabírá místo a přidá místa, Noví k tomu bonus podle generace. Batoh, který dostane, se sám nasadí (lepší
+/// vymění za horší, ten pak nese v rukou). Když batoh sundá, věci mu zůstanou, ale nic dalšího nepobere,
+/// dokud jich nebude míň než míst.
 /// </summary>
 public sealed class Inventory
 {
     private readonly List<ItemStack> _stacks = [];
+    private readonly int _baseCapacity;
+    private readonly bool _usesBags;
+    private readonly int _bagBonus;
 
     public Inventory(int capacity)
     {
-        Capacity = capacity;
+        _baseCapacity = capacity;
     }
 
-    /// <summary>Batoh pro postavu dané generace.</summary>
+    private Inventory(int hands, int bagBonus)
+    {
+        _baseCapacity = hands;
+        _usesBags = true;
+        _bagBonus = bagBonus;
+    }
+
+    /// <summary>Věci postavy dané generace: ruce, batoh přidá místa.</summary>
     public static Inventory For(GenerationTraits traits)
     {
-        return new Inventory(SlotsFor(traits.Generation));
+        return new Inventory(GameData.Crafting.Hands, BagBonusFor(traits.Generation));
     }
 
-    /// <summary>Počet míst: základ, Noví každé dvě generace jedno navíc (prototyp 10 + min(3, g / 2)).</summary>
-    public static int SlotsFor(int generation)
+    /// <summary>Kolik míst navíc má v batohu generace: Noví každé dvě generace jedno (prototyp min(3, g / 2)).</summary>
+    public static int BagBonusFor(int generation)
     {
         var rules = GameData.Gathering.Inventory;
         var g = Math.Min(generation, GameData.Generations.Cap);
-        return rules.BaseSlots + Math.Min(rules.MaxBonusSlots, g / rules.GenerationsPerBonusSlot);
+        return Math.Min(rules.MaxBonusSlots, g / rules.GenerationsPerBonusSlot);
     }
 
-    public int Capacity { get; }
+    /// <summary>Počet míst: u postavy ruce a batoh na zádech (s bonusem generace), jinak pevný.</summary>
+    public int Capacity => _usesBags ? _baseCapacity + BagSlots(Bag) : _baseCapacity;
+
+    /// <summary>Batoh na zádech (nezabírá místo), nebo null.</summary>
+    public Item? Bag { get; private set; }
+
+    public bool HasBag => Bag is not null;
+
+    /// <summary>Všechny věci i s batohem na zádech (třeba k tělu po smrti).</summary>
+    public IEnumerable<ItemStack> AllStacks => Bag is null ? _stacks : _stacks.Append(new ItemStack(Bag, 1));
+
+    private int BagSlots(Item? bag)
+    {
+        return bag is not null && GameData.Crafting.BagSlots.TryGetValue(bag.Kind, out var slots) ? slots + _bagBonus : 0;
+    }
+
+    private static bool IsBag(Item item)
+    {
+        return GameData.Crafting.BagSlots.ContainsKey(item.Kind);
+    }
+
+    /// <summary>Nasadí batoh z hromádky na záda (dosavadní batoh dá do rukou, i kdyby se nevešel).</summary>
+    public bool WearBag(int stackIndex)
+    {
+        if (!_usesBags || stackIndex < 0 || stackIndex >= _stacks.Count || !IsBag(_stacks[stackIndex].Item))
+        {
+            return false;
+        }
+
+        var bag = TakeOne(stackIndex)!;
+        if (Bag is not null)
+        {
+            _stacks.Add(new ItemStack(Bag, 1));
+        }
+
+        Bag = bag;
+        return true;
+    }
+
+    /// <summary>Sundá batoh ze zad do rukou (i kdyby se nevešel). Věcí bude víc než míst, dokud něco neodloží.</summary>
+    public bool TakeOffBag()
+    {
+        if (Bag is null)
+        {
+            return false;
+        }
+
+        _stacks.Add(new ItemStack(Bag, 1));
+        Bag = null;
+        return true;
+    }
+
+    /// <summary>Batoh na zádech z uloženého světa.</summary>
+    public void RestoreBag(Item? bag)
+    {
+        Bag = bag;
+    }
 
     public IReadOnlyList<ItemStack> Stacks => _stacks;
 
@@ -44,9 +114,21 @@ public sealed class Inventory
         _stacks.AddRange(stacks);
     }
 
-    /// <summary>Přidá věc. Vrací false, když je batoh plný.</summary>
+    /// <summary>Přidá věc. Batoh se sám nasadí, když je lepší než ten na zádech. Vrací false, když je plno.</summary>
     public bool TryAdd(Item item)
     {
+        if (_usesBags && IsBag(item) && BagSlots(item) > BagSlots(Bag))
+        {
+            var old = Bag;
+            Bag = item;
+            if (old is not null && !TryAdd(old))
+            {
+                _stacks.Add(new ItemStack(old, 1));
+            }
+
+            return true;
+        }
+
         var stackSize = GameData.Gathering.Inventory.StackSize;
         for (var i = 0; i < _stacks.Count; i++)
         {
@@ -124,7 +206,7 @@ public sealed class Inventory
     public int RoomFor(Item item)
     {
         var stackSize = GameData.Gathering.Inventory.StackSize;
-        var room = (Capacity - _stacks.Count) * stackSize;
+        var room = Math.Max(0, Capacity - _stacks.Count) * stackSize;
         foreach (var stack in _stacks)
         {
             if (stack.Item == item)
@@ -134,6 +216,28 @@ public sealed class Inventory
         }
 
         return room;
+    }
+
+    /// <summary>
+    /// Opotřebuje první nástroj daného druhu o jedno použití (na stejném místě). Vrací true, když se rozpadl.
+    /// </summary>
+    public bool WearOne(ItemKind kind)
+    {
+        var index = _stacks.FindIndex(s => s.Item.Kind == kind);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        var tool = _stacks[index].Item;
+        if (tool.Uses <= 1)
+        {
+            TakeOne(index);
+            return true;
+        }
+
+        ReplaceOne(index, tool with { Uses = tool.Uses - 1 });
+        return false;
     }
 
     /// <summary>Kolik kusů daného druhu je v batohu (třeba klacků).</summary>

@@ -33,6 +33,9 @@ public sealed class PlayerSave
     public int InventoryCapacity { get; init; }
 
     public List<ItemStack> Inventory { get; init; } = [];
+
+    /// <summary>Batoh na zádech (null = jen ruce).</summary>
+    public Item? Bag { get; init; }
 }
 
 /// <summary>

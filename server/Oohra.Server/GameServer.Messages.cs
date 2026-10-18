@@ -86,7 +86,7 @@ public sealed partial class GameServer
         }
 
         var stacks = player.Inventory.Stacks.Select(StackViewOf).ToArray();
-        var view = new InventoryView(player.Inventory.Capacity, stacks);
+        var view = new InventoryView(player.Inventory.Capacity, stacks, player.Inventory.Bag?.Kind);
         player.SentSpoilage = SpoilageOf(player);
         SendTo(player.Peer, w => Messages.WriteInventory(w, view));
     }
@@ -100,7 +100,7 @@ public sealed partial class GameServer
     private void BroadcastSnapshot()
     {
         var players = InWorld
-            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping, p.Character.TorchLit, p.Inventory.Count(ItemKind.LogPiece) > 0))
+            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping, p.Character.TorchLit, p.Inventory.Count(ItemKind.LogPiece) > 0, p.Inventory.Bag?.Kind))
             .ToArray();
         var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players, CurrentWeather.Kind, (float)CurrentWeather.Intensity, (float)CurrentWeather.Wind);
         Broadcast(w => Messages.WriteSnapshot(w, snapshot), DeliveryMethod.Sequenced);
@@ -194,6 +194,29 @@ public sealed partial class GameServer
         return plant is null
             ? new StackView(stack.Item.Kind, 0, default, default, stack.Item.Cooking, stack.Count, spoiled, stack.Item.Uses, stack.Item.Tree)
             : new StackView(stack.Item.Kind, plant.SpeciesId, plant.Part, plant.Ripeness, plant.Cooking, stack.Count, spoiled);
+    }
+
+    /// <summary>Pošle hráči recepty, které jeho postava umí, když se od minula změnily (naučil se, zemřel).</summary>
+    private void SendRecipes(PlayerSession player)
+    {
+        if (player.Peer is null)
+        {
+            return;
+        }
+
+        var known = string.Join(",", player.Character.Recipes.OrderBy(r => r));
+        if (known == player.SentRecipes)
+        {
+            return;
+        }
+
+        player.SentRecipes = known;
+        var rules = GameData.Crafting;
+        var views = rules.Recipes
+            .Where(r => player.Character.Knows(r.Id))
+            .Select(r => new RecipeView(rules.IndexOf(r), r.Id, r.Name, r.Inputs.Select(i => (i.Key, i.Value)).ToArray(), r.Tool, r.NearWater, r.NearFire, r.Repairs is not null))
+            .ToArray();
+        SendTo(player.Peer, w => Messages.WriteRecipes(w, views));
     }
 
     private TreeStateView[] TreeStateViews()

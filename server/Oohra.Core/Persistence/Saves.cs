@@ -39,6 +39,8 @@ public sealed class CharacterSave
 
     public bool TorchWarned { get; init; }
 
+    public List<string> Recipes { get; init; } = [];
+
     public double Toxin { get; init; }
 
     public double Fever { get; init; }
@@ -97,7 +99,7 @@ public sealed record StructureSave(
     int Id, BuildKind Kind, double X, double Y, double Angle, double Length, int FrameId, int OwnerId, string DecorationId,
     List<ItemStack>? Store, AnimalKind? Caught);
 
-public sealed record FireSave(int Id, double X, double Y, double BurnMinutes);
+public sealed record FireSave(int Id, double X, double Y, double BurnMinutes, double Burned = 0, int AshDay = -1);
 
 public sealed record PlantStateSave(int PlantId, double LeavesAt, double FruitAt, double GoneUntil);
 
@@ -151,7 +153,7 @@ public sealed class ForestrySave
 
 public sealed record SaplingSave(int TileIndex, TreeKind Kind, double Height, double PlantedMonths);
 
-public sealed record TimberSave(int Id, TimberKind Kind, TreeKind Tree, double X, double Y, double Angle, int Length);
+public sealed record TimberSave(int Id, TimberKind Kind, TreeKind Tree, double X, double Y, double Angle, int Length, bool Stripped = false);
 
 /// <summary>Kmeny: kdo patří do kterého kmene.</summary>
 public sealed class TribesSave

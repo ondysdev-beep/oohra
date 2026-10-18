@@ -286,6 +286,20 @@ public sealed class Animals
             return HuntResult.InventoryFull;
         }
 
+        // Kromě masa kůže (syrová, zahnije) a kosti, kolik se vejde (crafting.json).
+        if (GameData.Crafting.Carcass.TryGetValue(animal.Kind, out var carcass))
+        {
+            for (var i = 0; i < carcass.Hides; i++)
+            {
+                inventory.TryAdd(new Item(ItemKind.Hide, Day: GameClock.DayOf(now)));
+            }
+
+            for (var i = 0; i < carcass.Bones; i++)
+            {
+                inventory.TryAdd(Item.Bone);
+            }
+        }
+
         _animals.Remove(animal);
         return HuntResult.Butchered;
     }

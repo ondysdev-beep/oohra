@@ -342,18 +342,20 @@ public class AnimalTests
         Assert.Equal(Item.RawMeat(0) with { Cooking = Plants.Cooking.Baked }, Assert.Single(inventory.Stacks).Item);
     }
 
+    /// <summary>Pradávný kopí umí od narození (klacek a kámen), jedno stačí, procvičí řemeslo.</summary>
     [Fact]
     public void SpearFromStickAndStone()
     {
         var c = new Character(0, new Mulberry32(1));
         var inventory = new Inventory(10);
-        Assert.Equal(HuntResult.NeedMaterials, Crafting.MakeSpear(inventory, c));
+        var place = new CraftPlace(false, false, 0);
+        Assert.Equal(CraftResult.NeedMaterials, Crafting.Make("spear", inventory, c, place));
 
         inventory.TryAdd(Item.Stick);
         inventory.TryAdd(Item.Stone);
-        Assert.Equal(HuntResult.SpearMade, Crafting.MakeSpear(inventory, c));
+        Assert.Equal(CraftResult.Made, Crafting.Make("spear", inventory, c, place));
         Assert.Equal(1, inventory.Count(ItemKind.Spear));
-        Assert.Equal(HuntResult.AlreadyHasSpear, Crafting.MakeSpear(inventory, c));
+        Assert.Equal(CraftResult.AlreadyHave, Crafting.Make("spear", inventory, c, place));
         Assert.True(c.Skills.Pending(SkillKind.Craft) > 0);
     }
 

@@ -4,62 +4,186 @@ using Oohra.Core.World;
 
 namespace Oohra.Core.Items;
 
-/// <summary>Výroba nástrojů z batohu (prototyp makeSpear v part5.js).</summary>
+/// <summary>Kde postava stojí (u vody na činění kůže, u ohně) a kdy (herní minuty, kvůli hnití kůže).</summary>
+public readonly record struct CraftPlace(bool NearWater, bool NearFire, double Now);
+
+/// <summary>
+/// Výroba podle receptů (návrh 0.8, kap. 3, crafting.json). Co postava umí, se naučí zkoušením: spojí věci z batohu
+/// (Combine), a když z nich jde recept, který ještě neumí, může se napoprvé nepovést (failChance) a kus materiálu
+/// přijde vniveč. Povede-li se, recept umí (Character.Learn), smrtí ho zapomene. Pradávní znají základní recepty.
+/// </summary>
 public static class Crafting
 {
-    /// <summary>Kopí: klacek a kámen. Jedno kopí stačí. Procvičí řemeslo.</summary>
-    public static HuntResult MakeSpear(Inventory inventory, Character maker)
+    /// <summary>Vyrobí podle receptu (i neznámého, pak se může nepovést). Vrací výsledek a recept.</summary>
+    public static CraftResult Make(string recipeId, Inventory inventory, Character maker, CraftPlace place)
     {
-        if (inventory.Count(ItemKind.Spear) > 0)
-        {
-            return HuntResult.AlreadyHasSpear;
-        }
-
-        if (inventory.Count(ItemKind.Stick) < 1 || inventory.Count(ItemKind.Stone) < 1)
-        {
-            return HuntResult.NeedMaterials;
-        }
-
-        inventory.TryRemove(ItemKind.Stick, 1);
-        inventory.TryRemove(ItemKind.Stone, 1);
-        if (!inventory.TryAdd(Item.Spear))
-        {
-            inventory.TryAdd(Item.Stick);
-            inventory.TryAdd(Item.Stone);
-            return HuntResult.InventoryFull;
-        }
-
-        maker.Practice(SkillKind.Craft, GameData.Animals.Hunt.PracticeSpear);
-        return HuntResult.SpearMade;
+        var recipe = GameData.Crafting.Find(recipeId);
+        return recipe is null ? CraftResult.NothingCame : Make(recipe, inventory, maker, place);
     }
 
     /// <summary>
-    /// Kamenná sekera (návrh 0.8, kap. 3): klacek a kameny (woodcutting.json). Jedna stačí.
-    /// Opotřebuje se seknutím (uses). Procvičí řemeslo jako kopí.
+    /// Zkusí spojit vybrané hromádky z batohu. Hledá recept, jehož materiály jsou přesně tyhle druhy věcí
+    /// (nástroj receptu se do výběru nepočítá). Když jich jde víc (kopí i sekera jsou z klacku a kamene),
+    /// má přednost recept, který postava ještě neumí (zkoušením se hledá nové), pak ten s víc materiálem,
+    /// a jen takový, na který materiál má. Když žádný není, nic se nestane.
     /// </summary>
-    public static WoodResult MakeAxe(Inventory inventory, Character maker)
+    public static (CraftResult Result, Recipe? Recipe) Combine(IReadOnlyList<int> stackIndices, Inventory inventory, Character maker, CraftPlace place)
     {
-        var rules = GameData.Wood.Axe;
-        if (inventory.Count(ItemKind.Axe) > 0)
+        var kinds = stackIndices
+            .Where(i => i >= 0 && i < inventory.Stacks.Count)
+            .Select(i => inventory.Stacks[i].Item.Kind)
+            .ToHashSet();
+        var matching = GameData.Crafting.Recipes.Where(r => Matches(r, kinds)).ToList();
+        if (matching.Count == 0)
         {
-            return WoodResult.AlreadyHasAxe;
+            return (CraftResult.NothingCame, null);
         }
 
-        if (inventory.Count(ItemKind.Stick) < rules.Sticks || inventory.Count(ItemKind.Stone) < rules.Stones)
+        var affordable = matching.Where(r => r.Inputs.All(i => inventory.Count(i.Key) >= i.Value)).ToList();
+        var recipe = affordable
+            .OrderBy(r => maker.Knows(r.Id))
+            .ThenByDescending(r => r.Inputs.Values.Sum())
+            .FirstOrDefault() ?? matching[0];
+        return (Make(recipe, inventory, maker, place), recipe);
+    }
+
+    private static bool Matches(Recipe recipe, HashSet<ItemKind> kinds)
+    {
+        var wanted = recipe.Inputs.Keys.ToHashSet();
+        if (recipe.Repairs is { } repaired)
         {
-            return WoodResult.NeedMaterials;
+            wanted.Add(repaired);
         }
 
-        inventory.TryRemove(ItemKind.Stick, rules.Sticks);
-        inventory.TryRemove(ItemKind.Stone, rules.Stones);
-        if (!inventory.TryAdd(new Item(ItemKind.Axe, Uses: rules.Uses)))
+        var selected = new HashSet<ItemKind>(kinds);
+        if (recipe.Tool is { } tool)
         {
-            for (var i = 0; i < rules.Sticks; i++) inventory.TryAdd(Item.Stick);
-            for (var i = 0; i < rules.Stones; i++) inventory.TryAdd(Item.Stone);
-            return WoodResult.InventoryFull;
+            selected.Remove(tool);
         }
 
-        maker.Practice(SkillKind.Craft, GameData.Animals.Hunt.PracticeSpear);
-        return WoodResult.AxeMade;
+        return wanted.SetEquals(selected);
+    }
+
+    public static CraftResult Make(Recipe recipe, Inventory inventory, Character maker, CraftPlace place)
+    {
+        var check = Check(recipe, inventory, place);
+        if (check is not null)
+        {
+            return check.Value;
+        }
+
+        var known = maker.Knows(recipe.Id);
+        if (!known && maker.Rng.NextDouble() < GameData.Crafting.FailChance)
+        {
+            // Nepovedlo se: jeden kus některého materiálu přijde vniveč.
+            var inputs = recipe.Inputs.Keys.ToList();
+            inventory.TryRemove(inputs[maker.Rng.NextInt(inputs.Count)], 1);
+            return CraftResult.Failed;
+        }
+
+        var made = recipe.Repairs is null ? Produce(recipe, inventory, place.Now) : Repair(recipe, inventory);
+        if (made is not null)
+        {
+            return made.Value;
+        }
+
+        if (recipe.Tool is { } tool)
+        {
+            inventory.WearOne(tool);
+        }
+
+        maker.Practice(SkillKind.Craft, GameData.Skills.Practice.Craft);
+        maker.Learn(recipe.Id);
+        return known ? CraftResult.Made : CraftResult.Learned;
+    }
+
+    /// <summary>Jde to vyrobit tady a z toho, co má? Vrací důvod, proč ne, nebo null.</summary>
+    private static CraftResult? Check(Recipe recipe, Inventory inventory, CraftPlace place)
+    {
+        if (recipe.Unique && recipe.Output is { } output && (inventory.Count(output) > 0 || inventory.Bag?.Kind == output))
+        {
+            return CraftResult.AlreadyHave;
+        }
+
+        if (recipe.Repairs is { } repaired && !inventory.Stacks.Any(s => s.Item.Kind == repaired && s.Item.Uses < recipe.MaxUses))
+        {
+            return CraftResult.NothingToRepair;
+        }
+
+        if (recipe.NearWater && !place.NearWater)
+        {
+            return CraftResult.NeedWater;
+        }
+
+        if (recipe.NearFire && !place.NearFire)
+        {
+            return CraftResult.NeedFire;
+        }
+
+        if (recipe.Inputs.Any(input => inventory.Count(input.Key) < input.Value))
+        {
+            return CraftResult.NeedMaterials;
+        }
+
+        if (recipe.Tool is { } tool && inventory.Count(tool) == 0)
+        {
+            return CraftResult.NeedTool;
+        }
+
+        if (recipe.Inputs.ContainsKey(ItemKind.Hide) && inventory.Stacks.Where(s => s.Item.Kind == ItemKind.Hide).All(s => Spoilage.IsSpoiled(s.Item, place.Now)))
+        {
+            return CraftResult.Rotten;
+        }
+
+        return null;
+    }
+
+    /// <summary>Spotřebuje materiál a přidá výrobek. Když se výrobek nevejde, materiál vrátí.</summary>
+    private static CraftResult? Produce(Recipe recipe, Inventory inventory, double now)
+    {
+        var taken = new List<Item>();
+        foreach (var (kind, count) in recipe.Inputs)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                var index = BestStack(inventory, kind, now);
+                taken.Add(inventory.TakeOne(index)!);
+            }
+        }
+
+        if (inventory.TryAdd(new Item(recipe.Output!.Value, Uses: recipe.Uses)))
+        {
+            return null;
+        }
+
+        foreach (var item in taken)
+        {
+            inventory.TryAdd(item);
+        }
+
+        return CraftResult.InventoryFull;
+    }
+
+    /// <summary>Oprava: nástroj dostane repairUses použití navíc (nejvýš maxUses), materiál se spotřebuje.</summary>
+    private static CraftResult? Repair(Recipe recipe, Inventory inventory)
+    {
+        var kind = recipe.Repairs!.Value;
+        var index = inventory.Stacks.ToList().FindIndex(s => s.Item.Kind == kind && s.Item.Uses < recipe.MaxUses);
+        var tool = inventory.Stacks[index].Item;
+        inventory.ReplaceOne(index, tool with { Uses = Math.Min(recipe.MaxUses, tool.Uses + recipe.RepairUses) });
+        foreach (var (input, count) in recipe.Inputs)
+        {
+            inventory.TryRemove(input, count);
+        }
+
+        return null;
+    }
+
+    /// <summary>Hromádka, ze které se bere: u kůže ta nezahnilá, jinak první.</summary>
+    private static int BestStack(Inventory inventory, ItemKind kind, double now)
+    {
+        var stacks = inventory.Stacks.ToList();
+        var fresh = stacks.FindIndex(s => s.Item.Kind == kind && !Spoilage.IsSpoiled(s.Item, now));
+        return fresh >= 0 ? fresh : stacks.FindIndex(s => s.Item.Kind == kind);
     }
 }

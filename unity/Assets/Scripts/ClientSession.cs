@@ -119,6 +119,8 @@ namespace Oohra.Client
                 Clock.CalendarMonths = snapshot.CalendarMonths;
             }
 
+            // Názvy receptů pro hlášky (dřív, než přijde hláška o naučeném receptu).
+            Texts.RememberRecipes(Connection.Recipes);
             foreach (var gameEvent in Connection.TakeEvents())
             {
                 EventReceived?.Invoke(gameEvent);
@@ -324,6 +326,64 @@ namespace Oohra.Client
         public void MakeAxe()
         {
             Connection.MakeAxe();
+        }
+
+        private readonly HashSet<int> _combine = new HashSet<int>();
+
+        /// <summary>Hromádky z batohu zaškrtnuté ke spojení (zkoušení receptů).</summary>
+        public IReadOnlyCollection<int> CombineSelection
+        {
+            get { return _combine; }
+        }
+
+        public void ToggleCombine(int stackIndex)
+        {
+            if (!_combine.Remove(stackIndex)) _combine.Add(stackIndex);
+        }
+
+        /// <summary>Zkusí spojit zaškrtnuté věci. Výsledek přijde jako hláška Craft.</summary>
+        public void CombineSelected()
+        {
+            Connection.Combine(new List<int>(_combine));
+            _combine.Clear();
+        }
+
+        public void Craft(string recipeId)
+        {
+            Connection.Craft(recipeId);
+        }
+
+        public bool Knows(string recipeId)
+        {
+            foreach (var recipe in Connection.Recipes)
+            {
+                if (recipe.Id == recipeId) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>Má materiál a nástroj na recept (jestli je u vody nebo ohně, rozhodne server).</summary>
+        public bool HasMaterials(RecipeView recipe)
+        {
+            foreach (var input in recipe.Inputs)
+            {
+                if (Count(input.Kind) < input.Count) return false;
+            }
+
+            return !recipe.Tool.HasValue || Count(recipe.Tool.Value) > 0;
+        }
+
+        /// <summary>Sloupnout nožem lýko z kmene nebo kladu z nabídky.</summary>
+        public void StripBark()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Timber) Connection.StripBark(Menu.Id);
+        }
+
+        /// <summary>Nabrat popel z ohniště z nabídky.</summary>
+        public void TakeAsh()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.Fire) Connection.TakeAsh(Menu.Id);
         }
 
         /// <summary>Strom na dlaždici stojí (nepadá, není z něj pařez a není to mladý strom). Dorostlý mladý strom stojí.</summary>

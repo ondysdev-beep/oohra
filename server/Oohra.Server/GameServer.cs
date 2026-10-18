@@ -199,6 +199,8 @@ public sealed partial class GameServer : IDisposable
                 SendVocabulary(player);
             }
 
+            SendRecipes(player);
+
             SendTribeState(player);
         }
 
@@ -381,6 +383,7 @@ public sealed partial class GameServer : IDisposable
         player.SentTribeVersion = -1;
         player.SentStockKey = string.Empty;
         player.SentVocabularyVersion = -1;
+        player.SentRecipes = null;
         SendInventory(player);
         SendSelfState(player);
         PlayStats.Joined(player.Nickname, DateTime.UtcNow);
@@ -458,6 +461,11 @@ public sealed partial class GameServer : IDisposable
     private Inventory NewInventory(Character character)
     {
         var inventory = Inventory.For(character.Traits);
+        if (_config.StartBag)
+        {
+            inventory.TryAdd(new Item(ItemKind.SmallBag));
+        }
+
         for (var i = 0; i < _config.StartSticks; i++)
         {
             inventory.TryAdd(Item.Stick);

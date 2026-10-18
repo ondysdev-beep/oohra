@@ -70,13 +70,16 @@ public sealed class Materials
             return MaterialResult.NothingLeft;
         }
 
-        if (!inventory.TryAdd(Item.Stone))
+        // Z vrstvené skály je místo kamene občas pazourek (ze seedu a počtu kamenů v hromadě, ne náhodou).
+        var flint = island.Tiles[pile.TileIndex] == TileType.LayeredRock
+            && Hash.Hash2(pile.TileIndex, pile.Stones, island.Seed) < GameData.Crafting.FlintChance;
+        if (!inventory.TryAdd(flint ? Item.Flint : Item.Stone))
         {
             return MaterialResult.InventoryFull;
         }
 
         island.Rocks.TakeOne(pile.TileIndex, now);
-        return MaterialResult.GotStone;
+        return flint ? MaterialResult.GotFlint : MaterialResult.GotStone;
     }
 
     /// <summary>Stav stromu. Po prvním sběru se za den větve obnoví (prototyp c.c a c.r).</summary>

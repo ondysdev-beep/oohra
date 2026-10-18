@@ -67,6 +67,9 @@ public sealed class PlayerSession
     /// <summary>Verze zápisníku slov, která byla naposledy poslána (-1 = poslat znovu).</summary>
     public int SentVocabularyVersion { get; set; } = -1;
 
+    /// <summary>Které recepty hráč naposledy dostal (seřazené id přes čárku), null = ještě žádné.</summary>
+    public string? SentRecipes { get; set; }
+
     /// <summary>Kdy hráč naposledy něco řekl (sekundy od startu serveru), kvůli pauze mezi slovy.</summary>
     public double LastSaidAt { get; set; } = double.NegativeInfinity;
 

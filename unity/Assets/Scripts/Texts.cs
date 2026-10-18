@@ -58,10 +58,14 @@ namespace Oohra.Client
                     var tribe = (TribeResult)e.Code;
                     warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined or TribeResult.BornAtHome);
                     return For(tribe);
+                case EventKind.Craft:
+                    var craft = (CraftResult)e.Code;
+                    warn = craft != CraftResult.Made && craft != CraftResult.Learned;
+                    return For(craft, RecipeName(e.Subject));
                 case EventKind.Wood:
                     var wood = (WoodResult)e.Code;
                     warn = !(wood is WoodResult.AxeMade or WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut
-                        or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.PickedUp or WoodResult.Dropped);
+                        or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.PickedUp or WoodResult.Dropped or WoodResult.BastStripped);
                     return For(wood);
                 case EventKind.Stranger:
                     var stranger = (StrangerResult)e.Code;
@@ -211,6 +215,80 @@ namespace Oohra.Client
             return "před " + (System.Math.Round(minutes / 1440 * 10) / 10).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') + " dny";
         }
 
+        // Názvy receptů podle čísla (Subject v hlášce Craft). Plní je ClientSession ze seznamu receptů ze serveru.
+        private static readonly System.Collections.Generic.Dictionary<int, string> _recipeNames = new System.Collections.Generic.Dictionary<int, string>();
+
+        public static void RememberRecipes(RecipeView[] recipes)
+        {
+            foreach (var recipe in recipes) _recipeNames[recipe.Index] = recipe.Name;
+        }
+
+        private static string RecipeName(int index)
+        {
+            string name;
+            return _recipeNames.TryGetValue(index, out name) ? name : null;
+        }
+
+        /// <summary>Text k výrobě a zkoušení receptů (název receptu, když ho klient zná).</summary>
+        public static string For(CraftResult result, string recipe)
+        {
+            var what = recipe != null ? recipe.ToLower() : "to";
+            switch (result)
+            {
+                case CraftResult.Made: return "Hotovo: " + what + ".";
+                case CraftResult.Learned: return "Povedlo se! Teď umíš " + what + ". (Smrtí to zapomeneš.)";
+                case CraftResult.Failed: return "Nepovedlo se, kus materiálu přišel vniveč. Zkus to znovu.";
+                case CraftResult.NothingCame: return "Z tohohle nic nebude.";
+                case CraftResult.NeedMaterials: return "Na to ti chybí materiál.";
+                case CraftResult.NeedTool: return "Na to potřebuješ nástroj (třeba nůž).";
+                case CraftResult.NeedWater: return "Tohle se dělá u vody.";
+                case CraftResult.NeedFire: return "Tohle se dělá u ohně.";
+                case CraftResult.AlreadyHave: return "Tohle už máš.";
+                case CraftResult.NothingToRepair: return "Není co opravovat.";
+                case CraftResult.Rotten: return "Kůže už zahnila. Syrovou kůži je potřeba vyčinit do dvou dnů.";
+                case CraftResult.InventoryFull: return "Nemáš kam to dát. Něco odlož.";
+                default: return result.ToString();
+            }
+        }
+
+        /// <summary>Co recept potřebuje (nápověda u tlačítka).</summary>
+        public static string RecipeInputs(RecipeView recipe)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            foreach (var input in recipe.Inputs) parts.Add(input.Count + "× " + ItemName(input.Kind).ToLower());
+            if (recipe.Tool.HasValue) parts.Add("nástroj: " + ItemName(recipe.Tool.Value).ToLower());
+            if (recipe.NearWater) parts.Add("u vody");
+            if (recipe.NearFire) parts.Add("u ohně");
+            return string.Join(", ", parts);
+        }
+
+        /// <summary>Název věci podle druhu (bez podrobností hromádky).</summary>
+        public static string ItemName(ItemKind kind)
+        {
+            switch (kind)
+            {
+                case ItemKind.Stick: return "Klacek";
+                case ItemKind.Stone: return "Kámen";
+                case ItemKind.Spear: return "Kopí";
+                case ItemKind.Meat: return "Maso";
+                case ItemKind.Fish: return "Ryba";
+                case ItemKind.Axe: return "Sekera";
+                case ItemKind.Wood: return "Dřevo";
+                case ItemKind.Splinter: return "Tříska";
+                case ItemKind.LogPiece: return "Klad";
+                case ItemKind.SmallBag: return "Malý batoh z lýka";
+                case ItemKind.LargeBag: return "Velký batoh z kůže";
+                case ItemKind.Bast: return "Lýko";
+                case ItemKind.Hide: return "Syrová kůže";
+                case ItemKind.TannedHide: return "Vyčiněná kůže";
+                case ItemKind.Bone: return "Kost";
+                case ItemKind.Ash: return "Popel";
+                case ItemKind.Knife: return "Nůž";
+                case ItemKind.Flint: return "Pazourek";
+                default: return "Rostlina";
+            }
+        }
+
         /// <summary>Text ke kácení, dřevu a sekeře. Obyčejné seknutí nic nepíše (je ho slyšet).</summary>
         public static string For(WoodResult result)
         {
@@ -236,6 +314,9 @@ namespace Oohra.Client
                 case WoodResult.TooSoon: return null;
                 case WoodResult.InventoryFull: return "Nemáš kam to dát. Něco z batohu zahoď.";
                 case WoodResult.CannotSplit: return "Štípat jde jen dřevo.";
+                case WoodResult.BastStripped: return "Sloupl jsi z kůry lýko.";
+                case WoodResult.NoBark: return "Lýko tu už není (nebo ho tenhle strom nedá).";
+                case WoodResult.NeedKnife: return "Na lýko potřebuješ nůž.";
                 default: return result.ToString();
             }
         }
@@ -316,6 +397,8 @@ namespace Oohra.Client
                 case FireResult.InventoryFull: return "Nemáš kam to dát. Něco z batohu zahoď.";
                 case FireResult.TorchLit: return "Klacek chytl. Pochodeň ti svítí do tmy a zvěř se jí bojí.";
                 case FireResult.TorchAlreadyLit: return "Pochodeň už hoří.";
+                case FireResult.AshTaken: return "Nabral jsi popel. Hodí se na činění kůže.";
+                case FireResult.NoAsh: return "Popel tu ještě není (oheň musí chvíli hořet), nebo už je dnes vybraný.";
                 default: return result.ToString();
             }
         }
@@ -492,10 +575,11 @@ namespace Oohra.Client
             if (stack.Kind == ItemKind.Stick) return "Klacek";
             if (stack.Kind == ItemKind.Stone) return "Kámen";
             if (stack.Kind == ItemKind.Spear) return "Kopí";
-            if (stack.Kind == ItemKind.Axe) return "Kamenná sekera · zbývá " + stack.Uses + " seknutí";
-            if (stack.Kind == ItemKind.Wood) return "Dřevo";
-            if (stack.Kind == ItemKind.Splinter) return "Tříska";
+            if (stack.Kind == ItemKind.Axe) return "Sekera · zbývá " + stack.Uses + " seknutí";
+            if (stack.Kind == ItemKind.Knife) return "Nůž · zbývá " + stack.Uses + " použití";
             if (stack.Kind == ItemKind.LogPiece) return "Klad · " + TreeName(stack.Tree).ToLower();
+            if (stack.Kind == ItemKind.Hide) return "Syrová kůže" + (stack.Spoiled ? " · zahnilá" : string.Empty);
+            if (stack.Kind != ItemKind.Plant) return ItemName(stack.Kind);
             if (stack.Kind == ItemKind.Meat) return (stack.Cooking == Cooking.Baked ? "Maso · upečené" : "Maso · syrové") + (stack.Spoiled ? " · zapáchá" : string.Empty);
             if (stack.Kind == ItemKind.Fish) return (stack.Cooking == Cooking.Baked ? "Ryba · upečená" : "Ryba · syrová") + (stack.Spoiled ? " · zapáchá" : string.Empty);
 

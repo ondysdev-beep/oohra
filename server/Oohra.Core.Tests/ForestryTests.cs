@@ -13,18 +13,19 @@ public class ForestryTests
     [Fact]
     public void AxeIsMadeFromStickAndStones()
     {
-        var c = Person();
+        var c = new Character(0, new Mulberry32(1));
         var inventory = new Inventory(10);
+        var place = new CraftPlace(false, false, 0);
 
-        Assert.Equal(WoodResult.NeedMaterials, Crafting.MakeAxe(inventory, c));
+        Assert.Equal(CraftResult.NeedMaterials, Crafting.Make("axe", inventory, c, place));
         Give(inventory, Item.Stick, 1);
         Give(inventory, Item.Stone, 2);
-        Assert.Equal(WoodResult.AxeMade, Crafting.MakeAxe(inventory, c));
+        Assert.Equal(CraftResult.Made, Crafting.Make("axe", inventory, c, place));
 
         var axe = Assert.Single(inventory.Stacks).Item;
         Assert.Equal(ItemKind.Axe, axe.Kind);
-        Assert.Equal(GameData.Wood.Axe.Uses, axe.Uses);
-        Assert.Equal(WoodResult.AlreadyHasAxe, Crafting.MakeAxe(inventory, c));
+        Assert.Equal(GameData.Crafting.Find("axe")!.Uses, axe.Uses);
+        Assert.Equal(CraftResult.AlreadyHave, Crafting.Make("axe", inventory, c, place));
     }
 
     [Fact]

@@ -22,6 +22,7 @@ Návod pro správce testu: jak server spustit, co ukládá, jak ho ovládat a co
 - **Nový svět:** přesuň `world.json` jinam (nemaž ho, je to záloha) a spusť server.
 - **Návrat k záloze:** vypni server, zkopíruj vybranou zálohu ze složky `zalohy` jako `world.json` a spusť server.
 - **Jiný seed:** server uložený svět z jiného seedu nenačte a odmítne start (aby se stavby nepřenesly na jiný ostrov). Vrať seed, nebo přesuň `world.json` jinam.
+- Pro test s roboty dej do `server.json` `"startBag": true` (nováček má jinak jen dvě ruce a roboti si batoh vyrobit neumí). Před hraním s lidmi vrať `false`.
 - Po testu s roboty smaž (nebo přesuň) `stats.json` a `world.json`, ať v nich nejsou roboti.
 
 ## Příkazy v okně serveru

@@ -38,6 +38,11 @@ public sealed class ServerConfig
     /// <summary>Kolik klacků dostane nová postava do batohu (jen pro zkoušení ohně, ve hře 0).</summary>
     public int StartSticks { get; set; }
 
+    /// <summary>
+    /// Nová postava dostane malý batoh (jen pro zkoušení a pro roboty). Ve hře false: nováček má jen ruce (návrh 0.8).
+    /// </summary>
+    public bool StartBag { get; set; }
+
     /// <summary>Kolik kamenů dostane nová postava do batohu (jen pro zkoušení ohně, ve hře 0).</summary>
     public int StartStones { get; set; }
 

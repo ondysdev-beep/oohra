@@ -383,6 +383,7 @@ namespace Oohra.Client
                     GUI.Label(titleRect, Texts.WaterName(tile).ToUpper(), _title);
                     if (Button(ref buttonRect, "Napít se")) _session.Drink();
                     if (tile != TileType.Bog && _session.Count(ItemKind.Spear) > 0 && Button(ref buttonRect, "Rybařit")) _session.Fish();
+                    if (_session.Knows("tanHide") && _session.Count(ItemKind.Hide) > 0 && _session.Count(ItemKind.Ash) > 0 && Button(ref buttonRect, "Vyčinit kůži")) _session.Craft("tanHide");
                     break;
                 case TargetKind.Tree:
                     if (!_session.TreeStanding(target.TileY * _session.Connection.World.Width + target.TileX))
@@ -564,6 +565,7 @@ namespace Oohra.Client
             {
                 GUI.Label(titleRect, "KMEN (" + wood + ", " + timber.Value.Length + " m)", _title);
                 if (axe && Button(ref buttonRect, "Odseknout klad")) _session.ChopTimber();
+                if (_session.Count(ItemKind.Knife) > 0 && Button(ref buttonRect, "Sloupnout lýko")) _session.StripBark();
                 if (!axe) GUI.Label(new Rect(buttonRect.x, buttonRect.y + 4, 480, 22), "Kmen se rozseká na klady sekerou (B batoh: vyrobit sekeru).", _label);
                 return;
             }
@@ -571,6 +573,7 @@ namespace Oohra.Client
             GUI.Label(titleRect, "KLAD (" + wood + ")", _title);
             if (axe && Button(ref buttonRect, "Rozštípat")) _session.ChopTimber();
             if (Button(ref buttonRect, "Vzít")) _session.PickUpTimber();
+            if (_session.Count(ItemKind.Knife) > 0 && Button(ref buttonRect, "Sloupnout lýko")) _session.StripBark();
         }
 
         private void DrawFireMenu(Rect titleRect, ref Rect buttonRect)
@@ -586,6 +589,7 @@ namespace Oohra.Client
             GUI.Label(titleRect, fire.Value.Burning ? "OHEŇ" : "POPEL", _title);
             if (Button(ref buttonRect, fire.Value.Burning ? "Přiložit klacek" : "Zapálit znovu")) _session.FeedFire();
             if (fire.Value.Burning && Button(ref buttonRect, "Péct (batoh)")) _session.BackpackOpen = true;
+            if (Button(ref buttonRect, "Nabrat popel")) _session.TakeAsh();
             if (fire.Value.Burning && !_session.TorchLit && Button(ref buttonRect, "Zapálit pochodeň")) _session.LightTorch();
         }
 
@@ -614,37 +618,41 @@ namespace Oohra.Client
             var connection = _session.Connection;
             var inventory = connection.Inventory;
             var rowHeight = 34f;
-            var panelHeight = Mathf.Min(height - 40, 90 + Mathf.Max(1, inventory.Stacks.Length) * rowHeight);
-            _backpackRect = new Rect((width - 750) / 2, (height - panelHeight) / 2, 750, panelHeight);
+            var recipes = _session.GiveTo >= 0 ? new RecipeView[0] : connection.Recipes;
+            var recipeRows = recipes.Length == 0 ? 0 : 1 + (recipes.Length + 2) / 3;
+            var panelHeight = Mathf.Min(height - 40, 130 + Mathf.Max(1, inventory.Stacks.Length) * rowHeight + recipeRows * 32);
+            _backpackRect = new Rect((width - 780) / 2, (height - panelHeight) / 2, 780, panelHeight);
             GUI.Box(_backpackRect, GUIContent.none);
             GUI.Box(_backpackRect, GUIContent.none);
 
             var x = _backpackRect.x + 14;
             var y = _backpackRect.y + 10;
-            GUI.Label(new Rect(x, y, 300, 24), _session.GiveTo >= 0 ? "CO DÁT CIZINCI?" : "BATOH", _title);
-            GUI.Label(new Rect(x + (_session.GiveTo >= 0 ? 190 : 90), y + 2, 300, 22), $"{inventory.Stacks.Length} z {inventory.Capacity} míst", _label);
+            var title = _session.GiveTo >= 0 ? "CO DÁT CIZINCI?" : inventory.Bag.HasValue ? "BATOH" : "RUCE";
+            GUI.Label(new Rect(x, y, 300, 24), title, _title);
+            var full = inventory.Stacks.Length > inventory.Capacity ? " · víc neuneseš, něco odlož" : string.Empty;
+            GUI.Label(new Rect(x + (_session.GiveTo >= 0 ? 190 : 90), y + 2, 420, 22), $"{inventory.Stacks.Length} z {inventory.Capacity} míst{full}", _label);
             if (GUI.Button(new Rect(_backpackRect.xMax - 94, y, 80, 26), "Zavřít"))
             {
                 _session.BackpackOpen = false;
             }
 
-            var canMakeSpear = _session.Count(ItemKind.Spear) == 0 && _session.Count(ItemKind.Stick) > 0 && _session.Count(ItemKind.Stone) > 0;
-            if (canMakeSpear && GUI.Button(new Rect(_backpackRect.xMax - 284, y, 180, 26), "Vyrobit kopí (klacek, kámen)"))
+            y += 30;
+            // Batoh na zádech (nezabírá místo). Bez něj má nováček jen dvě ruce.
+            if (inventory.Bag.HasValue)
             {
-                _session.MakeSpear();
+                GUI.Label(new Rect(x, y + 2, 420, 22), "Na zádech: " + Texts.ItemName(inventory.Bag.Value), _label);
+                if (_session.GiveTo < 0 && GUI.Button(new Rect(x + 430, y, 90, 24), "Sundat")) connection.TakeOffBag();
+            }
+            else if (_session.GiveTo < 0)
+            {
+                GUI.Label(new Rect(x, y + 2, 700, 22), "Bez batohu uneseš jen to, co máš v rukou. Batoh si vyrobíš (zkus spojit lýko a klacky).", _label);
             }
 
-            var canMakeAxe = _session.Count(ItemKind.Axe) == 0 && _session.Count(ItemKind.Stick) > 0 && _session.Count(ItemKind.Stone) > 1;
-            if (canMakeAxe && GUI.Button(new Rect(_backpackRect.xMax - 484, y, 192, 26), "Vyrobit sekeru (klacek, 2 kameny)"))
-            {
-                _session.MakeAxe();
-            }
-
-            y += 36;
+            y += 30;
             if (inventory.Stacks.Length == 0)
             {
-                GUI.Label(new Rect(x, y, 560, 22), "Batoh je prázdný. Klikni na rostlinu a utrhni list, plod nebo vykopej kořen.", _label);
-                return;
+                GUI.Label(new Rect(x, y, 560, 22), "Nic neneseš. Klikni na rostlinu a utrhni list, plod nebo vykopej kořen.", _label);
+                y += rowHeight;
             }
 
             for (var i = 0; i < inventory.Stacks.Length; i++)
@@ -652,10 +660,17 @@ namespace Oohra.Client
                 var stack = inventory.Stacks[i];
                 var plant = stack.Kind == ItemKind.Plant;
                 var food = plant || stack.Kind == ItemKind.Meat || stack.Kind == ItemKind.Fish;
-                DrawBar(new Rect(x, y + 6, 18, 18), 1f, plant ? Palette.Leaf(connection.World.Species[stack.SpeciesId]) : Palette.Material(stack.Kind));
-                GUI.Label(new Rect(x + 26, y + 6, 240, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
+                if (_session.GiveTo < 0)
+                {
+                    // Zaškrtnout věci a zkusit je spojit (tak se hledají recepty).
+                    var picked = _session.CombineSelection.Contains(i);
+                    if (GUI.Toggle(new Rect(x, y + 6, 20, 20), picked, GUIContent.none) != picked) _session.ToggleCombine(i);
+                }
 
-                var buttons = new Rect(x + 270, y + 2, 84, 26);
+                DrawBar(new Rect(x + 24, y + 6, 18, 18), 1f, plant ? Palette.Leaf(connection.World.Species[stack.SpeciesId]) : Palette.Material(stack.Kind));
+                GUI.Label(new Rect(x + 50, y + 6, 250, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
+
+                var buttons = new Rect(x + 300, y + 2, 84, 26);
                 if (_session.GiveTo >= 0)
                 {
                     // Dávání cizinci: u každé věci jen „Dát“.
@@ -674,12 +689,41 @@ namespace Oohra.Client
                 if (food && Button(ref buttons, "Sníst")) connection.Eat(i);
                 if (canBake && Button(ref buttons, "Upéct")) _session.Bake(i);
                 if (stack.Kind == ItemKind.Wood && _session.Count(ItemKind.Axe) > 0 && Button(ref buttons, "Naštípat")) connection.SplitWood(i);
-                buttons.x = x + 270 + 3 * (buttons.width + 8);
+                if ((stack.Kind == ItemKind.SmallBag || stack.Kind == ItemKind.LargeBag) && Button(ref buttons, "Nasadit")) connection.WearBag(i);
+                buttons.x = x + 300 + 3 * (buttons.width + 8);
                 // Klad se nezahazuje, ale pokládá na zem.
                 if (Button(ref buttons, stack.Kind == ItemKind.LogPiece ? "Položit" : "Zahodit")) connection.Drop(i);
                 // Ukázat věc ostatním (návrh 9.3): řekni k tomu slovo, ať se ho naučí.
                 if (Button(ref buttons, "Ukázat")) connection.ShowItem(i);
                 y += rowHeight;
+            }
+
+            if (_session.GiveTo >= 0)
+            {
+                return;
+            }
+
+            if (_session.CombineSelection.Count > 0 && GUI.Button(new Rect(x, y, 260, 26), "Zkusit spojit (" + _session.CombineSelection.Count + ")"))
+            {
+                _session.CombineSelected();
+            }
+
+            y += 32;
+            if (recipes.Length == 0)
+            {
+                return;
+            }
+
+            // Recepty, které postava umí (ostatní se hledají zkoušením). Smrtí se zapomenou.
+            GUI.Label(new Rect(x, y, 300, 24), "UMÍŠ VYROBIT", _title);
+            y += 28;
+            for (var r = 0; r < recipes.Length; r++)
+            {
+                var recipe = recipes[r];
+                var rect = new Rect(x + r % 3 * 250, y + r / 3 * 32, 244, 26);
+                GUI.enabled = _session.HasMaterials(recipe);
+                if (GUI.Button(rect, new GUIContent(recipe.Name, Texts.RecipeInputs(recipe)))) _session.Craft(recipe.Id);
+                GUI.enabled = true;
             }
         }
 
@@ -688,7 +732,7 @@ namespace Oohra.Client
         {
             "WASD nebo klik myší: chůze · klik na věc: jít k ní a otevřít nabídku",
             "Mezerník: rána (zvíře poblíž) · Esc: zavřít nabídku",
-            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit, vyrobit kopí a sekeru, naštípat) · N spát a vstát · K dovednosti",
+            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit, zkusit spojit věci, vyrobit, co umíš) · N spát a vstát · K dovednosti",
             "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
             "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
             "H nakreslit značku · P podpis (jméno ze slabik a znak)",
