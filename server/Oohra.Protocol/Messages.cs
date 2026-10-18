@@ -749,8 +749,7 @@ public static class Messages
         w.Put((byte)MessageType.World);
         w.Put(world.Width);
         w.Put(world.Height);
-        w.PutBytesWithLength(world.Tiles.Select(t => (byte)t).ToArray());
-        w.PutArray(world.Shore);
+        PutTiles(w, world.Tiles, world.Shore);
 
         w.Put(world.Trees.Length);
         foreach (var t in world.Trees)
@@ -792,12 +791,44 @@ public static class Messages
         }
     }
 
+    // Bit pobřeží v bajtu dlaždice (druhů dlaždic je méně než 128).
+    private const byte ShoreBit = 0x80;
+
+    /// <summary>
+    /// Dlaždice a pobřeží v jednom bajtu na dlaždici, bez délky na začátku (tu dá šířka × výška).
+    /// PutBytesWithLength a PutArray z LiteNetLib zapisují délku jen do 2 bajtů (nejvýš 65 535), mapa 384 × 384 je větší.
+    /// </summary>
+    private static void PutTiles(NetDataWriter w, TileType[] tiles, bool[] shore)
+    {
+        var bytes = new byte[tiles.Length];
+        for (var i = 0; i < tiles.Length; i++)
+        {
+            bytes[i] = (byte)((byte)tiles[i] | (shore[i] ? ShoreBit : 0));
+        }
+
+        w.Put(bytes);
+    }
+
+    private static (TileType[] Tiles, bool[] Shore) GetTiles(NetDataReader r, int count)
+    {
+        var bytes = new byte[count];
+        r.GetBytes(bytes, count);
+        var tiles = new TileType[count];
+        var shore = new bool[count];
+        for (var i = 0; i < count; i++)
+        {
+            tiles[i] = (TileType)(bytes[i] & ~ShoreBit);
+            shore[i] = (bytes[i] & ShoreBit) != 0;
+        }
+
+        return (tiles, shore);
+    }
+
     public static WorldView ReadWorld(NetDataReader r)
     {
         var width = r.GetInt();
         var height = r.GetInt();
-        var tiles = r.GetBytesWithLength().Select(b => (TileType)b).ToArray();
-        var shore = r.GetBoolArray();
+        var (tiles, shore) = GetTiles(r, width * height);
         var trees = ReadList(r, () => new TreeView(r.GetInt(), r.GetFloat()));
         var plants = ReadList(r, () => new PlantView(r.GetInt(), r.GetFloat(), r.GetFloat()));
         var species = ReadList(r, () => new SpeciesView(r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetShort(), r.GetByte()));
@@ -1053,6 +1084,11 @@ public static class Messages
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>
+    /// <summary>Velikost zprávy se zvířaty: druh zprávy a počet, pak jedno zvíře (id, druh, x, y, směr, stav).</summary>
+    public const int AnimalsHeaderBytes = 1 + 4;
+
+    public const int AnimalViewBytes = 4 + 1 + 4 + 4 + 4 + 1;
+
     public static void WriteAnimals(NetDataWriter w, IReadOnlyList<AnimalView> animals)
     {
         w.Put((byte)MessageType.Animals);

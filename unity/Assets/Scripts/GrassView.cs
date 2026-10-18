@@ -10,11 +10,17 @@ namespace Oohra.Client
     /// Tráva jen pro ozdobu: trsy z katalogu vzhledu (Grass) rozházené po travnatých dlaždicích (v lese řidší).
     /// Nejsou to rostliny, nedá se na ně kliknout a server o nich neví. Trsů jsou tisíce, proto nejsou jako
     /// samostatné objekty, ale kreslí se po stovkách naráz (GPU instancing, Graphics.RenderMeshInstanced).
+    /// Trsy jsou rozdělené do čtverců CellSize × CellSize metrů a každý čtverec má své hranice, takže Unity kreslí
+    /// jen čtverce, které kamera vidí (na ostrově 384 × 384 m je jich většina mimo obraz).
     /// </summary>
     public class GrassView : MonoBehaviour
     {
         // Kolik trsů jde kreslit jedním voláním (bezpečná hranice pro všechny grafické karty).
         private const int ChunkSize = 1023;
+
+        // Velikost čtverce trávy (m) a jak vysoko tráva sahá (pro hranice čtverce).
+        private const int CellSize = 16;
+        private const float CellHeight = 3f;
 
         // V lese je tráva řidší, kolem kmene stromu žádná.
         private const float ForestDensity = 0.4f;
@@ -25,6 +31,17 @@ namespace Oohra.Client
         /// <summary>Kolik trsů je na ostrově (pro testy).</summary>
         public int Count { get; private set; }
 
+        /// <summary>Kolik dávek (čtverec × část modelu) se kreslí (pro testy).</summary>
+        public int ChunkCount
+        {
+            get
+            {
+                var count = 0;
+                foreach (var batch in _batches) count += batch.Chunks.Count;
+                return count;
+            }
+        }
+
         /// <summary>Jedna část modelu trávy (síť a materiál) a všechny její kopie na ostrově.</summary>
         private sealed class Batch
         {
@@ -32,8 +49,15 @@ namespace Oohra.Client
             public int SubMesh;
             public RenderParams Params;
             public Matrix4x4 Part;
-            public readonly List<Matrix4x4> Matrices = new List<Matrix4x4>();
-            public readonly List<Matrix4x4[]> Chunks = new List<Matrix4x4[]>();
+            public readonly Dictionary<int, List<Matrix4x4>> Cells = new Dictionary<int, List<Matrix4x4>>();
+            public readonly List<Chunk> Chunks = new List<Chunk>();
+        }
+
+        /// <summary>Kopie jedné části modelu v jednom čtverci (nejvýš ChunkSize), s hranicemi čtverce.</summary>
+        private sealed class Chunk
+        {
+            public RenderParams Params;
+            public Matrix4x4[] Matrices;
         }
 
         /// <summary>Rozhází trávu. Když katalog žádnou trávu nemá, vrátí null.</summary>
@@ -143,9 +167,17 @@ namespace Oohra.Client
                     var rotation = Quaternion.Euler(0f, seed * 360f, 0f);
                     var scale = Vector3.one * (0.8f + 0.4f * GroundView.Hash01(i, k * 4 + 4, 21));
                     var place = Matrix4x4.TRS(WorldCoords.ToUnity(x, y), rotation, scale);
+                    var cell = (int)y / CellSize * 10000 + (int)x / CellSize;
                     foreach (var part in models[(int)(seed * models.Count) % models.Count])
                     {
-                        part.Matrices.Add(place * part.Part);
+                        List<Matrix4x4> matrices;
+                        if (!part.Cells.TryGetValue(cell, out matrices))
+                        {
+                            matrices = new List<Matrix4x4>();
+                            part.Cells[cell] = matrices;
+                        }
+
+                        matrices.Add(place * part.Part);
                     }
 
                     Count++;
@@ -154,13 +186,35 @@ namespace Oohra.Client
 
             foreach (var batch in _batches)
             {
-                for (var start = 0; start < batch.Matrices.Count; start += ChunkSize)
+                foreach (var cell in batch.Cells)
                 {
-                    batch.Chunks.Add(batch.Matrices.GetRange(start, Mathf.Min(ChunkSize, batch.Matrices.Count - start)).ToArray());
+                    var bounds = CellBounds(cell.Key);
+                    for (var start = 0; start < cell.Value.Count; start += ChunkSize)
+                    {
+                        var parameters = batch.Params;
+                        parameters.worldBounds = bounds;
+                        batch.Chunks.Add(new Chunk
+                        {
+                            Params = parameters,
+                            Matrices = cell.Value.GetRange(start, Mathf.Min(ChunkSize, cell.Value.Count - start)).ToArray(),
+                        });
+                    }
                 }
 
-                batch.Matrices.Clear();
+                batch.Cells.Clear();
             }
+        }
+
+        /// <summary>Hranice čtverce v Unity (mapa y dolů = Unity -z), s rezervou na velikost trsu.</summary>
+        private static Bounds CellBounds(int cell)
+        {
+            var x = cell % 10000 * CellSize;
+            var y = cell / 10000 * CellSize;
+            var min = WorldCoords.ToUnity(x - 1, y + CellSize + 1);
+            var max = WorldCoords.ToUnity(x + CellSize + 1, y - 1);
+            var bounds = new Bounds();
+            bounds.SetMinMax(new Vector3(min.x, -1f, min.z), new Vector3(max.x, CellHeight, max.z));
+            return bounds;
         }
 
         private void Update()
@@ -169,7 +223,7 @@ namespace Oohra.Client
             {
                 foreach (var chunk in batch.Chunks)
                 {
-                    Graphics.RenderMeshInstanced(batch.Params, batch.Mesh, batch.SubMesh, chunk);
+                    Graphics.RenderMeshInstanced(chunk.Params, batch.Mesh, batch.SubMesh, chunk.Matrices);
                 }
             }
         }

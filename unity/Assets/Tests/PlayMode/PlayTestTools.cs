@@ -15,8 +15,11 @@ namespace Oohra.Client.Tests
     {
         public const string Invite = "UNITY-TEST";
 
-        /// <summary>Spustí server. extraJson jsou další položky server.json, např. "\"startHour\": 22".</summary>
-        public static Process StartServer(int port, string extraJson = "")
+        /// <summary>
+        /// Spustí server. extraJson jsou další položky server.json, např. "\"startHour\": 22".
+        /// Testy běží na menším světě 128 × 128 (rychlejší start), test velkého světa si dá 384.
+        /// </summary>
+        public static Process StartServer(int port, string extraJson = "", int worldSize = 128)
         {
             var repo = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
             // Jiný sestavený server jde zadat proměnnou OOHRA_SERVER_DLL (třeba když běžící server zamyká bin).
@@ -41,7 +44,7 @@ namespace Oohra.Client.Tests
             // Každý test začíná v novém světě: svět ani statistiky se neukládají (jinak by se načetly v dalším testu).
             extraJson += ", \"worldFile\": \"\", \"statsFile\": \"\"";
             var extra = ", " + extraJson;
-            File.WriteAllText(config, "{ \"port\": " + port + ", \"seed\": 1, \"worldSize\": 84, \"inviteCodes\": [\"" + Invite + "\"]" + extra + " }");
+            File.WriteAllText(config, "{ \"port\": " + port + ", \"seed\": 1, \"worldSize\": " + worldSize + ", \"inviteCodes\": [\"" + Invite + "\"]" + extra + " }");
             return Process.Start(new ProcessStartInfo("dotnet", "\"" + serverDll + "\" \"" + config + "\"")
             {
                 UseShellExecute = false,

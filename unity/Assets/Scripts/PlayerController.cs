@@ -174,7 +174,7 @@ namespace Oohra.Client
             if (TreeTiles.Contains(ty * world.Width + tx)) return InteractionTarget.ForTile(TargetKind.Tree, tx, ty);
             if (IsWater(tile)) return InteractionTarget.ForTile(TargetKind.Water, tx, ty);
             // Skála bez hromady kamenů nic nedá: klik na ni je obyčejná chůze.
-            if (tile == TileType.Rock && _session.RockPileAt(tx, ty) != null) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);
+            if ((tile == TileType.Rock || tile == TileType.LayeredRock) && _session.RockPileAt(tx, ty) != null) return InteractionTarget.ForTile(TargetKind.Rock, tx, ty);
             return null;
         }
 
@@ -416,7 +416,7 @@ namespace Oohra.Client
 
         private static bool IsWater(TileType tile)
         {
-            return tile == TileType.Pond || tile == TileType.Bog || tile == TileType.Sea;
+            return tile == TileType.Pond || tile == TileType.Ford || tile == TileType.Bog || tile == TileType.Sea;
         }
 
         private static double Distance(double ax, double ay, double bx, double by)

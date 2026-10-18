@@ -19,11 +19,11 @@ public class IslandTests
     [Fact]
     public void DefaultSizeComesFromSettings()
     {
-        var island = IslandGenerator.Build(1);
+        var island = WorldGenerator.Build(1);
 
         Assert.Equal(GameData.Settings.WorldWidth, island.Width);
         Assert.Equal(GameData.Settings.WorldHeight, island.Height);
-        Assert.Equal(128, island.Width);
+        Assert.Equal(384, island.Width);
     }
 
     [Fact]

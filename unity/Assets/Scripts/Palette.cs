@@ -128,6 +128,9 @@ namespace Oohra.Client
                 case TileType.Rock: return Hex("#8b8478");
                 case TileType.Bog: return Hex("#5d7048");
                 case TileType.Pond: return Hex("#3f7f90");
+                case TileType.Highland: return Hex("#7f7a63");
+                case TileType.Ford: return Hex("#4f8f9c");
+                case TileType.LayeredRock: return Hex("#8a7264");
                 default: return Color.magenta;
             }
         }

@@ -2,7 +2,7 @@
 {
   "port": 9050,
   "seed": 1,
-  // 0 = velikost ostrova podle settings.json (128).
+  // 0 = velikost ostrova podle settings.json (384).
   "worldSize": 0,
   // Kódy pozvánek pro testery. Kdo nemá kód, nepřihlásí se.
   "inviteCodes": [ "OOHRA-TEST" ],

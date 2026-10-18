@@ -22,7 +22,8 @@ namespace Oohra.Client
         public const int Forest = 2;
         public const int Rock = 3;
         public const int Bog = 4;
-        public const int LayerCount = 5;
+        public const int Highland = 5;
+        public const int LayerCount = 6;
 
         /// <summary>Nejhlubší místo (hluboké moře) pod úrovní souše, v metrech.</summary>
         public const float Depth = 1f;
@@ -50,16 +51,20 @@ namespace Oohra.Client
             new Vector2(-ShoreRadius, ShoreRadius), new Vector2(ShoreRadius, ShoreRadius),
         };
 
-        /// <summary>Textura dlaždice: moře má písečné dno, jezírko bahnité.</summary>
+        /// <summary>Textura dlaždice: moře a brod mají písečné dno, jezírko bahnité, vrstvená skála je zatím skála.</summary>
         public static int LayerOf(TileType tile)
         {
             switch (tile)
             {
                 case TileType.Sand:
                 case TileType.Sea:
+                case TileType.Ford:
                     return Sand;
                 case TileType.Forest: return Forest;
-                case TileType.Rock: return Rock;
+                case TileType.Rock:
+                case TileType.LayeredRock:
+                    return Rock;
+                case TileType.Highland: return Highland;
                 case TileType.Bog:
                 case TileType.Pond:
                     return Bog;
@@ -67,20 +72,21 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Hloubka dna pod souší (m): moře u břehu mělčí, jezírko mělké, souš 0.</summary>
+        /// <summary>Hloubka dna pod souší (m): moře u břehu mělčí, jezírko mělké, brod po kotníky, souš 0.</summary>
         public static float DepthOf(TileType tile, bool shore)
         {
             switch (tile)
             {
                 case TileType.Sea: return shore ? 0.55f : Depth;
                 case TileType.Pond: return 0.6f;
+                case TileType.Ford: return 0.15f;
                 default: return 0f;
             }
         }
 
         public static bool IsWater(TileType tile)
         {
-            return tile == TileType.Sea || tile == TileType.Pond;
+            return tile == TileType.Sea || tile == TileType.Pond || tile == TileType.Ford;
         }
 
         /// <summary>Počet bodů výšek na stranu: 2^n + 1, asi čtyři na metr (jak chce Terrain).</summary>

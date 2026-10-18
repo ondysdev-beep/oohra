@@ -81,6 +81,9 @@ namespace Oohra.Client
         [Tooltip("Bažina a dno jezírek.")]
         public Texture2D BogTexture;
 
+        [Tooltip("Kamenitá půda skalnaté vrchoviny (mezi skalami).")]
+        public Texture2D HighlandTexture;
+
         [Tooltip("Po kolika metrech se textura zemi opakuje.")]
         public float GroundTextureSize = 4f;
 
@@ -210,7 +213,9 @@ namespace Oohra.Client
                 case GroundLayout.Sand: return SandTexture;
                 case GroundLayout.Forest: return ForestTexture;
                 case GroundLayout.Rock: return RockTexture;
-                default: return BogTexture;
+                case GroundLayout.Bog: return BogTexture;
+                case GroundLayout.Highland: return HighlandTexture;
+                default: return null;
             }
         }
 

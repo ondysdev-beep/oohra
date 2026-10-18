@@ -28,6 +28,7 @@ Rozhodnuto 18. 10. 2026: další kolo je **návrh 0.8 Svět a logika** (`docs/Oo
 ### Neověřeno (zkontrolovat při hraní)
 - Vzhled třetí generace (ve hře nastane až za rok, zatím hlídají jen testy).
 - Zvuky (slabiky, oheň, kroky, divočák, vlk, déšť, hrom): testy kontrolují jen to, že existují.
+- Nový svět 384 × 384: jestli je ostrov hezký na procházení (vzdálenosti, kde se rodí nováček, jak daleko je voda), brod (postava stojí kousek nad vodou), hodně hromad kamenů ve vrchovině, plynulost na grafické kartě.
 - Počasí a pochodeň: jestli není mlha moc hustá, déšť moc studený, bouřka moc častá a noc moc tmavá (čísla v `weather.json`, světlo v `DayNightLight`, dohled ve `WeatherView`). Snímky z testů: `unity/Logs/bourka.png`, `mlha.png`.
 
 ## Kolo 0.8: Svět a logika (etapy)
@@ -38,8 +39,8 @@ Zadání: `docs/Oohra_0.8_Svet_a_logika.md`. Odhad etap 1 až 5 je 9 až 14 týd
 - [x] Tvar a výška terénu (18. 10., `WorldGenerator`, `worldgen.json`): nový generátor vedle starého (výšková mapa a vlhkost ze seedu, jeden celistvý ostrov s pobřežím). Testy: stejný seed = stejný svět, ostrov v jednom kuse.
 - [x] Oblasti podle výšky a vlhkosti: les, bažina, skalnatá vrchovina, louka, jezero **i řeka** (z vrchoviny do jezera a do moře, s brody). Test poměru ploch, oblasti v konzolovém klientovi (`-- 1 384 novy`, příkaz `oblasti`).
 - [x] Rozmístění: stromy (řidší, podle dlaždice), rostliny, skály (i vrstvená skála), pitná a bahenní voda, **2 tábory** cizinců (každý v jiné oblasti, u vody, aspoň 110 m od sebe) a **6 zřícenin** na souši. Testy: nic na vodě, tábory na souši. Místa narození zkontrolovat se serverem (další krok).
-- [ ] Server: výchozí velikost 384, nový svět, velikost úvodní zprávy s mapou, ukládání. 20 robotů na nové mapě a server stíhá.
-- [ ] Unity: zem pro 384 m (rozlišení terénu, případně víc dílů), textury oblastí, výkon trávy a stromů (nekreslit, co je daleko). Snímek z testu ukáže oblasti.
+- [x] Server (18. 10.): výchozí velikost 384, nový svět, úvodní zpráva s mapou (protokol 26, LiteNetLib neumí pole nad 65 535 prvků), ukládání a načtení. 20 robotů 5 minut: tick 2 až 3 ms z 33 ms, vytížení 8 %, asi 15 až 20 kB/s na hráče. Zvířat je podle plochy asi 540, hráč dostane nejbližší, co se vejdou do paketu.
+- [x] Unity (18. 10.): zem 384 m stačí jako jeden Terrain (načtení asi 3 s), nová vrstva kamenitá půda, brod jako mělká voda, tráva po čtvercích 16 × 16 m (kreslí se jen, co kamera vidí). Test `BigWorldSceneTests`, snímek `unity/Logs/svet.png`. Výkon na skutečné grafické kartě ověřit při hraní.
 - [ ] Úklid: golden testy ostrova a starý generátor pryč (testy náhody `mulberry32` a `hash2` zůstávají), roboti a cizinci fungují.
 
 Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, podíly les 35 %, louka asi 25 až 33 %, vrchovina 15 %, bažina 10 %, jezero 3 %, řeka a pláž zbytek.
