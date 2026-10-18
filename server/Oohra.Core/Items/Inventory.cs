@@ -93,6 +93,49 @@ public sealed class Inventory
         return stack.Item;
     }
 
+    /// <summary>
+    /// Vymění jeden kus z hromádky za jinou věc (třeba opotřebovanou sekeru). Když je kus na hromádce sám,
+    /// zůstane na stejném místě, ať se batoh nepřeházel. Vrací false, když se nová věc nevejde.
+    /// </summary>
+    public bool ReplaceOne(int stackIndex, Item replacement)
+    {
+        if (stackIndex < 0 || stackIndex >= _stacks.Count)
+        {
+            return false;
+        }
+
+        if (_stacks[stackIndex].Count == 1)
+        {
+            _stacks[stackIndex] = new ItemStack(replacement, 1);
+            return true;
+        }
+
+        var original = TakeOne(stackIndex)!;
+        if (TryAdd(replacement))
+        {
+            return true;
+        }
+
+        TryAdd(original);
+        return false;
+    }
+
+    /// <summary>Kolik kusů dané věci se ještě vejde (do rozpracovaných hromádek a na volná místa).</summary>
+    public int RoomFor(Item item)
+    {
+        var stackSize = GameData.Gathering.Inventory.StackSize;
+        var room = (Capacity - _stacks.Count) * stackSize;
+        foreach (var stack in _stacks)
+        {
+            if (stack.Item == item)
+            {
+                room += Math.Max(0, stackSize - stack.Count);
+            }
+        }
+
+        return room;
+    }
+
     /// <summary>Kolik kusů daného druhu je v batohu (třeba klacků).</summary>
     public int Count(ItemKind kind)
     {

@@ -58,6 +58,11 @@ namespace Oohra.Client
                     var tribe = (TribeResult)e.Code;
                     warn = !(tribe is TribeResult.Invited or TribeResult.Joined or TribeResult.Left or TribeResult.Stored or TribeResult.Taken or TribeResult.TheyJoined or TribeResult.BornAtHome);
                     return For(tribe);
+                case EventKind.Wood:
+                    var wood = (WoodResult)e.Code;
+                    warn = !(wood is WoodResult.AxeMade or WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut
+                        or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.PickedUp or WoodResult.Dropped);
+                    return For(wood);
                 case EventKind.Stranger:
                     var stranger = (StrangerResult)e.Code;
                     warn = stranger != StrangerResult.Gift && stranger != StrangerResult.Accepted;
@@ -206,6 +211,35 @@ namespace Oohra.Client
             return "před " + (System.Math.Round(minutes / 1440 * 10) / 10).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') + " dny";
         }
 
+        /// <summary>Text ke kácení, dřevu a sekeře. Obyčejné seknutí nic nepíše (je ho slyšet).</summary>
+        public static string For(WoodResult result)
+        {
+            switch (result)
+            {
+                case WoodResult.AxeMade: return "Vyrobil jsi kamennou sekeru. Strom padá na stranu od tebe, nestůj pod ním.";
+                case WoodResult.AlreadyHasAxe: return "Sekeru už máš.";
+                case WoodResult.NeedMaterials: return "Na sekeru potřebuješ klacek a dva kameny.";
+                case WoodResult.NeedAxe: return "Bez sekery to nepůjde. Rukama nasbíráš jen klacky.";
+                case WoodResult.Chopped: return null;
+                case WoodResult.TreeFalling: return "Strom praská a padá!";
+                case WoodResult.PieceCut: return "Odsekl jsi z kmene klad.";
+                case WoodResult.PieceSplit: return "Rozštípal jsi klad na dřevo.";
+                case WoodResult.WoodSplit: return "Naštípal jsi třísky.";
+                case WoodResult.AxeBroke: return "Sekera se rozpadla. Vyrob si novou.";
+                case WoodResult.PickedUp: return "Neseš klad. Je těžký, jdeš pomaleji.";
+                case WoodResult.Dropped: return "Položil jsi klad.";
+                case WoodResult.AlreadyCarrying: return "Už neseš klad. Víc neuneseš.";
+                case WoodResult.TooHeavy: return "Celý kmen neuneseš. Rozsekej ho na klady.";
+                case WoodResult.NotCarrying: return "Nic neneseš.";
+                case WoodResult.TooFar: return "Je to moc daleko.";
+                case WoodResult.NotFound: return "Už tu nic není.";
+                case WoodResult.TooSoon: return null;
+                case WoodResult.InventoryFull: return "Nemáš kam to dát. Něco z batohu zahoď.";
+                case WoodResult.CannotSplit: return "Štípat jde jen dřevo.";
+                default: return result.ToString();
+            }
+        }
+
         /// <summary>Text k výsledku lovu (prototyp attack a nabídka mrtvého zvířete).</summary>
         public static string For(HuntResult result, AnimalKind animal)
         {
@@ -352,6 +386,7 @@ namespace Oohra.Client
                 case BodyEvent.ColdInstinct: return "Zebe tě do kostí. Tělo ti říká: najdi oheň nebo úkryt, než přijde mráz.";
                 case BodyEvent.TorchLow: return "Pochodeň slábne. Brzy dohoří.";
                 case BodyEvent.TorchOut: return "Pochodeň zhasla. Kolem je zase tma.";
+                case BodyEvent.HitByTree: return "Zasáhl tě padající strom!";
                 default: return "Zemřel jsi.";
             }
         }
@@ -418,6 +453,7 @@ namespace Oohra.Client
                 case DeathCause.Hunger: return "Zemřel jsi hladem.";
                 case DeathCause.Bleeding: return "Vykrvácel jsi po zranění od zvířete.";
                 case DeathCause.Wound: return "Zemřel jsi na následky zranění od zvířete.";
+                case DeathCause.FallingTree: return "Zabil tě padající strom.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -456,6 +492,10 @@ namespace Oohra.Client
             if (stack.Kind == ItemKind.Stick) return "Klacek";
             if (stack.Kind == ItemKind.Stone) return "Kámen";
             if (stack.Kind == ItemKind.Spear) return "Kopí";
+            if (stack.Kind == ItemKind.Axe) return "Kamenná sekera · zbývá " + stack.Uses + " seknutí";
+            if (stack.Kind == ItemKind.Wood) return "Dřevo";
+            if (stack.Kind == ItemKind.Splinter) return "Tříska";
+            if (stack.Kind == ItemKind.LogPiece) return "Klad · " + TreeName(stack.Tree).ToLower();
             if (stack.Kind == ItemKind.Meat) return (stack.Cooking == Cooking.Baked ? "Maso · upečené" : "Maso · syrové") + (stack.Spoiled ? " · zapáchá" : string.Empty);
             if (stack.Kind == ItemKind.Fish) return (stack.Cooking == Cooking.Baked ? "Ryba · upečená" : "Ryba · syrová") + (stack.Spoiled ? " · zapáchá" : string.Empty);
 

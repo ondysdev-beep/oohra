@@ -24,6 +24,7 @@ public readonly record struct PlantInstance(int Id, int SpeciesId, double X, dou
 public sealed class Island
 {
     private readonly HashSet<int> _treeTiles;
+    private readonly Dictionary<int, Tree> _treeByTile;
 
     public Island(
         int seed,
@@ -52,6 +53,7 @@ public sealed class Island
         Species = species;
         SpeciesSecrets = speciesSecrets;
         _treeTiles = trees.Select(t => t.TileIndex).ToHashSet();
+        _treeByTile = trees.ToDictionary(t => t.TileIndex);
         Rocks = new RockPiles(this);
     }
 
@@ -115,7 +117,23 @@ public sealed class Island
         return Tiles[Index(x, y)];
     }
 
+    /// <summary>Kácení a dřevo na zemi (stromy, které padají nebo z nich zbyl pařez, kmeny, klady).</summary>
+    public Forestry Forestry { get; } = new();
+
+    /// <summary>Strom ze seedu na dlaždici (i pokácený), nebo null.</summary>
+    public Tree? TreeAt(int tileIndex)
+    {
+        return _treeByTile.TryGetValue(tileIndex, out var tree) ? tree : null;
+    }
+
+    /// <summary>Na dlaždici stojí strom (ne padající a ne pařez): jde z něj sbírat a kácet.</summary>
     public bool HasTree(int tileIndex)
+    {
+        return _treeTiles.Contains(tileIndex) && Forestry.IsStanding(tileIndex);
+    }
+
+    /// <summary>Na dlaždici je kmen, do kterého se naráží: stojící strom, padající strom, nebo pařez.</summary>
+    public bool HasTrunk(int tileIndex)
     {
         return _treeTiles.Contains(tileIndex);
     }

@@ -11,5 +11,5 @@ public sealed record TreeRules(int SeedSalt, List<TreeSpeciesRules> Species, int
     }
 }
 
-/// <summary>Druh stromu: rozsah výšky (metry) a jak často roste v které oblasti.</summary>
-public sealed record TreeSpeciesRules(TreeKind Kind, double MinHeight, double MaxHeight, Dictionary<RegionKind, double> Weights);
+/// <summary>Druh stromu: rozsah výšky (metry), kolik seknutí vydrží, kolik dřeva dá klad a kde roste.</summary>
+public sealed record TreeSpeciesRules(TreeKind Kind, double MinHeight, double MaxHeight, int Hits, int WoodPerPiece, Dictionary<RegionKind, double> Weights);

@@ -28,6 +28,7 @@ Rozhodnuto 18. 10. 2026: další kolo je **návrh 0.8 Svět a logika** (`docs/Oo
 ### Neověřeno (zkontrolovat při hraní)
 - Vzhled třetí generace (ve hře nastane až za rok, zatím hlídají jen testy).
 - Zvuky (slabiky, oheň, kroky, divočák, vlk, déšť, hrom): testy kontrolují jen to, že existují.
+- Kácení: jestli je počet seknutí a opotřebení sekery rozumné, jak vypadá pád stromu a kmen z kódu (pro vlastní modely políčka Stump, Log, LogPiece v katalogu).
 - Nový svět 384 × 384: jestli je ostrov hezký na procházení (vzdálenosti, kde se rodí nováček, jak daleko je voda), brod (postava stojí kousek nad vodou), hodně hromad kamenů ve vrchovině, plynulost na grafické kartě.
 - Počasí a pochodeň: jestli není mlha moc hustá, déšť moc studený, bouřka moc častá a noc moc tmavá (čísla v `weather.json`, světlo v `DayNightLight`, dohled ve `WeatherView`). Snímky z testů: `unity/Logs/bourka.png`, `mlha.png`.
 
@@ -47,11 +48,11 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 
 ### Etapa 2: Stromy a kácení (2 až 3 týdny)
 - [x] Stromy jako objekty (18. 10.): pět druhů (dub, jehličnan, bříza, vrba, suchý), výška ze seedu, `trees.json` (druh podle oblasti, u vody vrba), protokol 27 posílá druh a výšku, v katalogu políčko pro každý druh (prázdné = společné `Trees`, pak tvar z kódu), Unity `TreeViews`. Rozhodnuto: nošení kmene ve více lidech odloženo.
-- [ ] Věci ležící ve světě (kmeny, klady, mršiny): poloha, ukládání, posílání hráčům v okolí.
-- [ ] Kamenná sekera (jednoduchý recept, opotřebení).
-- [ ] Kácení: rány na serveru, pád podle strany seknutí, zapraskání, zranění v pruhu pádu, ležící kmen blokuje, pařez.
-- [ ] Klady po 1 m, dřevo, třísky (podpal, pochodeň).
-- [ ] Nošení kladu (jeden hráč, pomalu). Kmen pro víc nosičů odložen, kmen se zatím rozseká na místě.
+- [x] Dřevo ležící ve světě (18. 10., `Forestry`, `Timber`): kmeny a klady s polohou, směrem a délkou, ukládají se, posílají se všem (zpráva `Timbers`). Mršiny přijdou s etapou 3.
+- [x] Kamenná sekera: klacek a 2 kameny, 60 seknutí, pak se rozpadne (`woodcutting.json`, `Item.Uses`).
+- [x] Kácení: seknutí v rytmu (počet podle druhu v `trees.json`), strom praská 1,5 s a padá od sekáče, kdo je v pruhu pádu (hráč i zvíře), je zraněný, zbude pařez a ležící kmen, který blokuje cestu i stavění.
+- [x] Klady po 1 m (z kmene od špičky), klad na 2 až 4 díly dřeva podle druhu, díl dřeva na 4 třísky. Díl dřeva hoří v ohni 3× déle než klacek, tříska zapálí pochodeň.
+- [x] Nošení kladu: jeden v batohu, postava jde na 60 % rychlosti, ostatní vidí klad na rameni (`PlayerSnapshot.Carry`), Položit z batohu. Kmen pro víc nosičů odložen.
 - [ ] Obnova: mladé stromy rostou herní roky, kolem staveb strom nevyroste.
 
 ### Etapa 3: Nářadí, ruce, batoh, deník (2 až 3 týdny)

@@ -64,6 +64,12 @@ public sealed class GameConnection : IDisposable
     /// <summary>Ohně na ostrově (i vyhaslé, z nich zbyl popel).</summary>
     public FireView[] Fires { get; private set; } = [];
 
+    /// <summary>Stromy, které padají, nebo z nich zbyl pařez.</summary>
+    public TreeStateView[] TreeStates { get; private set; } = [];
+
+    /// <summary>Dřevo na zemi (kmeny a klady).</summary>
+    public TimberView[] Timbers { get; private set; } = [];
+
     /// <summary>Stavby hráčů (zdi).</summary>
     public StructureView[] Structures { get; private set; } = [];
 
@@ -207,6 +213,41 @@ public sealed class GameConnection : IDisposable
     }
 
     /// <summary>Nasbírat klacky u stromu na dlaždici.</summary>
+    /// <summary>Seknout sekerou do stromu. Výsledek přijde jako hláška Wood.</summary>
+    public void ChopTree(int tileX, int tileY)
+    {
+        Send(w => Messages.WriteTileAction(w, MessageType.ChopTree, tileX, tileY));
+    }
+
+    /// <summary>Seknout do dřeva na zemi: z kmene odsekne klad, klad rozštípe na dřevo.</summary>
+    public void ChopTimber(int timberId)
+    {
+        Send(w => Messages.WriteTimberAction(w, MessageType.ChopTimber, timberId));
+    }
+
+    /// <summary>Zvednout klad ze země (nosí se jen jeden).</summary>
+    public void PickUpTimber(int timberId)
+    {
+        Send(w => Messages.WriteTimberAction(w, MessageType.PickUpTimber, timberId));
+    }
+
+    /// <summary>Položit nesený klad.</summary>
+    public void DropTimber()
+    {
+        Send(Messages.WriteDropTimber);
+    }
+
+    /// <summary>Naštípat díl dřeva z hromádky v batohu na třísky.</summary>
+    public void SplitWood(int stackIndex)
+    {
+        Send(w => Messages.WriteStackAction(w, MessageType.SplitWood, stackIndex));
+    }
+
+    public void MakeAxe()
+    {
+        Send(Messages.WriteMakeAxe);
+    }
+
     public void GatherSticks(int tileX, int tileY)
     {
         Send(w => Messages.WriteTileAction(w, MessageType.GatherSticks, tileX, tileY));
@@ -464,6 +505,12 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Fires:
                 Fires = Messages.ReadFires(reader);
+                break;
+            case MessageType.TreeStates:
+                TreeStates = Messages.ReadTreeStates(reader);
+                break;
+            case MessageType.Timbers:
+                Timbers = Messages.ReadTimbers(reader);
                 break;
             case MessageType.Animals:
                 Animals = Messages.ReadAnimals(reader);

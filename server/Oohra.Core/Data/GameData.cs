@@ -100,6 +100,11 @@ public static class GameData
 
     public static TreeRules Trees => _trees.Value;
 
+    private static readonly Lazy<WoodRules> _wood =
+        new(() => Load<WoodRules>("woodcutting.json"));
+
+    public static WoodRules Wood => _wood.Value;
+
     private static readonly Lazy<StrangerRules> _strangers =
         new(() => Load<StrangerRules>("strangers.json"));
 

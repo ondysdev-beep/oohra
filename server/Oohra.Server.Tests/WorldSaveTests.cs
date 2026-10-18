@@ -54,6 +54,13 @@ public sealed class WorldSaveTests : IDisposable
             // Skrytý stav postavy: jed v těle a otrava, která se teprve projeví.
             ondra.Character.Toxin = 12.5;
             ondra.Character.TorchMinutes = 9999;
+
+            // Kácení: rozsekaný strom (jedno seknutí) se uloží.
+            var island = net.Server.Island;
+            var tree = island.Trees.First(t => island.HasTree(t.TileIndex));
+            var axe = new Oohra.Core.Items.Inventory(5);
+            axe.TryAdd(new Oohra.Core.Items.Item(Oohra.Core.Items.ItemKind.Axe, Uses: 10));
+            Assert.Equal(WoodResult.Chopped, island.Forestry.Chop(island, (int)tree.X, (int)tree.Y, 99, tree.X - 1, tree.Y, axe));
             ondra.Character.Schedule(net.Server.Clock.TotalMinutes + 30, EffectType.Vomit, 0.7);
             ondra.Character.Vocabulary.Hear([1, 2], 1, seesSpeaker: true);
             before = net.Server.CaptureWorld();
@@ -68,6 +75,7 @@ public sealed class WorldSaveTests : IDisposable
         Assert.Equal(before.CreatedUtc, restarted.Server.WorldCreatedUtc);
         Assert.Equal(12.5, restarted.Server.FindPlayer("Ondra")!.Character.Toxin);
         Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.TorchLit);
+        Assert.Contains(restarted.Server.Island.Trees, t => restarted.Server.Island.Forestry.HitsOf(t.TileIndex) == 1);
         Assert.Single(restarted.Server.FindPlayer("Ondra")!.Character.Scheduled);
         Assert.True(restarted.Server.FindPlayer("Petr")!.Character.IsDead);
 

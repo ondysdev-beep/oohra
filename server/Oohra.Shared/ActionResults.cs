@@ -1,5 +1,77 @@
 namespace Oohra.Core.World
 {
+    /// <summary>Jak dopadlo kácení, sekání kmene, štípání, nošení kladu nebo výroba sekery.</summary>
+    public enum WoodResult
+    {
+        AxeMade,
+
+        /// <summary>Sekera už je v batohu.</summary>
+        AlreadyHasAxe,
+
+        /// <summary>Na sekeru chybí klacek nebo kameny.</summary>
+        NeedMaterials,
+
+        /// <summary>Bez sekery to nejde (rukama jen klacky).</summary>
+        NeedAxe,
+
+        /// <summary>Seknutí do stromu (strom ještě stojí).</summary>
+        Chopped,
+
+        /// <summary>Strom zapraskal a padá (na stranu od toho, kdo sekal).</summary>
+        TreeFalling,
+
+        /// <summary>Odsekl klad z kmene.</summary>
+        PieceCut,
+
+        /// <summary>Rozštípal klad na díly dřeva.</summary>
+        PieceSplit,
+
+        /// <summary>Naštípal díl dřeva na třísky.</summary>
+        WoodSplit,
+
+        /// <summary>Sekera se rozpadla (byla moc opotřebovaná).</summary>
+        AxeBroke,
+
+        PickedUp,
+        Dropped,
+
+        /// <summary>Už nese klad, druhý neunese.</summary>
+        AlreadyCarrying,
+
+        /// <summary>Celý kmen jeden člověk neunese, napřed ho rozsekej na klady.</summary>
+        TooHeavy,
+
+        /// <summary>Nic nenese (položit).</summary>
+        NotCarrying,
+
+        TooFar,
+
+        /// <summary>Tady už strom (nebo dřevo) není.</summary>
+        NotFound,
+
+        /// <summary>Moc rychle po sobě (sekat jde jen v rytmu).</summary>
+        TooSoon,
+
+        InventoryFull,
+
+        /// <summary>Tohle se štípat nedá (není to díl dřeva).</summary>
+        CannotSplit,
+    }
+
+    /// <summary>Stav stromu, který už nestojí celý: padá, nebo zbyl jen pařez.</summary>
+    public enum TreeState
+    {
+        Falling = 1,
+        Stump = 2,
+    }
+
+    /// <summary>Dřevo ležící ve světě: celý kmen (blokuje cestu, seká se na klady), nebo klad (1 m).</summary>
+    public enum TimberKind
+    {
+        Trunk = 0,
+        Piece = 1,
+    }
+
     /// <summary>Jak sběr dopadl. Klient si k tomu přiřadí text.</summary>
     public enum HarvestResult
     {

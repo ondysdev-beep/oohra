@@ -52,8 +52,8 @@ public sealed class WorldView
     }
 }
 
-/// <summary>Poloha jednoho hráče ve snímku. Torch: drží zapálenou pochodeň.</summary>
-public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping, bool Torch = false);
+/// <summary>Poloha jednoho hráče ve snímku. Torch: drží zapálenou pochodeň, Carry: nese klad.</summary>
+public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping, bool Torch = false, bool Carry = false);
 
 /// <summary>
 /// Snímek světa: čas, počasí (druh, síla 0 až 1, vítr 0 až 1) a polohy všech hráčů. Posílá se mnohokrát za sekundu.
@@ -92,7 +92,14 @@ public sealed record SelfState(
     int WorldGeneration = 1);
 
 /// <summary>Hromádka v batohu. U materiálu (klacek, kámen) se údaje o rostlině nepoužívají. Spoiled: zkažené (zapáchá).</summary>
-public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count, bool Spoiled);
+/// <summary>Hromádka v batohu, jak ji vidí klient. Uses: kolik použití zbývá nástroji, Tree: z jakého stromu je klad.</summary>
+public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart Part, Ripeness Ripeness, Cooking Cooking, int Count, bool Spoiled, int Uses = 0, TreeKind Tree = TreeKind.Oak);
+
+/// <summary>Strom, který nestojí celý: padá (úhel pádu), nebo zbyl pařez.</summary>
+public readonly record struct TreeStateView(int TileIndex, TreeState State, float Angle);
+
+/// <summary>Dřevo na zemi: kmen nebo klad, druh stromu, střed, směr (radiány) a délka (metry).</summary>
+public readonly record struct TimberView(int Id, TimberKind Kind, TreeKind Tree, float X, float Y, float Angle, int Length);
 
 /// <summary>Oheň na ostrově (hoří, nebo z něj zbyl popel).</summary>
 public readonly record struct FireView(int Id, float X, float Y, bool Burning);
@@ -256,6 +263,30 @@ public static class Messages
         w.Put((byte)MessageType.MakeSpear);
     }
 
+    /// <summary>Vyrobit kamennou sekeru (klacek a kameny).</summary>
+    public static void WriteMakeAxe(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.MakeAxe);
+    }
+
+    /// <summary>Položit nesený klad.</summary>
+    public static void WriteDropTimber(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.DropTimber);
+    }
+
+    /// <summary>Akce s dřevem na zemi: ChopTimber (odseknout klad, rozštípat klad) nebo PickUpTimber.</summary>
+    public static void WriteTimberAction(NetDataWriter w, MessageType type, int timberId)
+    {
+        w.Put((byte)type);
+        w.Put(timberId);
+    }
+
+    public static int ReadTimberAction(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
     /// <summary>Lehnout si ke spánku, nebo vstát (když postava spí).</summary>
     public static void WriteSleep(NetDataWriter w)
     {
@@ -276,7 +307,7 @@ public static class Messages
         return Enum.IsDefined(typeof(BirthPlace), place) ? place : BirthPlace.Wild;
     }
 
-    /// <summary>Akce s dlaždicí: GatherSticks (strom), TakeStone (skála) nebo Fish (voda).</summary>
+    /// <summary>Akce s dlaždicí: GatherSticks a ChopTree (strom), TakeStone (skála) nebo Fish (voda).</summary>
     public static void WriteTileAction(NetDataWriter w, MessageType type, int tileX, int tileY)
     {
         w.Put((byte)type);
@@ -869,6 +900,7 @@ public static class Messages
             w.Put(p.Dead);
             w.Put(p.Sleeping);
             w.Put(p.Torch);
+            w.Put(p.Carry);
         }
     }
 
@@ -877,7 +909,7 @@ public static class Messages
         var minutes = r.GetDouble();
         var months = r.GetDouble();
         var (weather, intensity, wind) = ((WeatherKind)r.GetByte(), r.GetFloat(), r.GetFloat());
-        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool(), r.GetBool()));
+        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool(), r.GetBool(), r.GetBool()));
         return new Snapshot(minutes, months, players, weather, intensity, wind);
     }
 
@@ -996,11 +1028,13 @@ public static class Messages
         w.Put((byte)s.Cooking);
         w.Put(s.Count);
         w.Put(s.Spoiled);
+        w.Put((short)s.Uses);
+        w.Put((byte)s.Tree);
     }
 
     private static StackView GetStack(NetDataReader r)
     {
-        return new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt(), r.GetBool());
+        return new StackView((ItemKind)r.GetByte(), r.GetInt(), (PlantPart)r.GetByte(), (Ripeness)r.GetByte(), (Cooking)r.GetByte(), r.GetInt(), r.GetBool(), r.GetShort(), (TreeKind)r.GetByte());
     }
 
     public static void WriteEvent(NetDataWriter w, GameEvent e)
@@ -1060,6 +1094,46 @@ public static class Messages
     public static FireView[] ReadFires(NetDataReader r)
     {
         return ReadList(r, () => new FireView(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetBool()));
+    }
+
+    /// <summary>Stromy, které nestojí celé (padají nebo pařezy). Posílá se po přihlášení a při každé změně.</summary>
+    public static void WriteTreeStates(NetDataWriter w, IReadOnlyList<TreeStateView> trees)
+    {
+        w.Put((byte)MessageType.TreeStates);
+        w.Put(trees.Count);
+        foreach (var t in trees)
+        {
+            w.Put(t.TileIndex);
+            w.Put((byte)t.State);
+            w.Put(t.Angle);
+        }
+    }
+
+    public static TreeStateView[] ReadTreeStates(NetDataReader r)
+    {
+        return ReadList(r, () => new TreeStateView(r.GetInt(), (TreeState)r.GetByte(), r.GetFloat()));
+    }
+
+    /// <summary>Všechno dřevo na zemi (kmeny a klady). Posílá se po přihlášení a při každé změně.</summary>
+    public static void WriteTimbers(NetDataWriter w, IReadOnlyList<TimberView> timbers)
+    {
+        w.Put((byte)MessageType.Timbers);
+        w.Put(timbers.Count);
+        foreach (var t in timbers)
+        {
+            w.Put(t.Id);
+            w.Put((byte)t.Kind);
+            w.Put((byte)t.Tree);
+            w.Put(t.X);
+            w.Put(t.Y);
+            w.Put(t.Angle);
+            w.Put((byte)t.Length);
+        }
+    }
+
+    public static TimberView[] ReadTimbers(NetDataReader r)
+    {
+        return ReadList(r, () => new TimberView(r.GetInt(), (TimberKind)r.GetByte(), (TreeKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetByte()));
     }
 
     /// <summary>Všechny stavby hráčů. Posílá se po přihlášení a pak při každé změně.</summary>

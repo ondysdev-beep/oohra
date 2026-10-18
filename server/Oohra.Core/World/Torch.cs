@@ -10,7 +10,7 @@ namespace Oohra.Core.World;
 /// </summary>
 public static class Torch
 {
-    /// <summary>Zapálí pochodeň od hořícího ohně poblíž (stačí blízko jako na pečení). Spotřebuje jeden klacek.</summary>
+    /// <summary>Zapálí pochodeň od hořícího ohně poblíž (stačí blízko jako na pečení). Spotřebuje třísku, jinak klacek.</summary>
     public static FireResult Light(Island island, Fires fires, Character c, Inventory inventory, double x, double y)
     {
         if (c.TorchLit)
@@ -23,7 +23,7 @@ public static class Torch
             return FireResult.NoFireNear;
         }
 
-        if (!inventory.TryRemove(ItemKind.Stick, 1))
+        if (!inventory.TryRemove(ItemKind.Splinter, 1) && !inventory.TryRemove(ItemKind.Stick, 1))
         {
             return FireResult.NoStick;
         }

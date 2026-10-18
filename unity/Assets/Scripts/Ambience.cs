@@ -23,6 +23,9 @@ namespace Oohra.Client
         private static AudioClip _grunt;
         private static AudioClip _howl;
         private static AudioClip _rain;
+        private static AudioClip _chop;
+        private static AudioClip _creak;
+        private static AudioClip _crash;
         private static AudioClip _thunder;
 
         private readonly Dictionary<int, AnimalState> _animalStates = new Dictionary<int, AnimalState>();
@@ -31,11 +34,18 @@ namespace Oohra.Client
         private AudioSource _fire;
         private Vector3 _lastSelf;
         private float _walked;
+        private ClientSession _session;
 
-        public void Init(GameConnection connection, PlayerViews players)
+        public void Init(GameConnection connection, PlayerViews players, ClientSession session = null)
         {
             _connection = connection;
             _players = players;
+            _session = session;
+            if (session != null)
+            {
+                session.EventReceived += OnEvent;
+            }
+
             _fire = gameObject.AddComponent<AudioSource>();
             _fire.clip = Crackle();
             _fire.loop = true;
@@ -144,6 +154,35 @@ namespace Oohra.Client
             }
         }
 
+        private void OnDestroy()
+        {
+            if (_session != null)
+            {
+                _session.EventReceived -= OnEvent;
+            }
+        }
+
+        /// <summary>Vlastní seknutí sekerou je slyšet (do stromu i do dřeva na zemi).</summary>
+        private void OnEvent(GameEvent e)
+        {
+            if (e.Kind != EventKind.Wood || _players == null || _players.Self == null)
+            {
+                return;
+            }
+
+            var result = (WoodResult)e.Code;
+            if (result is WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.AxeBroke)
+            {
+                Play(Chop(), _players.Self.position, 0.8f);
+            }
+        }
+
+        /// <summary>Zvuk v místě (padající strom, dopad), hlasitost podle SyllableVoice.Volume.</summary>
+        public static void PlayAt(AudioClip clip, Vector3 at, float volume)
+        {
+            Play(clip, at, volume);
+        }
+
         private static void Play(AudioClip clip, Vector3 at, float volume)
         {
             if (Application.isPlaying && SyllableVoice.Volume > 0f)
@@ -221,6 +260,63 @@ namespace Oohra.Client
             }
 
             return _howl = Clip("Vlk", samples);
+        }
+
+        /// <summary>Seknutí sekerou: tupý úder do dřeva s krátkým dozvukem.</summary>
+        public static AudioClip Chop()
+        {
+            if (_chop != null) return _chop;
+            var samples = new float[(int)(0.18f * SampleRate)];
+            var seed = 71;
+            var phase = 0f;
+            for (var n = 0; n < samples.Length; n++)
+            {
+                var u = (float)n / samples.Length;
+                phase += 2 * Mathf.PI * Mathf.Lerp(220f, 140f, u) / SampleRate;
+                var knock = Mathf.Sin(phase) * Mathf.Exp(-u * 9f);
+                var crack = u < 0.05f ? Noise(ref seed) * (1f - u / 0.05f) : 0f;
+                samples[n] = (knock * 0.6f + crack * 0.5f) * 0.8f;
+            }
+
+            return _chop = Clip("Seknutí", samples);
+        }
+
+        /// <summary>Praskání padajícího stromu: nepravidelné praskání dřeva, čím dál hustší.</summary>
+        public static AudioClip Creak()
+        {
+            if (_creak != null) return _creak;
+            var samples = new float[(int)(1.4f * SampleRate)];
+            var seed = 303;
+            var pop = 0f;
+            var phase = 0f;
+            for (var n = 0; n < samples.Length; n++)
+            {
+                var u = (float)n / samples.Length;
+                if (Noise(ref seed) > 0.9985f - u * 0.004f) pop = 1f;
+                pop *= 0.992f;
+                phase += 2 * Mathf.PI * (90f + 40f * Mathf.Sin(u * 7f)) / SampleRate;
+                samples[n] = Noise(ref seed) * pop * 0.5f + Mathf.Sin(phase) * 0.15f * u;
+            }
+
+            return _creak = Clip("Praskání stromu", samples);
+        }
+
+        /// <summary>Dopad stromu: těžká rána a šumění větví.</summary>
+        public static AudioClip Crash()
+        {
+            if (_crash != null) return _crash;
+            var samples = new float[(int)(1.2f * SampleRate)];
+            var seed = 911;
+            var low = 0f;
+            for (var n = 0; n < samples.Length; n++)
+            {
+                var u = (float)n / samples.Length;
+                low = low * 0.96f + Noise(ref seed) * 0.04f;
+                var boom = Mathf.Sin(2 * Mathf.PI * 55f * n / SampleRate) * Mathf.Exp(-u * 6f);
+                samples[n] = Mathf.Clamp(boom * 0.7f + low * 4f * Mathf.Exp(-u * 3f) + Noise(ref seed) * 0.15f * Mathf.Exp(-u * 5f), -1f, 1f);
+            }
+
+            return _crash = Clip("Dopad stromu", samples);
         }
 
         /// <summary>Déšť: hustý šum s ťukáním kapek (smyčka 3 s, konec navazuje na začátek).</summary>

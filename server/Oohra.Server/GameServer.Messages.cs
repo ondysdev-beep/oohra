@@ -100,7 +100,7 @@ public sealed partial class GameServer
     private void BroadcastSnapshot()
     {
         var players = InWorld
-            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping, p.Character.TorchLit))
+            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping, p.Character.TorchLit, p.Inventory.Count(ItemKind.LogPiece) > 0))
             .ToArray();
         var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players, CurrentWeather.Kind, (float)CurrentWeather.Intensity, (float)CurrentWeather.Wind);
         Broadcast(w => Messages.WriteSnapshot(w, snapshot), DeliveryMethod.Sequenced);
@@ -192,8 +192,18 @@ public sealed partial class GameServer
         var plant = stack.Item.Plant;
         var spoiled = Spoilage.IsSpoiled(stack.Item, Clock.TotalMinutes);
         return plant is null
-            ? new StackView(stack.Item.Kind, 0, default, default, stack.Item.Cooking, stack.Count, spoiled)
+            ? new StackView(stack.Item.Kind, 0, default, default, stack.Item.Cooking, stack.Count, spoiled, stack.Item.Uses, stack.Item.Tree)
             : new StackView(stack.Item.Kind, plant.SpeciesId, plant.Part, plant.Ripeness, plant.Cooking, stack.Count, spoiled);
+    }
+
+    private TreeStateView[] TreeStateViews()
+    {
+        return Island.Forestry.TreeStates().Select(t => new TreeStateView(t.TileIndex, t.State, (float)t.Angle)).ToArray();
+    }
+
+    private TimberView[] TimberViews()
+    {
+        return Island.Forestry.Timbers.Select(t => new TimberView(t.Id, t.Kind, t.Tree, (float)t.X, (float)t.Y, (float)t.Angle, t.Length)).ToArray();
     }
 
     private FireView[] FireViews()

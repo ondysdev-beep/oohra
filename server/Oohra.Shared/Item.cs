@@ -1,4 +1,5 @@
 using Oohra.Core.Plants;
+using Oohra.Core.World;
 
 namespace Oohra.Core.Items
 {
@@ -17,20 +18,37 @@ namespace Oohra.Core.Items
 
         /// <summary>Ryba (jako maso: syrová nebo upečená).</summary>
         Fish = 5,
+
+        /// <summary>Kamenná sekera: kácení stromů a štípání dřeva. Opotřebuje se (Uses), pak se rozpadne.</summary>
+        Axe = 6,
+
+        /// <summary>Díl dřeva z rozštípaného kladu. V ohni hoří déle než klacek, dá se naštípat na třísky.</summary>
+        Wood = 7,
+
+        /// <summary>Tříska: jako klacek (podpal, pochodeň), později jehla na šití.</summary>
+        Splinter = 8,
+
+        /// <summary>Klad (kus kmene 1 m). Nosí se jen jeden a postava s ním jde pomaleji.</summary>
+        LogPiece = 9,
     }
 
     /// <summary>
-    /// Věc v batohu: část rostliny, maso nebo ryba, materiál (klacek, kámen), nebo nástroj (kopí).
+    /// Věc v batohu: část rostliny, maso nebo ryba, materiál (klacek, kámen, dřevo), nebo nástroj (kopí, sekera).
     /// Část rostliny nese i to, odkud je a jak je upravená. Maso a ryba nesou, jestli jsou upečené,
-    /// a herní den, kdy byly získané (časem se zkazí). Stejné věci se skládají na hromádku.
+    /// a herní den, kdy byly získané (časem se zkazí). Nástroj nese, kolik použití mu zbývá (Uses),
+    /// klad, z jakého je stromu (Tree). Stejné věci se skládají na hromádku.
     /// </summary>
-    public sealed record Item(ItemKind Kind, PlantItem? Plant = null, Cooking Cooking = Cooking.Raw, int Day = 0)
+    public sealed record Item(ItemKind Kind, PlantItem? Plant = null, Cooking Cooking = Cooking.Raw, int Day = 0, int Uses = 0, TreeKind Tree = TreeKind.Oak)
     {
         public static readonly Item Stick = new Item(ItemKind.Stick);
 
         public static readonly Item Stone = new Item(ItemKind.Stone);
 
         public static readonly Item Spear = new Item(ItemKind.Spear);
+
+        public static readonly Item Wood = new Item(ItemKind.Wood);
+
+        public static readonly Item Splinter = new Item(ItemKind.Splinter);
 
         /// <summary>Maso nebo ryba (IsFlesh).</summary>
         public bool IsFlesh => Kind == ItemKind.Meat || Kind == ItemKind.Fish;

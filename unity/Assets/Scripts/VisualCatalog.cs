@@ -47,6 +47,16 @@ namespace Oohra.Client
         [Tooltip("Suchý mrtvý strom bez listí, 3 až 6 m.")]
         public GameObject[] DeadTrees = new GameObject[0];
 
+        [Header("Kácení (prázdné = tvar z kódu)")]
+        [Tooltip("Pařez po pokáceném stromu. Hra ho srovná na výšku 0,6 m.")]
+        public GameObject Stump;
+
+        [Tooltip("Ležící kmen: model 1 m dlouhý podél osy X (hra ho srovná na 1 m a natáhne na délku kmene).")]
+        public GameObject Log;
+
+        [Tooltip("Klad (kus kmene 1 m) na zemi a na rameni postavy: model podél osy X, hra ho srovná na 1 m.")]
+        public GameObject LogPiece;
+
         [Header("Rostliny podle tvaru druhu: políčka 0 až 3 (víc tvarů druhy nemají)")]
         [Tooltip("Index = tvar druhu. Model se obarví barvou druhu (části se SpeciesTint, jinak celý), ať jdou druhy poznat.")]
         public GameObject[] Plants = new GameObject[4];

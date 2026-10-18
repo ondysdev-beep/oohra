@@ -42,6 +42,7 @@ public sealed partial class GameServer : IDisposable
     private int _nextPlayerId = 1;
     private long _tick;
     private int _sentFiresVersion;
+    private int _sentForestryVersion;
     private int _sentStructuresVersion;
     private int _sentSignsVersion;
     private int _sentRocksVersion;
@@ -168,6 +169,7 @@ public sealed partial class GameServer : IDisposable
         CurrentWeather = WeatherNow();
         Fires.Burn(minutes * Weather.BurnMultiplier(CurrentWeather));
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
+        Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock.TotalMinutes);
         UpdateStrangers(realSeconds);
 
         foreach (var player in InWorld.ToList())
@@ -205,6 +207,13 @@ public sealed partial class GameServer : IDisposable
         {
             _sentFiresVersion = Fires.Version;
             Broadcast(w => Messages.WriteFires(w, FireViews()));
+        }
+
+        if (Island.Forestry.Version != _sentForestryVersion)
+        {
+            _sentForestryVersion = Island.Forestry.Version;
+            Broadcast(w => Messages.WriteTreeStates(w, TreeStateViews()));
+            Broadcast(w => Messages.WriteTimbers(w, TimberViews()));
         }
 
         Island.Corpses.Decay(Clock.TotalMinutes);
@@ -361,6 +370,8 @@ public sealed partial class GameServer : IDisposable
         Broadcast(w => Messages.WritePlayerJoined(w, InfoOf(player)), except: peer);
         SendTo(peer, w => Messages.WritePlantStates(w, AllPlantVisuals()));
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
+        SendTo(peer, w => Messages.WriteTreeStates(w, TreeStateViews()));
+        SendTo(peer, w => Messages.WriteTimbers(w, TimberViews()));
         SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
         SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
         SendTo(peer, w => Messages.WriteDecorationTypes(w, DecorationTypeViews()));
@@ -470,7 +481,7 @@ public sealed partial class GameServer : IDisposable
             return;
         }
 
-        var distance = Movement.Distance(Island, c, player.X, player.Y, realSeconds);
+        var distance = Movement.Distance(Island, c, player.X, player.Y, realSeconds) * Movement.CarryMultiplier(player.Inventory);
         var (x, y) = Movement.Step(Island, player.X, player.Y, player.InputX, player.InputY, distance);
         player.X = x;
         player.Y = y;

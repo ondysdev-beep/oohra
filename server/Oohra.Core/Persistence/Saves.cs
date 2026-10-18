@@ -128,7 +128,23 @@ public sealed class IslandSave
     public int NextCorpseId { get; init; } = 1;
 
     public List<BirthGuard> BirthGuards { get; init; } = [];
+
+    public ForestrySave Forestry { get; init; } = new();
 }
+
+/// <summary>Kácení: rozsekané stromy (počet seknutí), pařezy (kdy padly) a dřevo na zemi.</summary>
+public sealed class ForestrySave
+{
+    public Dictionary<int, int> Hits { get; init; } = [];
+
+    public Dictionary<int, double> Stumps { get; init; } = [];
+
+    public List<TimberSave> Timbers { get; init; } = [];
+
+    public int NextTimberId { get; init; } = 1;
+}
+
+public sealed record TimberSave(int Id, TimberKind Kind, TreeKind Tree, double X, double Y, double Angle, int Length);
 
 /// <summary>Kmeny: kdo patří do kterého kmene.</summary>
 public sealed class TribesSave

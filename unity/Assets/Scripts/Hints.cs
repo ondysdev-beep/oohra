@@ -26,6 +26,8 @@ namespace Oohra.Client
         {
             { "fire", new[] { "První oheň", "Teplo a světlo. Noc je o něco méně strašná." } },
             { "torch", new[] { "První pochodeň", "Světlo, které neseš s sebou. Vlci se drží dál." } },
+            { "axe", new[] { "První sekera", "Teď padne i strom. Ale padá na stranu od tebe, kdo stojí za ním, dostane ránu." } },
+            { "tree", new[] { "První pokácený strom", "Kmen rozsekej na klady, klad rozštípej na dřevo. Dřevo hoří dlouho." } },
             { "spear", new[] { "První kopí", "Ostrý kámen na klacku mění lov." } },
             { "food", new[] { "První jídlo", "Snědl jsi něco a zatím ti není zle. Zapamatuj si to, otrava může přijít později." } },
             { "poison", new[] { "První otrava", "Takhle se učí hranice. Vzpomeň si, co jsi jedl." } },
@@ -142,6 +144,12 @@ namespace Oohra.Client
                     break;
                 case EventKind.Fire when (FireResult)e.Code is FireResult.TorchLit:
                     Milestone("torch");
+                    break;
+                case EventKind.Wood when (WoodResult)e.Code is WoodResult.AxeMade:
+                    Milestone("axe");
+                    break;
+                case EventKind.Wood when (WoodResult)e.Code is WoodResult.TreeFalling:
+                    Milestone("tree");
                     break;
                 case EventKind.Hunt when (HuntResult)e.Code is HuntResult.SpearMade:
                     Milestone("spear");
