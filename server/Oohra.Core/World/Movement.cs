@@ -42,7 +42,12 @@ public static class Movement
             return true;
         }
 
-        var tile = island.TileAt(tx, ty);
+        return IsWaterTile(island.TileAt(tx, ty));
+    }
+
+    /// <summary>Voda, do které se nedá vstoupit (moře, jezírko, jezero, řeka). Brod se přejít dá.</summary>
+    public static bool IsWaterTile(TileType tile)
+    {
         return tile == TileType.Sea || tile == TileType.Pond;
     }
 

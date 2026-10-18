@@ -8,7 +8,54 @@ public static class MapRenderer
 {
     public const string Legend =
         "Legenda: ~ moře  - pobřeží  . písek  , tráva  ; les  ^ skála  % bažina  o jezírko\n" +
+        "         : kamenitá půda  # vrstvená skála  = brod\n" +
         "         T strom  0-7 rostlina (číslo druhu)  K tábor kmene  R stará rytina";
+
+    public const string RegionLegend =
+        "Legenda: ~ moře  . pláž  L les  , louka  V vrchovina  B bažina  J jezero  R řeka";
+
+    /// <summary>
+    /// Mapa oblastí zmenšená, aby se vešla do konzole (nejvýš asi 96 znaků na řádek), a podíly oblastí ze souše.
+    /// Řádků je polovina, protože znak v konzoli je asi dvakrát vyšší než širší.
+    /// </summary>
+    public static string RenderRegions(Island island)
+    {
+        var step = Math.Max(1, (int)Math.Ceiling(island.Width / 96.0));
+        var text = new StringBuilder();
+        for (var y = 0; y < island.Height; y += step * 2)
+        {
+            for (var x = 0; x < island.Width; x += step)
+            {
+                text.Append(RegionChar(island.RegionAt(x, y)));
+            }
+
+            text.Append('\n');
+        }
+
+        var land = island.Regions.Count(r => r != RegionKind.Sea);
+        foreach (var group in island.Regions.Where(r => r != RegionKind.Sea).GroupBy(r => r).OrderBy(g => g.Key))
+        {
+            text.Append($"{RegionChar(group.Key)} {group.Key,-9} {100.0 * group.Count() / land,5:0.0} %\n");
+        }
+
+        return text.ToString();
+    }
+
+    private static char RegionChar(RegionKind region)
+    {
+        return region switch
+        {
+            RegionKind.Sea => '~',
+            RegionKind.Coast => '.',
+            RegionKind.Forest => 'L',
+            RegionKind.Meadow => ',',
+            RegionKind.Highland => 'V',
+            RegionKind.Marsh => 'B',
+            RegionKind.Lake => 'J',
+            RegionKind.River => 'R',
+            _ => '?',
+        };
+    }
 
     public static string Render(Island island)
     {
@@ -63,6 +110,9 @@ public static class MapRenderer
             TileType.Rock => '^',
             TileType.Bog => '%',
             TileType.Pond => 'o',
+            TileType.Highland => ':',
+            TileType.Ford => '=',
+            TileType.LayeredRock => '#',
             _ => '?',
         };
     }

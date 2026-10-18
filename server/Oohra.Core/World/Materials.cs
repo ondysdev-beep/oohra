@@ -54,7 +54,7 @@ public sealed class Materials
     /// </summary>
     public static MaterialResult TakeStone(Island island, int tileX, int tileY, Inventory inventory, double playerX, double playerY, double now)
     {
-        if (!island.InBounds(tileX, tileY) || island.TileAt(tileX, tileY) != TileType.Rock)
+        if (!island.InBounds(tileX, tileY) || island.TileAt(tileX, tileY) is not (TileType.Rock or TileType.LayeredRock))
         {
             return MaterialResult.WrongPlace;
         }
