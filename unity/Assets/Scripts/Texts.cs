@@ -280,6 +280,8 @@ namespace Oohra.Client
                 case FireResult.NoFireNear: return "Musíš být u ohně.";
                 case FireResult.CannotBake: return "Tohle se péct nedá.";
                 case FireResult.InventoryFull: return "Nemáš kam to dát. Něco z batohu zahoď.";
+                case FireResult.TorchLit: return "Klacek chytl. Pochodeň ti svítí do tmy a zvěř se jí bojí.";
+                case FireResult.TorchAlreadyLit: return "Pochodeň už hoří.";
                 default: return result.ToString();
             }
         }
@@ -348,6 +350,8 @@ namespace Oohra.Client
                 case BodyEvent.WoundInflamed: return "Rána se zanítila. Pálí a je ti horko.";
                 case BodyEvent.IronStomach: return "Železný žaludek to zvládl.";
                 case BodyEvent.ColdInstinct: return "Zebe tě do kostí. Tělo ti říká: najdi oheň nebo úkryt, než přijde mráz.";
+                case BodyEvent.TorchLow: return "Pochodeň slábne. Brzy dohoří.";
+                case BodyEvent.TorchOut: return "Pochodeň zhasla. Kolem je zase tma.";
                 default: return "Zemřel jsi.";
             }
         }

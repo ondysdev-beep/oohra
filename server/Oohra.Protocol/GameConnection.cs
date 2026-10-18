@@ -313,6 +313,12 @@ public sealed class GameConnection : IDisposable
         Send(Messages.WriteDreamOver);
     }
 
+    /// <summary>Zapálit pochodeň od ohně poblíž. Výsledek přijde jako hláška Fire.</summary>
+    public void LightTorch()
+    {
+        Send(Messages.WriteLightTorch);
+    }
+
     /// <summary>Ukázat ostatním věc z batohu (hráči ji uvidí v bublině, cizinec řekne, jestli se jí).</summary>
     public void ShowItem(int stackIndex)
     {

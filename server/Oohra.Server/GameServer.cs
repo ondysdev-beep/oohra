@@ -160,7 +160,8 @@ public sealed partial class GameServer : IDisposable
 
         SaveWorldWhenDue();
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
-        Fires.Burn(minutes);
+        CurrentWeather = WeatherNow();
+        Fires.Burn(minutes * Weather.BurnMultiplier(CurrentWeather));
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
         UpdateStrangers(realSeconds);
 
@@ -169,7 +170,8 @@ public sealed partial class GameServer : IDisposable
             Move(player, realSeconds);
             if (_seconds >= player.DreamUntil)
             {
-                Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y));
+                Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y), CurrentWeather);
+                Torch.Burn(player.Character, Clock.TotalMinutes, minutes, CurrentWeather);
             }
 
             if (player.Character.IsDead && !player.BodyLeft)

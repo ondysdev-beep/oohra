@@ -136,6 +136,9 @@ public sealed partial class GameServer
             case MessageType.DreamOver:
                 player.DreamUntil = double.NegativeInfinity;
                 break;
+            case MessageType.LightTorch:
+                FireAction(player, () => Torch.Light(Island, Fires, player.Character, player.Inventory, player.X, player.Y));
+                break;
             case MessageType.ShowItem:
                 ShowItem(player, Messages.ReadShowItem(reader));
                 break;

@@ -1,12 +1,13 @@
 using Oohra.Core.Data;
 using Oohra.Core.Time;
+using Oohra.Core.World;
 
 namespace Oohra.Core.Characters;
 
 /// <summary>
 /// Co se děje s tělem v čase (prototyp physiology a runEvents v part4.js):
 /// teplo, hlad, žízeň, únava, horečka, uzdravování, poškození a naplánované účinky jídla.
-/// Oheň hřeje (nearFire), úkryt taky (sheltered). Spánek vrací sílu a zpomaluje hlad a žízeň. Zranění zatím nejsou.
+/// Oheň hřeje (nearFire), úkryt taky (sheltered), déšť bez úkrytu studí (weather). Spánek vrací sílu a zpomaluje hlad a žízeň. Zranění zatím nejsou.
 /// </summary>
 public static class Physiology
 {
@@ -15,7 +16,7 @@ public static class Physiology
     /// nearFire: postava je u hořícího ohně (Fires.WarmsAt), sheltered: je v úkrytu (Shelter.IsSheltered).
     /// Teplo těla se pak blíží vyšší hodnotě.
     /// </summary>
-    public static void Update(Character c, GameClock clock, double minutes, bool nearFire = false, bool sheltered = false)
+    public static void Update(Character c, GameClock clock, double minutes, bool nearFire = false, bool sheltered = false, WeatherState weather = default)
     {
         if (c.IsDead)
         {
@@ -24,7 +25,7 @@ public static class Physiology
 
         var rules = GameData.Body;
         RunDueEffects(c, clock.TotalMinutes);
-        UpdateWarmth(c, clock, minutes, nearFire, sheltered, rules.Warmth);
+        UpdateWarmth(c, clock, minutes, nearFire, sheltered, weather, rules.Warmth);
         UpdateNeeds(c, minutes, rules.Needs);
         UpdateRecoveryAndFever(c, clock.TotalMinutes, minutes, rules);
         UpdatePoisonProtection(c, rules.FirstPoisonProtection);
@@ -44,14 +45,14 @@ public static class Physiology
     /// Nechá uběhnout daný počet herních minut po krocích (výchozí krok 1 minuta).
     /// Pro zkoušení v konzoli a v testech. Server bude místo toho volat Update každý tick.
     /// </summary>
-    public static void Run(Character c, GameClock clock, double minutes, double stepMinutes = 1, bool nearFire = false, bool sheltered = false)
+    public static void Run(Character c, GameClock clock, double minutes, double stepMinutes = 1, bool nearFire = false, bool sheltered = false, WeatherState weather = default)
     {
         var remaining = minutes;
         while (remaining > 0 && !c.IsDead)
         {
             var step = Math.Min(stepMinutes, remaining);
             clock.Advance(clock.RealSecondsFor(step));
-            Update(c, clock, step, nearFire, sheltered);
+            Update(c, clock, step, nearFire, sheltered, weather);
             remaining -= step;
         }
     }
@@ -80,13 +81,14 @@ public static class Physiology
         }
     }
 
-    private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, bool sheltered, WarmthRules rules)
+    private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, bool sheltered, WeatherState weather, WarmthRules rules)
     {
         var ambient = AmbientTemperature(clock, rules);
         var fire = nearFire ? GameData.Fire.Fire.WarmthBonus : 0;
         var shelter = sheltered ? GameData.Building.Shelter.WarmthBonus : 0;
         var sleeping = c.Sleeping ? GameData.Body.Sleep.WarmthBonus : 0;
-        var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor + fire + shelter + sleeping, 0, 100);
+        var rain = sheltered ? 0 : Weather.WarmthPenalty(weather);
+        var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor + fire + shelter + sleeping - rain, 0, 100);
         c.Warmth += (target - c.Warmth) * Math.Min(1, rules.ApproachPerMinute * minutes);
         NewbornWarmth(c, clock.TotalMinutes, rules.Newborn);
     }

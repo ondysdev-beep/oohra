@@ -85,6 +85,12 @@ namespace Oohra.Core.World
         CannotBake,
 
         InventoryFull,
+
+        /// <summary>Zapálil pochodeň od ohně (klacek z batohu).</summary>
+        TorchLit,
+
+        /// <summary>Pochodeň už hoří.</summary>
+        TorchAlreadyLit,
     }
 }
 

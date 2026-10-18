@@ -611,10 +611,10 @@ public sealed class Animals
         }
     }
 
-    /// <summary>Hráč je pro vlka na ráně: žije, není do fireRange od hořícího ohně a není v úkrytu.</summary>
+    /// <summary>Hráč je pro vlka na ráně: žije, nemá zapálenou pochodeň, není do fireRange od hořícího ohně a není v úkrytu.</summary>
     private static bool Exposed(Island island, Fires fires, AnimalTarget p, WolfRules rules)
     {
-        return !p.Character.IsDead && !fires.BurningNear(island, p.X, p.Y, rules.FireRange) && !Shelter.IsSheltered(island, p.X, p.Y);
+        return !p.Character.IsDead && !p.Character.TorchLit && !fires.BurningNear(island, p.X, p.Y, rules.FireRange) && !Shelter.IsSheltered(island, p.X, p.Y);
     }
 
     // ---------- divočák ----------

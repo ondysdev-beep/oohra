@@ -1,0 +1,30 @@
+// Počasí (ponurý ostrov: mlha, déšť, bouřky). Počasí se mění po úsecích segmentMinutes herních minut.
+// Pro každý úsek se ze seedu světa a čísla úseku vylosuje, co v něm bude (všichni hráči vidí totéž).
+{
+  // Délka jednoho úseku počasí (herní minuty; 120 herních minut je asi 7,5 skutečné minuty).
+  "segmentMinutes": 120,
+  // Jak dlouho se počasí na začátku a konci úseku rozjíždí a doznívá (podíl úseku).
+  "fadeShare": 0.25,
+  "seedSalt": 7919,
+  // Šance na mlhu podle hodiny začátku úseku: ráno (5 až 10 h) často, přes den občas, večer a v noci trochu.
+  "fogMorning": 0.55,
+  "fogDay": 0.12,
+  "fogNight": 0.2,
+  // Šance na déšť (bez ohledu na hodinu) a kolik dešťů je bouřka.
+  "rain": 0.18,
+  "stormShare": 0.18,
+  // Násobek šance na déšť podle ročního období (jaro, léto, podzim, zima).
+  "seasonRain": [ 1.1, 0.7, 1.5, 1.1 ],
+  // Násobek šance na mlhu podle ročního období.
+  "seasonFog": [ 1.0, 0.7, 1.4, 1.3 ],
+  // V dešti a bouřce bez úkrytu (zdi) je postavě zima: o kolik klesne cíl tepla těla (při plné síle počasí).
+  "rainWarmthPenalty": 8,
+  "stormWarmthPenalty": 14,
+  // Oheň v dešti a bouřce dohoří rychleji (násobek ubývání dřeva). Pochodeň taky.
+  "rainBurnMultiplier": 1.5,
+  "stormBurnMultiplier": 2.5,
+  // Pochodeň: zapálí se u hořícího ohně z jednoho klacku a hoří tolik herních minut.
+  "torchMinutes": 240,
+  // Kolik herních minut před dohořením hra upozorní, že pochodeň dohořívá.
+  "torchWarnMinutes": 20
+}

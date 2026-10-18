@@ -159,6 +159,21 @@ public class AnimalTests
     }
 
     [Fact]
+    public void TorchKeepsWolfAway()
+    {
+        var (px, py) = OpenSpot();
+        var animals = new Animals(1);
+        var wolf = animals.Place(AnimalKind.Wolf, px + 6, py);
+        var player = Player(1, px, py);
+        player.Character.TorchMinutes = 60;
+
+        Run(animals, Night(), [player], 0.2);
+
+        Assert.Equal(AnimalState.Wander, wolf.State);
+        Assert.DoesNotContain(player.Character.TakeMessages(), m => m.Event == BodyEvent.Stalked);
+    }
+
+    [Fact]
     public void WolfIgnoresPlayersByDay()
     {
         var (px, py) = OpenSpot();

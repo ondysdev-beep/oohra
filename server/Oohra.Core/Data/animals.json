@@ -31,7 +31,7 @@
   "wolf": {
     "hp": 5, "meat": 2, "radius": 0.3, "spawnAvoid": 20,
     "wanderSpeed": 1.4, "denRangeDay": 4, "denRangeNight": 12,
-    // V noci se plíží k hráči do stalkRange, který není do fireRange od ohně a není v úkrytu.
+    // V noci se plíží k hráči do stalkRange, který není do fireRange od ohně, nemá zapálenou pochodeň a není v úkrytu.
     "stalkRange": 11, "fireRange": 4.5, "stalkSeconds": 7, "stalkSecondsRandom": 4,
     "stalkFastSpeed": 2.4, "stalkSlowSpeed": 1.4, "stalkSlowWithin": 5, "giveUpRange": 16,
     "alertRange": 3.2, "alertSeconds": 0.8,

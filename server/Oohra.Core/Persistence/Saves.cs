@@ -35,6 +35,10 @@ public sealed class CharacterSave
 
     public double LastColdInstinct { get; init; } = double.NegativeInfinity;
 
+    public double TorchMinutes { get; init; }
+
+    public bool TorchWarned { get; init; }
+
     public double Toxin { get; init; }
 
     public double Fever { get; init; }
