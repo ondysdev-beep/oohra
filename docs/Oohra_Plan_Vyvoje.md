@@ -15,19 +15,65 @@
 - **Divočáci jsou nebezpečnější** (víc kusů, rozzuří se dřív, silnější výpad a rány, víc životů).
 - **Temnější vzhled hry i webu** (17. 10.): web je jen tmavý, s tmou kolem pochodně, mlhou, jiskrami a šeptanými větami. Hra má jít stejným směrem (temnější noci, víc tmy a mlhy, méně světlých ploch), až se bude ladit grafika.
 - **Ponuré počasí** (18. 10.): mlha nejčastěji ráno (5 až 10 h), přes den občas, déšť méně často než mlha, bouřka vzácně (víc deště a mlhy na podzim, méně v létě). Počasí je pro všechny stejné, počítá ho server ze seedu a času (`weather.json`). V dešti bez úkrytu je zima a oheň hoří rychleji. Kouř z ohňů, pochodeň (klacek zapálený u ohně, hoří 4 herní hodiny, v dešti kratší, svítí, vlci se jí bojí jako ohně). Den i noc jsou tmavší.
+- **Návrh 0.8 Svět a logika** (18. 10.): ostrov 384 × 384 s oblastmi, nový generátor (přesný přepis z prototypu a golden testy ostrova končí), stromy a kácení, nářadí, ruce a batoh, deník, nebezpečí. Jeskyně, patra a mapa později. Alfa až po etapě 3.
 - **Ukládání světa do souboru JSON** místo SQLite (pro 20 hráčů stačí, dá se přečíst, přejít na databázi jde později).
 
 ### Další kroky (pořadí)
-1. **Vyzkoušet hru sám:** nový hráč (sen bez slov), F1, zvuky, přežití první noci, cizinci, divočáci.
-2. **Dlouhý test s roboty** (třeba 5 hodin) s chytřejšími roboty, potom projít `stats.json`. Před testem s lidmi `stats.json` a `world.json` po robotech přesunout nebo smazat.
-3. **Webová stránka hry** (`web/`, koncept `docs/WEB_KONCEPT.md`): rozdělená na soubory, sdílení, favicon, přístupnost, tlačítko Mlha a skutečný postup (84 %) jsou hotové. Zbývá nasazení (GitHub Pages, repozitář je soukromý: buď veřejný repozitář jen pro web, nebo placený GitHub) a nový zápis do deníku.
-4. **Zbytek fáze E:** server na internetu (VPS nebo otevřený port), balíček hry pro testery (zip s `Oohra.exe` a adresou serveru), kódy pozvánek pro každého testera zvlášť.
-5. **Fáze F:** alfa se 3 až 5 známými, pak test s 15 až 20 lidmi.
+Rozhodnuto 18. 10. 2026: další kolo je **návrh 0.8 Svět a logika** (`docs/Oohra_0.8_Svet_a_logika.md`). Alfa se známými až **po etapě 3** (nováček bez ničeho hru úplně změní). Server na internetu se dá připravit kdykoli mezi etapami, je to krátká práce.
+1. **Krok 0 (hotovo 18. 10.):** návrh 0.8 v `docs/`, pravidla v `CLAUDE.md`, tento plán, starý `stats.json` po robotech přesunutý do `stary-svet/`.
+2. **Etapy 1 až 5** podle kapitoly „Kolo 0.8“ níže.
+3. **Zbytek fáze E:** server na internetu, balíček hry pro testery, kódy pozvánek pro každého zvlášť. Web: nasazení (repozitář je soukromý) a zápis do deníku.
+4. **Fáze F:** alfa se 3 až 5 známými (po etapě 3), pak test s 15 až 20 lidmi.
 
 ### Neověřeno (zkontrolovat při hraní)
 - Vzhled třetí generace (ve hře nastane až za rok, zatím hlídají jen testy).
 - Zvuky (slabiky, oheň, kroky, divočák, vlk, déšť, hrom): testy kontrolují jen to, že existují.
 - Počasí a pochodeň: jestli není mlha moc hustá, déšť moc studený, bouřka moc častá a noc moc tmavá (čísla v `weather.json`, světlo v `DayNightLight`, dohled ve `WeatherView`). Snímky z testů: `unity/Logs/bourka.png`, `mlha.png`.
+
+## Kolo 0.8: Svět a logika (etapy)
+
+Zadání: `docs/Oohra_0.8_Svet_a_logika.md`. Odhad etap 1 až 5 je 9 až 14 týdnů. Každý krok má vlastní větev, testy a sloučení.
+
+### Etapa 1: Svět 384 × 384 a oblasti (2 až 3 týdny)
+- [ ] Tvar a výška terénu: nový generátor vedle starého (výšková mapa a vlhkost ze seedu, jeden celistvý ostrov s pobřežím). Testy: stejný seed = stejný svět, ostrov v jednom kuse.
+- [ ] Oblasti podle výšky a vlhkosti: les, bažina, skalnatá vrchovina, louka, jezero nebo řeka. Test poměru ploch, oblasti vidět v textové mapě konzolového klienta.
+- [ ] Rozmístění: stromy (zatím jako dnes, jen řidší a podle oblasti), rostliny, skály (i vrstvená skála s pazourkem), pitná a bahenní voda, tábory cizinců a ruiny na souši, místa narození. Testy: nic na vodě, tábory na souši.
+- [ ] Server: výchozí velikost 384, nový svět, velikost úvodní zprávy s mapou, ukládání. 20 robotů na nové mapě a server stíhá.
+- [ ] Unity: zem pro 384 m (rozlišení terénu, případně víc dílů), textury oblastí, výkon trávy a stromů (nekreslit, co je daleko). Snímek z testu ukáže oblasti.
+- [ ] Úklid: golden testy ostrova a starý generátor pryč (testy náhody `mulberry32` a `hash2` zůstávají), roboti a cizinci fungují.
+
+### Etapa 2: Stromy a kácení (2 až 3 týdny)
+- [ ] Stromy jako objekty: pět druhů, výška ze seedu, `trees.json`, vzhled podle druhu v katalogu.
+- [ ] Věci ležící ve světě (kmeny, klady, mršiny): poloha, ukládání, posílání hráčům v okolí.
+- [ ] Kamenná sekera (jednoduchý recept, opotřebení).
+- [ ] Kácení: rány na serveru, pád podle strany seknutí, zapraskání, zranění v pruhu pádu, ležící kmen blokuje, pařez.
+- [ ] Klady po 1 m, dřevo, třísky (podpal, pochodeň).
+- [ ] Nošení kladu (jeden hráč, pomalu). Kmen pro víc nosičů odložen, kmen se zatím rozseká na místě.
+- [ ] Obnova: mladé stromy rostou herní roky, kolem staveb strom nevyroste.
+
+### Etapa 3: Nářadí, ruce, batoh, deník (2 až 3 týdny)
+- [ ] Ruce: dvě místa. Batoh je věc, která místa přidá. Nováček začíná bez ničeho (upravit nápovědy a roboty).
+- [ ] Recepty jako data (`recipes.json`), u postavy seznam odemčených receptů, smrtí se ztratí.
+- [ ] Nářadí: sekera, nůž, oštěp, opotřebení a oprava, pazourek jako lepší kámen.
+- [ ] Lýko, kůže (divočák, jelen jako nové zvíře, králík), mršiny v lese, syrová kůže zahnije za 2 dny, činění popelem u vody (popel z ohniště).
+- [ ] Malý a velký batoh.
+- [ ] Deník: věc s obsahem (kresby 12 × 12 a poznámky), ukládá se, zůstane u těla.
+- [ ] Kosti: jehla a háček (zbytek později).
+- [ ] Ukázání receptu jiným hráčem.
+
+### Etapa 4: Nebezpečí (2 až 3 týdny)
+- [ ] První vlna: komáři, pijavice, bahenní voda v bažině. Nemoci se zpožděním, léky v rostlinách. Obrana: kouř, bahno nebo popel na kůži, kožené oblečení.
+- [ ] Druhá vlna: klíšťata, vosí hnízda, hadi.
+
+### Etapa 5: Sezónní nebezpečí, stopy, sušení a uzení (1 až 2 týdny)
+
+### Později (mimo další kolo)
+Jeskyně (etapa 6), patra, střechy a statika (7), mapa jako věc a vor (8).
+
+### Rozhodnout před etapou
+- **2:** souhlas s odložením nošení kmene ve více lidech.
+- **3:** zdroj lýka (návrh 0.8, bod 10.1). Co znamená „zkoušení“ receptu (návrh: dokud recept neumíš, výroba se občas nepovede a materiál se ztratí).
+- **4:** jestli má každá nemoc svůj lék, nebo stačí obecná léčivá složka, kterou rostliny už mají.
 
 ## Zásadní změna oproti verzi 1
 
