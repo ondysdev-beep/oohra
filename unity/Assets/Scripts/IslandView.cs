@@ -10,10 +10,6 @@ namespace Oohra.Client
     /// </summary>
     public static class IslandView
     {
-        // Výška kmene a průměr koruny průměrného stromu v metrech (1 dlaždice = 1 metr).
-        public const float TrunkHeight = 2.8f;
-        public const float CrownSize = 2.6f;
-
         public static GameObject Build(WorldView world, GameConnection connection)
         {
             var root = new GameObject("Ostrov (vygenerovaný)");
@@ -26,7 +22,9 @@ namespace Oohra.Client
             var rocks = new GameObject("Skály");
             rocks.transform.SetParent(root.transform);
             rocks.AddComponent<RockPileViews>().Init(connection, world);
-            BuildTrees(world, root.transform, seeThrough);
+            var trees = new GameObject("Stromy");
+            trees.transform.SetParent(root.transform);
+            trees.AddComponent<TreeViews>().Init(world, seeThrough);
             BuildPlants(world, connection, root.transform);
             BuildCamps(world, root.transform);
             BuildRuins(world, root.transform);
@@ -43,65 +41,6 @@ namespace Oohra.Client
             structures.transform.SetParent(root.transform);
             structures.AddComponent<StructureViews>().Init(connection, seeThrough);
             return root;
-        }
-
-        private static void BuildTrees(WorldView world, Transform parent, SeeThrough crowns)
-        {
-            var trees = new GameObject("Stromy").transform;
-            trees.SetParent(parent);
-            var trunkColor = Palette.Hex("#5a4331");
-            var crownColors = new[] { Palette.Hex("#4e7d3a"), Palette.Hex("#3d6b30") };
-
-            foreach (var tree in world.Trees)
-            {
-                var x = tree.TileIndex % world.Width + 0.5;
-                var y = tree.TileIndex / world.Width + 0.5;
-                // 1 dlaždice = 1 metr. Strom je vysoký asi 5 až 7 m, koruna začíná nad hlavou postavy (1,8 m).
-                var size = 0.8f + tree.Variant * 0.4f;
-                var prefab = VisualCatalog.Current.Tree(tree.Variant);
-                if (prefab != null)
-                {
-                    AddTreeModel(prefab, trees, crowns, tree.TileIndex, x, y, size);
-                    Pickable.Attach(trees.GetChild(trees.childCount - 1).gameObject, TreeTarget(world, tree));
-                    continue;
-                }
-
-                // Kmen má stejnou tloušťku jako kolize na serveru (treeTrunkRadius 0,12 v movement.json).
-                var trunk = Primitive(PrimitiveType.Cylinder, "Kmen", trees, trunkColor);
-                trunk.transform.position = WorldCoords.ToUnity(x, y, TrunkHeight / 2 * size);
-                trunk.transform.localScale = new Vector3(0.24f, TrunkHeight / 2 * size, 0.24f);
-
-                var color = crownColors[tree.Variant > 0.5f ? 0 : 1];
-                var crown = Primitive(PrimitiveType.Sphere, "Koruna", trees, color);
-                var crownCenter = (TrunkHeight + CrownSize / 2 - 0.4f) * size;
-                var crownRadius = CrownSize / 2 * size;
-                crown.transform.position = WorldCoords.ToUnity(x, y, crownCenter);
-                crown.transform.localScale = Vector3.one * CrownSize * size;
-                crowns.Add(tree.TileIndex, crown, color, x, y, crownRadius, crownCenter - crownRadius, crownCenter + crownRadius);
-                Pickable.Attach(trunk, TreeTarget(world, tree));
-                Pickable.Attach(crown, TreeTarget(world, tree));
-            }
-        }
-
-        /// <summary>Strom jako cíl kliknutí: dlaždice stromu (nasbírat klacky).</summary>
-        private static InteractionTarget TreeTarget(WorldView world, TreeView tree)
-        {
-            return InteractionTarget.ForTile(TargetKind.Tree, tree.TileIndex % world.Width, tree.TileIndex / world.Width);
-        }
-
-        /// <summary>
-        /// Strom z katalogu vzhledu: natočený podle dlaždice (ať nejsou všechny stejně), zmenšený nebo zvětšený
-        /// podle varianty. Zprůhlední celý, když zakrývá postavu (koruna začíná zhruba ve 40 % výšky).
-        /// </summary>
-        private static void AddTreeModel(GameObject prefab, Transform parent, SeeThrough crowns, int tileIndex, double x, double y, float size)
-        {
-            var model = VisualCatalog.Spawn(prefab, parent, "Strom", height: VisualCatalog.Current.TreeHeight);
-            model.transform.position = WorldCoords.ToUnity(x, y);
-            model.transform.rotation = Quaternion.Euler(0f, tileIndex * 137 % 360, 0f);
-            model.transform.localScale *= size;
-            var bounds = VisualCatalog.BoundsOf(model);
-            var radius = Mathf.Max(bounds.extents.x, bounds.extents.z);
-            crowns.Add(tileIndex, model, null, x, y, radius, bounds.max.y * 0.4f, bounds.max.y);
         }
 
         /// <summary>

@@ -9,8 +9,10 @@ public readonly record struct GridPoint(int X, int Y);
 /// <summary>Místo ve světě (souřadnice v dlaždicích, střed dlaždice je x + 0,5).</summary>
 public readonly record struct Position(double X, double Y);
 
-/// <summary>Strom na dlaždici. Variant (0 až 1) určuje velikost a druh stromu při kreslení.</summary>
-public readonly record struct Tree(int TileIndex, double X, double Y, double Variant);
+/// <summary>
+/// Strom na dlaždici: druh a výška v metrech (ze seedu). Variant (0 až 1) vybere model, když jich má druh víc.
+/// </summary>
+public readonly record struct Tree(int TileIndex, double X, double Y, double Variant, TreeKind Kind, double Height);
 
 /// <summary>
 /// Jedna rostlina ve světě. FruitOffset (-1, 0, 1) posouvá zrání plodů o měsíc,

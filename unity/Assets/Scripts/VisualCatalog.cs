@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Oohra.Core.World;
 using UnityEngine;
 
@@ -27,12 +28,24 @@ namespace Oohra.Client
 
         private static VisualCatalog _current;
 
-        [Header("Stromy (na středu a velikosti modelu nezáleží, hra je srovná)")]
-        [Tooltip("Varianty stromů. Každý strom na ostrově dostane jednu podle svého čísla varianty.")]
+        [Header("Stromy (na středu a velikosti modelu nezáleží, hra je srovná na výšku stromu ze serveru)")]
+        [Tooltip("Společné varianty stromů: použijí se pro druh, který nemá vlastní políčko níž.")]
         public GameObject[] Trees = new GameObject[0];
 
-        [Tooltip("Výška stromu v metrech. Hra model zmenší nebo zvětší na tuto výšku (a pak ještě o ±20 % podle stromu).")]
-        public float TreeHeight = 5f;
+        [Tooltip("Dub (listnatý), 5 až 8 m. Víc modelů = víc variant.")]
+        public GameObject[] OakTrees = new GameObject[0];
+
+        [Tooltip("Jehličnan (borovice nebo smrk), 6 až 8 m.")]
+        public GameObject[] ConiferTrees = new GameObject[0];
+
+        [Tooltip("Bříza nebo olše, 4 až 7 m.")]
+        public GameObject[] BirchTrees = new GameObject[0];
+
+        [Tooltip("Vrba (bažina a břehy), 3 až 5 m.")]
+        public GameObject[] WillowTrees = new GameObject[0];
+
+        [Tooltip("Suchý mrtvý strom bez listí, 3 až 6 m.")]
+        public GameObject[] DeadTrees = new GameObject[0];
 
         [Header("Rostliny podle tvaru druhu: políčka 0 až 3 (víc tvarů druhy nemají)")]
         [Tooltip("Index = tvar druhu. Model se obarví barvou druhu (části se SpeciesTint, jinak celý), ať jdou druhy poznat.")]
@@ -171,16 +184,35 @@ namespace Oohra.Client
             set { _current = value; }
         }
 
-        /// <summary>Strom podle varianty (0 až 1), nebo null.</summary>
-        public GameObject Tree(float variant)
+        /// <summary>Strom podle druhu a varianty (0 až 1): z políčka druhu, když je prázdné, ze společného seznamu Trees, jinak null.</summary>
+        public GameObject Tree(TreeKind kind, float variant)
         {
-            var count = Trees == null ? 0 : Trees.Length;
-            if (count == 0)
+            return Pick(TreesOf(kind), variant) ?? Pick(Trees, variant);
+        }
+
+        private GameObject[] TreesOf(TreeKind kind)
+        {
+            switch (kind)
             {
-                return null;
+                case TreeKind.Oak: return OakTrees;
+                case TreeKind.Conifer: return ConiferTrees;
+                case TreeKind.Birch: return BirchTrees;
+                case TreeKind.Willow: return WillowTrees;
+                default: return DeadTrees;
+            }
+        }
+
+        /// <summary>Model ze seznamu podle varianty (prázdná políčka se přeskočí), nebo null.</summary>
+        private static GameObject Pick(GameObject[] models, float variant)
+        {
+            var filled = new List<GameObject>();
+            foreach (var model in models ?? new GameObject[0])
+            {
+                // Prázdné políčko není v Unity „opravdové“ null, proto != null.
+                if (model != null) filled.Add(model);
             }
 
-            return Trees[Mathf.Clamp((int)(variant * count), 0, count - 1)];
+            return filled.Count == 0 ? null : filled[Mathf.Clamp((int)(variant * filled.Count), 0, filled.Count - 1)];
         }
 
         /// <summary>Rostlina podle tvaru druhu, nebo null.</summary>

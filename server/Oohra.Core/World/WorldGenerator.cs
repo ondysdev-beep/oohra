@@ -487,6 +487,7 @@ public sealed class WorldGenerator
         IReadOnlyList<SpeciesSecret> secrets)
     {
         var rng = new Mulberry32(_seed ^ 0xA5A5);
+        var freshWater = DistanceFrom(i => _tiles[i] is TileType.Pond or TileType.Ford, i => true);
         var trees = new List<Tree>();
         var plants = new List<PlantInstance>();
         for (var i = 0; i < _tiles.Length; i++)
@@ -498,7 +499,8 @@ public sealed class WorldGenerator
             {
                 if (!clear)
                 {
-                    trees.Add(new Tree(i, x + 0.5, y + 0.5, rng.NextDouble()));
+                    var (kind, height) = TreeSpecies(i, freshWater);
+                    trees.Add(new Tree(i, x + 0.5, y + 0.5, rng.NextDouble(), kind, height));
                 }
 
                 continue;
@@ -519,6 +521,41 @@ public sealed class WorldGenerator
         }
 
         return (trees, plants);
+    }
+
+    /// <summary>
+    /// Druh a výška stromu ze seedu a čísla dlaždice (vlastní náhoda, aby se nepohnulo rozmístění rostlin):
+    /// druh podle vah oblasti v trees.json, u sladké vody často vrba, výška v rozsahu druhu.
+    /// </summary>
+    private (TreeKind Kind, double Height) TreeSpecies(int i, int[] freshWater)
+    {
+        var rules = GameData.Trees;
+        var salt = unchecked(_seed ^ rules.SeedSalt);
+        var (x, y) = (i % _width, i / _width);
+        var region = _regions[i];
+        var kind = TreeKind.Oak;
+        if (freshWater[i] <= rules.WaterDistance && Hash.Hash2(x, y, unchecked(salt + 1)) < rules.WillowNearWater)
+        {
+            kind = TreeKind.Willow;
+        }
+        else
+        {
+            var options = rules.Species.Where(s => s.Weights.ContainsKey(region)).ToList();
+            var pick = Hash.Hash2(x, y, salt) * options.Sum(s => s.Weights[region]);
+            foreach (var option in options)
+            {
+                kind = option.Kind;
+                pick -= option.Weights[region];
+                if (pick <= 0)
+                {
+                    break;
+                }
+            }
+        }
+
+        var species = rules.For(kind);
+        var height = species.MinHeight + (species.MaxHeight - species.MinHeight) * Hash.Hash2(x, y, unchecked(salt + 2));
+        return (kind, Math.Round(height, 1));
     }
 
     private static int PickSpecies(Mulberry32 rng, TileType tile, IReadOnlyList<SpeciesSecret> secrets)

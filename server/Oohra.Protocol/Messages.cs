@@ -12,8 +12,8 @@ namespace Oohra.Protocol;
 // Zprávy a jejich zápis do bajtů. Každá zpráva začíná bajtem MessageType (viz Write... metody).
 // Pořadí zápisu a čtení musí být stejné. Když se zpráva změní, zvyš ProtocolInfo.Version.
 
-/// <summary>Strom na mapě: dlaždice a velikost (0 až 1).</summary>
-public readonly record struct TreeView(int TileIndex, float Variant);
+/// <summary>Strom na mapě: dlaždice, varianta modelu (0 až 1), druh a výška v metrech.</summary>
+public readonly record struct TreeView(int TileIndex, float Variant, TreeKind Kind = TreeKind.Oak, float Height = 5);
 
 /// <summary>Rostlina na mapě. Její číslo (id) je pořadí v seznamu.</summary>
 public readonly record struct PlantView(int SpeciesId, float X, float Y);
@@ -756,6 +756,9 @@ public static class Messages
         {
             w.Put(t.TileIndex);
             w.Put(t.Variant);
+            w.Put((byte)t.Kind);
+            // Výška v decimetrech (stromy mají 3 až 8 m), stačí jeden bajt.
+            w.Put((byte)Math.Round(t.Height * 10));
         }
 
         w.Put(world.Plants.Length);
@@ -829,7 +832,7 @@ public static class Messages
         var width = r.GetInt();
         var height = r.GetInt();
         var (tiles, shore) = GetTiles(r, width * height);
-        var trees = ReadList(r, () => new TreeView(r.GetInt(), r.GetFloat()));
+        var trees = ReadList(r, () => new TreeView(r.GetInt(), r.GetFloat(), (TreeKind)r.GetByte(), r.GetByte() / 10f));
         var plants = ReadList(r, () => new PlantView(r.GetInt(), r.GetFloat(), r.GetFloat()));
         var species = ReadList(r, () => new SpeciesView(r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetShort(), r.GetByte()));
         var camps = ReadList(r, () => new CampView(r.GetInt(), r.GetInt()));
