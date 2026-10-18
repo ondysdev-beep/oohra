@@ -41,7 +41,7 @@ public class StrangerTests
     [Fact]
     public void ThreeStrangersInEachCamp()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
         var strangers = new Strangers(12345, island);
 
         Assert.Equal(6, strangers.All.Count);
@@ -58,7 +58,7 @@ public class StrangerTests
     [Fact]
     public void StrangersStayNearCamp()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
         var strangers = new Strangers(12345, island);
         var clock = GameClock.FromSettings();
         var plants = new PlantStates();
@@ -227,7 +227,7 @@ public class StrangerTests
 
     private static (Island Island, Strangers Strangers, Stranger First) Setup()
     {
-        var island = IslandGenerator.Build(12345, 84, 84);
+        var island = WorldGenerator.Build(12345, 128, 128);
         var strangers = new Strangers(12345, island);
         return (island, strangers, strangers.All[0]);
     }

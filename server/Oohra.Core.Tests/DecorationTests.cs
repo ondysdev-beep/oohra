@@ -7,7 +7,7 @@ namespace Oohra.Core.Tests;
 /// <summary>Dekorace ze seznamu decorations.json: cena, místo, kudy se dá projít a co vrátí rozebrání.</summary>
 public class DecorationTests
 {
-    private static readonly Island _island = IslandGenerator.Build(1, 128, 128);
+    private static readonly Island _island = WorldGenerator.Build(1, 128, 128);
 
     [Fact]
     public void ListLoads()
@@ -25,7 +25,7 @@ public class DecorationTests
     [Fact]
     public void BenchBlocksAndGivesHalfBack()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var (x, y) = OpenSpot(island);
         var bag = Bag(sticks: 3, stones: 0);
 
@@ -44,7 +44,7 @@ public class DecorationTests
     [Fact]
     public void StoneCircleIsWalkable()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var (x, y) = OpenSpot(island);
         var bag = Bag(sticks: 0, stones: 4);
 
@@ -69,7 +69,7 @@ public class DecorationTests
     [Fact]
     public void NoOverlapAndNotOnPlayer()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var (x, y) = OpenSpot(island);
         var bag = Bag(sticks: 20, stones: 20);
 

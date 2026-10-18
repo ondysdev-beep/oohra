@@ -10,7 +10,7 @@ namespace Oohra.Core.Tests;
 public class TrapFishSpoilTests
 {
     private const double Day = 1440;
-    private static readonly Island _island = IslandGenerator.Build(1, 128, 128);
+    private static readonly Island _island = WorldGenerator.Build(1, 128, 128);
 
     [Fact]
     public void MeatAndFruitSpoilAfterDays()
@@ -94,7 +94,7 @@ public class TrapFishSpoilTests
     [Fact]
     public void TrapCatchesRabbitAndGivesMeat()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var (px, py) = OpenSpot(island);
         var inventory = Sticks(3);
         Assert.Equal(BuildResult.Built, island.Structures.Build(island, new Fires(), inventory, px, py, BuildKind.Trap, px + 2, py, 0, 0, []));
@@ -129,7 +129,7 @@ public class TrapFishSpoilTests
     [Fact]
     public void TrapDoesNotBlockWalking()
     {
-        var island = IslandGenerator.Build(1, 128, 128);
+        var island = WorldGenerator.Build(1, 128, 128);
         var (px, py) = OpenSpot(island);
         island.Structures.Place(BuildKind.Trap, px + 1, py, 0, length: 0.01);
 

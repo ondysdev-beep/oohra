@@ -10,7 +10,7 @@ namespace Oohra.Core.Tests;
 /// <summary>Jazyk ze slabik: Starý hlas, zápisník slov a souvislosti řeči (prototyp makeVocab, npcSay, vocabInfo).</summary>
 public class LanguageTests
 {
-    private static readonly Island _island = IslandGenerator.Build(1, 128, 128);
+    private static readonly Island _island = WorldGenerator.Build(1, 128, 128);
 
     /// <summary>Stejný seed dá stejná slova jako prototyp (makeVocab s mulberry32(seed ^ 0x1A9)).</summary>
     [Theory]
