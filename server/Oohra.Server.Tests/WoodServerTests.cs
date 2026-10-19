@@ -49,8 +49,9 @@ public class WoodServerTests
         player.Y = piece.Y + 0.5;
 
         a.PickUpTimber(piece.Id);
-        Assert.True(net.Pump(() => b.Snapshot?.Players.Any(p => p.Id == player.Id && p.Carry) == true));
-        Assert.Contains(a.Inventory.Stacks, s => s.Kind == ItemKind.LogPiece && s.Tree == tree.Kind);
+        // Snímek (nespolehlivý kanál) může přijít dřív než batoh, proto se čeká na obojí.
+        Assert.True(net.Pump(() => b.Snapshot?.Players.Any(p => p.Id == player.Id && p.Carry) == true
+            && a.Inventory.Stacks.Any(s => s.Kind == ItemKind.LogPiece && s.Tree == tree.Kind)));
 
         a.DropTimber();
         Assert.True(net.Pump(() => b.Snapshot?.Players.Any(p => p.Id == player.Id && !p.Carry) == true

@@ -188,6 +188,9 @@ namespace Oohra.Client
         public GameObject Snake;
 
         [Header("Nebezpečí")]
+        [Tooltip("Barva kalné vody jarní záplavy nad zatopenou souší (průhlednost v alfě).")]
+        public Color FloodColor = new Color(0.30f, 0.29f, 0.20f, 0.55f);
+
         [Tooltip("Vosí hnízdo (creature_wasp_nest): visí na větvi asi 2,6 m nad zemí, velké asi 0,3 × 0,4 m, úchyt nahoře uprostřed.")]
         public GameObject WaspNest;
 

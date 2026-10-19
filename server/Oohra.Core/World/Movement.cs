@@ -94,7 +94,9 @@ public static class Movement
             return 1;
         }
 
-        return GameData.Movement.TerrainSpeed.TryGetValue(island.TileAt(tx, ty), out var speed) ? speed : 1;
+        // Na jaře zatopená souš se brodí jako bažina.
+        var tile = island.Flood.IsFlooded(tx, ty) ? TileType.Bog : island.TileAt(tx, ty);
+        return GameData.Movement.TerrainSpeed.TryGetValue(tile, out var speed) ? speed : 1;
     }
 
     /// <summary>S kladem v náruči jde postava pomaleji (carrySpeed ve woodcutting.json).</summary>

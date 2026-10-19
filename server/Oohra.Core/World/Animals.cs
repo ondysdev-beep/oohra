@@ -109,8 +109,11 @@ public sealed partial class Animals
         return _animals.Find(a => a.Id == id);
     }
 
-    /// <summary>Kolik zvířat daného druhu na ostrov patří (prototyp ECO, přepočtené podle plochy ostrova).</summary>
-    public static int TargetCount(Island island, AnimalKind kind)
+    /// <summary>
+    /// Kolik zvířat daného druhu na ostrov patří (prototyp ECO, přepočtené podle plochy ostrova). V zimě je
+    /// hladových vlků víc (seasons.json winterWolves).
+    /// </summary>
+    public static int TargetCount(Island island, AnimalKind kind, Season season = Season.Spring)
     {
         var population = GameData.Animals.Population;
         var count = kind switch
@@ -121,7 +124,8 @@ public sealed partial class Animals
             AnimalKind.Snake => population.Snake,
             _ => population.Wolf,
         };
-        return (int)Math.Round(count * island.Width * island.Height / population.ReferenceArea);
+        var factor = kind == AnimalKind.Wolf && season == Season.Winter ? GameData.Seasons.WinterWolves.PopulationFactor : 1;
+        return (int)Math.Round(count * factor * island.Width * island.Height / population.ReferenceArea);
     }
 
     /// <summary>Zabydlí ostrov zvířaty (prototyp initAnimals). Jeleni začínají u jednoho stáda.</summary>
@@ -159,7 +163,7 @@ public sealed partial class Animals
                     UpdateBoar(island, animal, clock, realSeconds, players);
                     break;
                 case AnimalKind.Wolf:
-                    UpdateWolf(island, fires, animal, clock, realSeconds, night, players);
+                    UpdateWolf(island, fires, animal, clock, realSeconds, WolvesHunt(clock), players);
                     break;
                 case AnimalKind.Snake:
                     UpdateSnake(island, animal, clock, realSeconds, players);
@@ -177,7 +181,7 @@ public sealed partial class Animals
             return;
         }
 
-        Respawn(island, clock.TotalMinutes, players);
+        Respawn(island, clock, players);
     }
 
     /// <summary>
@@ -569,6 +573,19 @@ public sealed partial class Animals
 
     // ---------- vlk ----------
 
+    /// <summary>Vlci loví v noci, hladoví v zimě už za soumraku.</summary>
+    public static bool WolvesHunt(GameClock clock)
+    {
+        var below = clock.Season == Season.Winter ? GameData.Seasons.WinterWolves.HuntDaylightBelow : GameData.Animals.NightDaylightBelow;
+        return clock.Daylight < below;
+    }
+
+    /// <summary>Jak blízko k ohni se vlk odváží: v zimě je hladový a dojde blíž.</summary>
+    private static double FireRange(GameClock clock, WolfRules rules)
+    {
+        return rules.FireRange * (clock.Season == Season.Winter ? GameData.Seasons.WinterWolves.FireRangeFactor : 1);
+    }
+
     private void UpdateWolf(Island island, Fires fires, Animal a, GameClock clock, double dt, bool night, IReadOnlyList<AnimalTarget> players)
     {
         var rules = GameData.Animals.Wolf;
@@ -576,7 +593,7 @@ public sealed partial class Animals
         switch (a.State)
         {
             case AnimalState.Stalk:
-                Stalk(island, fires, a, dt, players, rules);
+                Stalk(island, fires, a, clock, dt, players, rules);
                 break;
             case AnimalState.Alert:
                 Aim(a, players, dt, rules.ChargeSeconds);
@@ -608,7 +625,7 @@ public sealed partial class Animals
         if (a.Timer <= 0)
         {
             a.Timer = 3 + _rng.NextDouble() * 4;
-            var range = night ? rules.DenRangeNight : rules.DenRangeDay;
+            var range = night ? rules.DenRangeNight * (clock.Season == Season.Winter ? GameData.Seasons.WinterWolves.RoamFactor : 1) : rules.DenRangeDay;
             a.TargetX = a.DenX + (_rng.NextDouble() * 2 - 1) * range;
             a.TargetY = a.DenY + (_rng.NextDouble() * 2 - 1) * range;
         }
@@ -619,7 +636,7 @@ public sealed partial class Animals
             return;
         }
 
-        var (prey, d) = Nearest(players, a.X, a.Y, p => Exposed(island, fires, p, rules));
+        var (prey, d) = Nearest(players, a.X, a.Y, p => Exposed(island, fires, p, FireRange(clock, rules)));
         if (prey is not null && d < rules.StalkRange)
         {
             a.State = AnimalState.Stalk;
@@ -630,12 +647,12 @@ public sealed partial class Animals
     }
 
     /// <summary>Vlk se plíží k hráči. Vzdá to, když je hráč u ohně, v úkrytu, daleko, nebo když vyprší čas.</summary>
-    private void Stalk(Island island, Fires fires, Animal a, double dt, IReadOnlyList<AnimalTarget> players, WolfRules rules)
+    private void Stalk(Island island, Fires fires, Animal a, GameClock clock, double dt, IReadOnlyList<AnimalTarget> players, WolfRules rules)
     {
         var prey = Target(players, a.Prey);
         a.Timer -= dt;
         var d = prey is null ? double.MaxValue : Distance(prey.X, prey.Y, a.X, a.Y);
-        if (prey is null || !Exposed(island, fires, prey, rules) || a.Timer <= 0 || d > rules.GiveUpRange)
+        if (prey is null || !Exposed(island, fires, prey, FireRange(clock, rules)) || a.Timer <= 0 || d > rules.GiveUpRange)
         {
             a.State = AnimalState.Wander;
             a.Timer = 2;
@@ -656,9 +673,9 @@ public sealed partial class Animals
     }
 
     /// <summary>Hráč je pro vlka na ráně: žije, nemá zapálenou pochodeň, není do fireRange od hořícího ohně a není v úkrytu.</summary>
-    private static bool Exposed(Island island, Fires fires, AnimalTarget p, WolfRules rules)
+    private static bool Exposed(Island island, Fires fires, AnimalTarget p, double fireRange)
     {
-        return !p.Character.IsDead && !p.Character.TorchLit && !fires.BurningNear(island, p.X, p.Y, rules.FireRange) && !Shelter.IsSheltered(island, p.X, p.Y);
+        return !p.Character.IsDead && !p.Character.TorchLit && !fires.BurningNear(island, p.X, p.Y, fireRange) && !Shelter.IsSheltered(island, p.X, p.Y);
     }
 
     // ---------- divočák ----------
@@ -805,8 +822,9 @@ public sealed partial class Animals
     }
 
     /// <summary>Když zvířat ubude (lov), jednou za respawnMinutes se doplní jedno chybějící od každého druhu.</summary>
-    private void Respawn(Island island, double now, IReadOnlyList<AnimalTarget> players)
+    private void Respawn(Island island, GameClock clock, IReadOnlyList<AnimalTarget> players)
     {
+        var now = clock.TotalMinutes;
         if (double.IsNaN(_nextRespawnAt))
         {
             _nextRespawnAt = now + GameData.Animals.RespawnMinutes;
@@ -820,7 +838,7 @@ public sealed partial class Animals
         _nextRespawnAt = now + GameData.Animals.RespawnMinutes;
         foreach (var kind in new[] { AnimalKind.Boar, AnimalKind.Rabbit, AnimalKind.Deer, AnimalKind.Wolf, AnimalKind.Snake })
         {
-            if (_animals.Count(a => a.Kind == kind && !a.IsDead) < TargetCount(island, kind))
+            if (_animals.Count(a => a.Kind == kind && !a.IsDead) < TargetCount(island, kind, clock.Season))
             {
                 Spawn(island, kind, players);
             }

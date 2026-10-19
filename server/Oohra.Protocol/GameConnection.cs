@@ -103,6 +103,12 @@ public sealed class GameConnection : IDisposable
     /// <summary>Hromady kamenů na skalách (i prázdné, Stones 0).</summary>
     public RockPileView[] RockPiles { get; private set; } = [];
 
+    /// <summary>Na jaře zatopená souš (čísla dlaždic).</summary>
+    public int[] FloodedTiles { get; private set; } = [];
+
+    /// <summary>Stopy v bahně v okolí.</summary>
+    public TrackView[] Tracks { get; private set; } = [];
+
     /// <summary>Vosí hnízda ve stromech.</summary>
     public WaspNestView[] WaspNests { get; private set; } = [];
 
@@ -646,6 +652,12 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.WaspNests:
                 WaspNests = Messages.ReadWaspNests(reader);
+                break;
+            case MessageType.FloodedTiles:
+                FloodedTiles = Messages.ReadFloodedTiles(reader);
+                break;
+            case MessageType.Tracks:
+                Tracks = Messages.ReadTracks(reader);
                 break;
             case MessageType.Corpses:
                 Corpses = Messages.ReadCorpses(reader);
