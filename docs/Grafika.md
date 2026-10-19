@@ -270,6 +270,17 @@ kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůh
 
 ## Modely z Meshy (Oohra_Meshy_Prompty.md): kam s nimi
 
+### Jak model z Meshy dostat do hry
+
+1. V Meshy udělej **Remesh** na 2 000 až 5 000 trojúhelníků (postava může mít víc) a stáhni FBX.
+2. Ve složce modelu nech jen tři soubory se stejným jménem: `jmeno.fbx`, `jmeno.png` (barvy) a `jmeno_normal.png` (normály). Textury drsnosti a kovovosti hra nepotřebuje.
+3. FBX z Meshy má v sobě zabalené textury (10 až 20 MB). Přeulož ho v Blenderu bez nich (Export FBX, Path Mode: Strip, bez Embed Textures), pak má asi 200 kB. Textury stačí 1024 px.
+4. V Unity klikni na FBX a dej menu **Oohra → Připravit model z Meshy (vybraný FBX)**: nastaví textury, vytvoří materiál `jmeno.mat` (URP Lit) a dá ho modelu.
+5. Přetáhni model do políčka v **Oohra → Katalog vzhledu**. Stromy, rostliny, kameny a trávu hra zvětší sama. Zvíře nebo postavu dej do prefabu se správnou velikostí (divočák 1 m dlouhý, postava 1,8 m) a hlavou k ose +Z, viz `Models/animals/boar/Boar.prefab`.
+6. Postava s animací chůze potřebuje kostru **Humanoid** a ovladač animací s parametrem `Rychlost` (vzor `Models/human/pradavni/PlayerAncient.controller`: stojí, jde podle rychlosti). Bez parametrů `Spi` a `Mrtvy` hra spící a mrtvou postavu položí sama.
+
+Model z Meshy leží v Unity správně (Unity mu dá otočení -90° kolem X, to je v pořádku). Hlava zvířete z Meshy míří na +Z, tedy tam, kam ji hra chce.
+
 | Soubor | Políčko katalogu |
 |---|---|
 | `tree_oak_*`, `tree_pine_*` (i smrk), `tree_birch_*`, `tree_willow_*`, `tree_dead_*` | **OakTrees**, **ConiferTrees**, **BirchTrees**, **WillowTrees**, **DeadTrees** (výšku dá hra podle druhu, nemusíš ji ladit) |
