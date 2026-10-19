@@ -345,6 +345,7 @@ namespace Oohra.Client
         }
 
         private readonly HashSet<int> _combine = new HashSet<int>();
+        private readonly HashSet<int> _combineGround = new HashSet<int>();
 
         /// <summary>Hromádky z batohu zaškrtnuté ke spojení (zkoušení receptů).</summary>
         public IReadOnlyCollection<int> CombineSelection
@@ -357,11 +358,105 @@ namespace Oohra.Client
             if (!_combine.Remove(stackIndex)) _combine.Add(stackIndex);
         }
 
-        /// <summary>Zkusí spojit zaškrtnuté věci. Výsledek přijde jako hláška Craft.</summary>
+        /// <summary>Zaškrtnuté hromádky na zemi (čísla hromádek) ke zkoušení receptů.</summary>
+        public IReadOnlyCollection<int> GroundSelection
+        {
+            get { return _combineGround; }
+        }
+
+        public void ToggleGround(int pileId)
+        {
+            if (!_combineGround.Remove(pileId)) _combineGround.Add(pileId);
+        }
+
+        /// <summary>Kolik věcí je zaškrtnuto (v batohu i na zemi).</summary>
+        public int CombineCount
+        {
+            get { return _combine.Count + _combineGround.Count; }
+        }
+
+        /// <summary>Zkusí spojit zaškrtnuté věci z batohu i ze země. Výsledek přijde jako hláška Craft.</summary>
         public void CombineSelected()
         {
-            Connection.Combine(new List<int>(_combine));
+            Connection.Combine(new List<int>(_combine), new List<int>(_combineGround));
             _combine.Clear();
+            _combineGround.Clear();
+        }
+
+        /// <summary>
+        /// Hromádky na zemi u mé postavy (stejné podlaží, do CraftReach), ze kterých jde vyrábět, nejbližší první.
+        /// Server dosah ověří sám (ground.json, craftReach).
+        /// </summary>
+        public List<GroundItemView> NearbyGround()
+        {
+            var result = new List<GroundItemView>();
+            var self = Connection.SelfSnapshot();
+            if (!self.HasValue)
+            {
+                return result;
+            }
+
+            foreach (var pile in Connection.GroundItems)
+            {
+                var dx = pile.X - self.Value.X;
+                var dy = pile.Y - self.Value.Y;
+                if (pile.Level == self.Value.Level && dx * dx + dy * dy <= CraftReach * CraftReach)
+                {
+                    result.Add(pile);
+                }
+            }
+
+            result.Sort((a, b) => Distance(a, self.Value).CompareTo(Distance(b, self.Value)));
+            // Zaškrtnuté hromádky, které už nejsou u postavy (odešla, někdo je sebral), se odškrtnou.
+            _combineGround.RemoveWhere(id => !result.Exists(p => p.Id == id));
+            return result;
+        }
+
+        /// <summary>Z jaké vzdálenosti jde vyrábět z věcí na zemi (jako craftReach v ground.json, o kousek míň).</summary>
+        public const float CraftReach = 1.9f;
+
+        private static float Distance(GroundItemView pile, PlayerSnapshot self)
+        {
+            return (pile.X - self.X) * (pile.X - self.X) + (pile.Y - self.Y) * (pile.Y - self.Y);
+        }
+
+        /// <summary>Kolik kusů daného druhu má postava v batohu a na zemi u sebe (materiál na výrobu).</summary>
+        public int CountWithGround(ItemKind kind)
+        {
+            var count = Count(kind);
+            foreach (var pile in NearbyGround())
+            {
+                if (pile.Stack.Kind == kind) count += pile.Stack.Count;
+            }
+
+            return count;
+        }
+
+        /// <summary>Hromádka na zemi z nabídky (null, když už není).</summary>
+        public GroundItemView? MenuGroundItem()
+        {
+            if (Menu == null || Menu.Kind != TargetKind.GroundItem)
+            {
+                return null;
+            }
+
+            foreach (var pile in Connection.GroundItems)
+            {
+                if (pile.Id == Menu.Id) return pile;
+            }
+
+            return null;
+        }
+
+        /// <summary>Sebrat hromádku ze země, u které je otevřená nabídka.</summary>
+        public void PickUpGroundItem()
+        {
+            if (Menu != null && Menu.Kind == TargetKind.GroundItem)
+            {
+                Connection.PickUpItem(Menu.Id);
+                Menu = null;
+                Selected = null;
+            }
         }
 
         public void Craft(string recipeId)
@@ -384,7 +479,8 @@ namespace Oohra.Client
         {
             foreach (var input in recipe.Inputs)
             {
-                if (Count(input.Kind) < input.Count) return false;
+                // Materiál může ležet i na zemi u postavy, nástroj musí držet.
+                if (CountWithGround(input.Kind) < input.Count) return false;
             }
 
             return !recipe.Tool.HasValue || Count(recipe.Tool.Value) > 0;

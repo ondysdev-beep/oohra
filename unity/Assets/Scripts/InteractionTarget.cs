@@ -24,6 +24,9 @@ namespace Oohra.Client
 
         /// <summary>Vchod do jeskyně venku nebo východ uvnitř (číslo vchodu).</summary>
         Cave,
+
+        /// <summary>Hromádka věcí na zemi (číslo hromádky).</summary>
+        GroundItem,
     }
 
     /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
@@ -135,6 +138,12 @@ namespace Oohra.Client
         public static InteractionTarget ForCave(int entranceId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Cave, entranceId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
+        }
+
+        /// <summary>Hromádka věcí na zemi (číslo hromádky). (x, y) je místo, kde leží.</summary>
+        public static InteractionTarget ForGroundItem(int pileId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.GroundItem, pileId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
         }
 
         public static InteractionTarget ForTimber(int timberId, double x, double y)

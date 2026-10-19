@@ -58,7 +58,7 @@ namespace Oohra.Client
             { "sick", "Je ti zle. Něco z toho, co jsi jedl, ti neudělalo dobře. Pij vodu a odpočívej." },
             { "word", "Někdo poblíž mluví. Slova se objevují v zápisníku (J). Co znamenají, musíš odhadnout sám." },
             { "stranger", "Cizinci mluví svým jazykem. Sleduj, co dělají, když něco říkají. Zkus jim ukázat rostlinu." },
-            { "hands", "Máš jen dvě ruce: uneseš dvě hromádky věcí. Batoh si vyrobíš. V batohu (B) zaškrtni věci a zkus je spojit." },
+            { "hands", "Máš jen dvě ruce: uneseš dvě hromádky věcí. Co se nevejde, polož na zem (B, Položit). Vyrábět jde i z věcí na zemi u tebe: zaškrtni je v batohu a zkus spojit." },
             { "mosquito", "Komáři mohou přenášet nemoc. Drž se u ohně (kouř), nebo se natři bahnem či popelem." },
             { "leech", "Pijavice se chytají v bažině. Sundáš je u ohně nebo popelem z ohniště." },
             { "disease", "Je ti zle. Nemoc chce svůj lék: zkoušej rostliny a zapisuj si, co pomohlo. Pij hodně vody." },

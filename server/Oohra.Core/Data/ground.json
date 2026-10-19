@@ -1,0 +1,19 @@
+// Věci na zemi: hromádky, které hráč položí (Zahodit), a výrobky, které se mu nevejdou do rukou.
+// Z hromádek blízko postavy se dá vyrábět, jako by je měla v rukou (pracovní místo, třeba u ohně).
+{
+  // Jak daleko před postavu se věc položí (m). Když je tam voda nebo skála, položí se k nohám.
+  "dropDistance": 0.6,
+  // Stejná věc do této vzdálenosti se přidá na hromádku, která už leží (m).
+  "mergeRadius": 0.6,
+  // Nejvíc kusů na jedné hromádce na zemi.
+  "maxPile": 30,
+  // Jak blízko musí postava být, aby hromádku sebrala (m).
+  "reach": 1.6,
+  // Z hromádek do této vzdálenosti se dá vyrábět (m).
+  "craftReach": 2.0,
+  // Za kolik herních dnů od položení věc na zemi zmizí (přidáním na hromádku se čas obnoví).
+  "lifetimeDays": 4,
+  // Každému hráči se posílají hromádky do této vzdálenosti (m), nejvýš maxSent nejbližších.
+  "viewDistance": 40,
+  "maxSent": 120
+}

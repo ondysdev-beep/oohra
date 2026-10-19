@@ -47,6 +47,8 @@ public sealed partial class GameServer
                 Signs = Island.Signs.Export(),
                 Corpses = Island.Corpses.Export(),
                 NextCorpseId = Island.Corpses.NextId,
+                Ground = Island.Ground.Export(),
+                NextGroundId = Island.Ground.NextId,
                 BirthGuards = Island.BirthGuards.All.ToList(),
             },
             Tribes = Tribes.Export(),
@@ -82,6 +84,7 @@ public sealed partial class GameServer
         Island.Forestry.Restore(Island, save.Island.Forestry);
         Island.Signs.Restore(save.Island.Signs);
         Island.Corpses.Restore(save.Island.Corpses, save.Island.NextCorpseId);
+        Island.Ground.Restore(save.Island.Ground, save.Island.NextGroundId);
         Island.BirthGuards.Restore(save.Island.BirthGuards);
         Tribes.Restore(save.Tribes);
         Journals.Restore(save.Journals, save.NextJournalId);

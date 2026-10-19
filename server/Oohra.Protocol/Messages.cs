@@ -135,6 +135,9 @@ public readonly record struct RockPileView(int TileIndex, int Stones, int MaxSto
 /// <summary>Stopa v bahně: poloha, směr (0 až 255 = celý kruh), kdo ji udělal a jak je čerstvá (255 nová, 0 mizí).</summary>
 public readonly record struct TrackView(float X, float Y, byte Dir, TrackMaker Maker, byte Fresh);
 
+/// <summary>Hromádka věcí na zemi: kde leží, v jakém podlaží (0 země) a co to je (Stack, i s počtem).</summary>
+public readonly record struct GroundItemView(int Id, float X, float Y, byte Level, StackView Stack);
+
 /// <summary>Vchod do jeskyně: venku (X, Y, Facing = směr ke skále) a uvnitř (InsideX, InsideY). Hidden = nenápadný.</summary>
 public readonly record struct CaveEntranceView(int Id, float X, float Y, float Facing, float InsideX, float InsideY, bool Hidden);
 
@@ -312,8 +315,11 @@ public static class Messages
         return r.GetString(64);
     }
 
-    /// <summary>Zkusit spojit vybrané hromádky z batohu (najde recept, který z nich jde).</summary>
-    public static void WriteCombine(NetDataWriter w, IReadOnlyList<int> stackIndices)
+    /// <summary>
+    /// Zkusit spojit vybrané hromádky z batohu a ze země u postavy (čísla hromádek na zemi), najde recept,
+    /// který z nich jde.
+    /// </summary>
+    public static void WriteCombine(NetDataWriter w, IReadOnlyList<int> stackIndices, IReadOnlyList<int>? groundPileIds = null)
     {
         w.Put((byte)MessageType.Combine);
         w.Put((byte)stackIndices.Count);
@@ -321,9 +327,16 @@ public static class Messages
         {
             w.Put((byte)index);
         }
+
+        var ground = groundPileIds ?? Array.Empty<int>();
+        w.Put((byte)ground.Count);
+        foreach (var id in ground)
+        {
+            w.Put(id);
+        }
     }
 
-    public static int[] ReadCombine(NetDataReader r)
+    public static (int[] StackIndices, int[] GroundPileIds) ReadCombine(NetDataReader r)
     {
         var count = Math.Min((int)r.GetByte(), 8);
         var indices = new int[count];
@@ -332,7 +345,46 @@ public static class Messages
             indices[i] = r.GetByte();
         }
 
-        return indices;
+        var groundCount = Math.Min((int)r.GetByte(), 8);
+        var ground = new int[groundCount];
+        for (var i = 0; i < groundCount; i++)
+        {
+            ground[i] = r.GetInt();
+        }
+
+        return (indices, ground);
+    }
+
+    /// <summary>Sebrat hromádku ze země (číslo hromádky).</summary>
+    public static void WritePickUpItem(NetDataWriter w, int pileId)
+    {
+        w.Put((byte)MessageType.PickUpItem);
+        w.Put(pileId);
+    }
+
+    public static int ReadPickUpItem(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
+    /// <summary>Hromádky věcí na zemi v okolí hráče.</summary>
+    public static void WriteGroundItems(NetDataWriter w, IReadOnlyList<GroundItemView> piles)
+    {
+        w.Put((byte)MessageType.GroundItems);
+        w.Put(piles.Count);
+        foreach (var p in piles)
+        {
+            w.Put(p.Id);
+            w.Put(p.X);
+            w.Put(p.Y);
+            w.Put(p.Level);
+            PutStack(w, p.Stack);
+        }
+    }
+
+    public static GroundItemView[] ReadGroundItems(NetDataReader r)
+    {
+        return ReadList(r, () => new GroundItemView(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetByte(), GetStack(r)));
     }
 
     /// <summary>Recepty, které postava umí. Posílá se po přihlášení a když se nějaký naučí (nebo zemře).</summary>

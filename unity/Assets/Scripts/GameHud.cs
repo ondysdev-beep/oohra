@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
@@ -411,6 +412,20 @@ namespace Oohra.Client
                 case TargetKind.Timber:
                     DrawTimberMenu(titleRect, ref buttonRect);
                     break;
+                case TargetKind.GroundItem:
+                    var lying = _session.MenuGroundItem();
+                    if (lying == null)
+                    {
+                        // Někdo hromádku sebral, nebo zmizela: nabídka se zavře.
+                        _session.Menu = null;
+                        _session.Selected = null;
+                        break;
+                    }
+
+                    GUI.Label(titleRect, "NA ZEMI: " + Texts.Describe(lying.Value.Stack).ToUpper() + " ×" + lying.Value.Stack.Count, _title);
+                    if (Button(ref buttonRect, "Sebrat")) _session.PickUpGroundItem();
+                    GUI.Label(new Rect(buttonRect.x, buttonRect.y + 4, 360, 22), "Z věcí na zemi u sebe můžeš i vyrábět (B batoh).", _label);
+                    break;
                 case TargetKind.Rock:
                     var pile = _session.RockPileAt(target.TileX, target.TileY);
                     if (pile == null)
@@ -715,7 +730,9 @@ namespace Oohra.Client
             var rowHeight = 34f;
             var recipes = _session.GiveTo >= 0 ? new RecipeView[0] : connection.Recipes;
             var recipeRows = recipes.Length == 0 ? 0 : 1 + (recipes.Length + 2) / 3;
-            var panelHeight = Mathf.Min(height - 40, 130 + Mathf.Max(1, inventory.Stacks.Length) * rowHeight + recipeRows * 32);
+            var ground = _session.GiveTo >= 0 ? new List<GroundItemView>() : _session.NearbyGround();
+            var groundRows = ground.Count == 0 ? 0 : 1 + ground.Count;
+            var panelHeight = Mathf.Min(height - 40, 130 + Mathf.Max(1, inventory.Stacks.Length) * rowHeight + groundRows * rowHeight + recipeRows * 32);
             _backpackRect = new Rect((width - 780) / 2, (height - panelHeight) / 2, 780, panelHeight);
             GUI.Box(_backpackRect, GUIContent.none);
             GUI.Box(_backpackRect, GUIContent.none);
@@ -740,7 +757,7 @@ namespace Oohra.Client
             }
             else if (_session.GiveTo < 0)
             {
-                GUI.Label(new Rect(x, y + 2, 700, 22), "Bez batohu uneseš jen to, co máš v rukou. Batoh si vyrobíš (zkus spojit lýko a klacky).", _label);
+                GUI.Label(new Rect(x, y + 2, 750, 22), "Bez batohu uneseš jen to, co máš v rukou. Co se nevejde, polož na zem: vyrábět jde i z věcí u tebe.", _label);
             }
 
             y += 30;
@@ -788,8 +805,8 @@ namespace Oohra.Client
                 if (stack.Kind == ItemKind.Journal && Button(ref buttons, "Otevřít")) _session.OpenJournal(i);
                 if (stack.Kind == ItemKind.Ash && Button(ref buttons, "Natřít se")) connection.Smear(true);
                 buttons.x = x + 300 + 3 * (buttons.width + 8);
-                // Klad se nezahazuje, ale pokládá na zem.
-                if (Button(ref buttons, stack.Kind == ItemKind.LogPiece ? "Položit" : "Zahodit")) connection.Drop(i);
+                // Věc nezmizí, položí se na zem před postavu (klad jako dřevo, ostatní jako hromádka).
+                if (Button(ref buttons, "Položit")) connection.Drop(i);
                 // Ukázat věc ostatním (návrh 9.3): řekni k tomu slovo, ať se ho naučí.
                 if (Button(ref buttons, "Ukázat")) connection.ShowItem(i);
                 y += rowHeight;
@@ -800,7 +817,25 @@ namespace Oohra.Client
                 return;
             }
 
-            if (_session.CombineSelection.Count > 0 && GUI.Button(new Rect(x, y, 260, 26), "Zkusit spojit (" + _session.CombineSelection.Count + ")"))
+            if (ground.Count > 0)
+            {
+                // Věci na zemi u postavy: jdou zaškrtnout ke zkoušení a vyrábí se z nich jako z rukou.
+                GUI.Label(new Rect(x, y + 4, 400, 24), "NA ZEMI U TEBE", _title);
+                y += rowHeight;
+                foreach (var pile in ground)
+                {
+                    var picked = _session.GroundSelection.Contains(pile.Id);
+                    if (GUI.Toggle(new Rect(x, y + 6, 20, 20), picked, GUIContent.none) != picked) _session.ToggleGround(pile.Id);
+                    var stack = pile.Stack;
+                    DrawBar(new Rect(x + 24, y + 6, 18, 18), 1f, stack.Kind == ItemKind.Plant ? Palette.Leaf(connection.World.Species[stack.SpeciesId]) : Palette.Material(stack.Kind));
+                    GUI.Label(new Rect(x + 50, y + 6, 250, 22), $"{Texts.Describe(stack)}  ×{stack.Count}", _label);
+                    var buttons = new Rect(x + 300, y + 2, 84, 26);
+                    if (Button(ref buttons, "Sebrat")) connection.PickUpItem(pile.Id);
+                    y += rowHeight;
+                }
+            }
+
+            if (_session.CombineCount > 0 && GUI.Button(new Rect(x, y, 260, 26), "Zkusit spojit (" + _session.CombineCount + ")"))
             {
                 _session.CombineSelected();
             }
@@ -829,7 +864,7 @@ namespace Oohra.Client
         {
             "WASD nebo klik myší: chůze · klik na věc: jít k ní a otevřít nabídku",
             "Mezerník: rána (zvíře poblíž) · Esc: zavřít nabídku",
-            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit, zkusit spojit věci, vyrobit, co umíš, otevřít deník) · N spát a vstát · K dovednosti",
+            "B batoh (jíst, ochutnat, upéct, ukázat, položit na zem, zkusit spojit věci i ze země, vyrobit, co umíš, otevřít deník) · N spát a vstát · K dovednosti",
             "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
             "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
             "H nakreslit značku · P podpis (jméno ze slabik a znak)",

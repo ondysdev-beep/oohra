@@ -121,6 +121,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Těla mrtvých hráčů (i s věcmi).</summary>
     public CorpseView[] Corpses { get; private set; } = [];
 
+    /// <summary>Hromádky věcí na zemi v okolí (server posílá jen blízké).</summary>
+    public GroundItemView[] GroundItems { get; private set; } = [];
+
     /// <summary>Můj podpis: jméno ze slabik (prázdné = ještě žádný) a znak.</summary>
     public byte[] SignatureName { get; private set; } = [];
 
@@ -276,9 +279,16 @@ public sealed class GameConnection : IDisposable
     }
 
     /// <summary>Zkusit spojit hromádky z batohu (najít recept zkoušením).</summary>
-    public void Combine(IReadOnlyList<int> stackIndices)
+    /// <summary>Zkusit spojit zaškrtnuté hromádky z batohu a ze země (čísla hromádek na zemi).</summary>
+    public void Combine(IReadOnlyList<int> stackIndices, IReadOnlyList<int>? groundPileIds = null)
     {
-        Send(w => Messages.WriteCombine(w, stackIndices));
+        Send(w => Messages.WriteCombine(w, stackIndices, groundPileIds));
+    }
+
+    /// <summary>Sebrat hromádku ze země.</summary>
+    public void PickUpItem(int pileId)
+    {
+        Send(w => Messages.WritePickUpItem(w, pileId));
     }
 
     /// <summary>Sloupnout nožem lýko z ležícího kmene nebo kladu.</summary>
@@ -706,6 +716,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.CaveEntrances:
                 CaveEntrances = Messages.ReadCaveEntrances(reader);
+                break;
+            case MessageType.GroundItems:
+                GroundItems = Messages.ReadGroundItems(reader);
                 break;
             case MessageType.Corpses:
                 Corpses = Messages.ReadCorpses(reader);

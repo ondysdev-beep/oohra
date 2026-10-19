@@ -149,6 +149,11 @@ public sealed class IslandSave
 
     public int NextCorpseId { get; init; } = 1;
 
+    /// <summary>Věci na zemi (hromádky, které hráči položili).</summary>
+    public List<GroundPile> Ground { get; init; } = [];
+
+    public int NextGroundId { get; init; } = 1;
+
     public List<BirthGuard> BirthGuards { get; init; } = [];
 
     public ForestrySave Forestry { get; init; } = new();

@@ -50,6 +50,10 @@ namespace Oohra.Client
                     var build = (BuildResult)e.Code;
                     warn = build != BuildResult.Built && build != BuildResult.Removed;
                     return For(build);
+                case EventKind.Ground:
+                    var ground = (GroundResult)e.Code;
+                    warn = !(ground is GroundResult.Taken or GroundResult.Dropped);
+                    return For(ground);
                 case EventKind.Corpse:
                     var corpse = (CorpseResult)e.Code;
                     warn = corpse != CorpseResult.Taken;
@@ -98,6 +102,19 @@ namespace Oohra.Client
                 default:
                     warn = false;
                     return null;
+            }
+        }
+
+        /// <summary>Text k věcem na zemi (sebrat hromádku).</summary>
+        public static string For(GroundResult result)
+        {
+            switch (result)
+            {
+                case GroundResult.Taken: return "Sebral jsi to.";
+                case GroundResult.Dropped: return "Položil jsi to na zem.";
+                case GroundResult.TooFar: return "Na to odsud nedosáhneš.";
+                case GroundResult.InventoryFull: return "Víc neuneseš. Polož něco na zem (B batoh, Položit).";
+                default: return "To už tu neleží.";
             }
         }
 

@@ -72,6 +72,12 @@ public sealed class PlayerSession
 
     public double NextTracksAt { get; set; }
 
+    /// <summary>Jaké věci na zemi hráč naposledy dostal (verze a čtverec 4 × 4 m, kde stál), -1 = poslat znovu.</summary>
+    public (int Version, int X, int Y) SentGround { get; set; } = (-1, 0, 0);
+
+    /// <summary>Naposledy poslaný seznam věcí na zemi byl prázdný.</summary>
+    public bool SentGroundEmpty { get; set; }
+
     /// <summary>Podlaží: 0 přízemí, 1 patro (na podlaze patra).</summary>
     public int Level { get; set; }
 

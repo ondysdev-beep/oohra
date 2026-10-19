@@ -117,6 +117,9 @@ public sealed class Island
     /// <summary>Těla mrtvých hráčů s jejich věcmi (zmizí po 4 dnech).</summary>
     public Corpses Corpses { get; } = new();
 
+    /// <summary>Věci, které hráči položili na zem (zmizí po pár dnech).</summary>
+    public GroundItems Ground { get; } = new();
+
     /// <summary>Místa narození, kde prvních 24 hodin nesmí stavět cizí (návrh 4.1).</summary>
     public BirthGuards BirthGuards { get; } = new();
 

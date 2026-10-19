@@ -85,6 +85,11 @@ public static class GameData
 
     public static CorpseRules Corpses => _corpses.Value;
 
+    private static readonly Lazy<GroundRules> _ground =
+        new(() => Load<GroundRules>("ground.json"));
+
+    public static GroundRules Ground => _ground.Value;
+
     private static readonly Lazy<WeatherRules> _weather =
         new(() => Load<WeatherRules>("weather.json"));
 
