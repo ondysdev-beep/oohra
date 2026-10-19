@@ -21,6 +21,7 @@ public sealed record WorldGenRules(
     CampRules Camps,
     RuinRules Ruins,
     ShallowRules Shallows,
+    TerrainRules Terrain,
     Dictionary<TileType, double> TreeChance,
     TreeClumpRules TreeClumps,
     Dictionary<TileType, double> PlantChance);
@@ -44,6 +45,9 @@ public sealed record PondRules(int Count, double MinRadius, double MaxRadius);
 public sealed record CampRules(int Count, int MinDistance, int WaterWithin);
 
 public sealed record RuinRules(int Count, int MinDistance, int CampDistance);
+
+/// <summary>Výška terénu: velikost a výška vlnění, výška vrchoviny, skalní hřbety, jak pozvolna se souš zvedá od vody.</summary>
+public sealed record TerrainRules(double HillScale, double Lowland, double Highland, double RockBonus, double CoastRise, double Marsh, double Bank, int Smoothing);
 
 /// <summary>Mělčiny u moře a jezera (šířka v dlaždicích) a jak hluboko v bažině začíná močál.</summary>
 public sealed record ShallowRules(int SeaWidth, int LakeWidth, int MireDepth);

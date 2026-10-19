@@ -86,15 +86,15 @@ namespace Oohra.Client
             }
 
             var ray = _camera.ScreenPointToRay(mouse.position.ReadValue());
-            float distance;
-            // V patře se kliká na podlahu patra (ve výšce postavy), jinak na zem.
-            if (!new Plane(Vector3.up, Vector3.up * _session.SelfHeight).Raycast(ray, out distance))
+            Vector3 point;
+            // V patře se kliká na podlahu patra (ve výšce postavy), jinak na terén (kopce).
+            if (!_session.PointerOnGround(ray, out point))
             {
                 return;
             }
 
             double x, y;
-            WorldCoords.FromUnity(ray.GetPoint(distance), out x, out y);
+            WorldCoords.FromUnity(point, out x, out y);
             _session.Menu = null;
             _stuckTime = 0;
             _target = PickObject(ray) ?? PickTarget(x, y);

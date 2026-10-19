@@ -76,13 +76,14 @@ public sealed class WorldGenerator
         DigPonds();
         FillUnreachablePockets();
         MarkShallowsAndMire();
+        var elevation = BuildElevation();
 
         var shore = MarkShore();
         var camps = MakeCamps();
         var ruins = MakeRuinSpots(camps);
         var species = SpeciesGenerator.Build(_seed, GameData.Archetypes.Count, GameData.Settings.MonthsPerYear);
         var (trees, plants) = PlaceTreesAndPlants(camps, ruins, species.Secrets);
-        return new Island(_seed, _width, _height, _tiles, shore, camps, ruins, trees, plants, species.Species, species.Secrets, _regions);
+        return new Island(_seed, _width, _height, _tiles, shore, camps, ruins, trees, plants, species.Species, species.Secrets, _regions, elevation: elevation);
     }
 
     /// <summary>
@@ -109,6 +110,122 @@ public sealed class WorldGenerator
                 _tiles[i] = TileType.Mire;
             }
         }
+    }
+
+    /// <summary>
+    /// Výška terénu (terrain ve worldgen.json): voda ve výšce 0, bažina těsně nad ní, souš se od vody zvedá pozvolna
+    /// (do coastRise metrů), krajina se vlní, vrchovina stoupá k nejvyšším místům, vnitřky skal jsou hřbety. Výšky
+    /// jsou v rozích dlaždic (průměr okolních dlaždic, roh u vody je u hladiny) a terén se vyhladí.
+    /// </summary>
+    private ElevationMap BuildElevation()
+    {
+        var rules = _rules.Terrain;
+        var water = DistanceFrom(i => IsLowWater(_tiles[i]) || _tiles[i] is TileType.Bog or TileType.Mire, i => true);
+        var highland = Enumerable.Range(0, _tiles.Length).Where(i => _regions[i] == RegionKind.Highland).Select(i => _elevation[i]).ToList();
+        var (low, high) = highland.Count > 0 ? (highland.Min(), highland.Max()) : (0.0, 1.0);
+        var tile = new double[_tiles.Length];
+        for (var i = 0; i < _tiles.Length; i++)
+        {
+            var (x, y) = (i % _width, i / _width);
+            if (IsLowWater(_tiles[i]))
+            {
+                continue;
+            }
+
+            if (_tiles[i] is TileType.Bog or TileType.Mire)
+            {
+                tile[i] = rules.Marsh;
+                continue;
+            }
+
+            var hills = Noise.Fbm(x / rules.HillScale, y / rules.HillScale, unchecked(_seed + 77)) * rules.Lowland;
+            var mountain = _regions[i] == RegionKind.Highland ? rules.Highland * Math.Clamp((_elevation[i] - low) / Math.Max(1e-6, high - low), 0, 1) : 0;
+            var rise = Math.Clamp(water[i] / rules.CoastRise, 0, 1);
+            tile[i] = rules.Bank + (hills + mountain) * rise * rise * (3 - 2 * rise);
+        }
+
+        var corners = new float[(_width + 1) * (_height + 1)];
+        for (var cy = 0; cy <= _height; cy++)
+        {
+            for (var cx = 0; cx <= _width; cx++)
+            {
+                corners[cy * (_width + 1) + cx] = (float)CornerHeight(tile, cx, cy, rules);
+            }
+        }
+
+        for (var pass = 0; pass < rules.Smoothing; pass++)
+        {
+            corners = Smooth(corners);
+        }
+
+        return new ElevationMap(_width, _height, corners);
+    }
+
+    private static bool IsLowWater(TileType tile)
+    {
+        return tile is TileType.Sea or TileType.Shallows or TileType.Pond or TileType.Ford;
+    }
+
+    /// <summary>Výška rohu: průměr okolních dlaždic. U vody hladina (0), uprostřed skal o rockBonus výš.</summary>
+    private double CornerHeight(double[] tile, int cx, int cy, TerrainRules rules)
+    {
+        double sum = 0;
+        var count = 0;
+        var rock = true;
+        for (var dy = -1; dy <= 0; dy++)
+        {
+            for (var dx = -1; dx <= 0; dx++)
+            {
+                var (x, y) = (cx + dx, cy + dy);
+                if (!InBounds(x, y) || IsLowWater(_tiles[y * _width + x]))
+                {
+                    return 0;
+                }
+
+                sum += tile[y * _width + x];
+                count++;
+                rock &= _tiles[y * _width + x] is TileType.Rock or TileType.LayeredRock;
+            }
+        }
+
+        return sum / count + (rock ? rules.RockBonus : 0);
+    }
+
+    /// <summary>Vyhlazení terénu (průměr se sousedy). Rohy u hladiny zůstanou u hladiny.</summary>
+    private float[] Smooth(float[] corners)
+    {
+        var (w, h) = (_width + 1, _height + 1);
+        var result = new float[corners.Length];
+        for (var y = 0; y < h; y++)
+        {
+            for (var x = 0; x < w; x++)
+            {
+                var i = y * w + x;
+                if (corners[i] <= 0)
+                {
+                    continue;
+                }
+
+                double sum = 0;
+                var count = 0;
+                for (var dy = -1; dy <= 1; dy++)
+                {
+                    for (var dx = -1; dx <= 1; dx++)
+                    {
+                        if (x + dx >= 0 && y + dy >= 0 && x + dx < w && y + dy < h)
+                        {
+                            sum += corners[(y + dy) * w + x + dx];
+                            count++;
+                        }
+                    }
+                }
+
+                // Souš zůstane nad hladinou.
+                result[i] = Math.Max(0.05f, (float)(sum / count));
+            }
+        }
+
+        return result;
     }
 
     private bool OnMapEdge(int i)

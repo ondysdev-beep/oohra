@@ -44,7 +44,7 @@ namespace Oohra.Client.Tests
             Assert.AreEqual(GroundLayout.Bog, GroundLayout.LayerOf(TileType.Pond));
         }
 
-        /// <summary>Souš je rovně (1), u kraje mapy hluboké moře (0), mělčina mezi tím.</summary>
+        /// <summary>Souš bez kopců je ve výšce hladiny (nad nejhlubším dnem o Depth), u kraje mapy hluboké moře (0), mělčina mezi tím.</summary>
         [Test]
         public void LandIsFlatAndSeaIsDeep()
         {
@@ -54,14 +54,15 @@ namespace Oohra.Client.Tests
 
             // Střed mapy je souš. Řádky jdou od jihu: řádek 0 je spodní okraj mapy.
             var middle = (resolution - 1) / 2;
-            Assert.AreEqual(1f, heights[middle, middle]);
+            var land = GroundLayout.Depth / (GroundLayout.Depth + GroundLayout.MaxElevation(world));
+            Assert.AreEqual(land, heights[middle, middle], 1e-5f);
             Assert.AreEqual(0f, heights[0, 0]);
 
             // Bod v mělčině kolem ostrůvku je pod vodou, ale mělčeji než volné moře.
             var column = (int)(1.5 / 6 * (resolution - 1));
             var shallow = heights[middle, column];
             Assert.Greater(shallow, 0f);
-            Assert.Less(shallow, 1f);
+            Assert.Less(shallow, land);
         }
 
         [Test]

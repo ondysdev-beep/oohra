@@ -281,6 +281,9 @@ namespace Oohra.Core.World
 
         /// <summary>Tolik by podpory neunesly (nosnost): přidej sloupky nebo zdi, nebo lehčí materiál.</summary>
         TooHeavy,
+
+        /// <summary>Svah je tu na stavbu moc strmý (maxRise v building.json).</summary>
+        TooSteep,
     }
 
     /// <summary>Jak dopadlo lezení po žebříku.</summary>

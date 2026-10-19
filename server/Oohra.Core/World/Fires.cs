@@ -109,6 +109,7 @@ public sealed class Fires
 
         var footprint = rules.FootprintRadius;
         if (!Placement.OnDryLand(island, x, y)
+            || !Placement.LevelEnough(island, [new Position(x, y)])
             || !Placement.ClearOfTrunks(island, x, y, x, y, footprint)
             || _fires.Exists(f => Distance(f.X, f.Y, x, y) < 2 * footprint)
             || island.Structures.Blocks(x, y, footprint))

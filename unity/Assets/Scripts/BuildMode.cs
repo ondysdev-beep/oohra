@@ -449,15 +449,15 @@ namespace Oohra.Client
         private Vector2? PointerOnMap(Vector2 screen)
         {
             var ray = _camera.ScreenPointToRay(screen);
-            float distance;
-            // V patře se míří na podlahu patra, ne na zem pod ní.
-            if (!new Plane(Vector3.up, Vector3.up * _session.SelfHeight).Raycast(ray, out distance))
+            Vector3 point;
+            // V patře se míří na podlahu patra, ne na zem pod ní. Jinak na terén (kopce).
+            if (!_session.PointerOnGround(ray, out point))
             {
                 return null;
             }
 
             double x, y;
-            WorldCoords.FromUnity(ray.GetPoint(distance), out x, out y);
+            WorldCoords.FromUnity(point, out x, out y);
             return new Vector2((float)x, (float)y);
         }
 

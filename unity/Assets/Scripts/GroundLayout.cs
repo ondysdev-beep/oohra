@@ -91,6 +91,18 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Nejvyšší místo terénu (metry nad hladinou) s rezervou: Terrain musí být tak vysoký.</summary>
+        public static float MaxElevation(WorldView world)
+        {
+            var max = 0f;
+            foreach (var e in world.Elevation)
+            {
+                if (e > max) max = e;
+            }
+
+            return max + 1f;
+        }
+
         public static bool IsWater(TileType tile)
         {
             return tile == TileType.Sea || tile == TileType.Pond || tile == TileType.Ford || tile == TileType.Mire || tile == TileType.Shallows;
@@ -109,36 +121,22 @@ namespace Oohra.Client
         }
 
         /// <summary>
-        /// Kolik kroužku kolem bodu (x, y) na mapě je souš (0 až 1). Mimo mapu je moře.
-        /// Bod je na souši, když je to aspoň polovina.
+        /// Jak moc je bod (x, y) na mapě souš (0 až 1): plynulý přechod mezi středy sousedních dlaždic (souš 1, voda 0).
+        /// Bod je na souši, když je to aspoň polovina. Šikmé pobřeží je tak rovná čára, ne schody po dlaždicích,
+        /// a roh ostrůvku se zakulatí jen kousek (kde postava smí stát, zůstane souš). Mimo mapu je moře.
         /// </summary>
         public static float LandFraction(WorldView world, double x, double y)
         {
-            var corners = 0;
-            for (var i = 0; i < 4; i++)
-            {
-                if (!IsWaterAt(world, x + (i % 2 == 0 ? -ShoreRadius : ShoreRadius), y + (i < 2 ? -ShoreRadius : ShoreRadius)))
-                {
-                    corners++;
-                }
-            }
+            var (cx, cy) = (System.Math.Floor(x - 0.5), System.Math.Floor(y - 0.5));
+            var (fx, fy) = ((float)(x - 0.5 - cx), (float)(y - 0.5 - cy));
+            var top = Mathf.Lerp(Land(world, cx, cy), Land(world, cx + 1, cy), fx);
+            var bottom = Mathf.Lerp(Land(world, cx, cy + 1), Land(world, cx + 1, cy + 1), fx);
+            return Mathf.Lerp(top, bottom, fy);
+        }
 
-            // Kroužek leží nejvýš na 2 × 2 dlaždicích a ty jsou v rozích: když se rohy shodují, výsledek je jasný.
-            if (corners == 0 || corners == 4)
-            {
-                return corners / 4f;
-            }
-
-            var land = 0;
-            foreach (var offset in _shoreDisc)
-            {
-                if (!IsWaterAt(world, x + offset.x, y + offset.y))
-                {
-                    land++;
-                }
-            }
-
-            return (float)land / _shoreDisc.Length;
+        private static float Land(WorldView world, double tileX, double tileY)
+        {
+            return IsWaterAt(world, tileX + 0.5, tileY + 0.5) ? 0f : 1f;
         }
 
         /// <summary>
@@ -148,13 +146,17 @@ namespace Oohra.Client
         public static float[,] Heights(WorldView world, int resolution)
         {
             var heights = new float[resolution, resolution];
+            var range = Depth + MaxElevation(world);
             for (var row = 0; row < resolution; row++)
             {
                 for (var column = 0; column < resolution; column++)
                 {
                     var x = column * (double)world.Width / (resolution - 1);
                     var y = world.Height - row * (double)world.Height / (resolution - 1);
-                    heights[row, column] = 1f - DepthAt(world, x, y) / Depth;
+                    // Pod vodou dno (záporně), na souši výška terénu (kopce), obojí od nejhlubšího dna.
+                    var depth = DepthAt(world, x, y);
+                    var level = depth > 0f ? -depth : world.ElevationAt(x, y);
+                    heights[row, column] = (level + Depth) / range;
                 }
             }
 
@@ -199,23 +201,33 @@ namespace Oohra.Client
                 return 0f;
             }
 
-            // Hloubka okolních vodních dlaždic (na volné vodě stačí rohy kroužku, u břehu celý kroužek),
+            // Hloubka plynule mezi středy vodních dlaždic (mělčina přechází do hlubokého moře bez schodů),
             // u břehu (souš těsně pod polovinou) mělčí.
-            var samples = land > 0f || !SameDepthAtCorners(world, x, y) ? _shoreDisc : _corners;
-            var total = 0f;
-            var count = 0;
-            foreach (var offset in samples)
+            var water = WaterDepth(world, x, y);
+            return water * Mathf.SmoothStep(0f, 1f, (0.5f - land) * 2f);
+        }
+
+        /// <summary>Hloubka vody v bodě: plynule mezi středy okolních vodních dlaždic (souš se nepočítá).</summary>
+        private static float WaterDepth(WorldView world, double x, double y)
+        {
+            var (cx, cy) = (System.Math.Floor(x - 0.5), System.Math.Floor(y - 0.5));
+            var (fx, fy) = ((float)(x - 0.5 - cx), (float)(y - 0.5 - cy));
+            float total = 0f, weight = 0f;
+            for (var j = 0; j <= 1; j++)
             {
-                var depth = DepthOfPoint(world, x + offset.x, y + offset.y);
-                if (depth > 0f)
+                for (var i = 0; i <= 1; i++)
                 {
-                    total += depth;
-                    count++;
+                    var depth = DepthOfPoint(world, cx + i + 0.5, cy + j + 0.5);
+                    var w = (i == 0 ? 1 - fx : fx) * (j == 0 ? 1 - fy : fy);
+                    if (depth > 0f)
+                    {
+                        total += depth * w;
+                        weight += w;
+                    }
                 }
             }
 
-            var water = count > 0 ? total / count : Depth;
-            return water * Mathf.SmoothStep(0f, 1f, (0.5f - land) * 2f);
+            return weight > 0f ? total / weight : Depth;
         }
 
         private static bool SameDepthAtCorners(WorldView world, double x, double y)

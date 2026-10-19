@@ -75,12 +75,12 @@ namespace Oohra.Client.Tests
                 Assert.LessOrEqual(System.Math.Abs(pickable.TileX - target.TileX), 12);
             }
 
-            // Souš je ve výšce 0, dno vody pod hladinou.
+            // Souš je ve výšce terénu (kopce), dno vody pod hladinou.
             Vector2 land;
             Vector2 water;
             FindShore(world, out land, out water);
             var bottom = terrain.transform.position.y;
-            Assert.AreEqual(0f, terrain.SampleHeight(WorldCoords.ToUnity(land.x, land.y)) + bottom, 0.01f);
+            Assert.AreEqual(WorldCoords.Ground(land.x, land.y), terrain.SampleHeight(WorldCoords.ToUnity(land.x, land.y)) + bottom, 0.05f);
             Assert.Less(terrain.SampleHeight(WorldCoords.ToUnity(water.x, water.y)) + bottom, GroundLayout.WaterLevel);
 
             yield return WaitFor(() => Object.FindAnyObjectByType<CameraRig>() != null, 5f, "Kamera nezačala sledovat postavu.");
@@ -100,7 +100,7 @@ namespace Oohra.Client.Tests
                 {
                     var dry = world.TileAt(x, y) == TileType.Sand;
                     var wet = world.TileAt(x + 1, y);
-                    if (dry && (wet == TileType.Pond || wet == TileType.Sea) && world.TileAt(x + 2, y) == wet
+                    if (dry && (wet == TileType.Pond || wet == TileType.Sea || wet == TileType.Shallows) && world.TileAt(x + 2, y) == wet
                         && world.TileAt(x + 2, y - 1) == wet && world.TileAt(x + 2, y + 1) == wet && world.TileAt(x + 3, y) == wet)
                     {
                         land = new Vector2(x + 0.5f, y + 0.5f);

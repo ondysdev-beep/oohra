@@ -315,6 +315,12 @@ public sealed class Structures
             return BuildUpper(island, fires, inventory, playerX, playerY, kind, x, y, angle, length, players, builder, ownerId, level, decorationId);
         }
 
+        // Na strmém svahu se nestaví (střecha stojí na zdech, dveře v otvoru, zátaras u vchodu).
+        if (kind is not (BuildKind.Roof or BuildKind.Door or BuildKind.Barricade) && !Placement.LevelEnough(island, Footprint(kind, x, y, angle, length)))
+        {
+            return BuildResult.TooSteep;
+        }
+
         if (kind == BuildKind.Ladder)
         {
             return BuildLadder(inventory, playerX, playerY, x, y, angle, builder, ownerId);
@@ -1020,6 +1026,22 @@ public sealed class Structures
     }
 
     /// <summary>Rohy čtverce (podlaha, střecha).</summary>
+    /// <summary>Body pod stavbou na kontrolu svahu: konce a střed zdi, rohy podlahy, jinak místo stavby.</summary>
+    private static List<Position> Footprint(BuildKind kind, double x, double y, double angle, double length)
+    {
+        switch (kind)
+        {
+            case BuildKind.StickWall:
+            case BuildKind.DoorFrame:
+                var (x1, y1, x2, y2) = Structure.WallEnds(x, y, angle, kind == BuildKind.StickWall ? length : GameData.Building.Wall.Length);
+                return [new Position(x1, y1), new Position(x, y), new Position(x2, y2)];
+            case BuildKind.Floor:
+                return Corners(new Structure(-1, kind, x, y, angle, GameData.Building.Floor.Size)).Append(new Position(x, y)).ToList();
+            default:
+                return [new Position(x, y)];
+        }
+    }
+
     private static IEnumerable<Position> Corners(Structure square)
     {
         var half = square.Length / 2;

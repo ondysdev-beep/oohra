@@ -45,7 +45,7 @@ namespace Oohra.Client.Tests
             yield return WaitFor(() => nests.Count > 0 && nests.Count == session.Connection.WaspNests.Length, 5f, "Vosí hnízda se neukázala.");
             var first = session.Connection.WaspNests[0];
             var nest = nests.transform.GetChild(0);
-            Assert.AreEqual(WaspNestViews.NestHeight, nest.position.y, 0.01f);
+            Assert.AreEqual(WorldCoords.Ground(first.X, first.Y) + WaspNestViews.NestHeight, nest.position.y, 0.01f);
             Assert.IsTrue(session.Connection.World.Trees.Any(t => t.TileIndex == first.TileIndex), "Hnízdo musí být ve stromě.");
 
             session.Connection.InspectBody();

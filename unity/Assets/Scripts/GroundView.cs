@@ -21,7 +21,7 @@ namespace Oohra.Client
             var catalog = VisualCatalog.Current;
             var data = new TerrainData();
             data.heightmapResolution = GroundLayout.HeightResolution(Mathf.Max(world.Width, world.Height));
-            data.size = new Vector3(world.Width, GroundLayout.Depth, world.Height);
+            data.size = new Vector3(world.Width, GroundLayout.Depth + GroundLayout.MaxElevation(world), world.Height);
             data.SetHeights(0, 0, GroundLayout.Heights(world, data.heightmapResolution));
             data.alphamapResolution = GroundLayout.AlphaResolution(Mathf.Max(world.Width, world.Height));
             data.terrainLayers = Layers(catalog);

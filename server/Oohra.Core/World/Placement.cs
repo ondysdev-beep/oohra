@@ -16,6 +16,28 @@ public static class Placement
         return Math.Sqrt(dx * dx + dy * dy) <= GameData.Building.PlaceReach;
     }
 
+    /// <summary>
+    /// Místo je dost rovné na stavbu: mezi body pod stavbou (třeba konce zdi nebo rohy podlahy) je výškový rozdíl nejvýš
+    /// maxRise (building.json). Jeden bod: kolem něj v kruhu o poloměru radius.
+    /// </summary>
+    public static bool LevelEnough(Island island, IReadOnlyList<Position> points, double radius = 0.5)
+    {
+        var heights = new List<double>();
+        foreach (var p in points)
+        {
+            heights.Add(island.Elevation.At(p.X, p.Y));
+            if (points.Count == 1)
+            {
+                heights.Add(island.Elevation.At(p.X + radius, p.Y));
+                heights.Add(island.Elevation.At(p.X - radius, p.Y));
+                heights.Add(island.Elevation.At(p.X, p.Y + radius));
+                heights.Add(island.Elevation.At(p.X, p.Y - radius));
+            }
+        }
+
+        return heights.Max() - heights.Min() <= GameData.Building.MaxRise;
+    }
+
     /// <summary>Bod je na mapě, ne ve vodě (moře, jezírko) a ne ve skále kolem jeskyně.</summary>
     public static bool OnDryLand(Island island, double x, double y)
     {

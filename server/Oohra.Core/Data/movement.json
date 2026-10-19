@@ -16,6 +16,9 @@
     "Rock": 0.9,
     "Sand": 0.95
   },
+  // Svahy (sklon = metrů výšky na metr cesty): do kopce se jde pomaleji (uphillSlowdown za každý metr na metr,
+  // nejpomaleji minSpeed), z kopce o trochu rychleji (downhillBoost), na sráz strmější než maxGrade se vylézt nedá.
+  "slope": { "uphillSlowdown": 1.1, "downhillBoost": 0.25, "minSpeed": 0.35, "maxGrade": 1.2 },
   // Zpomalení a zrychlení podle stavu těla (prototyp speedMul).
   "body": {
     "toxinAbove": 45,
