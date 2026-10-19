@@ -213,7 +213,10 @@ namespace Oohra.Client
             var min = WorldCoords.ToUnity(x - 1, y + CellSize + 1);
             var max = WorldCoords.ToUnity(x + CellSize + 1, y - 1);
             var bounds = new Bounds();
-            bounds.SetMinMax(new Vector3(min.x, -1f, min.z), new Vector3(max.x, CellHeight, max.z));
+            // Trsy stojí na terénu (kopce): výška čtverce od nejnižšího po nejvyšší roh.
+            var low = Mathf.Min(min.y, max.y, WorldCoords.Ground(x, y), WorldCoords.Ground(x + CellSize, y + CellSize));
+            var high = Mathf.Max(min.y, max.y, WorldCoords.Ground(x, y), WorldCoords.Ground(x + CellSize, y + CellSize));
+            bounds.SetMinMax(new Vector3(min.x, low - 1f, min.z), new Vector3(max.x, high + CellHeight + 2f, max.z));
             return bounds;
         }
 

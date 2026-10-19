@@ -426,6 +426,7 @@ namespace Oohra.Client
                 case BuildResult.Repaired: return "Střecha je opravená. Zase nezatéká.";
                 case BuildResult.CannotRepair: return "Opravit jde jen střecha, která nehoří.";
                 case BuildResult.TooHeavy: return "Tolik by to neuneslo. Přidej sloupky nebo zdi pod to, nebo stav z lehčího.";
+                case BuildResult.TooSteep: return "Tady je moc strmý svah. Stav na rovnějším místě.";
                 default: return result.ToString();
             }
         }

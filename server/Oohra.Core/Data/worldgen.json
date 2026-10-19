@@ -35,6 +35,11 @@
   // Zóny u vody: pruh moře u břehu širokých seaWidth dlaždic je mělčina (brodí se), u jezera lakeWidth dlaždic mělká
   // sladká voda (jako brod). Bažina dál než mireDepth dlaždic od svého okraje je močál.
   "shallows": { "seaWidth": 2, "lakeWidth": 1, "mireDepth": 3 },
+  // Terén (metry nad hladinou): voda a bažina dole, souš se od vody zvedá po coastRise metrech (pláže a břehy jsou
+  // mírné), krajina se vlní do lowland metrů (šum o velikosti hillScale), vrchovina stoupá k vrcholům do highland
+  // metrů a vnitřek skal je o rockBonus výš (skalní hřbety). smoothing = kolikrát se terén vyhladí. Souš je hned
+  // u vody aspoň bank metrů nad hladinou (malý val, ať vlny nepřelévají pláž).
+  "terrain": { "hillScale": 45, "lowland": 5, "highland": 26, "rockBonus": 9, "coastRise": 25, "marsh": 0.25, "bank": 0.35, "smoothing": 2 },
   // Šance na strom na dlaždici. Stromy stojí kdekoli v dlaždici a ne blíž než spacing (trees.json), takže les je
   // hustý jen tak, jak koruny dovolí.
   "treeChance": { "Forest": 0.2, "Grass": 0.01, "Bog": 0.04, "Highland": 0.04 },

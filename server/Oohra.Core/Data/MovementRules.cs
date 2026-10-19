@@ -8,8 +8,12 @@ public sealed record MovementRules(
     double Radius,
     double TreeTrunkRadius,
     Dictionary<TileType, double> TerrainSpeed,
+    SlopeRules Slope,
     BodySpeedRules Body,
     SpawnRules Spawn);
+
+/// <summary>Svahy: zpomalení do kopce, zrychlení z kopce, nejmenší rychlost a nejstrmější svah, na který se vyleze.</summary>
+public sealed record SlopeRules(double UphillSlowdown, double DownhillBoost, double MinSpeed, double MaxGrade);
 
 public sealed record BodySpeedRules(
     double ToxinAbove,

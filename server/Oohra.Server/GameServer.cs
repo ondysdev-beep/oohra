@@ -607,7 +607,8 @@ public sealed partial class GameServer : IDisposable
             return;
         }
 
-        var distance = Movement.Distance(Island, c, player.X, player.Y, realSeconds) * Movement.CarryMultiplier(player.Inventory);
+        var slope = player.Level == 0 ? (player.InputX, player.InputY) : (0.0, 0.0);
+        var distance = Movement.Distance(Island, c, player.X, player.Y, realSeconds, slope.Item1, slope.Item2) * Movement.CarryMultiplier(player.Inventory);
         var (x, y) = Movement.Step(Island, player.X, player.Y, player.InputX, player.InputY, distance, player.Level);
         player.X = x;
         player.Y = y;

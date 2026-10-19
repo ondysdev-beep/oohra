@@ -81,7 +81,7 @@ public static class Caves
 
         EnsureDens(caves, rules);
         return new Island(surface.Seed, w, height, tiles, shore, surface.Camps, surface.RuinSpots, surface.Trees, surface.Plants,
-            surface.Species, surface.SpeciesSecrets, regions, h, caves, entrances);
+            surface.Species, surface.SpeciesSecrets, regions, h, caves, entrances, surface.Elevation.WithHeight(height));
     }
 
     /// <summary>Jeskyně má druhý východ (táhne v ní, kouř nevadí).</summary>

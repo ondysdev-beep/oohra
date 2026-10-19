@@ -4,6 +4,9 @@
 {
   // Jak daleko od sebe smí postava stavět (střed stavby od středu postavy). Dál, ať je na stavbu vidět.
   "placeReach": 10,
+  // Stavět jde jen na rovnějším místě: mezi nejvyšším a nejnižším bodem pod stavbou (konce zdi, rohy podlahy, místo
+  // ohně a dekorace) smí být nejvýš maxRise metrů.
+  "maxRise": 0.8,
   "wall": {
     // Příčka z klacků: plná délka (hrana políčka stavební mřížky 2 × 2 m, BuildGrid) a tloušťka stěny. Zeď s otvorem
     // má vždy plnou délku. sticksCost je za plnou délku, kratší zeď stojí úměrně méně (zaokrouhleno nahoru).

@@ -177,6 +177,8 @@ namespace Oohra.Client
 
         private void BuildScene()
         {
+            // Výšky terénu (kopce) pro všechno, co se staví do scény (WorldCoords.ToUnity).
+            WorldCoords.Terrain = _connection.World;
             var island = IslandView.Build(_connection.World, _connection);
             _players = new GameObject("Hráči").AddComponent<PlayerViews>();
             _players.Init(_connection);
@@ -224,6 +226,7 @@ namespace Oohra.Client
 
             _connection = null;
             _session = null;
+            WorldCoords.Terrain = null;
         }
 
         private void OnDestroy()

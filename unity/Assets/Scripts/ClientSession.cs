@@ -212,10 +212,28 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Výška, ve které moje postava stojí (podlaha patra, nebo zem).</summary>
+        /// <summary>Výška, ve které moje postava stojí nad terénem (podlaha patra, nebo zem).</summary>
         public float SelfHeight
         {
             get { return SelfLevel * StructureViews.LevelHeight; }
+        }
+
+        /// <summary>
+        /// Kam míří paprsek od kurzoru: v patře na podlahu patra (rovina ve výšce postavy), jinak na terén s kopci.
+        /// </summary>
+        public bool PointerOnGround(Ray ray, out Vector3 point)
+        {
+            var self = Connection.SelfSnapshot();
+            if (SelfLevel > 0 && self.HasValue)
+            {
+                float distance;
+                var floor = WorldCoords.Ground(self.Value.X, self.Value.Y) + SelfHeight;
+                var hit = new Plane(Vector3.up, Vector3.up * floor).Raycast(ray, out distance);
+                point = hit ? ray.GetPoint(distance) : Vector3.zero;
+                return hit;
+            }
+
+            return WorldCoords.RaycastGround(ray, out point);
         }
 
         /// <summary>Rozebrat stavbu, u které je otevřená nabídka.</summary>

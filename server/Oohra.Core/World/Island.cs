@@ -41,8 +41,10 @@ public sealed class Island
         RegionKind[]? regions = null,
         int surfaceHeight = 0,
         IReadOnlyList<Cave>? caves = null,
-        IReadOnlyList<CaveEntrance>? caveEntrances = null)
+        IReadOnlyList<CaveEntrance>? caveEntrances = null,
+        ElevationMap? elevation = null)
     {
+        Elevation = elevation ?? ElevationMap.Flat(width, height);
         SurfaceHeight = surfaceHeight > 0 ? surfaceHeight : height;
         Caves = caves ?? [];
         CaveEntrances = caveEntrances ?? [];
@@ -176,6 +178,9 @@ public sealed class Island
     {
         return _treeTiles.Contains(tileIndex) || Forestry.HasYoungTrunk(tileIndex);
     }
+
+    /// <summary>Výška terénu (kopce, vrchovina, skalní hřbety; voda ve výšce 0). Mapa má stejnou šířku a výšku jako ostrov.</summary>
+    public ElevationMap Elevation { get; }
 
     /// <summary>
     /// Kde na dlaždici stojí kmen: strom ze seedu kdekoli v dlaždici, dorostlý a mladý strom a pařez po stromu ze

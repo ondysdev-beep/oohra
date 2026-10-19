@@ -47,9 +47,29 @@ public sealed class WorldView
 
     public RuinView[] Ruins { get; init; } = [];
 
+    /// <summary>Výška terénu v rozích dlaždic ((Width + 1) × (Height + 1), metry nad hladinou). Prázdné = rovina.</summary>
+    public float[] Elevation { get; init; } = [];
+
     public TileType TileAt(int x, int y)
     {
         return Tiles[y * Width + x];
+    }
+
+    /// <summary>Výška terénu v bodě (x, y) na mapě (dopočítaná mezi rohy dlaždic). Mimo mapu a bez výšek 0.</summary>
+    public float ElevationAt(double x, double y)
+    {
+        if (Elevation.Length != (Width + 1) * (Height + 1) || x < 0 || y < 0 || x > Width || y > Height)
+        {
+            return 0;
+        }
+
+        var cx = Math.Min((int)Math.Floor(x), Width - 1);
+        var cy = Math.Min((int)Math.Floor(y), Height - 1);
+        var (fx, fy) = ((float)(x - cx), (float)(y - cy));
+        var row = Width + 1;
+        var top = Elevation[cy * row + cx] * (1 - fx) + Elevation[cy * row + cx + 1] * fx;
+        var bottom = Elevation[(cy + 1) * row + cx] * (1 - fx) + Elevation[(cy + 1) * row + cx + 1] * fx;
+        return top * (1 - fy) + bottom * fy;
     }
 }
 
@@ -1260,6 +1280,13 @@ public static class Messages
             w.Put(ruin.X);
             w.Put(ruin.Y);
         }
+
+        // Výšky terénu v centimetrech (do 655 m), vlastní délka (víc než 65 535 hodnot).
+        w.Put(world.Elevation.Length);
+        foreach (var e in world.Elevation)
+        {
+            w.Put((ushort)Math.Clamp(Math.Round(e * 100), 0, ushort.MaxValue));
+        }
     }
 
     // Bit pobřeží v bajtu dlaždice (druhů dlaždic je méně než 128).
@@ -1305,8 +1332,15 @@ public static class Messages
         var species = ReadList(r, () => new SpeciesView(r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetShort(), r.GetByte()));
         var camps = ReadList(r, () => new CampView(r.GetInt(), r.GetInt()));
         var ruins = ReadList(r, () => new RuinView(r.GetFloat(), r.GetFloat()));
+        var elevation = new float[r.GetInt()];
+        for (var i = 0; i < elevation.Length; i++)
+        {
+            elevation[i] = r.GetUShort() / 100f;
+        }
+
         return new WorldView
         {
+            Elevation = elevation,
             Width = width,
             Height = height,
             Tiles = tiles,

@@ -26,6 +26,7 @@ public static class WorldViews
                 .ToArray(),
             Camps = island.Camps.Select(c => new CampView(c.X, c.Y)).ToArray(),
             Ruins = island.RuinSpots.Select(r => new RuinView((float)r.X, (float)r.Y)).ToArray(),
+            Elevation = island.Elevation.Corners.ToArray(),
         };
     }
 

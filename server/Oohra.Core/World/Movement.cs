@@ -161,25 +161,26 @@ public static class Movement
             var angle = degrees * Math.PI / 180;
             var sx = ux * Math.Cos(angle) - uy * Math.Sin(angle);
             var sy = ux * Math.Sin(angle) + uy * Math.Cos(angle);
-            if (CanStand(island, x + sx * distance, y + sy * distance, radius, level))
+            if (CanStand(island, x + sx * distance, y + sy * distance, radius, level) && Climbable(island, x, y, x + sx * distance, y + sy * distance, level))
             {
                 return (x + sx * distance, y + sy * distance);
             }
         }
 
-        if (level == 0 && TrunkSlide(island, x, y, ux, uy, radius) is var (tx, ty) && CanStand(island, x + tx * distance, y + ty * distance, radius))
+        if (level == 0 && TrunkSlide(island, x, y, ux, uy, radius) is var (tx, ty) && CanStand(island, x + tx * distance, y + ty * distance, radius)
+            && Climbable(island, x, y, x + tx * distance, y + ty * distance, level))
         {
             return (x + tx * distance, y + ty * distance);
         }
 
         var dx = ux * distance;
         var dy = uy * distance;
-        if (CanStand(island, x + dx, y, radius, level))
+        if (CanStand(island, x + dx, y, radius, level) && Climbable(island, x, y, x + dx, y, level))
         {
             x += dx;
         }
 
-        if (CanStand(island, x, y + dy, radius, level))
+        if (CanStand(island, x, y + dy, radius, level) && Climbable(island, x, y, x, y + dy, level))
         {
             y += dy;
         }
@@ -231,10 +232,47 @@ public static class Movement
         return null;
     }
 
-    /// <summary>Kolik dlaždic postava ujde za danou dobu (sekundy reálného času).</summary>
-    public static double Distance(Island island, Character c, double x, double y, double seconds)
+    /// <summary>
+    /// Kolik dlaždic postava ujde za danou dobu (sekundy reálného času). Směr (dirX, dirY) kvůli svahu: do kopce
+    /// pomaleji, z kopce rychleji.
+    /// </summary>
+    public static double Distance(Island island, Character c, double x, double y, double seconds, double dirX = 0, double dirY = 0)
     {
-        return GameData.Movement.WalkSpeed * BodySpeed(c) * TerrainSpeed(island, x, y) * seconds;
+        return GameData.Movement.WalkSpeed * BodySpeed(c) * TerrainSpeed(island, x, y) * SlopeSpeed(island, x, y, dirX, dirY) * seconds;
+    }
+
+    /// <summary>Násobek rychlosti na svahu ve směru chůze (slope v movement.json). Bez směru 1.</summary>
+    public static double SlopeSpeed(Island island, double x, double y, double dirX, double dirY)
+    {
+        var length = Math.Sqrt(dirX * dirX + dirY * dirY);
+        if (length <= 0)
+        {
+            return 1;
+        }
+
+        var rules = GameData.Movement.Slope;
+        var grade = island.Elevation.Grade(x, y, dirX / length, dirY / length);
+        return grade > 0
+            ? Math.Max(rules.MinSpeed, 1 - grade * rules.UphillSlowdown)
+            : 1 + Math.Min(1, -grade) * rules.DownhillBoost;
+    }
+
+    /// <summary>Krok z (x1, y1) do (x2, y2) nevede do svahu strmějšího než maxGrade (z kopce dolů jde vždy). V patře se nepočítá.</summary>
+    public static bool Climbable(Island island, double x1, double y1, double x2, double y2, int level = 0)
+    {
+        if (level > 0)
+        {
+            return true;
+        }
+
+        var run = Math.Sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+        if (run <= 1e-9)
+        {
+            return true;
+        }
+
+        var rise = island.Elevation.At(x2, y2) - island.Elevation.At(x1, y1);
+        return rise <= 0 || rise / run <= GameData.Movement.Slope.MaxGrade;
     }
 
     private static int Floor(double value)
