@@ -179,6 +179,10 @@ public sealed partial class GameServer
                 }
 
                 break;
+            case MessageType.RepairStructure:
+                var repairing = Messages.ReadRepairStructure(reader);
+                BuildAction(player, () => Island.Structures.Repair(repairing, player.Inventory, player.X, player.Y, player.Id, Tribes, Clock.TotalMinutes));
+                break;
             case MessageType.JumpDown:
                 if (!player.Character.IsDead && player.Level > 0)
                 {

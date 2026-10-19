@@ -62,6 +62,8 @@ namespace Oohra.Client
             { "mosquito", "Komáři mohou přenášet nemoc. Drž se u ohně (kouř), nebo se natři bahnem či popelem." },
             { "leech", "Pijavice se chytají v bažině. Sundáš je u ohně nebo popelem z ohniště." },
             { "disease", "Je ti zle. Nemoc chce svůj lék: zkoušej rostliny a zapisuj si, co pomohlo. Pij hodně vody." },
+            { "buildingfire", "Oheň u dřevěné stavby ji může zapálit. Postav kolem ohniště kruh z kamenů (G, ozdoby), pak je oheň v bezpečí." },
+            { "leak", "Střecha časem zatéká, pak před deštěm nechrání. Opravíš ji v její nabídce (polovina materiálu)." },
             { "storey", "Jsi v patře. Zvířata sem nedosáhnou, ze země tu ale nic nesebereš. Dolů po žebříku, nebo tlačítkem Seskočit." },
             { "roof", "Střecha musí mít dvě podpory: zdi, sloupky nebo sousední střechu. Bez podpory zapraská a spadne. Před deštěm chrání jen střecha nad hlavou." },
             { "smoke", "Oheň v jeskyni s jediným vchodem dusí. Rozdělej ho venku, nebo v jeskyni, kde je druhý východ a táhne." },
@@ -197,6 +199,12 @@ namespace Oohra.Client
                     break;
                 case EventKind.Body when (BodyEvent)e.Code is BodyEvent.Leech:
                     Tip("leech");
+                    break;
+                case EventKind.Body when (BodyEvent)e.Code is BodyEvent.BuildingOnFire:
+                    Tip("buildingfire");
+                    break;
+                case EventKind.Build when (BuildResult)e.Code is BuildResult.Repaired:
+                    Tip("leak");
                     break;
                 case EventKind.Climb when (ClimbResult)e.Code is ClimbResult.Up:
                     Tip("storey");

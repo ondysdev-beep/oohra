@@ -182,6 +182,9 @@ public sealed partial class GameServer : IDisposable
         var minutes = Clock.Advance(realSeconds * _config.TimeSpeed);
         CurrentWeather = WeatherNow();
         Fires.Burn(minutes * Weather.BurnMultiplier(CurrentWeather));
+        Island.Structures.SetTime(Clock.TotalMinutes);
+        BuildingFire.Update(Island, Fires, minutes, CurrentWeather.Kind, _rng, Clock.TotalMinutes);
+        LeakingRoofs();
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
         Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock);
         Island.Flood.Update(Clock);
@@ -203,11 +206,12 @@ public sealed partial class GameServer : IDisposable
                 var inCave = Island.InCave(player.X, player.Y);
                 var weather = inCave ? WeatherState.Calm : CurrentWeather;
                 var sheltered = inCave || Shelter.IsSheltered(Island, player.X, player.Y, player.Level);
-                var roofed = inCave || Roofs.IsRoofed(Island.Structures, player.X, player.Y, player.Level);
+                var roofed = inCave || Roofs.IsRoofed(Island.Structures, player.X, player.Y, player.Level, Clock.TotalMinutes);
                 Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), sheltered, weather, inCave ? GameData.Caves.Temperature : null, roofed);
                 Torch.Burn(player.Character, Clock.TotalMinutes, minutes, weather);
                 Caves.Discover(Island, player.Character, player.X, player.Y, Clock.TotalMinutes);
                 Caves.Smoke(Island, Fires, player.Character, player.X, player.Y, minutes, Clock.TotalMinutes);
+                BuildingFire.Heat(Island.Structures, player.Character, player.X, player.Y, player.Level, minutes, Clock.TotalMinutes);
                 if (player.Level == 0)
                 {
                     Hazards.Update(player.Character, Island, Fires, player.X, player.Y, Clock, minutes, _rng);
@@ -380,6 +384,19 @@ public sealed partial class GameServer : IDisposable
     private IEnumerable<PlayerSession> InWorld => _byPeer.Values.Concat(_lingering.Keys);
 
     /// <summary>Postavám odpojených hráčů vypršel čas ve světě: zmizí (bezpečně uložené na místě).</summary>
+    private int _leakingCount = -1;
+
+    /// <summary>Když nějaká střecha začne zatékat (dosloužil materiál), klienti dostanou seznam staveb znovu.</summary>
+    private void LeakingRoofs()
+    {
+        var count = Island.Structures.All.Count(s => Structures.Leaking(s, Clock.TotalMinutes));
+        if (count != _leakingCount)
+        {
+            _leakingCount = count;
+            Broadcast(w => Messages.WriteStructures(w, StructureViews()));
+        }
+    }
+
     /// <summary>Statika střech: kdo je pod praskající střechou, dostane varování, kdo pod padající, ránu.</summary>
     private void RoofStatics(double realSeconds)
     {

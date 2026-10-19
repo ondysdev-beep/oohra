@@ -463,7 +463,8 @@ namespace Oohra.Client
 
             var trap = structure.Value.Kind == BuildKind.Trap;
             var caught = trap && structure.Value.Caught >= 0;
-            var title = _session.StructureName(structure.Value).ToUpper();
+            var title = _session.StructureName(structure.Value).ToUpper()
+                + (structure.Value.Burning ? " · HOŘÍ!" : structure.Value.Leaking ? " · ZATÉKÁ" : string.Empty);
             GUI.Label(titleRect, caught ? title + " (" + AnimalViews.NameOf((AnimalKind)structure.Value.Caught).ToLower() + ")" : title, _title);
             if (!_session.MayTouch(structure.Value))
             {
@@ -472,6 +473,11 @@ namespace Oohra.Client
             }
 
             if (caught && Button(ref buttonRect, "Vzít úlovek")) _session.TakeCatch();
+            if (structure.Value.Kind == BuildKind.Roof && !structure.Value.Burning && Button(ref buttonRect, "Opravit střechu"))
+            {
+                _session.Connection.RepairStructure(structure.Value.Id);
+            }
+
             if (structure.Value.Kind == BuildKind.Ladder)
             {
                 var up = _session.SelfLevel == 0;

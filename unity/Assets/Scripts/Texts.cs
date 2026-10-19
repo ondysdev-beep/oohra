@@ -403,6 +403,8 @@ namespace Oohra.Client
                 case BuildResult.NoCaveEntrance: return "Zátaras patří k vchodu do jeskyně. Tady žádný není, nebo už zatarasený je.";
                 case BuildResult.NoSupport: return "Střecha by se neměla o co opřít. Potřebuje dvě podpory: zdi, sloupky nebo sousední střechu.";
                 case BuildResult.NoFloor: return "V patře se staví jen na podlahu patra. Žebřík patří k jejímu okraji.";
+                case BuildResult.Repaired: return "Střecha je opravená. Zase nezatéká.";
+                case BuildResult.CannotRepair: return "Opravit jde jen střecha, která nehoří.";
                 default: return result.ToString();
             }
         }
@@ -539,6 +541,7 @@ namespace Oohra.Client
                 case BodyEvent.HitByRoof: return "Spadla na tebe střecha!";
                 case BodyEvent.Fell: return "Podlaha pod tebou povolila a spadl jsi dolů.";
                 case BodyEvent.JumpedDown: return "Seskočil jsi dolů. Kotníky to trochu cítí.";
+                case BodyEvent.BuildingOnFire: return "Stavba vedle tebe hoří! Žár pálí, uteč.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -609,6 +612,7 @@ namespace Oohra.Client
                 case DeathCause.Smoke: return "Udusil ses kouřem v jeskyni.";
                 case DeathCause.Collapse: return "Zavalila tě spadlá střecha.";
                 case DeathCause.Fall: return "Pád z patra byl poslední.";
+                case DeathCause.Burned: return "Uhořel jsi u hořící stavby.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -684,6 +688,18 @@ namespace Oohra.Client
                 case Cooking.Smoked: return fish ? "Ryba · uzená" : "Maso · uzené";
                 case Cooking.Dried: return fish ? "Ryba · sušená" : "Maso · sušené";
                 default: return fish ? "Ryba · syrová" : "Maso · syrové";
+            }
+        }
+
+        /// <summary>Název střechy podle materiálu.</summary>
+        public static string RoofName(string material)
+        {
+            switch (material)
+            {
+                case "Bark": return "Střecha z kůry";
+                case "Hide": return "Střecha z kůže";
+                case "Shingles": return "Střecha ze šindelů";
+                default: return "Střecha z větví";
             }
         }
 

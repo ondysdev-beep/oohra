@@ -41,6 +41,23 @@ namespace Oohra.Client
         /// <summary>Podlaží stavby ze země (podlaha patra = 1). V patře se staví vždy v patře.</summary>
         public int Level { get; private set; }
 
+        /// <summary>Další materiál kromě klacků a kamenů (střecha z kůry, kůže, šindelů), nebo null.</summary>
+        public ItemKind? ExtraItem { get; private set; }
+
+        public int ExtraCount { get; private set; }
+
+        /// <summary>Střecha z materiálu (building.json roofMaterials). Materiál jde serveru jako DecorationId.</summary>
+        public static BuildOption Roof(RoofMaterial material, string name, int sticks, ItemKind? item = null, int count = 0)
+        {
+            var cost = CostText(sticks, 0) + (item.HasValue ? " a " + count + "× " + Texts.ItemName(item.Value).ToLower() : string.Empty);
+            return new BuildOption(BuildKind.Roof, name, cost, sticks, 0, StructureViews.PanelSize)
+            {
+                DecorationId = material.ToString(),
+                ExtraItem = item,
+                ExtraCount = count,
+            };
+        }
+
         /// <summary>Podlaha patra (staví se ze země, drží na zdech a sloupcích jako střecha).</summary>
         public static BuildOption UpperFloor()
         {
@@ -100,7 +117,10 @@ namespace Oohra.Client
             new BuildOption(BuildKind.Barricade, "Zátaras u vchodu do jeskyně", "6 klacků", 6, 0),
             new BuildOption(BuildKind.Post, "Sloupek (podpírá střechu)", "1 klacek", 1, 0),
             new BuildOption(BuildKind.Floor, "Podlaha 2 × 2 m", "3 klacky", 3, 0, StructureViews.PanelSize),
-            new BuildOption(BuildKind.Roof, "Střecha 2 × 2 m (na zdech nebo sloupcích)", "3 klacky", 3, 0, StructureViews.PanelSize),
+            BuildOption.Roof(RoofMaterial.Branches, "Střecha z větví 2 × 2 m (vydrží 4 dny)", 3),
+            BuildOption.Roof(RoofMaterial.Bark, "Střecha z kůry (vydrží 10 dní)", 2, ItemKind.Bast, 3),
+            BuildOption.Roof(RoofMaterial.Hide, "Střecha z kůže (vydrží 20 dní)", 2, ItemKind.TannedHide, 2),
+            BuildOption.Roof(RoofMaterial.Shingles, "Střecha ze šindelů (vydrží 40 dní)", 2, ItemKind.Wood, 4),
             BuildOption.UpperFloor(),
             new BuildOption(BuildKind.Ladder, "Žebřík k patru (u okraje podlahy patra)", "3 klacky", 3, 0),
         };
@@ -217,7 +237,8 @@ namespace Oohra.Client
         public bool HasMaterials()
         {
             var sticks = Selected == BuildKind.StickWall ? (TargetLength <= 0.5f + 0.001f ? 1 : 2) : SelectedOption.Sticks;
-            return _session.Count(ItemKind.Stick) >= sticks && _session.Count(ItemKind.Stone) >= SelectedOption.Stones;
+            var extra = !SelectedOption.ExtraItem.HasValue || _session.Count(SelectedOption.ExtraItem.Value) >= SelectedOption.ExtraCount;
+            return extra && _session.Count(ItemKind.Stick) >= sticks && _session.Count(ItemKind.Stone) >= SelectedOption.Stones;
         }
 
         private void Send()

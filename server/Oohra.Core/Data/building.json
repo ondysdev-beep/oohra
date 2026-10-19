@@ -54,6 +54,25 @@
   "ladder": { "sticksCost": 3, "sticksBack": 1, "reach": 1.6, "floorMargin": 0.7 },
   // Patro: seskočit dolů ubere jumpDamage zdraví, pád se zřícenou podlahou fallDamage.
   "storey": { "jumpDamage": 6, "fallDamage": 18 },
+  // Materiály střechy (návrh 0.8, kap. 6): cena (klacky a item × count) a za kolik dní začne zatékat (pak
+  // před deštěm nechrání, dokud se neopraví). Oprava stojí repairShare materiálu (zaokrouhleno nahoru).
+  // Došky z trávy a hlína přijdou s novými surovinami.
+  "roofMaterials": [
+    { "material": "Branches", "sticks": 3, "item": "Stick", "count": 0, "days": 4 },
+    { "material": "Bark", "sticks": 2, "item": "Bast", "count": 3, "days": 10 },
+    { "material": "Hide", "sticks": 2, "item": "TannedHide", "count": 2, "days": 20 },
+    { "material": "Shingles", "sticks": 2, "item": "Wood", "count": 4, "days": 40 }
+  ],
+  "repairShare": 0.5,
+  // Oheň ve stavbě: hořící ohniště do igniteRange metrů od dřevěné stavby (nebo pod deskou) ji zapálí se šancí
+  // igniteChancePerMinute za herní minutu (v dešti × rainFactor). Hořící stavba zapaluje sousední do spreadRange,
+  // za burnMinutes shoří. Kdo je do heatRange, ztrácí heatDamagePerMinute zdraví. Ohniště uvnitř kruhu z kamenů
+  // (ringDecoration) nic nezapálí.
+  "buildingFire": {
+    "igniteRange": 1.4, "igniteChancePerMinute": 0.008, "rainFactor": 0.3,
+    "spreadRange": 0.6, "spreadChancePerMinute": 0.03, "burnMinutes": 40,
+    "heatRange": 1.0, "heatDamagePerMinute": 0.8, "warnEveryMinutes": 5, "ringDecoration": "stone_circle"
+  },
   "barricade": {
     // Zátaras u vchodu do jeskyně (návrh 0.8, kap. 4): staví se jen do entranceReach metrů od vchodu, jeden na vchod.
     // Dovnitř pak projde jen majitel a jeho kmen, ven každý.
