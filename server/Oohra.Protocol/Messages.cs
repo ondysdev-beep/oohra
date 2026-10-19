@@ -130,7 +130,8 @@ public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 /// <summary>Stavba. Decoration: id dekorace (u ostatních staveb prázdné).</summary>
 /// <summary>Stavba. Cracking = střecha bez podpory praská (za chvíli spadne).</summary>
 /// <summary>Decoration: id dekorace, u střechy materiál (RoofMaterial). Leaking = střecha zatéká, Burning = stavba hoří.</summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "", bool Cracking = false, byte Level = 0, bool Leaking = false, bool Burning = false);
+/// <summary>PlanId: plán stavební mřížky (0 = stojí volně).</summary>
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "", bool Cracking = false, byte Level = 0, bool Leaking = false, bool Burning = false, int PlanId = 0);
 
 /// <summary>Druh dekorace z decorations.json na serveru: název do nabídky, cena, poloměr a jestli se přes ni dá projít.</summary>
 public sealed record DecorationTypeView(string Id, string Name, int Sticks, int Stones, float Radius, bool Blocks);
@@ -1596,7 +1597,8 @@ public static class Messages
     }
 
     /// <summary>Všechny stavby hráčů. Posílá se po přihlášení a pak při každé změně.</summary>
-    public static void WriteStructures(NetDataWriter w, IReadOnlyList<StructureView> structures)
+    /// <summary>Stavby a plány stavební mřížky. Posílá se po přihlášení a při každé změně.</summary>
+    public static void WriteStructures(NetDataWriter w, IReadOnlyList<StructureView> structures, IReadOnlyList<GridPlan>? plans = null)
     {
         w.Put((byte)MessageType.Structures);
         w.Put(structures.Count);
@@ -1615,12 +1617,25 @@ public static class Messages
             w.Put(s.Level);
             w.Put(s.Leaking);
             w.Put(s.Burning);
+            w.Put(s.PlanId);
+        }
+
+        var list = plans ?? Array.Empty<GridPlan>();
+        w.Put(list.Count);
+        foreach (var p in list)
+        {
+            w.Put(p.Id);
+            w.Put(p.X);
+            w.Put(p.Y);
+            w.Put(p.Angle);
         }
     }
 
-    public static StructureView[] ReadStructures(NetDataReader r)
+    public static (StructureView[] Structures, GridPlan[] Plans) ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId), r.GetBool(), r.GetByte(), r.GetBool(), r.GetBool()));
+        var structures = ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId), r.GetBool(), r.GetByte(), r.GetBool(), r.GetBool(), r.GetInt()));
+        var plans = ReadList(r, () => new GridPlan(r.GetInt(), r.GetDouble(), r.GetDouble(), r.GetDouble()));
+        return (structures, plans);
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>

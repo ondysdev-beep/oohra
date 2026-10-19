@@ -87,7 +87,7 @@ namespace Oohra.Client
         public float GrassPerTile = 1.5f;
 
         [Header("Stavby (střed dole v počátku, délka podél osy X)")]
-        [Tooltip("Zeď z klacků dlouhá přesně 1 m. Kratší zeď se zmenší podél osy X.")]
+        [Tooltip("Zeď z klacků dlouhá přesně 2 m (hrana políčka stavební mřížky). Kratší zeď se zmenší podél osy X.")]
         public GameObject Wall;
 
         [Tooltip("Zeď s otvorem na dveře, 1 m dlouhá, otvor 0,8 m uprostřed.")]

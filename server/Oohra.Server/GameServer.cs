@@ -303,7 +303,7 @@ public sealed partial class GameServer : IDisposable
         if (Island.Structures.Version != _sentStructuresVersion)
         {
             _sentStructuresVersion = Island.Structures.Version;
-            Broadcast(w => Messages.WriteStructures(w, StructureViews()));
+            Broadcast(w => Messages.WriteStructures(w, StructureViews(), Island.Structures.Plans));
         }
 
         _tick++;
@@ -395,7 +395,7 @@ public sealed partial class GameServer : IDisposable
         if (count != _leakingCount)
         {
             _leakingCount = count;
-            Broadcast(w => Messages.WriteStructures(w, StructureViews()));
+            Broadcast(w => Messages.WriteStructures(w, StructureViews(), Island.Structures.Plans));
         }
     }
 
@@ -487,7 +487,7 @@ public sealed partial class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteFires(w, FireViews()));
         SendTo(peer, w => Messages.WriteTreeStates(w, TreeStateViews()));
         SendTo(peer, w => Messages.WriteTimbers(w, TimberViews()));
-        SendTo(peer, w => Messages.WriteStructures(w, StructureViews()));
+        SendTo(peer, w => Messages.WriteStructures(w, StructureViews(), Island.Structures.Plans));
         SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
         SendTo(peer, w => Messages.WriteDecorationTypes(w, DecorationTypeViews()));
         SendTo(peer, w => Messages.WriteRockPiles(w, RockPileViews()));

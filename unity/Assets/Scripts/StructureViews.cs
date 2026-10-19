@@ -13,7 +13,7 @@ namespace Oohra.Client
     public class StructureViews : MonoBehaviour
     {
         // Rozměry v metrech. Délka, tloušťka a otvor jsou stejné jako na serveru (building.json).
-        public const float WallLength = 1.0f;
+        public const float WallLength = 2.0f;
         public const float WallHeight = 2.0f;
 
         /// <summary>Strana čtverce střechy a podlahy (building.json roof.size, floor.size).</summary>
@@ -46,7 +46,7 @@ namespace Oohra.Client
             return level * LevelHeight - (kind == BuildKind.Floor && level > 0 ? FloorThickness : 0f);
         }
         public const float WallThickness = 0.1f;
-        public const float OpeningWidth = 0.8f;
+        public const float OpeningWidth = 0.9f;
         public const float DoorHeight = 1.9f;
         public static readonly Color WallColor = new Color(0.54f, 0.42f, 0.26f);
         public static readonly Color DoorColor = new Color(0.45f, 0.33f, 0.2f);

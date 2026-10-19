@@ -73,8 +73,8 @@ public class StructureTests
 
         Assert.True(ax < x + 1 - 0.28 - 0.05 + 1e-9, $"Postava prošla zdí na x = {ax:0.00}.");
 
-        // O metr vedle (za koncem zdi) se projde.
-        var (bx, by) = (x, y + 1);
+        // Za koncem zdi (zeď má 2 m, konec je metr od středu) se projde.
+        var (bx, by) = (x, y + 1.5);
         for (var i = 0; i < 30; i++)
         {
             (bx, by) = Movement.Step(island, bx, by, 1, 0, 0.05);
@@ -176,13 +176,13 @@ public class StructureTests
 
     [Theory]
     [InlineData(0.1)]
-    [InlineData(1.2)]
+    [InlineData(2.2)]
     public void WallLengthMustBeInRange(double length)
     {
         var island = NewIsland();
         var (x, y) = OpenSpot(island);
 
-        Assert.Equal(BuildResult.CannotBuildHere, Build(island, Sticks(2), x, y, x + 1, y, 0, length: length));
+        Assert.Equal(BuildResult.CannotBuildHere, Build(island, Sticks(9), x, y, x + 1, y, 0, length: length));
     }
 
     [Fact]
@@ -191,9 +191,9 @@ public class StructureTests
         var island = NewIsland();
         var (x, y) = OpenSpot(island);
 
-        Build(island, Sticks(2), x, y, x + 1, y, 0, BuildKind.DoorFrame, length: 0.4);
+        Build(island, Sticks(3), x, y, x + 1.5, y, Math.PI / 2, BuildKind.DoorFrame, length: 0.4);
 
-        Assert.Equal(1.0, island.Structures.All.Single().Length, 9);
+        Assert.Equal(GameData.Building.Wall.Length, island.Structures.All.Single().Length, 9);
     }
 
     /// <summary>Zeď s otvorem blokuje jen sloupky po krajích, otvorem se projde.</summary>
@@ -202,7 +202,7 @@ public class StructureTests
     {
         var island = NewIsland();
         var (x, y) = OpenSpot(island);
-        Assert.Equal(BuildResult.Built, Build(island, Sticks(2), x, y, x + 1, y, Math.PI / 2, BuildKind.DoorFrame));
+        Assert.Equal(BuildResult.Built, Build(island, Sticks(3), x, y, x + 1, y, Math.PI / 2, BuildKind.DoorFrame));
 
         Assert.True(Movement.CanStand(island, x + 1, y, 0.28));
         Assert.False(Movement.CanStand(island, x + 1, y + 0.45, 0.28));
@@ -223,7 +223,7 @@ public class StructureTests
         var (x, y) = OpenSpot(island);
         Assert.Equal(BuildResult.NoDoorway, Build(island, Sticks(2), x, y, x + 1, y, 0, BuildKind.Door));
 
-        Build(island, Sticks(2), x, y, x + 1, y, Math.PI / 2, BuildKind.DoorFrame);
+        Build(island, Sticks(3), x, y, x + 1, y, Math.PI / 2, BuildKind.DoorFrame);
         var frame = island.Structures.All.Single();
         var inventory = Sticks(4);
 

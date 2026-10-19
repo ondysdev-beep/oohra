@@ -5,12 +5,12 @@
   // Jak daleko od sebe smí postava stavět (střed stavby od středu postavy). Dál, ať je na stavbu vidět.
   "placeReach": 10,
   "wall": {
-    // Příčka z klacků: plná délka a tloušťka stěny. Zeď s otvorem má vždy plnou délku.
-    "length": 1.0,
+    // Příčka z klacků: plná délka (hrana políčka stavební mřížky 2 × 2 m, BuildGrid) a tloušťka stěny. Zeď s otvorem
+    // má vždy plnou délku. sticksCost je za plnou délku, kratší zeď stojí úměrně méně (zaokrouhleno nahoru).
+    "length": 2.0,
     "thickness": 0.1,
-    // Zeď může být i kratší (poloviční zeď, nebo dorovnání mezery, aby zdi do sebe zapadly).
     "minLength": 0.25,
-    "sticksCost": 2,
+    "sticksCost": 4,
     // Krátká zeď (nejvýš shortMaxLength) stojí méně.
     "shortMaxLength": 0.5,
     "shortSticksCost": 1,
@@ -19,9 +19,9 @@
     "removeReach": 1.6
   },
   "doorFrame": {
-    // Zeď s otvorem: otvor uprostřed, po krajích sloupky (zbytek délky zdi). Otvorem se dá projít.
-    "openingWidth": 0.8,
-    "sticksCost": 2,
+    // Zeď s otvorem: otvor uprostřed, po krajích zeď (zbytek délky). Otvorem se dá projít.
+    "openingWidth": 0.9,
+    "sticksCost": 3,
     "sticksBack": 1
   },
   "door": {

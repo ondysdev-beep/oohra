@@ -79,6 +79,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Stavby hráčů (zdi).</summary>
     public StructureView[] Structures { get; private set; } = [];
 
+    /// <summary>Plány stavební mřížky (počátek a natočení), ke kterým patří stavby (StructureView.PlanId).</summary>
+    public GridPlan[] Plans { get; private set; } = [];
+
     /// <summary>Zvířata v okolí (server posílá jen blízká).</summary>
     public AnimalView[] Animals { get; private set; } = [];
 
@@ -673,7 +676,7 @@ public sealed class GameConnection : IDisposable
                 _announcements.Enqueue(Messages.ReadAnnouncement(reader));
                 break;
             case MessageType.Structures:
-                Structures = Messages.ReadStructures(reader);
+                (Structures, Plans) = Messages.ReadStructures(reader);
                 break;
             case MessageType.Speech:
                 _speech.Enqueue(Messages.ReadSpeech(reader));

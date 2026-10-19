@@ -32,9 +32,12 @@ namespace Oohra.Client.Tests
             yield return null;
         }
 
-        /// <summary>Modulárně se druhá zeď přichytí přesně na konec první a pokračuje rovně.</summary>
+        /// <summary>
+        /// Stavební mřížka: první zeď založí plán, druhá (kurzor kousek za koncem, trochu vedle) leží přesně na sousední
+        /// hraně políčka a pokračuje rovně. Mřížka je při stavění vidět.
+        /// </summary>
         [UnityTest]
-        public IEnumerator ModularWallJoinsWallEnd()
+        public IEnumerator GridWallJoinsWallEnd()
         {
             var session = Object.FindAnyObjectByType<IslandBootstrap>();
             yield return Join(session);
@@ -46,12 +49,14 @@ namespace Oohra.Client.Tests
             yield return PlaceAround(session.Session, buildMode, () => connection.Structures.Length > 0);
             Assert.AreEqual(1, connection.Structures.Length, "První zeď se nepodařilo postavit.");
             var first = connection.Structures[0];
+            Assert.AreEqual(1, connection.Plans.Length, "První zeď nezaložila plán.");
+            Assert.AreEqual(BuildGrid.Cell, first.Length, 0.01f);
 
-            buildMode.Modular = true;
             foreach (var side in new[] { 1f, -1f })
             {
-                var end = new Vector2(first.X + side * 0.5f, first.Y);
-                buildMode.PlaceAt(end.x + side * 0.3f, end.y + 0.05f);
+                buildMode.PlaceAt(first.X + side * 1.8f, first.Y + 0.3f);
+                Assert.IsTrue(buildMode.OnExistingPlan, "Náhled se nepřichytil k plánu.");
+                Assert.IsTrue(Object.FindAnyObjectByType<GridLines>().Visible, "Mřížka není vidět.");
                 yield return new WaitForSecondsRealtime(0.7f);
                 if (connection.Structures.Length < 2)
                 {
@@ -59,17 +64,11 @@ namespace Oohra.Client.Tests
                 }
 
                 var second = connection.Structures.First(s => s.Id != first.Id);
-                Assert.AreEqual(first.X + side, second.X, 0.01f, "Zeď se nepřichytila na konec.");
+                Assert.AreEqual(first.X + side * BuildGrid.Cell, second.X, 0.01f, "Zeď neleží na sousední hraně.");
                 Assert.AreEqual(first.Y, second.Y, 0.01f);
-                Assert.AreEqual(0f, Mathf.DeltaAngle(0f, second.Angle * Mathf.Rad2Deg) % 180f, 0.5f);
+                Assert.AreEqual(first.Angle, second.Angle, 0.01f);
+                Assert.AreEqual(first.PlanId, second.PlanId);
                 yield return SaveScreenshot("moduly.png");
-
-                // Poloviční zeď (volně): na serveru je dlouhá 0,5 m.
-                buildMode.Modular = false;
-                buildMode.Open(BuildMode.Catalog[1]);
-                var count = connection.Structures.Length;
-                yield return PlaceAround(session.Session, buildMode, () => connection.Structures.Length > count);
-                Assert.IsTrue(connection.Structures.Any(s => Mathf.Abs(s.Length - 0.5f) < 0.001f), "Poloviční zeď se nepostavila.");
                 yield break;
             }
 

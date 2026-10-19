@@ -4,22 +4,27 @@ using Oohra.Protocol;
 
 namespace Oohra.Server.Tests;
 
-/// <summary>Režim stavby přes síť: zdi s libovolným úhlem a úkryt.</summary>
+/// <summary>Režim stavby přes síť: zdi ve stavební mřížce (první díl natočený po 15°) a úkryt.</summary>
 public class WallServerTests
 {
     [Fact]
     public void WallIsSeenByEveryoneAndCanBeRemoved()
     {
-        using var net = new TestNetwork(configure: c => c.StartSticks = 2);
+        using var net = new TestNetwork(configure: c => c.StartSticks = 4);
         var a = net.Join("Ondra");
         var b = net.Join("Petr");
         var player = net.Server.FindPlayer("Ondra")!;
         var (x, y) = StandInOpen(net, player);
 
-        a.Place(BuildKind.StickWall, x + 1, y, 0.3f);
+        a.Place(BuildKind.StickWall, x + 1.5f, y, 1.6f);
 
         Assert.True(net.Pump(() => b.Structures.Length == 1));
-        Assert.Equal((x + 1, y, 0.3f), (b.Structures[0].X, b.Structures[0].Y, b.Structures[0].Angle));
+        // První zeď založí plán: leží pod kurzorem, úhel se zaokrouhlí na 15° (1,6 rad je 92°, tedy 90°), délka je hrana políčka.
+        Assert.Equal((x + 1.5f, y), (b.Structures[0].X, b.Structures[0].Y));
+        Assert.Equal(Math.PI / 2, b.Structures[0].Angle, 4);
+        Assert.Equal(BuildGrid.Cell, b.Structures[0].Length, 4);
+        Assert.True(b.Structures[0].PlanId > 0);
+        Assert.Single(b.Plans);
         Assert.True(net.Pump(() => a.Inventory.Stacks.Length == 0));
 
         a.RemoveStructure(b.Structures[0].Id);
@@ -30,7 +35,7 @@ public class WallServerTests
     [Fact]
     public void DoorGoesIntoDoorFrameForEveryone()
     {
-        using var net = new TestNetwork(configure: c => c.StartSticks = 4);
+        using var net = new TestNetwork(configure: c => c.StartSticks = 5);
         var a = net.Join("Ondra");
         var b = net.Join("Petr");
         var player = net.Server.FindPlayer("Ondra")!;
@@ -48,7 +53,7 @@ public class WallServerTests
     [Fact]
     public void NoWallOnAnotherPlayer()
     {
-        using var net = new TestNetwork(configure: c => c.StartSticks = 2);
+        using var net = new TestNetwork(configure: c => c.StartSticks = 4);
         var a = net.Join("Ondra");
         net.Join("Petr");
         var builder = net.Server.FindPlayer("Ondra")!;

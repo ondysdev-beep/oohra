@@ -30,29 +30,5 @@ namespace Oohra.Client.Tests
             Object.DestroyImmediate(roof);
             Object.DestroyImmediate(post);
         }
-
-        /// <summary>Nová střecha se přichytí těsně vedle té, která už stojí (na straně u kurzoru).</summary>
-        [Test]
-        public void PanelSnapsNextToNeighbour()
-        {
-            var structures = new[] { new StructureView(1, BuildKind.Roof, 10f, 10f, 0f, 2f) };
-            SnapResult snap;
-
-            Assert.IsTrue(ModularSnap.Panel(structures, new Vector2(12.4f, 10.3f), BuildKind.Roof, 2f, out snap));
-            Assert.AreEqual(12f, snap.Center.x, 0.001f);
-            Assert.AreEqual(10f, snap.Center.y, 0.001f);
-            Assert.IsFalse(ModularSnap.Panel(structures, new Vector2(30f, 30f), BuildKind.Roof, 2f, out snap));
-        }
-
-        /// <summary>První střecha se natočí podle nejbližší zdi.</summary>
-        [Test]
-        public void FirstRoofTurnsLikeWall()
-        {
-            var structures = new[] { new StructureView(1, BuildKind.StickWall, 10f, 10f, 0.5f, 1f) };
-            SnapResult snap;
-
-            Assert.IsTrue(ModularSnap.Panel(structures, new Vector2(10.5f, 11f), BuildKind.Roof, 2f, out snap));
-            Assert.AreEqual(0.5f * Mathf.Rad2Deg, snap.AngleDegrees, 0.01f);
-        }
     }
 }

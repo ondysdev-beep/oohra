@@ -87,9 +87,10 @@ namespace Oohra.Client
     /// <summary>
     /// Režim stavby pro všechny stavby. G ho zapne a vypne, F ho otevře rovnou s ohněm, 1 až 9 vybírá stavbu (za stavbami z kódu jsou dekorace ze serveru).
     /// U kurzoru je průsvitný náhled stavby, nejdál Reach od postavy. Levé tlačítko staví, Esc nebo G režim ukončí,
-    /// pravé tlačítko myši otáčí kamerou (Q a E v režimu stavby otáčí stavbou). R přepíná volnou a modulární stavbu:
-    /// volně Q a E stavbou plynule otáčejí; modulárně se zeď přichytí ke konci jiné zdi (směr určí kurzor,
-    /// Q a E ji kolem toho konce natáčejí po 15°) a v mezeře mezi dvěma konci se natáhne tak, aby zapadla.
+    /// pravé tlačítko myši otáčí kamerou (Q a E v režimu stavby otáčí stavbou). Zdi, podlahy, střechy a sloupky
+    /// stojí ve stavební mřížce 2 × 2 m (BuildGrid, GridLines ukazuje mřížku): první díl založí plán (Q a E ho
+    /// natáčí po 15°), další díly poblíž se k plánu přichytí (Q a E otáčí zdí po 90°, kurzor vybere hranu políčka).
+    /// Ostatní věci stojí volně, R přepíná plynulé otáčení a otáčení po 15°.
     /// Dveře se vždy vsadí do nejbližší zdi s otvorem. Jestli se stavba opravdu postaví, rozhodne server.
     /// </summary>
     public class BuildMode : MonoBehaviour
@@ -107,9 +108,8 @@ namespace Oohra.Client
 
         public static readonly BuildOption[] Catalog =
         {
-            new BuildOption(BuildKind.StickWall, "Zeď z klacků", "2 klacky", 2, 0),
-            new BuildOption(BuildKind.StickWall, "Poloviční zeď", "1 klacek", 1, 0, 0.5f),
-            new BuildOption(BuildKind.DoorFrame, "Zeď s otvorem na dveře", "2 klacky", 2, 0),
+            new BuildOption(BuildKind.StickWall, "Zeď z klacků 2 m", "4 klacky", 4, 0),
+            new BuildOption(BuildKind.DoorFrame, "Zeď s otvorem na dveře 2 m", "3 klacky", 3, 0),
             new BuildOption(BuildKind.Door, "Dveře (do otvoru)", "2 klacky", 2, 0),
             new BuildOption(BuildKind.Campfire, "Oheň", "3 klacky a kámen", 3, 1),
             new BuildOption(BuildKind.Trap, "Past (chytí králíka nebo jelena)", "3 klacky", 3, 0),
@@ -130,6 +130,7 @@ namespace Oohra.Client
         private DecorationTypeView[] _decorationSource;
         private BuildOption[] _options = Catalog;
         private GameObject _ghost;
+        private GridLines _grid;
         private bool _placeable;
 
         /// <summary>Režim stavby je zapnutý (kliknutí pak nestaví postavu do pohybu).</summary>
@@ -142,8 +143,17 @@ namespace Oohra.Client
             get { return SelectedOption.Kind; }
         }
 
-        /// <summary>Modulární stavba: zdi se přichytávají ke koncům jiných zdí a dorovnávají mezery.</summary>
+        /// <summary>
+        /// Jen u věcí, které stojí volně (oheň, past, koš, dekorace, žebřík): Q a E otáčí po 15° (jinak plynule).
+        /// Zdi, podlahy, střechy a sloupky stojí vždy ve stavební mřížce (BuildGrid).
+        /// </summary>
         public bool Modular { get; set; }
+
+        /// <summary>Náhled se přichytil k plánu, který už stojí (Q a E pak otáčí zdí po 90°).</summary>
+        public bool OnExistingPlan { get; private set; }
+
+        /// <summary>Plán, ke kterému se náhled přichytil (i nový), pro čáry mřížky.</summary>
+        public GridPlan? AimedPlan { get; private set; }
 
         /// <summary>Úhel stavby ve stupních (0 = zeď vede od západu na východ). Modulárně pootočení kolem konce zdi.</summary>
         public float AngleDegrees { get; set; }
@@ -159,6 +169,7 @@ namespace Oohra.Client
         {
             _session = session;
             _camera = camera;
+            _grid = new GameObject("Mřížka stavby").AddComponent<GridLines>();
         }
 
         /// <summary>
@@ -216,6 +227,7 @@ namespace Oohra.Client
         {
             IsActive = false;
             CameraRig.KeysTurnCamera = true;
+            if (_grid != null) _grid.Hide();
             if (_ghost != null)
             {
                 Destroy(_ghost);
@@ -230,13 +242,14 @@ namespace Oohra.Client
         public void PlaceAt(double x, double y)
         {
             Aim(new Vector2((float)x, (float)y));
+            if (_ghost != null) ShowGhost();
             Send();
         }
 
         /// <summary>Má na vybranou stavbu materiál (jen pro barvu náhledu, rozhodne server).</summary>
         public bool HasMaterials()
         {
-            var sticks = Selected == BuildKind.StickWall ? (TargetLength <= 0.5f + 0.001f ? 1 : 2) : SelectedOption.Sticks;
+            var sticks = SelectedOption.Sticks;
             var extra = !SelectedOption.ExtraItem.HasValue || _session.Count(SelectedOption.ExtraItem.Value) >= SelectedOption.ExtraCount;
             return extra && _session.Count(ItemKind.Stick) >= sticks && _session.Count(ItemKind.Stone) >= SelectedOption.Stones;
         }
@@ -326,7 +339,14 @@ namespace Oohra.Client
             if (keyboard.rKey.wasPressedThisFrame) Modular = !Modular;
             if (keyboard.escapeKey.wasPressedThisFrame) Close();
 
-            if (Modular)
+            if (BuildGrid.OnGrid(Selected))
+            {
+                // Mřížka: nový plán se natáčí po 15°, v plánu, který stojí, otáčí Q a E zdí po 90° (druhá hrana políčka).
+                var step = OnExistingPlan ? 90f : (float)BuildGrid.AngleStep;
+                if (keyboard.qKey.wasPressedThisFrame) AngleDegrees -= step;
+                if (keyboard.eKey.wasPressedThisFrame) AngleDegrees += step;
+            }
+            else if (Modular)
             {
                 if (keyboard.qKey.wasPressedThisFrame) AngleDegrees -= ModularStep;
                 if (keyboard.eKey.wasPressedThisFrame) AngleDegrees += ModularStep;
@@ -349,28 +369,38 @@ namespace Oohra.Client
                 return;
             }
 
-            var isWall = Selected == BuildKind.StickWall || Selected == BuildKind.DoorFrame;
-            SnapResult snap;
-            if (Modular && isWall && ModularSnap.Find(_session.Connection.Structures, pointer, SelectedOption.Length, AngleDegrees, Selected == BuildKind.StickWall, out snap))
+            OnExistingPlan = false;
+            AimedPlan = null;
+            if (BuildGrid.OnGrid(Selected))
             {
-                Target = snap.Center;
-                TargetAngleDegrees = snap.AngleDegrees;
-                TargetLength = snap.Length;
-                _placeable = InReach(Target);
-                return;
-            }
-
-            if (Modular && (Selected == BuildKind.Roof || Selected == BuildKind.Floor)
-                && ModularSnap.Panel(_session.Connection.Structures, pointer, Selected, StructureViews.PanelSize, out snap))
-            {
-                Target = ClampToReach(snap.Center);
-                TargetAngleDegrees = snap.AngleDegrees;
-                _placeable = InReach(snap.Center);
+                AimOnGrid(pointer);
                 return;
             }
 
             TargetAngleDegrees = AngleDegrees;
             Target = ClampToReach(pointer);
+        }
+
+        /// <summary>
+        /// Zeď, zeď s otvorem, podlaha, střecha, sloupek: přichytí se ke stavební mřížce stejně, jako to spočítá server
+        /// (BuildGrid ve sdílené knihovně). Poblíž dílu plánu se přidá k plánu, jinak založí nový plán pod kurzorem.
+        /// </summary>
+        private void AimOnGrid(Vector2 pointer)
+        {
+            var connection = _session.Connection;
+            var pieces = new System.Collections.Generic.List<GridPiece>();
+            foreach (var structure in connection.Structures)
+            {
+                if (structure.PlanId > 0) pieces.Add(new GridPiece(structure.PlanId, structure.X, structure.Y));
+            }
+
+            var snap = BuildGrid.Snap(connection.Plans, pieces, Selected, pointer.x, pointer.y, AngleDegrees * Mathf.Deg2Rad);
+            OnExistingPlan = !snap.NewPlan;
+            AimedPlan = new GridPlan(snap.PlanId, snap.PlanX, snap.PlanY, snap.PlanAngle);
+            Target = new Vector2((float)snap.X, (float)snap.Y);
+            TargetAngleDegrees = (float)(snap.Angle * Mathf.Rad2Deg);
+            TargetLength = Selected == BuildKind.Floor || Selected == BuildKind.Roof ? StructureViews.PanelSize : (float)snap.Length;
+            _placeable = InReach(Target);
         }
 
         /// <summary>Dveře: do nejbližší zdi s otvorem bez dveří. Když žádná není, náhled je červený.</summary>
@@ -468,9 +498,12 @@ namespace Oohra.Client
             StructureViews.PlaceModel(_ghost.transform, Target.x, Target.y, TargetAngleDegrees * Mathf.Deg2Rad, StructureViews.BaseHeight(Selected, level));
             if (Selected == BuildKind.StickWall)
             {
-                // Délka zdi se při dorovnávání mění, náhled se natáhne.
+                // Délka zdi podle mřížky (hrana políčka), náhled se natáhne.
                 StructureViews.StretchWall(_ghost, TargetLength);
             }
+
+            if (_grid != null && AimedPlan.HasValue) _grid.Show(AimedPlan.Value, Target.x, Target.y, StructureViews.BaseHeight(BuildKind.Floor, level));
+            else if (_grid != null) _grid.Hide();
 
             var color = _placeable && HasMaterials() ? CanBuild : CannotBuild;
             foreach (var renderer in _ghost.GetComponentsInChildren<Renderer>())
