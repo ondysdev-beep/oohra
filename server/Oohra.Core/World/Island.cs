@@ -56,6 +56,7 @@ public sealed class Island
         _treeByTile = trees.ToDictionary(t => t.TileIndex);
         Rocks = new RockPiles(this);
         Wasps = new WaspNests(this);
+        Flood = new Flooding(this);
     }
 
     public int Seed { get; }
@@ -102,6 +103,12 @@ public sealed class Island
 
     /// <summary>Vosí hnízda ve stromech (ze seedu, vykouřená na čas zmizí).</summary>
     public WaspNests Wasps { get; }
+
+    /// <summary>Rozvodněná bažina na jaře (podle kalendáře, neukládá se).</summary>
+    public Flooding Flood { get; }
+
+    /// <summary>Stopy v bahně (krátkodobé, neukládají se).</summary>
+    public Tracks Tracks { get; } = new();
 
     /// <summary>Značky a rytiny hráčů a staré rytiny u ruin (ty přidá server při startu, AddAncient).</summary>
     public Signs Signs { get; } = new();

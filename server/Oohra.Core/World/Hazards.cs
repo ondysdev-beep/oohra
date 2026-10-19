@@ -8,7 +8,7 @@ namespace Oohra.Core.World;
 
 /// <summary>
 /// Nebezpečné okolí, první vlna (návrh 0.8, kap. 5, hazards.json): komáři v bažině a u vody (kousnutí,
-/// zimnice), pijavice při chůzi bažinou. Obrana: kouř z ohně, natřít se bahnem nebo popelem, pijavice sundat
+/// zimnice), pijavice při chůzi bažinou (i jarní zatopenou souší). Obrana: kouř z ohně, natřít se bahnem nebo popelem, pijavice sundat
 /// u ohně nebo popelem. Bahenní vodu (úplavice) řeší pití (Drinking). Druhá vlna: klíšťata v trávě a lese
 /// (přisají se potichu, prohlédnout se). Hady počítá Animals, vosí hnízda WaspNests.
 /// </summary>
@@ -113,7 +113,7 @@ public static class Hazards
         }
 
         var (tx, ty) = ((int)Math.Floor(x), (int)Math.Floor(y));
-        if (!island.InBounds(tx, ty) || island.TileAt(tx, ty) != TileType.Bog || c.Leeches >= rules.Max)
+        if (!Tracks.Muddy(island, x, y) || c.Leeches >= rules.Max)
         {
             return;
         }

@@ -1,0 +1,17 @@
+// Sezónní nebezpečí a stopy (návrh 0.8, kap. 5).
+{
+  // Hladoví vlci v zimě: je jich populationFactor× víc, loví už za soumraku (denní světlo pod huntDaylightBelow),
+  // oheň je odradí jen zblízka (fireRange × fireRangeFactor) a v noci se toulají dál od doupěte (× roamFactor),
+  // takže dojdou blíž k táborům.
+  "winterWolves": { "populationFactor": 1.5, "huntDaylightBelow": 0.45, "fireRangeFactor": 0.55, "roamFactor": 2 },
+
+  // Rozvodněná bažina na jaře: voda se rozlije z bažiny (dlaždice Bog a jezírka v oblasti bažiny) do okolní nízké
+  // souše (tráva, les, písek) až do vzdálenosti úroveň × maxRange dlaždic. Úroveň podle měsíce roku (0 až 11; jaro jsou měsíce 0 až 2,
+  // na konci zimy taje sníh). Zatopená souš se chová jako bažina: zpomalí, chytají se pijavice, zůstávají stopy.
+  "flood": { "monthLevels": [ 0.5, 1, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0.25 ], "maxRange": 4 },
+
+  // Stopy v bahně (bažina a zatopená souš): hráč nebo zvíře nechá stopu každých stepMeters. Stopa vydrží
+  // lifeMinutes herních minut, v dešti a v bouřce stárne rainFactor× rychleji. Nejvýš maxTracks stop na ostrově
+  // (nejstarší zmizí). Hráč dostane nejbližší stopy do viewDistance metrů (nejvýš maxSent), nejvýš jednou za sendEverySeconds.
+  "tracks": { "stepMeters": 0.8, "lifeMinutes": 720, "rainFactor": 8, "maxTracks": 6000, "viewDistance": 28, "maxSent": 400, "sendEverySeconds": 1 }
+}

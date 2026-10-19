@@ -48,6 +48,7 @@ public sealed partial class GameServer : IDisposable
     private int _sentRocksVersion;
     private int _sentWaspsVersion;
     private int _sentWaspsForestryVersion;
+    private int _sentFloodVersion;
     private int _sentCorpsesVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
@@ -66,6 +67,10 @@ public sealed partial class GameServer : IDisposable
         var size = config.WorldSize > 0 ? config.WorldSize : GameData.Settings.WorldWidth;
         Island = WorldGenerator.Build(config.Seed, size, size);
         Clock = GameClock.FromSettings(config.StartHour * 60);
+        if (config.StartMonth > 0)
+        {
+            Clock.Restore(config.StartHour * 60, config.StartMonth);
+        }
         Plants = new PlantStates();
         _worldView = WorldViews.From(Island);
         _rng = new Mulberry32(config.Seed ^ 0x5E4E);
@@ -175,6 +180,8 @@ public sealed partial class GameServer : IDisposable
         Fires.Burn(minutes * Weather.BurnMultiplier(CurrentWeather));
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
         Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock);
+        Island.Flood.Update(Clock);
+        Island.Tracks.Update(Island, AnimalTargets(), Animals.All, minutes, CurrentWeather.Kind);
         if (_config.Wasps)
         {
             Island.Wasps.Update(realSeconds, Clock.TotalMinutes, AnimalTargets());
@@ -210,6 +217,7 @@ public sealed partial class GameServer : IDisposable
             }
 
             SendRecipes(player);
+            SendTracks(player);
 
             SendTribeState(player);
         }
@@ -233,6 +241,12 @@ public sealed partial class GameServer : IDisposable
         {
             _sentCorpsesVersion = Island.Corpses.Version;
             Broadcast(w => Messages.WriteCorpses(w, CorpseViews()));
+        }
+
+        if (Island.Flood.Version != _sentFloodVersion)
+        {
+            _sentFloodVersion = Island.Flood.Version;
+            Broadcast(w => Messages.WriteFloodedTiles(w, Island.Flood.FloodedTiles().ToList()));
         }
 
         // Hnízdo zmizí i s pokáceným stromem, proto se hlídá i verze kácení.
@@ -397,6 +411,8 @@ public sealed partial class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteDecorationTypes(w, DecorationTypeViews()));
         SendTo(peer, w => Messages.WriteRockPiles(w, RockPileViews()));
         SendTo(peer, w => Messages.WriteWaspNests(w, WaspNestViews()));
+        SendTo(peer, w => Messages.WriteFloodedTiles(w, Island.Flood.FloodedTiles().ToList()));
+        player.SentTracks = (-1, 0, 0);
         SendTo(peer, w => Messages.WriteCorpses(w, CorpseViews()));
         SendSignature(player);
         player.SentTribeVersion = -1;

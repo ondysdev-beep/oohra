@@ -67,6 +67,14 @@ public sealed class PlayerSession
     /// <summary>Verze zápisníku slov, která byla naposledy poslána (-1 = poslat znovu).</summary>
     public int SentVocabularyVersion { get; set; } = -1;
 
+    /// <summary>Jaké stopy hráč naposledy dostal (verze stop a čtverec 4 × 4 m, kde stál) a kdy smí další.</summary>
+    public (int Version, int X, int Y) SentTracks { get; set; } = (-1, 0, 0);
+
+    public double NextTracksAt { get; set; }
+
+    /// <summary>Naposledy poslaný seznam stop byl prázdný.</summary>
+    public bool SentTracksEmpty { get; set; }
+
     /// <summary>Které recepty hráč naposledy dostal (seřazené id přes čárku), null = ještě žádné.</summary>
     public string? SentRecipes { get; set; }
 

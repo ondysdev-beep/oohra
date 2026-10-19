@@ -19,6 +19,17 @@ namespace Oohra.Core.World
         Snake = 4,
     }
 
+    /// <summary>Kdo nechal stopu v bahně: člověk, nebo zvíře (číslo AnimalKind + 1).</summary>
+    public enum TrackMaker
+    {
+        Human = 0,
+        Boar = 1,
+        Rabbit = 2,
+        Deer = 3,
+        Wolf = 4,
+        Snake = 5,
+    }
+
     /// <summary>Co zvíře právě dělá. Klient podle toho mění vzhled (výpad, vyčerpání, smrt).</summary>
     public enum AnimalState
     {

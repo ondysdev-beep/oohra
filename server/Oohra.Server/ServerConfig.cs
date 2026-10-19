@@ -35,6 +35,9 @@ public sealed class ServerConfig
     /// <summary>V kolik hodin svět začíná (jen pro zkoušení, třeba 21 = hned noc). Ve hře 7.</summary>
     public double StartHour { get; set; } = 7;
 
+    /// <summary>Ve kterém měsíci kalendáře svět začíná (jen pro zkoušení: 1 = jarní záplava, 9 = zima s vlky). Ve hře 0.</summary>
+    public double StartMonth { get; set; }
+
     /// <summary>Kolik klacků dostane nová postava do batohu (jen pro zkoušení ohně, ve hře 0).</summary>
     public int StartSticks { get; set; }
 

@@ -129,6 +129,9 @@ public sealed record DecorationTypeView(string Id, string Name, int Sticks, int 
 /// <summary>Hromada kamenů na skalní dlaždici: kolik kamenů zbývá (0 = zmizela) a kolik jich má plná.</summary>
 public readonly record struct RockPileView(int TileIndex, int Stones, int MaxStones);
 
+/// <summary>Stopa v bahně: poloha, směr (0 až 255 = celý kruh), kdo ji udělal a jak je čerstvá (255 nová, 0 mizí).</summary>
+public readonly record struct TrackView(float X, float Y, byte Dir, TrackMaker Maker, byte Fresh);
+
 /// <summary>Vosí hnízdo ve stromě (TileIndex stromu), Angry = vosy jsou rozzuřené.</summary>
 public readonly record struct WaspNestView(int TileIndex, float X, float Y, bool Angry);
 
@@ -763,6 +766,42 @@ public static class Messages
     public static RockPileView[] ReadRockPiles(NetDataReader r)
     {
         return ReadList(r, () => new RockPileView(r.GetInt(), r.GetByte(), r.GetByte()));
+    }
+
+    /// <summary>Na jaře zatopená souš (čísla dlaždic). Posílá se po přihlášení a když se voda zvedne nebo opadne.</summary>
+    public static void WriteFloodedTiles(NetDataWriter w, IReadOnlyList<int> tiles)
+    {
+        w.Put((byte)MessageType.FloodedTiles);
+        w.Put(tiles.Count);
+        foreach (var tile in tiles)
+        {
+            w.Put(tile);
+        }
+    }
+
+    public static int[] ReadFloodedTiles(NetDataReader r)
+    {
+        return ReadList(r, r.GetInt);
+    }
+
+    /// <summary>Stopy v bahně v okolí hráče.</summary>
+    public static void WriteTracks(NetDataWriter w, IReadOnlyList<TrackView> tracks)
+    {
+        w.Put((byte)MessageType.Tracks);
+        w.Put(tracks.Count);
+        foreach (var t in tracks)
+        {
+            w.Put(t.X);
+            w.Put(t.Y);
+            w.Put(t.Dir);
+            w.Put((byte)t.Maker);
+            w.Put(t.Fresh);
+        }
+    }
+
+    public static TrackView[] ReadTracks(NetDataReader r)
+    {
+        return ReadList(r, () => new TrackView(r.GetFloat(), r.GetFloat(), r.GetByte(), (TrackMaker)r.GetByte(), r.GetByte()));
     }
 
     /// <summary>Vosí hnízda na ostrově. Posílá se po přihlášení a pak při každé změně.</summary>

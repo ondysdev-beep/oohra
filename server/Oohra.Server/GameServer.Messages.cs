@@ -244,6 +244,44 @@ public sealed partial class GameServer
         return Island.Rocks.All.Select(p => new RockPileView(p.TileIndex, p.Stones, p.MaxStones)).ToArray();
     }
 
+    /// <summary>
+    /// Stopy v okolí hráče: pošlou se, když nějaká přibyla nebo zmizela, nebo když hráč popošel, nejvýš jednou
+    /// za sendEverySeconds. Jen nejbližší (maxSent).
+    /// </summary>
+    private void SendTracks(PlayerSession player)
+    {
+        var rules = GameData.Seasons.Tracks;
+        var key = (Island.Tracks.Version, (int)Math.Floor(player.X / 4), (int)Math.Floor(player.Y / 4));
+        if (key == player.SentTracks || _seconds < player.NextTracksAt)
+        {
+            return;
+        }
+
+        var near = Island.Tracks.Near(player.X, player.Y, rules.ViewDistance)
+            .OrderBy(t => (t.X - player.X) * (t.X - player.X) + (t.Y - player.Y) * (t.Y - player.Y))
+            .Take(rules.MaxSent)
+            .Select(t => new TrackView((float)t.X, (float)t.Y, AngleByte(t.Dir), t.Maker, (byte)Math.Round(255 * Math.Max(0, 1 - t.Worn / rules.LifeMinutes))))
+            .ToList();
+
+        // Prázdný seznam se pošle jen jednou (ať klient smaže staré stopy), pak už ne.
+        if (near.Count == 0 && player.SentTracks.Version >= 0 && player.SentTracksEmpty)
+        {
+            player.SentTracks = key;
+            return;
+        }
+
+        player.SentTracks = key;
+        player.SentTracksEmpty = near.Count == 0;
+        player.NextTracksAt = _seconds + rules.SendEverySeconds;
+        SendTo(player.Peer!, w => Messages.WriteTracks(w, near));
+    }
+
+    private static byte AngleByte(double radians)
+    {
+        var turn = radians / (2 * Math.PI) % 1;
+        return (byte)((int)Math.Round((turn < 0 ? turn + 1 : turn) * 256) % 256);
+    }
+
     private WaspNestView[] WaspNestViews()
     {
         return Island.Wasps.Active(Clock.TotalMinutes).Select(n => new WaspNestView(n.TileIndex, (float)n.X, (float)n.Y, Island.Wasps.IsAngry(n))).ToArray();

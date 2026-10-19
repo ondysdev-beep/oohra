@@ -11,6 +11,8 @@
   "timeSpeed": 1,
   // Jen pro zkoušení: v kolik hodin svět začíná (21 = hned noc) a materiál na oheň do začátku.
   "startHour": 7,
+  // Ve kterém měsíci kalendáře svět začíná (0 až 11, jaro 0 až 2, zima 9 až 11). Jen pro zkoušení, ve hře 0.
+  "startMonth": 0,
   "startSticks": 0,
   "startStones": 0,
   // Jen pro zkoušení a roboty: nová postava dostane malý batoh. Ve hře false (nováček má jen dvě ruce).
