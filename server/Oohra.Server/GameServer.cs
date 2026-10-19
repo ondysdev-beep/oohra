@@ -238,6 +238,7 @@ public sealed partial class GameServer : IDisposable
 
             SendRecipes(player);
             SendTracks(player);
+            SendGroundItems(player);
             SendCaveEntrances(player);
 
             SendTribeState(player);
@@ -258,6 +259,7 @@ public sealed partial class GameServer : IDisposable
         }
 
         Island.Corpses.Decay(Clock.TotalMinutes);
+        Island.Ground.Decay(Clock.TotalMinutes);
         if (Island.Corpses.Version != _sentCorpsesVersion)
         {
             _sentCorpsesVersion = Island.Corpses.Version;
@@ -431,6 +433,9 @@ public sealed partial class GameServer : IDisposable
                 Storeys.Fall(c, now);
             }
         }
+
+        // Věci položené v patře spadnou, když pod nimi podlaha není.
+        Island.Ground.Settle(p => Roofs.StandsOn(Island.Structures, p.X, p.Y, p.Level, 0));
     }
 
     private void EndLingering()
@@ -490,6 +495,7 @@ public sealed partial class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteFloodedTiles(w, Island.Flood.FloodedTiles().ToList()));
         SendTo(peer, w => Messages.WriteRacks(w, RackViews()));
         player.SentTracks = (-1, 0, 0);
+        player.SentGround = (-1, 0, 0);
         SendTo(peer, w => Messages.WriteCorpses(w, CorpseViews()));
         SendSignature(player);
         player.SentTribeVersion = -1;

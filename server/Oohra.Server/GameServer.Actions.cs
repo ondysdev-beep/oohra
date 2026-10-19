@@ -234,7 +234,11 @@ public sealed partial class GameServer
                 SendInventory(player);
                 break;
             case MessageType.Combine:
-                CombineAction(player, Messages.ReadCombine(reader));
+                var (combined, groundPiles) = Messages.ReadCombine(reader);
+                CombineAction(player, combined, groundPiles);
+                break;
+            case MessageType.PickUpItem:
+                PickUpItem(player, Messages.ReadPickUpItem(reader));
                 break;
             case MessageType.StripBark:
                 var bark = Messages.ReadTimberAction(reader);
@@ -422,16 +426,31 @@ public sealed partial class GameServer
         SendCraftResult(player, result, recipe);
     }
 
-    /// <summary>Zkoušení: spojit vybrané hromádky. Když z nich nejde žádný recept, nic se nestane.</summary>
-    private void CombineAction(PlayerSession player, int[] stackIndices)
+    /// <summary>
+    /// Zkoušení: spojit vybrané hromádky z batohu a ze země. Když z nich nejde žádný recept, nic se nestane.
+    /// </summary>
+    private void CombineAction(PlayerSession player, int[] stackIndices, int[] groundPileIds)
     {
         if (player.Character.IsDead)
         {
             return;
         }
 
-        var (result, recipe) = Crafting.Combine(stackIndices, player.Inventory, player.Character, PlaceOf(player));
+        var (result, recipe) = Crafting.Combine(stackIndices, player.Inventory, player.Character, PlaceOf(player), groundPileIds);
         SendCraftResult(player, result, recipe);
+    }
+
+    /// <summary>Sebrat hromádku ze země (kolik se vejde). Seznam věcí na zemi se pošle v příštím ticku.</summary>
+    private void PickUpItem(PlayerSession player, int pileId)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = Island.Ground.PickUp(pileId, player.Inventory, player.X, player.Y, player.Level);
+        SendEvent(player, new GameEvent(EventKind.Ground, (byte)result, default, []));
+        SendInventory(player);
     }
 
     private void SendCraftResult(PlayerSession player, CraftResult result, Recipe? recipe)
@@ -501,7 +520,8 @@ public sealed partial class GameServer
             }
         }
 
-        return new CraftPlace(nearWater, Fires.WarmsAt(Island, player.X, player.Y), Clock.TotalMinutes, Journals);
+        var ground = new GroundAccess(Island.Ground, Island, player.X, player.Y, player.Level, player.Facing);
+        return new CraftPlace(nearWater, Fires.WarmsAt(Island, player.X, player.Y), Clock.TotalMinutes, Journals, ground);
     }
 
     /// <summary>Kácení, dřevo a sekera. Stav stromů a dřeva na zemi se všem pošle v příštím ticku.</summary>
@@ -731,7 +751,8 @@ public sealed partial class GameServer
                 WoodAction(player, () => Island.Forestry.Drop(Island, inventory, player.X, player.Y, player.Facing));
                 break;
             case MessageType.Drop:
-                inventory.Drop(index);
+                // Věc nezmizí, leží na zemi před postavou (v patře na podlaze) a kdokoli ji může sebrat.
+                Island.Ground.Drop(Island, inventory, index, player.X, player.Y, player.Level, player.Facing, Clock.TotalMinutes);
                 break;
         }
 

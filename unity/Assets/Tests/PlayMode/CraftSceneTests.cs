@@ -60,5 +60,34 @@ namespace Oohra.Client.Tests
             yield return WaitFor(() => session.Count(ItemKind.Knife) == 1, 5f, "Nůž se nevyrobil. Hlášky: " + string.Join(" | ", session.Log.Select(l => l.Text)));
             Assert.AreEqual(0, session.Count(ItemKind.Stone));
         }
+
+        /// <summary>
+        /// Věci na zemi: kameny se položí na zem (nezmizí, je je vidět), sekera se vyrobí z klacku v ruce a kamenů
+        /// na zemi a zbylé kameny jdou sebrat.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator DropOnGroundCraftFromItAndPickUp()
+        {
+            var bootstrap = Object.FindAnyObjectByType<IslandBootstrap>();
+            bootstrap.Connect("127.0.0.1", TestPort, Invite, "Ondra");
+            yield return WaitFor(() => bootstrap.Session != null, 15f, "Unity se nepřipojilo k serveru.");
+            var session = bootstrap.Session;
+            var connection = session.Connection;
+            var views = Object.FindAnyObjectByType<GroundItemViews>();
+            yield return WaitFor(() => connection.Recipes.Any(r => r.Id == "axe") && session.Count(ItemKind.Stone) == 4, 5f, "Recepty nebo kameny nepřišly.");
+
+            connection.Drop(System.Array.FindIndex(connection.Inventory.Stacks, s => s.Kind == ItemKind.Stone));
+            yield return WaitFor(() => views.Count == 1 && session.NearbyGround().Count == 1, 5f, "Kameny na zemi nejsou vidět.");
+            Assert.AreEqual(0, session.Count(ItemKind.Stone));
+            var recipe = connection.Recipes.First(r => r.Id == "axe");
+            Assert.IsTrue(session.HasMaterials(recipe), "Kameny na zemi u postavy se počítají jako materiál.");
+
+            session.Craft("axe");
+            yield return WaitFor(() => session.Count(ItemKind.Axe) == 1, 5f, "Sekera z věcí na zemi se nevyrobila. Hlášky: " + string.Join(" | ", session.Log.Select(l => l.Text)));
+            yield return WaitFor(() => connection.GroundItems.Length == 1 && connection.GroundItems[0].Stack.Count == 2, 5f, "Na zemi měly zbýt dva kameny.");
+
+            connection.PickUpItem(connection.GroundItems[0].Id);
+            yield return WaitFor(() => session.Count(ItemKind.Stone) == 2 && views.Count == 0, 5f, "Kameny ze země se nesebraly.");
+        }
     }
 }

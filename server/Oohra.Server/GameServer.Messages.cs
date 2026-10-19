@@ -249,6 +249,37 @@ public sealed partial class GameServer
     /// Stopy v okolí hráče: pošlou se, když nějaká přibyla nebo zmizela, nebo když hráč popošel, nejvýš jednou
     /// za sendEverySeconds. Jen nejbližší (maxSent).
     /// </summary>
+    /// <summary>
+    /// Věci na zemi v okolí hráče (ground.json: viewDistance, nejvýš maxSent nejbližších). Posílá se, když se
+    /// něco změní, nebo když hráč přejde do jiného čtverce 4 × 4 m.
+    /// </summary>
+    private void SendGroundItems(PlayerSession player)
+    {
+        var key = (Island.Ground.Version, (int)Math.Floor(player.X / 4), (int)Math.Floor(player.Y / 4));
+        if (key == player.SentGround)
+        {
+            return;
+        }
+
+        var rules = GameData.Ground;
+        var near = Island.Ground.All
+            .Select(p => (Pile: p, Distance: Math.Sqrt((p.X - player.X) * (p.X - player.X) + (p.Y - player.Y) * (p.Y - player.Y))))
+            .Where(p => p.Distance <= rules.ViewDistance)
+            .OrderBy(p => p.Distance)
+            .Take(rules.MaxSent)
+            .Select(p => new GroundItemView(p.Pile.Id, (float)p.Pile.X, (float)p.Pile.Y, (byte)p.Pile.Level, StackViewOf(new ItemStack(p.Pile.Item, p.Pile.Count))))
+            .ToList();
+        if (player.SentGround.Version >= 0 && near.Count == 0 && player.SentGroundEmpty)
+        {
+            player.SentGround = key;
+            return;
+        }
+
+        player.SentGround = key;
+        player.SentGroundEmpty = near.Count == 0;
+        SendTo(player.Peer!, w => Messages.WriteGroundItems(w, near));
+    }
+
     private void SendTracks(PlayerSession player)
     {
         var rules = GameData.Seasons.Tracks;

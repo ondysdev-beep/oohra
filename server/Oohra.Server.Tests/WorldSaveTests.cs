@@ -47,6 +47,12 @@ public sealed class WorldSaveTests : IDisposable
             a.DrawSign((float)ondra.X, (float)ondra.Y - 1, bits);
             Assert.True(net.Pump(() => a.Signs.Any(s => !s.Ancient)));
 
+            // Věc na zemi (klacky se spotřebovaly na koš).
+            ondra.Inventory.TryAdd(Item.Stick);
+            Assert.True(net.Pump(() => a.Inventory.Stacks.Any(s => s.Kind == ItemKind.Stick)));
+            a.Drop(Array.FindIndex(a.Inventory.Stacks, s => s.Kind == ItemKind.Stick));
+            Assert.True(net.Pump(() => a.GroundItems.Length == 1));
+
             petr.Character.Hydration = 0;
             petr.Character.Health = 0.0001;
             Assert.True(net.Pump(() => b.Self!.Dead && net.Server.Island.Corpses.All.Count == 1));
@@ -110,7 +116,8 @@ public sealed class WorldSaveTests : IDisposable
         var back = restarted.Join("Ondra", playerKey: "klic-ondry");
         Assert.True(back.LoggedIn);
         Assert.Equal(ondraId, back.PlayerId);
-        Assert.True(restarted.Pump(() => back.Stockpiles.Length == 1 && back.Signs.Any(s => !s.Ancient) && back.Corpses.Length == 1));
+        Assert.True(restarted.Pump(() => back.Stockpiles.Length == 1 && back.Signs.Any(s => !s.Ancient) && back.Corpses.Length == 1
+            && back.GroundItems.Any(g => g.Stack.Kind == ItemKind.Stick)));
         Assert.Equal(2, back.TribeMembers.Length);
 
         // Nový hráč dostane nové číslo (čísla se neopakují).
