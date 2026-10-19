@@ -60,6 +60,9 @@ Kolize (Collider) v prefabu nevadí, hra je smaže. Kudy se dá projít, počít
 | **MeatStrip** (kus masa) | asi 0,08 × 0,25 m | úchyt nahoře uprostřed | Visí v kouři nad ohněm a na sušáku. Hra ho obarví podle stavu (syrové, uzené, sušené), model má být světlý nebo šedý. Model sušáku může mít maso namalované, hra pověsí skutečné kusy do výšky 1 m. |
 | **CaveEntrance**, **HiddenCaveEntrance** (vchod do jeskyně) | otvor asi 1,5 × 2 m, nenápadný úzká puklina | otvor ve směru osy Z, zadní strana se opře o skálu, dole uprostřed | Stojí na hraně skály u chodného místa. Nenápadný vidí jen ten, kdo ho objevil. |
 | **CaveExit** (východ uvnitř) | podle chuti, třeba suť pod otvorem | dole uprostřed | Hra k němu přidá světlo shora. Prázdné = průsvitný sloup světla. |
+| **Post** (sloupek) | 2 m vysoký, asi 0,14 m silný | dole uprostřed | Podpírá střechu. |
+| **Floor** (podlaha) | 2 × 2 m, nízká | dole uprostřed čtverce | Leží na zemi. |
+| **Roof** (střecha) | 2 × 2 m, spodek ve výšce 2 m | počátek dole uprostřed čtverce na zemi, střecha v modelu ve výšce 2 m | Hra ji neposouvá nahoru, výšku má mít model. Praskající střecha se třese. |
 | **Barricade** (zátaras) | asi 1,5 m široký, 1,6 m vysoký | podél osy X, dole uprostřed | Stojí na hraně skály před vchodem do jeskyně, hra ho natočí podle skály. |
 | **CaveWallColor** (barva, ne model) | | | Barva skalních stěn jeskyně (bloky vysoké 1,6 m). |
 | **FloodColor** (barva, ne model) | | | Barva kalné vody jarní záplavy nad zatopenou souší, průhlednost v alfě. |

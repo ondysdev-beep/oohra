@@ -105,6 +105,15 @@ namespace Oohra.Client
         [Tooltip("Zátaras u vchodu do jeskyně: klacky přes otvor, asi 1,5 m široký a 1,6 m vysoký, podél osy X.")]
         public GameObject Barricade;
 
+        [Tooltip("Sloupek pod střechu: asi 2 m vysoký, tloušťka asi 0,14 m, dole uprostřed.")]
+        public GameObject Post;
+
+        [Tooltip("Podlaha 2 × 2 m: ploché dílce na zemi, dole uprostřed.")]
+        public GameObject Floor;
+
+        [Tooltip("Střecha 2 × 2 m: spodek ve výšce 2 m nad zemí (model ho má mít v sobě), střed dole uprostřed čtverce.")]
+        public GameObject Roof;
+
         [Header("Dekorace (id stejné jako v server/Oohra.Core/Data/decorations.json)")]
         [Tooltip("Pro každou dekoraci její id a prefab (střed dole uprostřed, velikost podle radius v decorations.json).")]
         public DecorationModel[] Decorations = new DecorationModel[0];
@@ -297,6 +306,9 @@ namespace Oohra.Client
                 case BuildKind.Trap: return Trap;
                 case BuildKind.Stockpile: return Stockpile;
                 case BuildKind.Barricade: return Barricade;
+                case BuildKind.Post: return Post;
+                case BuildKind.Floor: return Floor;
+                case BuildKind.Roof: return Roof;
                 case BuildKind.Campfire: return Campfire;
                 default: return null;
             }

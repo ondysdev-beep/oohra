@@ -145,6 +145,12 @@ public enum BodyEvent
 
     /// <summary>Dusí ho kouř v jeskyni bez odvětrání.</summary>
     Smoke,
+
+    /// <summary>Spadla na něj střecha.</summary>
+    HitByRoof,
+
+    /// <summary>Střecha nad ním praská (ztratila podporu, za chvíli spadne).</summary>
+    RoofCracking,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -187,6 +193,9 @@ public enum DeathCause
 
     /// <summary>Udusil se kouřem v jeskyni.</summary>
     Smoke,
+
+    /// <summary>Zavalila ho spadlá střecha.</summary>
+    Collapse,
 }
 
 /// <summary>Viditelný příznak ve stavu těla.</summary>

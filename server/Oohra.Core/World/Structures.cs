@@ -58,6 +58,9 @@ public sealed class Structure
     /// <summary>Past: co se do ní chytilo (null = nic).</summary>
     public AnimalKind? Caught { get; internal set; }
 
+    /// <summary>Střecha bez podpory: od kdy praská (reálné sekundy Structures), null = drží.</summary>
+    public double? CrackingSince { get; internal set; }
+
     /// <summary>Konce celé stavby (zeď, zeď s otvorem i dveře leží na úsečce dlouhé Length).</summary>
     public (double X1, double Y1, double X2, double Y2) Ends
     {
@@ -225,6 +228,11 @@ public sealed class Structures
         if (kind == BuildKind.Barricade)
         {
             return BuildBarricade(island, inventory, playerX, playerY, x, y, builder, ownerId);
+        }
+
+        if (kind is BuildKind.Post or BuildKind.Roof or BuildKind.Floor)
+        {
+            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId);
         }
 
         if (kind == BuildKind.Decoration)
@@ -437,6 +445,13 @@ public sealed class Structures
         var reach = radius + GameData.Building.Wall.Thickness / 2;
         foreach (var structure in Near(x, y, reach))
         {
+            // Sloupek je kruh.
+            if (structure.Kind == BuildKind.Post
+                && Math.Sqrt((structure.X - x) * (structure.X - x) + (structure.Y - y) * (structure.Y - y)) < radius + GameData.Building.Post.Radius)
+            {
+                return true;
+            }
+
             // Dekorace, přes kterou se nedá projít, je kruh.
             if (GameData.Decoration(structure.DecorationId) is { Blocks: true } decoration
                 && Math.Sqrt((structure.X - x) * (structure.X - x) + (structure.Y - y) * (structure.Y - y)) < radius + decoration.Radius)
@@ -497,6 +512,9 @@ public sealed class Structures
             case BuildKind.Door: return rules.Door.SticksCost;
             case BuildKind.Trap: return rules.Trap.SticksCost;
             case BuildKind.Barricade: return rules.Barricade.SticksCost;
+            case BuildKind.Post: return rules.Post.SticksCost;
+            case BuildKind.Roof: return rules.Roof.SticksCost;
+            case BuildKind.Floor: return rules.Floor.SticksCost;
             case BuildKind.Stockpile: return rules.Stockpile.SticksCost;
             case BuildKind.Decoration: return 0;
         }
@@ -522,6 +540,9 @@ public sealed class Structures
             case BuildKind.Door: return rules.Door.SticksBack;
             case BuildKind.Trap: return rules.Trap.SticksBack;
             case BuildKind.Barricade: return rules.Barricade.SticksBack;
+            case BuildKind.Post: return rules.Post.SticksBack;
+            case BuildKind.Roof: return rules.Roof.SticksBack;
+            case BuildKind.Floor: return rules.Floor.SticksBack;
             case BuildKind.Stockpile: return rules.Stockpile.SticksBack;
             case BuildKind.Decoration: return (GameData.Decoration(structure.DecorationId)?.Sticks ?? 0) / 2;
             default: return SticksCost(structure.Kind, structure.Length) / 2;
@@ -622,6 +643,119 @@ public sealed class Structures
         return BuildResult.Built;
     }
 
+    /// <summary>
+    /// Sloupek, podlaha, střecha (návrh 0.8, kap. 6). Sloupek jako bodová stavba. Podlaha a střecha jsou čtverce:
+    /// podlaha na suché zemi a nepřekrývá jinou podlahu, střecha nepřekrývá jinou střechu a musí mít podporu
+    /// (Roofs.Stable), jinak NoSupport.
+    /// </summary>
+    private BuildResult BuildFrame(Island island, Fires fires, Inventory inventory, double playerX, double playerY, BuildKind kind,
+        double x, double y, double angle, IEnumerable<Position> players, Character? builder, int ownerId)
+    {
+        var rules = GameData.Building;
+        var cost = SticksCost(kind, 0, builder);
+        if (inventory.Count(ItemKind.Stick) < cost)
+        {
+            return BuildResult.NeedMaterials;
+        }
+
+        if (!Placement.InReach(playerX, playerY, x, y))
+        {
+            return BuildResult.TooFar;
+        }
+
+        double length;
+        if (kind == BuildKind.Post)
+        {
+            if (!PointFits(island, fires, x, y, rules.Post.Radius) || players.Any(p => Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y)) < GameData.Movement.Radius + rules.Post.Radius))
+            {
+                return BuildResult.CannotBuildHere;
+            }
+
+            length = 0.01;
+            angle = 0;
+        }
+        else
+        {
+            var size = kind == BuildKind.Roof ? rules.Roof.Size : rules.Floor.Size;
+            var probe = new Structure(-1, kind, x, y, angle, size);
+            var overlaps = All.Any(s => s.Kind == kind && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < size * 0.95);
+            if (overlaps || (kind == BuildKind.Floor && !Corners(probe).All(c => Placement.OnDryLand(island, c.X, c.Y))))
+            {
+                return BuildResult.CannotBuildHere;
+            }
+
+            if (kind == BuildKind.Roof && !Roofs.Stable(this, probe).Contains(probe.Id))
+            {
+                return BuildResult.NoSupport;
+            }
+
+            length = size;
+        }
+
+        inventory.TryRemove(ItemKind.Stick, cost);
+        Place(kind, x, y, angle, length: length, ownerId: ownerId);
+        builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
+        return BuildResult.Built;
+    }
+
+    /// <summary>Rohy čtverce (podlaha, střecha).</summary>
+    private static IEnumerable<Position> Corners(Structure square)
+    {
+        var half = square.Length / 2;
+        var (c, s) = (Math.Cos(square.Angle), Math.Sin(square.Angle));
+        foreach (var (a, b) in new[] { (-1, -1), (1, -1), (1, 1), (-1, 1) })
+        {
+            yield return new Position(square.X + (a * c - b * s) * half, square.Y + (a * s + b * c) * half);
+        }
+    }
+
+    private double _time;
+    private double _nextCheckAt;
+
+    /// <summary>
+    /// Statika (realSeconds reálného času): střecha bez podpory zapraská, za warnSeconds spadne. Vrací střechy,
+    /// které právě začaly praskat (server varuje, kdo je pod nimi) a které spadly (zraní, kdo stál pod nimi).
+    /// Když se podpora vrátí včas, praskání přestane.
+    /// </summary>
+    public (List<Structure> Cracked, List<Structure> Fallen) Update(double realSeconds)
+    {
+        var rules = GameData.Building.Roof;
+        _time += realSeconds;
+        var fallen = new List<Structure>();
+        var cracked = new List<Structure>();
+        if (_time < _nextCheckAt)
+        {
+            return (cracked, fallen);
+        }
+
+        _nextCheckAt = _time + rules.CheckSeconds;
+        var stable = Roofs.Stable(this);
+        foreach (var roof in All.Where(s => s.Kind == BuildKind.Roof).ToList())
+        {
+            if (stable.Contains(roof.Id))
+            {
+                if (roof.CrackingSince is not null)
+                {
+                    roof.CrackingSince = null;
+                    Version++;
+                }
+            }
+            else if (roof.CrackingSince is null)
+            {
+                roof.CrackingSince = _time;
+                cracked.Add(roof);
+                Version++;
+            }
+            else if (_time - roof.CrackingSince >= rules.WarnSeconds)
+            {
+                Take(roof, new Inventory(0));
+                fallen.Add(roof);
+            }
+        }
+
+        return (cracked, fallen);
+    }
+
     /// <summary>Poloměr bodové stavby (past, zásoby, dekorace), u zdí a dveří 0.</summary>
     public static double RadiusOf(Structure structure)
     {
@@ -629,6 +763,7 @@ public sealed class Structures
         {
             case BuildKind.Trap: return GameData.Building.Trap.FootprintRadius;
             case BuildKind.Stockpile: return GameData.Building.Stockpile.FootprintRadius;
+            case BuildKind.Post: return GameData.Building.Post.Radius;
             case BuildKind.Decoration: return GameData.Decoration(structure.DecorationId)?.Radius ?? 0;
             default: return 0;
         }
@@ -691,6 +826,12 @@ public sealed class Structures
     {
         var (x1, y1, x2, y2) = structure.Ends;
         var margin = Math.Max(GameData.Building.Wall.Thickness / 2, RadiusOf(structure));
+        if (structure.Kind is BuildKind.Roof or BuildKind.Floor)
+        {
+            // Čtverec: celý (úhlopříčka), ať ho Near najde odkudkoli zpod něj.
+            margin = structure.Length / 2 * Math.Sqrt(2);
+            (x1, y1, x2, y2) = (structure.X, structure.Y, structure.X, structure.Y);
+        }
         for (var ty = (int)Math.Floor(Math.Min(y1, y2) - margin); ty <= (int)Math.Floor(Math.Max(y1, y2) + margin); ty++)
         {
             for (var tx = (int)Math.Floor(Math.Min(x1, x2) - margin); tx <= (int)Math.Floor(Math.Max(x1, x2) + margin); tx++)

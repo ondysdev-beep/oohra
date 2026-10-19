@@ -121,7 +121,8 @@ public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 /// a délka v metrech. Caught: co je v pasti (číslo AnimalKind), -1 = nic.
 /// </summary>
 /// <summary>Stavba. Decoration: id dekorace (u ostatních staveb prázdné).</summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "");
+/// <summary>Stavba. Cracking = střecha bez podpory praská (za chvíli spadne).</summary>
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "", bool Cracking = false);
 
 /// <summary>Druh dekorace z decorations.json na serveru: název do nabídky, cena, poloměr a jestli se přes ni dá projít.</summary>
 public sealed record DecorationTypeView(string Id, string Name, int Sticks, int Stones, float Radius, bool Blocks);
@@ -1506,12 +1507,13 @@ public static class Messages
             w.Put(s.Caught);
             w.Put(s.OwnerId);
             w.Put(s.Decoration ?? string.Empty);
+            w.Put(s.Cracking);
         }
     }
 
     public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId)));
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId), r.GetBool()));
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>

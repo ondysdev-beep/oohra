@@ -89,6 +89,9 @@ namespace Oohra.Client
             new BuildOption(BuildKind.Trap, "Past (chytí králíka nebo jelena)", "3 klacky", 3, 0),
             new BuildOption(BuildKind.Stockpile, "Zásoby kmene (koš)", "4 klacky", 4, 0),
             new BuildOption(BuildKind.Barricade, "Zátaras u vchodu do jeskyně", "6 klacků", 6, 0),
+            new BuildOption(BuildKind.Post, "Sloupek (podpírá střechu)", "1 klacek", 1, 0),
+            new BuildOption(BuildKind.Floor, "Podlaha 2 × 2 m", "3 klacky", 3, 0, StructureViews.PanelSize),
+            new BuildOption(BuildKind.Roof, "Střecha 2 × 2 m (na zdech nebo sloupcích)", "3 klacky", 3, 0, StructureViews.PanelSize),
         };
 
         private ClientSession _session;
@@ -325,6 +328,15 @@ namespace Oohra.Client
                 TargetAngleDegrees = snap.AngleDegrees;
                 TargetLength = snap.Length;
                 _placeable = InReach(Target);
+                return;
+            }
+
+            if (Modular && (Selected == BuildKind.Roof || Selected == BuildKind.Floor)
+                && ModularSnap.Panel(_session.Connection.Structures, pointer, Selected, StructureViews.PanelSize, out snap))
+            {
+                Target = ClampToReach(snap.Center);
+                TargetAngleDegrees = snap.AngleDegrees;
+                _placeable = InReach(snap.Center);
                 return;
             }
 

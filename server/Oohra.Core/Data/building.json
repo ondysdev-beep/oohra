@@ -37,6 +37,19 @@
     "sticksBack": 2,
     "footprintRadius": 0.35
   },
+  // Sloupek, podlaha a střecha (návrh 0.8, kap. 6, první vlna). Sloupek podpírá střechu, blokuje jako kruh.
+  "post": { "sticksCost": 1, "sticksBack": 0, "radius": 0.1 },
+  // Podlaha: čtverec size × size na zemi (nepřekáží v chůzi). Později na ní stojí druhé podlaží.
+  "floor": { "sticksCost": 3, "sticksBack": 1, "size": 2 },
+  // Střecha: čtverec size × size ve výšce zdí. Drží, když se opírá aspoň o minSupports podpor: zeď (aspoň
+  // minWallSupport metrů pod ní nebo pod okrajem, supportTolerance metrů za okrajem se počítá), sloupek pod ní,
+  // nebo sousední střecha do neighbourDistance, která sama drží. Bez podpory zapraská a za warnSeconds spadne:
+  // kdo je pod ní, dostane damage zdraví. Před deštěm chrání střecha, ne zdi.
+  "roof": {
+    "sticksCost": 3, "sticksBack": 1, "size": 2,
+    "supportTolerance": 0.3, "minWallSupport": 0.4, "minSupports": 2, "neighbourDistance": 2.15,
+    "warnSeconds": 5, "damage": 25, "checkSeconds": 0.5
+  },
   "barricade": {
     // Zátaras u vchodu do jeskyně (návrh 0.8, kap. 4): staví se jen do entranceReach metrů od vchodu, jeden na vchod.
     // Dovnitř pak projde jen majitel a jeho kmen, ven každý.

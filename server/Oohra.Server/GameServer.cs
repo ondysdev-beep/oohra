@@ -185,6 +185,7 @@ public sealed partial class GameServer : IDisposable
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
         Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock);
         Island.Flood.Update(Clock);
+        RoofStatics(realSeconds);
         Racks.Update(Fires, Island.Structures, Clock, CurrentWeather.Kind, minutes);
         Island.Tracks.Update(Island, AnimalTargets(), Animals.All, minutes, CurrentWeather.Kind);
         if (_config.Wasps)
@@ -202,7 +203,8 @@ public sealed partial class GameServer : IDisposable
                 var inCave = Island.InCave(player.X, player.Y);
                 var weather = inCave ? WeatherState.Calm : CurrentWeather;
                 var sheltered = inCave || Shelter.IsSheltered(Island, player.X, player.Y);
-                Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), sheltered, weather, inCave ? GameData.Caves.Temperature : null);
+                var roofed = inCave || Roofs.IsRoofed(Island.Structures, player.X, player.Y);
+                Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), sheltered, weather, inCave ? GameData.Caves.Temperature : null, roofed);
                 Torch.Burn(player.Character, Clock.TotalMinutes, minutes, weather);
                 Caves.Discover(Island, player.Character, player.X, player.Y, Clock.TotalMinutes);
                 Caves.Smoke(Island, Fires, player.Character, player.X, player.Y, minutes, Clock.TotalMinutes);
@@ -375,6 +377,32 @@ public sealed partial class GameServer : IDisposable
     private IEnumerable<PlayerSession> InWorld => _byPeer.Values.Concat(_lingering.Keys);
 
     /// <summary>Postavám odpojených hráčů vypršel čas ve světě: zmizí (bezpečně uložené na místě).</summary>
+    /// <summary>Statika střech: kdo je pod praskající střechou, dostane varování, kdo pod padající, ránu.</summary>
+    private void RoofStatics(double realSeconds)
+    {
+        var (cracked, fallen) = Island.Structures.Update(realSeconds);
+        var now = Clock.TotalMinutes;
+        foreach (var player in InWorld)
+        {
+            var c = player.Character;
+            if (c.IsDead)
+            {
+                continue;
+            }
+
+            if (cracked.Any(r => Roofs.Covers(r, player.X, player.Y)))
+            {
+                c.Report(now, BodyEvent.RoofCracking);
+            }
+
+            if (fallen.Any(r => Roofs.Covers(r, player.X, player.Y)))
+            {
+                c.TakeDamage(GameData.Building.Roof.Damage, DeathCause.Collapse);
+                c.Report(now, BodyEvent.HitByRoof);
+            }
+        }
+    }
+
     private void EndLingering()
     {
         foreach (var (player, until) in _lingering.ToList())

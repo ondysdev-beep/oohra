@@ -16,7 +16,7 @@ public static class Physiology
     /// nearFire: postava je u hořícího ohně (Fires.WarmsAt), sheltered: je v úkrytu (Shelter.IsSheltered).
     /// Teplo těla se pak blíží vyšší hodnotě.
     /// </summary>
-    public static void Update(Character c, GameClock clock, double minutes, bool nearFire = false, bool sheltered = false, WeatherState weather = default, double? ambient = null)
+    public static void Update(Character c, GameClock clock, double minutes, bool nearFire = false, bool sheltered = false, WeatherState weather = default, double? ambient = null, bool? roofed = null)
     {
         if (c.IsDead)
         {
@@ -27,7 +27,7 @@ public static class Physiology
         c.LastNow = clock.TotalMinutes;
         RunDueEffects(c, clock.TotalMinutes);
         Diseases.Update(c, clock.TotalMinutes, minutes);
-        UpdateWarmth(c, clock, minutes, nearFire, sheltered, weather, rules.Warmth, ambient);
+        UpdateWarmth(c, clock, minutes, nearFire, sheltered, weather, rules.Warmth, ambient, roofed ?? sheltered);
         UpdateNeeds(c, minutes, rules.Needs);
         UpdateRecoveryAndFever(c, clock.TotalMinutes, minutes, rules);
         UpdatePoisonProtection(c, rules.FirstPoisonProtection);
@@ -84,13 +84,14 @@ public static class Physiology
     }
 
     /// <summary>Teplo těla se blíží cíli. Ambient přebije teplotu okolí (v jeskyni je stálá).</summary>
-    private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, bool sheltered, WeatherState weather, WarmthRules rules, double? fixedAmbient)
+    private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, bool sheltered, WeatherState weather, WarmthRules rules, double? fixedAmbient, bool roofed)
     {
         var ambient = fixedAmbient ?? AmbientTemperature(clock, rules);
         var fire = nearFire ? GameData.Fire.Fire.WarmthBonus : 0;
         var shelter = sheltered ? GameData.Building.Shelter.WarmthBonus : 0;
         var sleeping = c.Sleeping ? GameData.Body.Sleep.WarmthBonus : 0;
-        var rain = sheltered ? 0 : Weather.WarmthPenalty(weather);
+        // Před deštěm chrání střecha nad hlavou (zdi jen hřejí).
+        var rain = roofed ? 0 : Weather.WarmthPenalty(weather);
         var target = Math.Clamp(rules.Base + c.Traits.ColdBonus + (ambient - rules.ComfortAmbient) * rules.AmbientFactor + fire + shelter + sleeping - rain, 0, 100);
         c.Warmth += (target - c.Warmth) * Math.Min(1, rules.ApproachPerMinute * minutes);
         NewbornWarmth(c, clock.TotalMinutes, rules.Newborn);

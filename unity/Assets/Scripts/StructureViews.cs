@@ -15,6 +15,12 @@ namespace Oohra.Client
         // Rozměry v metrech. Délka, tloušťka a otvor jsou stejné jako na serveru (building.json).
         public const float WallLength = 1.0f;
         public const float WallHeight = 2.0f;
+
+        /// <summary>Strana čtverce střechy a podlahy (building.json roof.size, floor.size).</summary>
+        public const float PanelSize = 2f;
+
+        /// <summary>Tloušťka střechy (leží na zdech, spodek ve výšce WallHeight).</summary>
+        public const float RoofThickness = 0.14f;
         public const float WallThickness = 0.1f;
         public const float OpeningWidth = 0.8f;
         public const float DoorHeight = 1.9f;
@@ -100,6 +106,20 @@ namespace Oohra.Client
 
                     var prop = Part(root.transform, "Vzpěra", new Vector3(0f, 0.2f, 0f), new Vector3(0.05f, 0.4f, 0.05f), WallColor);
                     prop.transform.localRotation = Quaternion.Euler(0f, 0f, 30f);
+                    break;
+                case BuildKind.Post:
+                    Part(root.transform, "Sloupek", new Vector3(0f, WallHeight / 2, 0f), new Vector3(0.14f, WallHeight / 2, 0.14f), WallColor, PrimitiveType.Cylinder);
+                    break;
+                case BuildKind.Floor:
+                    // Prkna z klacků: tři pruhy těsně vedle sebe.
+                    for (var i = 0; i < 3; i++)
+                    {
+                        Part(root.transform, "Prkna", new Vector3(0f, 0.03f, (i - 1) * length / 3), new Vector3(length, 0.06f, length / 3 - 0.02f), Palette.Hex("#8a6a48"));
+                    }
+
+                    break;
+                case BuildKind.Roof:
+                    Part(root.transform, "Střecha", new Vector3(0f, WallHeight + RoofThickness / 2, 0f), new Vector3(length, RoofThickness, length), Palette.Hex("#6e5a3e"));
                     break;
                 case BuildKind.Barricade:
                     // Zátaras: svislé klacky přes otvor a dva šikmé vzpěrné, vysoký asi 1,6 m.
@@ -212,13 +232,26 @@ namespace Oohra.Client
                 case BuildKind.Trap: return "Past";
                 case BuildKind.Stockpile: return "Zásoby kmene";
                 case BuildKind.Barricade: return "Zátaras";
+                case BuildKind.Post: return "Sloupek";
+                case BuildKind.Floor: return "Podlaha";
+                case BuildKind.Roof: return "Střecha";
                 case BuildKind.Decoration: return "Dekorace";
                 default: return "Zeď";
             }
         }
 
+        /// <summary>Střechy, které praskají (třesou se, za chvíli spadnou).</summary>
+        private readonly HashSet<int> _cracking = new HashSet<int>();
+
+        /// <summary>Kolik střech teď praská (pro testy).</summary>
+        public int CrackingCount
+        {
+            get { return _cracking.Count; }
+        }
+
         private void Update()
         {
+            Shake();
             if (_connection == null || ReferenceEquals(_connection.Structures, _shown))
             {
                 return;
@@ -234,6 +267,16 @@ namespace Oohra.Client
                 {
                     // Do pasti se něco chytilo (nebo úlovek někdo vzal): model se postaví znovu.
                     RemoveView(structure.Id);
+                }
+
+                if (structure.Cracking)
+                {
+                    _cracking.Add(structure.Id);
+                }
+                else if (_cracking.Remove(structure.Id) && _views.ContainsKey(structure.Id))
+                {
+                    // Střecha zase drží: vrátit ji na místo.
+                    _views[structure.Id].transform.localRotation = Quaternion.Euler(0f, structure.Angle * Mathf.Rad2Deg, 0f);
                 }
 
                 if (!_views.ContainsKey(structure.Id))
@@ -255,6 +298,25 @@ namespace Oohra.Client
             foreach (var id in removed)
             {
                 RemoveView(id);
+            }
+        }
+
+        /// <summary>Praskající střecha se třese a kolébá.</summary>
+        private void Shake()
+        {
+            if (_shown == null)
+            {
+                return;
+            }
+
+            foreach (var structure in _shown)
+            {
+                GameObject view;
+                if (structure.Cracking && _views.TryGetValue(structure.Id, out view))
+                {
+                    var wobble = Mathf.Sin(Time.time * 37f + structure.Id) * 1.2f;
+                    view.transform.localRotation = Quaternion.Euler(wobble, structure.Angle * Mathf.Rad2Deg, wobble * 0.5f);
+                }
             }
         }
 

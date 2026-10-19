@@ -266,6 +266,9 @@ namespace Oohra.Core.World
 
         /// <summary>Zátaras patří k vchodu do jeskyně, tady žádný není (nebo už zatarasený je).</summary>
         NoCaveEntrance,
+
+        /// <summary>Střecha by neměla o co se opřít (potřebuje zdi, sloupky nebo sousední střechu).</summary>
+        NoSupport,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>

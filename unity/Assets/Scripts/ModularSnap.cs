@@ -45,6 +45,75 @@ namespace Oohra.Client
         /// turnDegrees: pootočení z Q a E (bere se jen část do 90°, hrubý směr určí kurzor),
         /// canFit: smí se dorovnávat (jen zeď, zeď s otvorem má pevnou délku).
         /// </summary>
+        /// <summary>Jak daleko od kurzoru se hledá sousední střecha nebo podlaha (metry).</summary>
+        public const float PanelSearch = 3.5f;
+
+        /// <summary>
+        /// Střecha nebo podlaha (čtverec size): přichytí se těsně vedle stejné stavby blízko kurzoru (jedna ze čtyř
+        /// stran, stejný úhel). Když žádná není, natočí se podle nejbližší zdi (střed zůstane u kurzoru).
+        /// Vrací false, když není k čemu se přichytit.
+        /// </summary>
+        public static bool Panel(IList<StructureView> structures, Vector2 pointer, BuildKind kind, float size, out SnapResult result)
+        {
+            result = new SnapResult { Center = pointer, Length = size };
+            var best = float.MaxValue;
+            foreach (var s in structures)
+            {
+                var center = new Vector2(s.X, s.Y);
+                if (s.Kind != kind || Vector2.Distance(center, pointer) > PanelSearch)
+                {
+                    continue;
+                }
+
+                var along = new Vector2(Mathf.Cos(s.Angle), Mathf.Sin(s.Angle)) * size;
+                var across = new Vector2(-along.y, along.x);
+                foreach (var spot in new[] { center + along, center - along, center + across, center - across })
+                {
+                    var distance = Vector2.Distance(spot, pointer);
+                    if (distance < best && !Occupied(structures, kind, spot, size))
+                    {
+                        best = distance;
+                        result.Center = spot;
+                        result.AngleDegrees = s.Angle * Mathf.Rad2Deg;
+                    }
+                }
+            }
+
+            if (best < float.MaxValue)
+            {
+                return true;
+            }
+
+            // První střecha: natočit podle nejbližší zdi.
+            var wallDistance = PanelSearch;
+            var found = false;
+            foreach (var s in structures)
+            {
+                var distance = Vector2.Distance(new Vector2(s.X, s.Y), pointer);
+                if ((s.Kind == BuildKind.StickWall || s.Kind == BuildKind.DoorFrame) && distance < wallDistance)
+                {
+                    wallDistance = distance;
+                    result.AngleDegrees = s.Angle * Mathf.Rad2Deg;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        private static bool Occupied(IList<StructureView> structures, BuildKind kind, Vector2 spot, float size)
+        {
+            foreach (var s in structures)
+            {
+                if (s.Kind == kind && Vector2.Distance(new Vector2(s.X, s.Y), spot) < size * 0.95f)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static bool Find(IList<StructureView> structures, Vector2 pointer, float length, float turnDegrees, bool canFit, out SnapResult result)
         {
             result = default(SnapResult);

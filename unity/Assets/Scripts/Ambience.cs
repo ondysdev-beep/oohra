@@ -186,6 +186,18 @@ namespace Oohra.Client
                 return;
             }
 
+            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.RoofCracking)
+            {
+                Play(Creak(), _players.Self.position + Vector3.up * 2f, 0.9f);
+                return;
+            }
+
+            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.HitByRoof)
+            {
+                Play(Crash(), _players.Self.position, 1f);
+                return;
+            }
+
             if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.SnakeWarning)
             {
                 Play(Hiss(), _players.Self.position, 0.7f);
