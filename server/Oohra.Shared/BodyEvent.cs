@@ -91,6 +91,30 @@ public enum BodyEvent
 
     /// <summary>Zasáhl ho padající strom.</summary>
     HitByTree,
+
+    /// <summary>Štípou komáři (hláška nejvýš jednou za čas, zvuk při každém kousnutí).</summary>
+    MosquitoBite,
+
+    /// <summary>Přisála se pijavice.</summary>
+    Leech,
+
+    /// <summary>Sundal pijavice.</summary>
+    LeechesRemoved,
+
+    /// <summary>Natřel se bahnem nebo popelem (komáři chvíli neštípou).</summary>
+    Smeared,
+
+    /// <summary>Třese jím zimnice (začala nemoc, jméno hráč nevidí).</summary>
+    Chills,
+
+    /// <summary>Bolí ho břicho (začala nemoc, jméno hráč nevidí).</summary>
+    BellyAche,
+
+    /// <summary>Po jídle se mu ulevilo (lék zabírá).</summary>
+    Relief,
+
+    /// <summary>Nemoc odezněla.</summary>
+    Recovered,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -144,6 +168,18 @@ public enum Symptom
     Unconscious,
     Bleeding,
     Limping,
+
+    /// <summary>Zimnice: horečka chodí ve vlnách (nemoc od komárů).</summary>
+    Chills,
+
+    /// <summary>Bolest břicha (nemoc ze špatné vody).</summary>
+    BellyAche,
+
+    /// <summary>Na noze visí pijavice.</summary>
+    Leeches,
+
+    /// <summary>Natřený bahnem nebo popelem (komáři neštípou).</summary>
+    Smeared,
 }
 
 /// <summary>

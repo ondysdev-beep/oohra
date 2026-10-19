@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Oohra.Core.Characters;
 using Oohra.Core.World;
 using Oohra.Protocol;
 using UnityEngine;
@@ -24,6 +25,7 @@ namespace Oohra.Client
         private static AudioClip _howl;
         private static AudioClip _rain;
         private static AudioClip _chop;
+        private static AudioClip _buzz;
         private static AudioClip _creak;
         private static AudioClip _crash;
         private static AudioClip _thunder;
@@ -165,7 +167,18 @@ namespace Oohra.Client
         /// <summary>Vlastní seknutí sekerou je slyšet (do stromu i do dřeva na zemi).</summary>
         private void OnEvent(GameEvent e)
         {
-            if (e.Kind != EventKind.Wood || _players == null || _players.Self == null)
+            if (_players == null || _players.Self == null)
+            {
+                return;
+            }
+
+            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.MosquitoBite)
+            {
+                Play(Buzz(), _players.Self.position + Vector3.up, 0.5f);
+                return;
+            }
+
+            if (e.Kind != EventKind.Wood)
             {
                 return;
             }
@@ -260,6 +273,23 @@ namespace Oohra.Client
             }
 
             return _howl = Clip("Vlk", samples);
+        }
+
+        /// <summary>Komár u ucha: tenké bzučení, které se blíží a vzdaluje.</summary>
+        public static AudioClip Buzz()
+        {
+            if (_buzz != null) return _buzz;
+            var samples = new float[(int)(1.6f * SampleRate)];
+            var phase = 0f;
+            for (var n = 0; n < samples.Length; n++)
+            {
+                var u = (float)n / samples.Length;
+                phase += 2 * Mathf.PI * (560f + 40f * Mathf.Sin(u * 23f)) / SampleRate;
+                var near = Mathf.Sin(u * Mathf.PI) * (0.6f + 0.4f * Mathf.Sin(u * 9f));
+                samples[n] = (Mathf.Sin(phase) + 0.3f * Mathf.Sin(2 * phase)) * 0.18f * near;
+            }
+
+            return _buzz = Clip("Komár", samples);
         }
 
         /// <summary>Seknutí sekerou: tupý úder do dřeva s krátkým dozvukem.</summary>

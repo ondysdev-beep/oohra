@@ -334,7 +334,10 @@ namespace Oohra.Client
             }
 
             var symptomText = self.Symptoms.Length == 0 ? string.Empty : "PŘÍZNAKY  " + string.Join(" · ", self.Symptoms.Select(Texts.For));
-            GUI.Label(new Rect(x + 10, y + 36, panelWidth - 20, 22), symptomText, _warn);
+            var leeches = self.Symptoms.Contains(Symptom.Leeches);
+            GUI.Label(new Rect(x + 10, y + 36, panelWidth - (leeches ? 170 : 20), 22), symptomText, _warn);
+            // Pijavice jdou sundat u ohně, nebo popelem z batohu.
+            if (leeches && GUI.Button(new Rect(x + panelWidth - 160, y + 34, 150, 22), "Sundat pijavice")) _session.Connection.RemoveLeeches();
             return y - 6;
         }
 
@@ -383,6 +386,7 @@ namespace Oohra.Client
                     GUI.Label(titleRect, Texts.WaterName(tile).ToUpper(), _title);
                     if (Button(ref buttonRect, "Napít se")) _session.Drink();
                     if (tile != TileType.Bog && (_session.Count(ItemKind.Spear) > 0 || _session.Count(ItemKind.Hook) > 0) && Button(ref buttonRect, "Rybařit")) _session.Fish();
+                    if (tile != TileType.Sea && Button(ref buttonRect, "Natřít se bahnem")) _session.Connection.Smear(false);
                     if (_session.Knows("tanHide") && _session.Count(ItemKind.Hide) > 0 && _session.Count(ItemKind.Ash) > 0 && Button(ref buttonRect, "Vyčinit kůži")) _session.Craft("tanHide");
                     break;
                 case TargetKind.Tree:
@@ -706,6 +710,7 @@ namespace Oohra.Client
                 if (stack.Kind == ItemKind.Wood && _session.Count(ItemKind.Axe) > 0 && Button(ref buttons, "Naštípat")) connection.SplitWood(i);
                 if ((stack.Kind == ItemKind.SmallBag || stack.Kind == ItemKind.LargeBag) && Button(ref buttons, "Nasadit")) connection.WearBag(i);
                 if (stack.Kind == ItemKind.Journal && Button(ref buttons, "Otevřít")) _session.OpenJournal(i);
+                if (stack.Kind == ItemKind.Ash && Button(ref buttons, "Natřít se")) connection.Smear(true);
                 buttons.x = x + 300 + 3 * (buttons.width + 8);
                 // Klad se nezahazuje, ale pokládá na zem.
                 if (Button(ref buttons, stack.Kind == ItemKind.LogPiece ? "Položit" : "Zahodit")) connection.Drop(i);

@@ -27,6 +27,7 @@ namespace Oohra.Client
             { "fire", new[] { "První oheň", "Teplo a světlo. Noc je o něco méně strašná." } },
             { "torch", new[] { "První pochodeň", "Světlo, které neseš s sebou. Vlci se drží dál." } },
             { "craft", new[] { "Nový recept", "Co umíš vyrobit, si pamatuješ, dokud žiješ. Najdeš to v batohu (B)." } },
+            { "recovered", new[] { "Uzdravil ses", "Pamatuj si, co ti pomohlo. Nakresli si to do deníku." } },
             { "bag", new[] { "První batoh", "Teď uneseš víc než dvě věci." } },
             { "journal", new[] { "První deník", "Co si nakreslíš, přežije i tvou smrt. Kdo deník najde u těla, přečte ho." } },
             { "taught", new[] { "Někdo tě něco naučil", "Co umíš, můžeš ukázat dalším (klikni na hráče)." } },
@@ -58,6 +59,9 @@ namespace Oohra.Client
             { "word", "Někdo poblíž mluví. Slova se objevují v zápisníku (J). Co znamenají, musíš odhadnout sám." },
             { "stranger", "Cizinci mluví svým jazykem. Sleduj, co dělají, když něco říkají. Zkus jim ukázat rostlinu." },
             { "hands", "Máš jen dvě ruce: uneseš dvě hromádky věcí. Batoh si vyrobíš. V batohu (B) zaškrtni věci a zkus je spojit." },
+            { "mosquito", "Komáři mohou přenášet nemoc. Drž se u ohně (kouř), nebo se natři bahnem či popelem." },
+            { "leech", "Pijavice se chytají v bažině. Sundáš je u ohně nebo popelem z ohniště." },
+            { "disease", "Je ti zle. Nemoc chce svůj lék: zkoušej rostliny a zapisuj si, co pomohlo. Pij hodně vody." },
             { "fog", "Padá mlha. Ztratit se je snadné. Drž se míst, která znáš." },
             { "rain", "Prší. Mokrý promrzneš, oheň hoří rychleji. Schovej se do úkrytu ze zdí." },
             { "storm", "Bouřka. Déšť tě promáčí do kostí a pochodeň i oheň hoří rychle. Najdi úkryt." },
@@ -179,6 +183,18 @@ namespace Oohra.Client
                     break;
                 case EventKind.Body when (BodyEvent)e.Code is BodyEvent.Ate:
                     Milestone("food");
+                    break;
+                case EventKind.Body when (BodyEvent)e.Code is BodyEvent.MosquitoBite:
+                    Tip("mosquito");
+                    break;
+                case EventKind.Body when (BodyEvent)e.Code is BodyEvent.Leech:
+                    Tip("leech");
+                    break;
+                case EventKind.Body when (BodyEvent)e.Code is BodyEvent.Chills or BodyEvent.BellyAche:
+                    Tip("disease");
+                    break;
+                case EventKind.Body when (BodyEvent)e.Code is BodyEvent.Recovered:
+                    Milestone("recovered");
                     break;
                 case EventKind.Body when (BodyEvent)e.Code is BodyEvent.Vomited or BodyEvent.Diarrhea or BodyEvent.Tremor or BodyEvent.Fainted:
                     Milestone("poison");

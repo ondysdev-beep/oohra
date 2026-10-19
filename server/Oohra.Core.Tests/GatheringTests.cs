@@ -176,10 +176,12 @@ public class GatheringTests
             Assert.Equal(DrinkResult.Muddy, Drinking.Drink(c, _island, x, y, x + 0.5, y + 0.5, clock));
         }
 
-        Assert.Contains(c.Scheduled, e => e.Type == EffectType.Sickness);
-        Physiology.Run(c, clock, 501);
-        Assert.Contains(c.TakeMessages(), m => m.Event == BodyEvent.FeltSick);
-        Assert.True(c.Infection > 0);
+        // Bahenní voda dá úplavici se zpožděním (návrh 0.8, kap. 5): bolest břicha a průjem.
+        Assert.Single(c.Scheduled, e => e.Type == EffectType.Dysentery);
+        Physiology.Run(c, clock, 560);
+        Assert.Contains(c.TakeMessages(), m => m.Event == BodyEvent.BellyAche);
+        Assert.True(c.HasDisease(DiseaseKind.Dysentery));
+        Assert.Contains(Symptom.BellyAche, c.Symptoms());
     }
 
     [Fact]

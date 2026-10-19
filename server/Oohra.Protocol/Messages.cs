@@ -412,6 +412,24 @@ public static class Messages
         return new JournalView(stack, pages);
     }
 
+    /// <summary>Natřít se bahnem (u bažiny nebo vody) nebo popelem z batohu, ať komáři neštípou.</summary>
+    public static void WriteSmear(NetDataWriter w, bool ash)
+    {
+        w.Put((byte)MessageType.Smear);
+        w.Put(ash);
+    }
+
+    public static bool ReadSmear(NetDataReader r)
+    {
+        return r.GetBool();
+    }
+
+    /// <summary>Sundat pijavice (u ohně nebo popelem).</summary>
+    public static void WriteRemoveLeeches(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.RemoveLeeches);
+    }
+
     /// <summary>Sundat batoh ze zad do rukou.</summary>
     public static void WriteTakeOffBag(NetDataWriter w)
     {

@@ -7,6 +7,7 @@
 //   cook            násobek složení po upečení
 //   unripeIrritant  dráždivost přidaná nezralému plodu (když chybí, platí 0,4)
 //   seasonal        násobek složení části podle ročního období (jaro, léto, podzim, zima)
+//   cures           lék na nemoc v části rostliny (návrh 0.8, kap. 5, hazards.json): každá nemoc má svůj lék
 [
   {
     // 0: bezpečný sladký plod
@@ -17,7 +18,8 @@
       "root": [0.08, 0, 0, 0, 0, 0],
       "fruit": [0.75, 0, 0, 0, 0, 0]
     },
-    "cook": [1.05, 0.3, 0.4, 1, 0.6, 0.6]
+    "cook": [1.05, 0.3, 0.4, 1, 0.6, 0.6],
+    "cures": { "leaf": { "Dysentery": 0.3 } }
   },
   {
     // 1: výživný kořen, syrový jedovatý, upečením toxin skoro zmizí
@@ -36,7 +38,8 @@
       "root": [0.1, 0.15, 0, 0, 0, 0.8],
       "fruit": [0.18, 0.15, 0, 0, 0, 0]
     },
-    "cook": [1, 0.3, 1, 1, 1, 0.7]
+    "cook": [1, 0.3, 1, 1, 1, 0.7],
+    "cures": { "leaf": { "MarshFever": 0.8 } }
   },
   {
     // 3: list jedlý na jaře, s rokem čím dál jedovatější
@@ -77,7 +80,8 @@
       "root": [0.25, 0, 0, 0, 0, 0],
       "fruit": [0.3, 0, 0, 0, 0, 0]
     },
-    "cook": [1.2, 1, 1, 1, 1, 1]
+    "cook": [1.2, 1, 1, 1, 1, 1],
+    "cures": { "root": { "MarshFever": 0.3 } }
   },
   {
     // 6: lákavý plod s nervovým jedem
@@ -99,6 +103,7 @@
       "fruit": [0.4, 0.2, 0, 0, 0, 0]
     },
     "cook": [1.15, 0.04, 1, 1, 1, 1],
+    "cures": { "root": { "Dysentery": 0.8 } },
     "seasonal": {
       "part": "root",
       "multipliers": [

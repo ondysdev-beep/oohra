@@ -24,7 +24,9 @@ public static class Physiology
         }
 
         var rules = GameData.Body;
+        c.LastNow = clock.TotalMinutes;
         RunDueEffects(c, clock.TotalMinutes);
+        Diseases.Update(c, clock.TotalMinutes, minutes);
         UpdateWarmth(c, clock, minutes, nearFire, sheltered, weather, rules.Warmth);
         UpdateNeeds(c, minutes, rules.Needs);
         UpdateRecoveryAndFever(c, clock.TotalMinutes, minutes, rules);
@@ -313,6 +315,12 @@ public static class Physiology
                 case EffectType.WoundInfection:
                     c.Infection = Math.Max(c.Infection, effect.Strength);
                     c.Report(now, BodyEvent.WoundInflamed);
+                    break;
+                case EffectType.MarshFever:
+                    Diseases.Start(c, DiseaseKind.MarshFever, effect.Strength, now);
+                    break;
+                case EffectType.Dysentery:
+                    Diseases.Start(c, DiseaseKind.Dysentery, effect.Strength, now);
                     break;
             }
         }

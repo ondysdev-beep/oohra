@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Oohra.Core.Characters;
 using Oohra.Core.Plants;
 using Oohra.Core.World;
 
@@ -23,6 +24,17 @@ public sealed class Archetype
     public double? UnripeIrritant { get; init; }
 
     public SeasonalMultipliers? Seasonal { get; init; }
+
+    /// <summary>Lék na nemoc v částech rostliny (část → nemoc → síla léku). Každá nemoc má svůj lék.</summary>
+    public Dictionary<PlantPart, Dictionary<DiseaseKind, double>>? Cures { get; init; }
+
+    private static readonly Dictionary<DiseaseKind, double> _noCures = [];
+
+    /// <summary>Léky v části rostliny (prázdné, když žádné nemá).</summary>
+    public IReadOnlyDictionary<DiseaseKind, double> CuresFor(PlantPart part)
+    {
+        return Cures is not null && Cures.TryGetValue(part, out var cures) ? cures : _noCures;
+    }
 
     [JsonIgnore]
     public bool HasFruit => Parts.Fruit is not null;

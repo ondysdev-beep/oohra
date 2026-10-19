@@ -20,6 +20,12 @@ public enum EffectType
 
     /// <summary>Zánět rány po zranění od zvířete.</summary>
     WoundInfection,
+
+    /// <summary>Začátek bahenní zimnice (po kousnutí komára).</summary>
+    MarshFever,
+
+    /// <summary>Začátek úplavice (po bahenní vodě).</summary>
+    Dysentery,
 }
 
 /// <summary>Účinek, který nastane v čase At (herní minuty). Strength je síla účinku.</summary>
@@ -89,6 +95,37 @@ public sealed class Character
     public bool TorchWarned { get; set; }
 
     private readonly HashSet<string> _recipes = [];
+    private readonly List<Disease> _diseases = [];
+
+    /// <summary>SKRYTÉ: nemoci, které postava má (hráč vidí jen projevy). Smrtí zmizí s postavou.</summary>
+    public IReadOnlyList<Disease> Diseases => _diseases;
+
+    public bool HasDisease(DiseaseKind kind)
+    {
+        return _diseases.Any(d => d.Kind == kind);
+    }
+
+    public void SetDisease(Disease disease)
+    {
+        RemoveDisease(disease.Kind);
+        _diseases.Add(disease);
+    }
+
+    public void RemoveDisease(DiseaseKind kind)
+    {
+        _diseases.RemoveAll(d => d.Kind == kind);
+    }
+
+    /// <summary>Kolik pijavic na postavě visí.</summary>
+    public int Leeches { get; set; }
+
+    /// <summary>Do kdy je natřená bahnem nebo popelem (komáři neštípou), herní minuty.</summary>
+    public double SmearedUntil { get; set; } = double.NegativeInfinity;
+
+    public double LastMosquitoWarning { get; set; } = double.NegativeInfinity;
+
+    /// <summary>Herní čas posledního výpočtu těla (pro příznaky, které závisí na čase). Neukládá se.</summary>
+    public double LastNow { get; set; }
 
     /// <summary>Recepty, které postava umí (zkoušením nebo od narození). Smrtí se ztratí.</summary>
     public IReadOnlyCollection<string> Recipes => _recipes;
@@ -397,6 +434,26 @@ public sealed class Character
             list.Add(Symptom.Limping);
         }
 
+        if (HasDisease(DiseaseKind.MarshFever))
+        {
+            list.Add(Symptom.Chills);
+        }
+
+        if (HasDisease(DiseaseKind.Dysentery))
+        {
+            list.Add(Symptom.BellyAche);
+        }
+
+        if (Leeches > 0)
+        {
+            list.Add(Symptom.Leeches);
+        }
+
+        if (SmearedUntil > LastNow)
+        {
+            list.Add(Symptom.Smeared);
+        }
+
         return list;
     }
 
@@ -419,6 +476,10 @@ public sealed class Character
             TorchMinutes = TorchMinutes,
             TorchWarned = TorchWarned,
             Recipes = [.. _recipes],
+            Diseases = [.. _diseases],
+            Leeches = Leeches,
+            SmearedUntil = SmearedUntil,
+            LastMosquitoWarning = LastMosquitoWarning,
             Toxin = Toxin,
             Fever = Fever,
             Infection = Infection,
@@ -487,6 +548,10 @@ public sealed class Character
             c._blame[cause] = amount;
         }
 
+        c._diseases.AddRange(save.Diseases);
+        c.Leeches = save.Leeches;
+        c.SmearedUntil = save.SmearedUntil;
+        c.LastMosquitoWarning = save.LastMosquitoWarning;
         c._recipes.Clear();
         foreach (var recipe in save.Recipes)
         {

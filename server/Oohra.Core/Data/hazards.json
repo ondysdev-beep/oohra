@@ -1,0 +1,42 @@
+// Nebezpečné okolí a nemoci (návrh 0.8, kap. 5). Hra nikde nepíše jméno nemoci, hráč vidí jen projevy.
+// Časy v herních minutách (den má 1440).
+{
+  // Bahenní zimnice (od komárů): po inkubaci přichází horečka ve vlnách (cycleMinutes, horečka feverShare
+  // každého cyklu, až do severity × feverFactor) a únava. Sama odezní o healPerDay za den, lék ze správné rostliny rychleji.
+  "marshFever": {
+    "incubationMin": 1440, "incubationRange": 1440,
+    "strengthMin": 50, "strengthRange": 30,
+    "cycleMinutes": 480, "feverShare": 0.35, "feverFactor": 0.9,
+    "energyDrainPerMinute": 0.03, "healPerDay": 12
+  },
+  // Úplavice (z bahenní vody): průjem, dokud je nemoc silnější než diarrheaAbove, k tomu žízeň navíc.
+  "dysentery": {
+    "incubationMin": 180, "incubationRange": 360,
+    "strengthMin": 40, "strengthRange": 30,
+    "diarrheaAbove": 15, "hydrationPerMinute": 0.02, "healPerDay": 20
+  },
+  // Lék: kolik síly nemoci ubere jedno snězení části s lékem 1,0 (ochutnání méně podle dávky). Upečené léčí slaběji.
+  "cureFactor": 60,
+  "bakedCureMultiplier": 0.7,
+
+  // Komáři: v bažině a do nearWater metrů od sladké nebo bahenní vody. Síla podle ročního období (jaro, léto,
+  // podzim, zima) a hodiny (za svítání a soumraku plně, jinak dayFactor). Při plné síle kousne jednou za biteEveryMinutes.
+  // Kousnutí přenese zimnici s šancí infectChance. Neštípou u ohně (kouř do smokeRange metrů) a natřené bahnem nebo popelem.
+  "mosquitoes": {
+    "seasons": [ 0.5, 1, 0.6, 0 ],
+    "dawn": [ 4, 8 ],
+    "dusk": [ 18, 23 ],
+    "dayFactor": 0.25,
+    "nearWater": 4,
+    "biteEveryMinutes": 20,
+    "infectChance": 0.06,
+    "smokeRange": 4,
+    "warnEveryMinutes": 45
+  },
+  // Natřít se bahnem (u bažiny nebo vody) nebo popelem z batohu: tolik minut komáři neštípou.
+  "smearMinutes": 240,
+
+  // Pijavice: při chůzi bažinou se s šancí chancePerMinute přisaje pijavice (nejvýš max). Každá ubírá zdraví.
+  // Sundají se u ohně nebo popelem.
+  "leeches": { "chancePerMinute": 0.04, "max": 4, "healthPerLeechPerMinute": 0.02 }
+}
