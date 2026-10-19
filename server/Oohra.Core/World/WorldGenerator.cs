@@ -75,6 +75,7 @@ public sealed class WorldGenerator
         PaintTiles();
         DigPonds();
         FillUnreachablePockets();
+        MarkShallowsAndMire();
 
         var shore = MarkShore();
         var camps = MakeCamps();
@@ -82,6 +83,38 @@ public sealed class WorldGenerator
         var species = SpeciesGenerator.Build(_seed, GameData.Archetypes.Count, GameData.Settings.MonthsPerYear);
         var (trees, plants) = PlaceTreesAndPlants(camps, ruins, species.Secrets);
         return new Island(_seed, _width, _height, _tiles, shore, camps, ruins, trees, plants, species.Species, species.Secrets, _regions);
+    }
+
+    /// <summary>
+    /// Zóny u vody: moře u břehu je mělčina (Shallows), okraj jezera mělká sladká voda (Ford, brodí se a pije),
+    /// nitro bažiny dál od okraje je močál (Mire). Oblasti zůstávají (moře, jezero, bažina).
+    /// </summary>
+    private void MarkShallowsAndMire()
+    {
+        var rules = _rules.Shallows;
+        var land = DistanceFrom(i => _tiles[i] is not (TileType.Sea or TileType.Pond or TileType.Ford), i => true);
+        var bogEdge = DistanceFrom(i => _tiles[i] != TileType.Bog, i => true);
+        for (var i = 0; i < _tiles.Length; i++)
+        {
+            if (_tiles[i] == TileType.Sea && land[i] <= rules.SeaWidth && !OnMapEdge(i))
+            {
+                _tiles[i] = TileType.Shallows;
+            }
+            else if (_tiles[i] == TileType.Pond && _regions[i] == RegionKind.Lake && land[i] <= rules.LakeWidth)
+            {
+                _tiles[i] = TileType.Ford;
+            }
+            else if (_tiles[i] == TileType.Bog && bogEdge[i] > rules.MireDepth)
+            {
+                _tiles[i] = TileType.Mire;
+            }
+        }
+    }
+
+    private bool OnMapEdge(int i)
+    {
+        var (x, y) = (i % _width, i / _width);
+        return x == 0 || y == 0 || x == _width - 1 || y == _height - 1;
     }
 
     // ---------- tvar ostrova ----------
@@ -470,7 +503,7 @@ public sealed class WorldGenerator
             var x = 5 + rng.NextInt(_width - 10);
             var y = 5 + rng.NextInt(_height - 10);
             if (!AreaIsDryLand(x, y, 1)
-                || _tiles[y * _width + x] == TileType.Bog
+                || _tiles[y * _width + x] is TileType.Bog or TileType.Mire
                 || camps.Any(c => Distance(x, y, c.X, c.Y) < rules.CampDistance)
                 || spots.Any(s => Distance(x, y, s.X, s.Y) < rules.MinDistance))
             {
@@ -658,7 +691,7 @@ public sealed class WorldGenerator
             for (var xx = x - radius; xx <= x + radius; xx++)
             {
                 if (!InBounds(xx, yy) || _tiles[yy * _width + xx] is TileType.Sea or TileType.Pond or TileType.Ford
-                    or TileType.Rock or TileType.LayeredRock or TileType.Bog)
+                    or TileType.Rock or TileType.LayeredRock or TileType.Bog or TileType.Mire or TileType.Shallows)
                 {
                     return false;
                 }

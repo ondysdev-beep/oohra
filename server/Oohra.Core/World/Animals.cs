@@ -343,7 +343,7 @@ public sealed partial class Animals
             return HuntResult.NeedSpear;
         }
 
-        if (!island.InBounds(tileX, tileY) || island.TileAt(tileX, tileY) is not (TileType.Pond or TileType.Sea))
+        if (!island.InBounds(tileX, tileY) || island.TileAt(tileX, tileY) is not (TileType.Pond or TileType.Sea or TileType.Shallows))
         {
             return HuntResult.NotWater;
         }

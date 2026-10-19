@@ -192,7 +192,7 @@ namespace Oohra.Client
             {
                 for (var tx = cx - range; tx <= cx + range; tx++)
                 {
-                    if (tx < 0 || ty < 0 || tx >= world.Width || ty >= world.Height || world.TileAt(tx, ty) != TileType.Sea)
+                    if (tx < 0 || ty < 0 || tx >= world.Width || ty >= world.Height || (world.TileAt(tx, ty) != TileType.Sea && world.TileAt(tx, ty) != TileType.Shallows))
                     {
                         continue;
                     }
@@ -251,7 +251,7 @@ namespace Oohra.Client
             {
                 clips = sounds.StepsWood;
             }
-            else if (tile == TileType.Bog || tile == TileType.Ford || System.Array.IndexOf(flooded, ty * world.Width + tx) >= 0)
+            else if (tile == TileType.Bog || tile == TileType.Ford || tile == TileType.Mire || tile == TileType.Shallows || System.Array.IndexOf(flooded, ty * world.Width + tx) >= 0)
             {
                 clips = sounds.StepsMud;
             }

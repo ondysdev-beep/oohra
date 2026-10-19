@@ -20,6 +20,7 @@ public sealed record WorldGenRules(
     PondRules Ponds,
     CampRules Camps,
     RuinRules Ruins,
+    ShallowRules Shallows,
     Dictionary<TileType, double> TreeChance,
     TreeClumpRules TreeClumps,
     Dictionary<TileType, double> PlantChance);
@@ -43,6 +44,9 @@ public sealed record PondRules(int Count, double MinRadius, double MaxRadius);
 public sealed record CampRules(int Count, int MinDistance, int WaterWithin);
 
 public sealed record RuinRules(int Count, int MinDistance, int CampDistance);
+
+/// <summary>Mělčiny u moře a jezera (šířka v dlaždicích) a jak hluboko v bažině začíná močál.</summary>
+public sealed record ShallowRules(int SeaWidth, int LakeWidth, int MireDepth);
 
 /// <summary>Shluky stromů a mýtiny: šum o velikosti skvrn Scale metrů násobí šanci na strom (Min až Max).</summary>
 public sealed record TreeClumpRules(double Scale, double Min, double Max);

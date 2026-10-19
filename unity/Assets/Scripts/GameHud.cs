@@ -398,8 +398,9 @@ namespace Oohra.Client
                     var tile = _session.Connection.World.TileAt(target.TileX, target.TileY);
                     GUI.Label(titleRect, Texts.WaterName(tile).ToUpper(), _title);
                     if (Button(ref buttonRect, "Napít se")) _session.Drink();
-                    if (tile != TileType.Bog && (_session.Count(ItemKind.Spear) > 0 || _session.Count(ItemKind.Hook) > 0) && Button(ref buttonRect, "Rybařit")) _session.Fish();
-                    if (tile != TileType.Sea && Button(ref buttonRect, "Natřít se bahnem")) _session.Connection.Smear(false);
+                    var fishable = tile == TileType.Pond || tile == TileType.Sea || tile == TileType.Shallows;
+                    if (fishable && (_session.Count(ItemKind.Spear) > 0 || _session.Count(ItemKind.Hook) > 0) && Button(ref buttonRect, "Rybařit")) _session.Fish();
+                    if (tile != TileType.Sea && tile != TileType.Shallows && Button(ref buttonRect, "Natřít se bahnem")) _session.Connection.Smear(false);
                     if (_session.Knows("tanHide") && _session.Count(ItemKind.Hide) > 0 && _session.Count(ItemKind.Ash) > 0 && Button(ref buttonRect, "Vyčinit kůži")) _session.Craft("tanHide");
                     break;
                 case TargetKind.Tree:

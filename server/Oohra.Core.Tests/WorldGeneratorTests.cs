@@ -69,11 +69,12 @@ public class WorldGeneratorTests
         var river = Indices(world, i => world.Regions[i] == RegionKind.River).ToList();
 
         Assert.NotEmpty(river);
-        Assert.Contains(river, i => Neighbours(world, i).Any(n => world.Tiles[n] == TileType.Sea));
+        Assert.Contains(river, i => Neighbours(world, i).Any(n => world.Regions[n] == RegionKind.Sea));
         Assert.Contains(river, i => Neighbours(world, i).Any(n => world.Regions[n] == RegionKind.Lake));
         Assert.Contains(river, i => Neighbours(world, i).Any(n => world.Regions[n] == RegionKind.Highland));
         Assert.True(world.Tiles.Count(t => t == TileType.Ford) > 10);
-        Assert.All(Indices(world, i => world.Tiles[i] == TileType.Ford), i => Assert.Equal(RegionKind.River, world.Regions[i]));
+        // Brod je na řece, mělká sladká voda i na okraji jezera.
+        Assert.All(Indices(world, i => world.Tiles[i] == TileType.Ford), i => Assert.Contains(world.Regions[i], new[] { RegionKind.River, RegionKind.Lake }));
     }
 
     [Theory]
@@ -85,12 +86,14 @@ public class WorldGeneratorTests
         {
             var (tile, region) = (world.Tiles[i], world.Regions[i]);
             if (tile is TileType.Rock or TileType.LayeredRock or TileType.Highland) Assert.Equal(RegionKind.Highland, region);
-            if (tile == TileType.Bog) Assert.Equal(RegionKind.Marsh, region);
+            if (tile is TileType.Bog or TileType.Mire) Assert.Equal(RegionKind.Marsh, region);
             if (tile == TileType.Sand) Assert.Equal(RegionKind.Coast, region);
-            if (region == RegionKind.Sea) Assert.Equal(TileType.Sea, tile);
+            if (region == RegionKind.Sea) Assert.Contains(tile, new[] { TileType.Sea, TileType.Shallows });
         }
 
         Assert.True(world.Tiles.Count(t => t == TileType.LayeredRock) > 100, "Vrstvená skála (pazourek) chybí.");
+        Assert.True(world.Tiles.Count(t => t == TileType.Mire) > 50, "V bažině chybí močál.");
+        Assert.True(world.Tiles.Count(t => t == TileType.Shallows) > 500, "U moře chybí mělčina.");
         Assert.True(Indices(world, i => world.Tiles[i] == TileType.Grass && world.Regions[i] == RegionKind.Forest).Count() > 500, "V lese chybí světliny.");
     }
 

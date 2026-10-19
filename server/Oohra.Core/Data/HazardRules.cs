@@ -9,6 +9,7 @@ public sealed record HazardRules(
     MosquitoRules Mosquitoes,
     double SmearMinutes,
     LeechRules Leeches,
+    WadingRules Wading,
     TickFeverRules TickFever,
     SnakeVenomRules SnakeVenom,
     TickRules Ticks,
@@ -26,7 +27,10 @@ public sealed record MosquitoRules(
     double[] Seasons, double[] Dawn, double[] Dusk, double DayFactor, double NearWater,
     double BiteEveryMinutes, double InfectChance, double SmokeRange, double WarnEveryMinutes);
 
-public sealed record LeechRules(double ChancePerMinute, int Max, double HealthPerLeechPerMinute);
+public sealed record LeechRules(double ChancePerMinute, int Max, double HealthPerLeechPerMinute, double MireMultiplier);
+
+/// <summary>Brodění mělčinou: o kolik klesá teplo za herní minutu.</summary>
+public sealed record WadingRules(double WarmthPerMinute);
 
 public sealed record TickFeverRules(
     double IncubationMin, double IncubationRange, double StrengthMin, double StrengthRange,

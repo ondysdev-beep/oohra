@@ -139,6 +139,8 @@ namespace Oohra.Client
                 case TileType.Forest: return Hex("#6f9449");
                 case TileType.Rock: return Hex("#8b8478");
                 case TileType.Bog: return Hex("#5d7048");
+                case TileType.Mire: return Hex("#3c4630");
+                case TileType.Shallows: return Hex("#5c9aa4");
                 case TileType.Pond: return Hex("#3f7f90");
                 case TileType.Highland: return Hex("#7f7a63");
                 case TileType.Ford: return Hex("#4f8f9c");

@@ -82,7 +82,7 @@ public sealed class Tracks
     public static bool Muddy(Island island, double x, double y)
     {
         var (tx, ty) = ((int)Math.Floor(x), (int)Math.Floor(y));
-        return island.InBounds(tx, ty) && (island.TileAt(tx, ty) == TileType.Bog || island.Flood.IsFlooded(tx, ty));
+        return island.InBounds(tx, ty) && (island.TileAt(tx, ty) is TileType.Bog or TileType.Mire || island.Flood.IsFlooded(tx, ty));
     }
 
     public static TrackMaker MakerOf(AnimalKind kind)
