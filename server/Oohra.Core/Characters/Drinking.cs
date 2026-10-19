@@ -51,16 +51,11 @@ public static class Drinking
         var instinct = c.Traits.Generation >= rules.InstinctFromGeneration;
         c.Hydration = Math.Min(100, c.Hydration + (instinct ? rules.MuddyHydrationInstinct : rules.MuddyHydration));
 
+        // Bahenní voda (návrh 0.8, kap. 5): úplavice se zpožděním, léčí ji jen správná rostlina (hazards.json).
         var chance = instinct ? rules.SicknessChanceInstinct : rules.SicknessChance;
         if (c.Rng.NextDouble() < chance)
         {
-            var delay = rules.SicknessDelayMin + c.Rng.NextDouble() * rules.SicknessDelayRange;
-            var strength = rules.SicknessStrengthMin + c.Rng.NextDouble() * rules.SicknessStrengthRange;
-            c.Schedule(now + delay, EffectType.Sickness, strength);
-            if (c.Rng.NextDouble() < rules.DiarrheaChance)
-            {
-                c.Schedule(now + rules.DiarrheaDelayMin + c.Rng.NextDouble() * rules.DiarrheaDelayRange, EffectType.Diarrhea, rules.DiarrheaStrength);
-            }
+            Diseases.Infect(c, DiseaseKind.Dysentery, now);
         }
 
         return instinct ? DrinkResult.MuddySip : DrinkResult.Muddy;

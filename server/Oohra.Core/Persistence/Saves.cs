@@ -41,6 +41,14 @@ public sealed class CharacterSave
 
     public List<string> Recipes { get; init; } = [];
 
+    public List<Disease> Diseases { get; init; } = [];
+
+    public int Leeches { get; init; }
+
+    public double SmearedUntil { get; init; } = double.NegativeInfinity;
+
+    public double LastMosquitoWarning { get; init; } = double.NegativeInfinity;
+
     public double Toxin { get; init; }
 
     public double Fever { get; init; }

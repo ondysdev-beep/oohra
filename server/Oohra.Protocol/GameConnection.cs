@@ -290,6 +290,18 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteDrawJournal(w, stackIndex, page, bits));
     }
 
+    /// <summary>Natřít se bahnem (ash = false, u bažiny nebo vody) nebo popelem z batohu.</summary>
+    public void Smear(bool ash)
+    {
+        Send(w => Messages.WriteSmear(w, ash));
+    }
+
+    /// <summary>Sundat pijavice (u ohně, jinak popelem z batohu).</summary>
+    public void RemoveLeeches()
+    {
+        Send(Messages.WriteRemoveLeeches);
+    }
+
     /// <summary>Nasadit batoh z hromádky na záda.</summary>
     public void WearBag(int stackIndex)
     {

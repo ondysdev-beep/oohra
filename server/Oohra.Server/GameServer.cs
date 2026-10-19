@@ -182,6 +182,7 @@ public sealed partial class GameServer : IDisposable
             {
                 Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y), CurrentWeather);
                 Torch.Burn(player.Character, Clock.TotalMinutes, minutes, CurrentWeather);
+                Hazards.Update(player.Character, Island, Fires, player.X, player.Y, Clock, minutes, _rng);
             }
 
             if (player.Character.IsDead && !player.BodyLeft)

@@ -426,6 +426,10 @@ namespace Oohra.Client
                 case BodyEvent.LearnedInSleep:
                 case BodyEvent.IronStomach:
                 case BodyEvent.SkillLevelUp:
+                case BodyEvent.LeechesRemoved:
+                case BodyEvent.Smeared:
+                case BodyEvent.Relief:
+                case BodyEvent.Recovered:
                     return false;
                 default:
                     return true;
@@ -478,6 +482,14 @@ namespace Oohra.Client
                 case BodyEvent.TorchLow: return "Pochodeň slábne. Brzy dohoří.";
                 case BodyEvent.TorchOut: return "Pochodeň zhasla. Kolem je zase tma.";
                 case BodyEvent.HitByTree: return "Zasáhl tě padající strom!";
+                case BodyEvent.MosquitoBite: return "Štípou tě komáři. Kouř z ohně je odežene, nebo se natři bahnem či popelem.";
+                case BodyEvent.Leech: return "Něco se ti přisálo na nohu. Pijavice.";
+                case BodyEvent.LeechesRemoved: return "Sundal jsi pijavice.";
+                case BodyEvent.Smeared: return "Natřel ses. Komáři si tě teď chvíli nevšimnou.";
+                case BodyEvent.Chills: return "Třese tebou zima, i když je ti horko. Přichází to ve vlnách.";
+                case BodyEvent.BellyAche: return "Bolí tě břicho a pořád musíš odbíhat.";
+                case BodyEvent.Relief: return "Po jídle se ti trochu ulevilo.";
+                case BodyEvent.Recovered: return "Je ti zase dobře. Nemoc odešla.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -562,6 +574,10 @@ namespace Oohra.Client
                 case Symptom.Unconscious: return "bezvědomí";
                 case Symptom.Bleeding: return "krvácení";
                 case Symptom.Limping: return "kulhání";
+                case Symptom.Chills: return "zimnice (horečka chodí ve vlnách)";
+                case Symptom.BellyAche: return "bolí tě břicho";
+                case Symptom.Leeches: return "na noze ti visí pijavice";
+                case Symptom.Smeared: return "natřený (komáři neštípou)";
                 default: return symptom.ToString();
             }
         }

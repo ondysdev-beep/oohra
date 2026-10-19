@@ -15,12 +15,26 @@ public static class Eating
     public static void Eat(Character c, PlantItem item, SpeciesSecret species, GameClock clock, bool spoiled = false)
     {
         Consume(c, CompositionCalculator.Compute(item, species), clock, GameData.Body.Eating.EatDose, taste: false, spoiled);
+        ApplyCures(c, item, species, GameData.Body.Eating.EatDose, clock);
+    }
+
+    /// <summary>Lék na nemoc ve snědené části (skryté složení): nemoc zeslabí, jinou nemoc neléčí.</summary>
+    private static void ApplyCures(Character c, PlantItem item, SpeciesSecret species, double dose, GameClock clock)
+    {
+        if (c.IsDead)
+        {
+            return;
+        }
+
+        var cures = GameData.Archetypes[species.ArchetypeIndex].CuresFor(item.Part);
+        Diseases.Cure(c, cures, dose, item.Cooking != Cooking.Raw, clock.TotalMinutes);
     }
 
     /// <summary>Ochutná malý kousek: dostane nápovědu chuti a slabší účinky.</summary>
     public static void Taste(Character c, PlantItem item, SpeciesSecret species, GameClock clock, bool spoiled = false)
     {
         Consume(c, CompositionCalculator.Compute(item, species), clock, GameData.Body.Eating.TasteDose, taste: true, spoiled);
+        ApplyCures(c, item, species, GameData.Body.Eating.TasteDose, clock);
     }
 
     /// <summary>Sní (nebo ochutná) maso či rybu. Syrové trochu dráždí, upečené je výživné (prototyp comp pro meat).</summary>

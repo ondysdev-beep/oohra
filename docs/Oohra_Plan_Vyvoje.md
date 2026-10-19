@@ -28,6 +28,7 @@ Rozhodnuto 18. 10. 2026: další kolo je **návrh 0.8 Svět a logika** (`docs/Oo
 ### Neověřeno (zkontrolovat při hraní)
 - Vzhled třetí generace (ve hře nastane až za rok, zatím hlídají jen testy).
 - Zvuky (slabiky, oheň, kroky, divočák, vlk, déšť, hrom): testy kontrolují jen to, že existují.
+- Nemoci a bažina: jestli nejsou komáři moc častí, úplavice moc zlá (s průjmem je žízeň trojnásobná) a jestli se dá na lék přijít zkoušením (lék na zimnici je list pálivé rostliny, na úplavici kořen dráždivé).
 - Ruce a recepty: jestli nováček pochopí, že má jen dvě ruce a že se recepty hledají spojováním věcí (zatím jediná nápověda), a jestli 40 % neúspěchu není moc.
 - Kácení: jestli je počet seknutí a opotřebení sekery rozumné, jak vypadá pád stromu a kmen z kódu (pro vlastní modely políčka Stump, Log, LogPiece v katalogu).
 - Nový svět 384 × 384: jestli je ostrov hezký na procházení (vzdálenosti, kde se rodí nováček, jak daleko je voda), brod (postava stojí kousek nad vodou), hodně hromad kamenů ve vrchovině, plynulost na grafické kartě.
@@ -67,7 +68,7 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 - [x] Ukázání receptu jiným hráčem (nabídka hráče „Ukázat, jak se dělá“, do 2,5 m): ten druhý ho pak umí bez zkoušení. **Etapa 3 hotová.**
 
 ### Etapa 4: Nebezpečí (2 až 3 týdny)
-- [ ] První vlna: komáři, pijavice, bahenní voda v bažině. Nemoci se zpožděním, léky v rostlinách. Obrana: kouř, bahno nebo popel na kůži, kožené oblečení.
+- [x] První vlna (19. 10.): komáři v bažině a u vody (léto, svítání a soumrak, kousnutí přenese bahenní zimnici: horečka ve vlnách, únava), pijavice při chůzi bažinou (ubírají zdraví, sundají se u ohně nebo popelem), bahenní voda dá úplavici (průjem, žízeň). Obrana: kouř z ohně, natřít se bahnem nebo popelem (4 h). Rozhodnuto: **každá nemoc má vlastní lék** ve skrytém složení (`cures` v archetypes.json), upečené léčí slaběji, bez léku nemoc za pár dní odezní. Jméno nemoci hra nikde nepíše. **Kožené oblečení zatím ne** (bude s oblečením).
 - [ ] Druhá vlna: klíšťata, vosí hnízda, hadi.
 
 ### Etapa 5: Sezónní nebezpečí, stopy, sušení a uzení (1 až 2 týdny)

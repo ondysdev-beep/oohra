@@ -117,6 +117,27 @@ public sealed partial class GameServer
             case MessageType.Craft:
                 CraftAction(player, Messages.ReadCraft(reader));
                 break;
+            case MessageType.Smear:
+                var ash = Messages.ReadSmear(reader);
+                if (!Hazards.Smear(player.Character, Island, player.Inventory, player.X, player.Y, ash, Clock.TotalMinutes))
+                {
+                    SendEvent(player, new GameEvent(EventKind.Craft, (byte)(ash ? CraftResult.NeedMaterials : CraftResult.NeedWater), default, []));
+                }
+
+                SendBodyEvents(player);
+                SendInventory(player);
+                SendSelfState(player);
+                break;
+            case MessageType.RemoveLeeches:
+                if (!Hazards.RemoveLeeches(player.Character, player.Inventory, Fires.WarmsAt(Island, player.X, player.Y), Clock.TotalMinutes))
+                {
+                    SendEvent(player, new GameEvent(EventKind.Craft, (byte)CraftResult.NeedFire, default, []));
+                }
+
+                SendBodyEvents(player);
+                SendInventory(player);
+                SendSelfState(player);
+                break;
             case MessageType.TeachRecipe:
                 TeachAction(player, Messages.ReadTeachRecipe(reader));
                 break;

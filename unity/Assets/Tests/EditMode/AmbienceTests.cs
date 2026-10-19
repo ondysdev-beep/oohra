@@ -19,6 +19,7 @@ namespace Oohra.Client.Tests
             Check(Ambience.Chop(), 0.1f, 0.4f);
             Check(Ambience.Creak(), 1f, 2f);
             Check(Ambience.Crash(), 0.8f, 2f);
+            Check(Ambience.Buzz(), 1f, 2f);
         }
 
         private static void Check(AudioClip clip, float minSeconds, float maxSeconds)
