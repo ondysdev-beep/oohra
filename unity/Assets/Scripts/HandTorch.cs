@@ -31,9 +31,19 @@ namespace Oohra.Client
             torch.transform.localPosition = new Vector3(0.3f, 0.05f, 0.18f);
             torch.transform.localRotation = Quaternion.Euler(15f, 0f, -8f);
 
-            var stick = IslandView.Primitive(PrimitiveType.Cylinder, "Klacek", torch.transform, Palette.Hex("#4a3424"));
-            stick.transform.localScale = new Vector3(0.05f, 0.3f, 0.05f);
-            stick.transform.localPosition = new Vector3(0f, 0.1f, 0f);
+            // Pochodeň z katalogu (Torch), srovnaná na 0,6 m, jinak klacek z kódu. Plamen je vždy nahoře.
+            var model = VisualCatalog.Current.Torch;
+            if (model != null)
+            {
+                var stick = VisualCatalog.Spawn(model, torch.transform, "Klacek", height: 0.6f);
+                stick.transform.localPosition = new Vector3(0f, -0.2f, 0f);
+            }
+            else
+            {
+                var stick = IslandView.Primitive(PrimitiveType.Cylinder, "Klacek", torch.transform, Palette.Hex("#4a3424"));
+                stick.transform.localScale = new Vector3(0.05f, 0.3f, 0.05f);
+                stick.transform.localPosition = new Vector3(0f, 0.1f, 0f);
+            }
 
             var flame = IslandView.Primitive(PrimitiveType.Sphere, "Plamínek", torch.transform, Color.white);
             Palette.SetGlow(flame, Palette.Hex("#f2a03a"));

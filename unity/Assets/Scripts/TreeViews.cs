@@ -135,7 +135,9 @@ namespace Oohra.Client
             var growth = state.State == TreeState.Grown ? 1f : state.Growth;
             var height = Mathf.Max(0.4f, state.Height * growth);
             var variant = (state.TileIndex * 37 % 100) / 100f;
-            _trees[state.TileIndex] = Build(new TreeView(state.TileIndex, variant, state.Kind, height));
+            var view = new TreeView(state.TileIndex, variant, state.Kind, height);
+            var sapling = state.State == TreeState.Sapling ? VisualCatalog.Current.Sapling(variant) : null;
+            _trees[state.TileIndex] = sapling != null ? Sapling(sapling, view) : Build(view);
             _kinds[state.TileIndex] = state.Kind;
             _young[state.TileIndex] = state;
         }
@@ -229,7 +231,7 @@ namespace Oohra.Client
         public static GameObject CreateStump(Transform parent, TreeKind kind, double x, double y)
         {
             const float height = 0.6f;
-            var prefab = VisualCatalog.Current.Stump;
+            var prefab = VisualCatalog.Current.Stump(GroundView.Hash01((int)x, (int)y, 41));
             GameObject stump;
             if (prefab != null)
             {
@@ -244,6 +246,17 @@ namespace Oohra.Client
             }
 
             return stump;
+        }
+
+        /// <summary>Mladý stromek z katalogu (Saplings), srovnaný na výšku podle růstu. Kliknout na něj jde (nabídka se zavře).</summary>
+        private GameObject Sapling(GameObject prefab, TreeView tree)
+        {
+            var x = tree.TileIndex % _world.Width + 0.5;
+            var y = tree.TileIndex / _world.Width + 0.5;
+            var model = VisualCatalog.Spawn(prefab, transform, "Mladý strom " + tree.TileIndex, height: tree.Height);
+            model.transform.position = WorldCoords.ToUnity(x, y);
+            model.transform.rotation = Quaternion.Euler(0f, tree.TileIndex * 137 % 360, 0f);
+            return model;
         }
 
         private GameObject Build(TreeView tree)
