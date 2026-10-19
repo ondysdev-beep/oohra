@@ -127,6 +127,8 @@ namespace Oohra.Client
             }
 
             var player = new Vector2(_players.Self.position.x, -_players.Self.position.z);
+            // Výšky se počítají od podlahy, na které postava stojí (v patře od podlahy patra, ne od země).
+            var floor = _players.Self.position.y - PlayerViews.BodyHeight / 2;
             var toCameraUnity = _camera.transform.position - _players.Self.position;
             var toCamera = new Vector2(toCameraUnity.x, -toCameraUnity.z);
             var horizontal = toCamera.magnitude;
@@ -134,7 +136,7 @@ namespace Oohra.Client
 
             // Jak rychle paprsky ke kameře stoupají (výška na metr vodorovně).
             var rise = horizontal > 0.001f ? toCameraUnity.y / horizontal : 1000f;
-            var reach = Mathf.Min(MaxSearch, Mathf.Max(0f, _tallest - FeetHeight) / Mathf.Max(rise, 0.05f) + 3f);
+            var reach = Mathf.Min(MaxSearch, Mathf.Max(0f, _tallest - floor - FeetHeight) / Mathf.Max(rise, 0.05f) + 3f);
             var r = Mathf.CeilToInt(reach);
             var cx = Mathf.FloorToInt(player.x);
             var cy = Mathf.FloorToInt(player.y);
@@ -150,7 +152,7 @@ namespace Oohra.Client
 
                     foreach (var entry in cell)
                     {
-                        if (!Covers(entry.Position, entry.Radius, entry.Bottom, entry.Top, player, toCamera, rise))
+                        if (!Covers(entry.Position, entry.Radius, entry.Bottom - floor, entry.Top - floor, player, toCamera, rise))
                         {
                             continue;
                         }

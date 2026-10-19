@@ -725,12 +725,17 @@ public sealed class Structures
                 return BuildResult.CannotBuildHere;
             }
 
-            if (deck && !Roofs.Stable(this, probe).Contains(probe.Id))
+            if (deck && !Roofs.Stable(this, probe, loads: false).Contains(probe.Id))
             {
                 return BuildResult.NoSupport;
             }
 
             length = size;
+        }
+
+        if ((kind == BuildKind.Roof || level > 0) && TooHeavy(new Structure(-1, kind, x, y, angle, length, level: level) { Material = material?.Material ?? RoofMaterial.Branches }))
+        {
+            return BuildResult.TooHeavy;
         }
 
         inventory.TryRemove(ItemKind.Stick, cost);
@@ -748,6 +753,14 @@ public sealed class Structures
 
         builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
         return BuildResult.Built;
+    }
+
+    /// <summary>Nová stavba by něco přetížila (nebo sama neunesla): něco, co teď drží, by po ní nedrželo.</summary>
+    private bool TooHeavy(Structure probe)
+    {
+        var before = Roofs.Stable(this);
+        var after = Roofs.Stable(this, probe);
+        return !after.Contains(probe.Id) || before.Any(id => !after.Contains(id));
     }
 
     /// <summary>Materiál střechy podle názvu (z nabídky stavby), bez názvu větve.</summary>
@@ -881,6 +894,11 @@ public sealed class Structures
             return BuildResult.CannotBuildHere;
         }
 
+        if (TooHeavy(probe))
+        {
+            return BuildResult.TooHeavy;
+        }
+
         inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
         Place(kind, x, y, angle, length: length, ownerId: ownerId, level: level);
         builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
@@ -932,7 +950,7 @@ public sealed class Structures
     /// které právě začaly praskat (server varuje, kdo je pod nimi) a které spadly (zraní, kdo stál pod nimi).
     /// Když se podpora vrátí včas, praskání přestane.
     /// </summary>
-    public (List<Structure> Cracked, List<Structure> Fallen) Update(double realSeconds)
+    public (List<Structure> Cracked, List<Structure> Fallen) Update(double realSeconds, IReadOnlyList<(double X, double Y, int Level)>? people = null)
     {
         var rules = GameData.Building.Roof;
         _time += realSeconds;
@@ -944,8 +962,8 @@ public sealed class Structures
         }
 
         _nextCheckAt = _time + rules.CheckSeconds;
-        var stable = Roofs.Stable(this);
-        foreach (var roof in All.Where(s => Roofs.IsDeck(s) || s.Level > 0).ToList())
+        var stable = Roofs.Stable(this, null, people);
+        foreach (var roof in All.Where(s => Roofs.IsDeck(s) || s.Level > 0 || (Roofs.Capacity(s) is not null && !stable.Contains(s.Id))).ToList())
         {
             if (stable.Contains(roof.Id))
             {

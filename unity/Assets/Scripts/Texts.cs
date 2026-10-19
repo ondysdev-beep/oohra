@@ -405,6 +405,7 @@ namespace Oohra.Client
                 case BuildResult.NoFloor: return "V patře se staví jen na podlahu patra. Žebřík patří k jejímu okraji.";
                 case BuildResult.Repaired: return "Střecha je opravená. Zase nezatéká.";
                 case BuildResult.CannotRepair: return "Opravit jde jen střecha, která nehoří.";
+                case BuildResult.TooHeavy: return "Tolik by to neuneslo. Přidej sloupky nebo zdi pod to, nebo stav z lehčího.";
                 default: return result.ToString();
             }
         }

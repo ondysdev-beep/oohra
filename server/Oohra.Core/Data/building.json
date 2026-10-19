@@ -73,6 +73,19 @@
     "spreadRange": 0.6, "spreadChancePerMinute": 0.03, "burnMinutes": 40,
     "heatRange": 1.0, "heatDamagePerMinute": 0.8, "warnEveryMinutes": 5, "ringDecoration": "stone_circle"
   },
+  // Nosnost (statika, druhý krok): váha staveb jde shora dolů (střecha patra na zdi patra, ty na podlahu patra,
+  // ta na sloupky a zdi přízemí). Sloupek unese postCapacity, zeď wallCapacityPerMeter na metr své délky (k tomu,
+  // co sama váží). Co je přetížené, zapraská a spadne. Zeď váží za metr, člověk v patře person.
+  "load": {
+    "weights": {
+      "StickWall": 1, "DoorFrame": 1, "Door": 0.5, "Post": 0.3, "Floor": 1.5, "Ladder": 0.3,
+      "Stockpile": 1, "Decoration": 1, "Barricade": 1, "Trap": 0.3, "Campfire": 0, "Roof": 1
+    },
+    "roofWeights": { "Branches": 1, "Bark": 1.5, "Hide": 2, "Shingles": 3 },
+    "person": 1,
+    "postCapacity": 4,
+    "wallCapacityPerMeter": 6
+  },
   "barricade": {
     // Zátaras u vchodu do jeskyně (návrh 0.8, kap. 4): staví se jen do entranceReach metrů od vchodu, jeden na vchod.
     // Dovnitř pak projde jen majitel a jeho kmen, ven každý.
