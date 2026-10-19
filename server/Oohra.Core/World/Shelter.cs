@@ -11,10 +11,10 @@ namespace Oohra.Core.World;
 /// </summary>
 public static class Shelter
 {
-    public static bool IsSheltered(Island island, double x, double y)
+    public static bool IsSheltered(Island island, double x, double y, int level = 0)
     {
         var rules = GameData.Building.Shelter;
-        var walls = island.Structures.Near(x, y, rules.MaxDistance).ToList();
+        var walls = island.Structures.Near(x, y, rules.MaxDistance).Where(s => s.Level == level).ToList();
         if (walls.Count == 0)
         {
             return false;

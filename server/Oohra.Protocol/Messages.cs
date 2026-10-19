@@ -53,7 +53,8 @@ public sealed class WorldView
 }
 
 /// <summary>Poloha jednoho hráče ve snímku. Torch: drží zapálenou pochodeň, Carry: nese klad, Bag: batoh na zádech.</summary>
-public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping, bool Torch = false, bool Carry = false, ItemKind? Bag = null);
+/// <summary>Hráč ve snímku. Level = podlaží (0 přízemí, 1 patro).</summary>
+public readonly record struct PlayerSnapshot(int Id, float X, float Y, float Facing, bool Dead, bool Sleeping, bool Torch = false, bool Carry = false, ItemKind? Bag = null, byte Level = 0);
 
 /// <summary>
 /// Snímek světa: čas, počasí (druh, síla 0 až 1, vítr 0 až 1) a polohy všech hráčů. Posílá se mnohokrát za sekundu.
@@ -122,7 +123,7 @@ public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 /// </summary>
 /// <summary>Stavba. Decoration: id dekorace (u ostatních staveb prázdné).</summary>
 /// <summary>Stavba. Cracking = střecha bez podpory praská (za chvíli spadne).</summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "", bool Cracking = false);
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "", bool Cracking = false, byte Level = 0);
 
 /// <summary>Druh dekorace z decorations.json na serveru: název do nabídky, cena, poloměr a jestli se přes ni dá projít.</summary>
 public sealed record DecorationTypeView(string Id, string Name, int Sticks, int Stones, float Radius, bool Blocks);
@@ -620,7 +621,7 @@ public static class Messages
     }
 
     /// <summary>Režim stavby: postavit stavbu se středem (x, y), úhlem v radiánech a délkou (zeď) v metrech.</summary>
-    public static void WritePlace(NetDataWriter w, BuildKind kind, float x, float y, float angle, float length, string decoration = "")
+    public static void WritePlace(NetDataWriter w, BuildKind kind, float x, float y, float angle, float length, string decoration = "", byte level = 0)
     {
         w.Put((byte)MessageType.Place);
         w.Put((byte)kind);
@@ -629,12 +630,31 @@ public static class Messages
         w.Put(angle);
         w.Put(length);
         w.Put(decoration ?? string.Empty);
+        w.Put(level);
     }
 
-    /// <summary>Decoration: id dekorace z decorations.json (u ostatních staveb prázdné).</summary>
-    public static (BuildKind Kind, float X, float Y, float Angle, float Length, string Decoration) ReadPlace(NetDataReader r)
+    /// <summary>Decoration: id dekorace z decorations.json (u ostatních staveb prázdné). Level: podlaha patra (1) ze země.</summary>
+    public static (BuildKind Kind, float X, float Y, float Angle, float Length, string Decoration, byte Level) ReadPlace(NetDataReader r)
     {
-        return ((BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetString(MaxDecorationId));
+        return ((BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetString(MaxDecorationId), r.GetByte());
+    }
+
+    /// <summary>Vylézt nahoru nebo slézt dolů po žebříku (číslo stavby).</summary>
+    public static void WriteUseLadder(NetDataWriter w, int ladderId)
+    {
+        w.Put((byte)MessageType.UseLadder);
+        w.Put(ladderId);
+    }
+
+    public static int ReadUseLadder(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
+    /// <summary>Seskočit z patra dolů.</summary>
+    public static void WriteJumpDown(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.JumpDown);
     }
 
     /// <summary>Rozebrat stavbu podle čísla.</summary>
@@ -1245,6 +1265,7 @@ public static class Messages
             w.Put(p.Torch);
             w.Put(p.Carry);
             w.Put(p.Bag.HasValue ? (byte)p.Bag.Value : (byte)255);
+            w.Put(p.Level);
         }
     }
 
@@ -1258,7 +1279,7 @@ public static class Messages
         var minutes = r.GetDouble();
         var months = r.GetDouble();
         var (weather, intensity, wind) = ((WeatherKind)r.GetByte(), r.GetFloat(), r.GetFloat());
-        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool(), r.GetBool(), r.GetBool(), BagOf(r.GetByte())));
+        var players = ReadList(r, () => new PlayerSnapshot(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool(), r.GetBool(), r.GetBool(), r.GetBool(), BagOf(r.GetByte()), r.GetByte()));
         return new Snapshot(minutes, months, players, weather, intensity, wind);
     }
 
@@ -1508,12 +1529,13 @@ public static class Messages
             w.Put(s.OwnerId);
             w.Put(s.Decoration ?? string.Empty);
             w.Put(s.Cracking);
+            w.Put(s.Level);
         }
     }
 
     public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId), r.GetBool()));
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId), r.GetBool(), r.GetByte()));
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>

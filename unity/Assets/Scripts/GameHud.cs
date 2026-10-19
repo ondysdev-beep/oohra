@@ -336,8 +336,9 @@ namespace Oohra.Client
             var symptomText = self.Symptoms.Length == 0 ? string.Empty : "PŘÍZNAKY  " + string.Join(" · ", self.Symptoms.Select(Texts.For));
             var leeches = self.Symptoms.Contains(Symptom.Leeches);
             GUI.Label(new Rect(x + 10, y + 36, panelWidth - (leeches ? 300 : 150), 22), symptomText, _warn);
-            // Klíšťata se přisají potichu: najde je jen prohlídka.
+            // Klíšťata se přisají potichu: najde je jen prohlídka. V patře jde i seskočit dolů.
             if (GUI.Button(new Rect(x + panelWidth - 130, y + 34, 120, 22), "Prohlédnout se")) _session.Connection.InspectBody();
+            if (_session.SelfLevel > 0 && GUI.Button(new Rect(x + panelWidth - 130, y - 28, 120, 22), "Seskočit dolů")) _session.Connection.JumpDown();
             // Pijavice jdou sundat u ohně, nebo popelem z batohu.
             if (leeches && GUI.Button(new Rect(x + panelWidth - 280, y + 34, 140, 22), "Sundat pijavice")) _session.Connection.RemoveLeeches();
             return y - 6;
@@ -471,6 +472,18 @@ namespace Oohra.Client
             }
 
             if (caught && Button(ref buttonRect, "Vzít úlovek")) _session.TakeCatch();
+            if (structure.Value.Kind == BuildKind.Ladder)
+            {
+                var up = _session.SelfLevel == 0;
+                if (Button(ref buttonRect, up ? "Vylézt nahoru" : "Slézt dolů"))
+                {
+                    _session.Connection.UseLadder(structure.Value.Id);
+                    _session.Menu = null;
+                    _session.Selected = null;
+                    return;
+                }
+            }
+
             if (ClientSession.IsDryingRack(structure.Value))
             {
                 // Sušák: maso se suší ve dne, když neprší.

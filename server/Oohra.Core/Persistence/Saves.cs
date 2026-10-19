@@ -109,7 +109,7 @@ public sealed record WordSave(byte[] Word, int Heard, int[] Contexts, Concept? M
 /// <summary>Stavba (u koše i s obsahem, u pasti s úlovkem).</summary>
 public sealed record StructureSave(
     int Id, BuildKind Kind, double X, double Y, double Angle, double Length, int FrameId, int OwnerId, string DecorationId,
-    List<ItemStack>? Store, AnimalKind? Caught);
+    List<ItemStack>? Store, AnimalKind? Caught, int Level = 0);
 
 public sealed record FireSave(int Id, double X, double Y, double BurnMinutes, double Burned = 0, int AshDay = -1);
 

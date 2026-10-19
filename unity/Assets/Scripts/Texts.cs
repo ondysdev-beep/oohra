@@ -67,6 +67,10 @@ namespace Oohra.Client
                     warn = !(wood is WoodResult.AxeMade or WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut
                         or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.PickedUp or WoodResult.Dropped or WoodResult.BastStripped);
                     return For(wood);
+                case EventKind.Climb:
+                    var climb = (ClimbResult)e.Code;
+                    warn = !(climb is ClimbResult.Up or ClimbResult.Down);
+                    return For(climb);
                 case EventKind.Cave:
                     var cave = (CaveResult)e.Code;
                     warn = !(cave is CaveResult.Entered or CaveResult.Left);
@@ -398,6 +402,7 @@ namespace Oohra.Client
                 case BuildResult.NotInCave: return "V jeskyni stěny dává skála. Zeď ani dveře tu nepostavíš, ohniště, zásoby a ozdoby ano.";
                 case BuildResult.NoCaveEntrance: return "Zátaras patří k vchodu do jeskyně. Tady žádný není, nebo už zatarasený je.";
                 case BuildResult.NoSupport: return "Střecha by se neměla o co opřít. Potřebuje dvě podpory: zdi, sloupky nebo sousední střechu.";
+                case BuildResult.NoFloor: return "V patře se staví jen na podlahu patra. Žebřík patří k jejímu okraji.";
                 default: return result.ToString();
             }
         }
@@ -532,6 +537,8 @@ namespace Oohra.Client
                 case BodyEvent.Smoke: return "Kouř se drží pod stropem a dusí tě. Tahle jeskyně nemá kudy větrat.";
                 case BodyEvent.RoofCracking: return "Střecha nad tebou praská! Uteč, nebo ji rychle podepři.";
                 case BodyEvent.HitByRoof: return "Spadla na tebe střecha!";
+                case BodyEvent.Fell: return "Podlaha pod tebou povolila a spadl jsi dolů.";
+                case BodyEvent.JumpedDown: return "Seskočil jsi dolů. Kotníky to trochu cítí.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -601,6 +608,7 @@ namespace Oohra.Client
                 case DeathCause.FallingTree: return "Zabil tě padající strom.";
                 case DeathCause.Smoke: return "Udusil ses kouřem v jeskyni.";
                 case DeathCause.Collapse: return "Zavalila tě spadlá střecha.";
+                case DeathCause.Fall: return "Pád z patra byl poslední.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -676,6 +684,18 @@ namespace Oohra.Client
                 case Cooking.Smoked: return fish ? "Ryba · uzená" : "Maso · uzené";
                 case Cooking.Dried: return fish ? "Ryba · sušená" : "Maso · sušené";
                 default: return fish ? "Ryba · syrová" : "Maso · syrové";
+            }
+        }
+
+        /// <summary>Text k lezení po žebříku.</summary>
+        public static string For(ClimbResult result)
+        {
+            switch (result)
+            {
+                case ClimbResult.Up: return "Vylezl jsi nahoru. Zvířata sem nedosáhnou.";
+                case ClimbResult.Down: return "Slezl jsi dolů.";
+                case ClimbResult.TooFar: return "K žebříku musíš blíž.";
+                default: return "Ten žebřík nikam nevede.";
             }
         }
 

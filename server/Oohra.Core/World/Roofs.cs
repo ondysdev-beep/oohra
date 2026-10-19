@@ -3,44 +3,71 @@ using Oohra.Core.Data;
 namespace Oohra.Core.World;
 
 /// <summary>
-/// Střechy a jejich statika, první verze (návrh 0.8, kap. 6, building.json roof): střecha je čtverec size × size
-/// ve výšce zdí. Drží, když se opírá aspoň o minSupports podpor: zeď nebo zeď s otvorem (aspoň minWallSupport
-/// metrů zdi pod okrajem nebo pod střechou), sloupek pod ní, nebo sousední střecha, která sama drží. Střecha
-/// bez podpory zapraská a za warnSeconds spadne (Structures.Update). Před deštěm chrání, kdo stojí pod
-/// střechou, která drží.
+/// Desky (střechy a podlahy pater) a statika, podpůrný graf (návrh 0.8, kap. 6, building.json roof): deska je
+/// čtverec Length × Length. Výška desky: střecha v podlaží L leží ve výšce L + 1, podlaha patra L ve výšce L
+/// (podlaha přízemí leží na zemi a drží vždy). Deska drží, když se opírá aspoň o minSupports podpor: zeď nebo zeď
+/// s otvorem o podlaží níž (aspoň minWallSupport metrů pod ní nebo pod okrajem), sloupek pod ní, nebo sousední
+/// deska ve stejné výšce, která sama drží. Stavby v patře drží, když stojí na podlaze patra, která drží. Co nedrží,
+/// zapraská a za warnSeconds spadne (Structures.Update).
 /// </summary>
 public static class Roofs
 {
-    /// <summary>Bod (x, y) je pod střechou (čtverec).</summary>
-    public static bool Covers(Structure roof, double x, double y, double margin = 0)
+    /// <summary>Nejvyšší podlaží (0 přízemí, 1 patro). Nad patrem už je jen střecha.</summary>
+    public const int TopLevel = 1;
+
+    /// <summary>Deska (střecha nebo podlaha patra), která potřebuje podporu.</summary>
+    public static bool IsDeck(Structure s)
     {
-        var half = GameData.Building.Roof.Size / 2 + margin;
-        var (dx, dy) = (x - roof.X, y - roof.Y);
-        var (c, s) = (Math.Cos(roof.Angle), Math.Sin(roof.Angle));
+        return s.Kind == BuildKind.Roof || (s.Kind == BuildKind.Floor && s.Level > 0);
+    }
+
+    /// <summary>Výška desky v podlažích (střecha přízemí a podlaha patra jsou obě ve výšce 1).</summary>
+    public static int DeckHeight(Structure s)
+    {
+        return s.Kind == BuildKind.Roof ? s.Level + 1 : s.Level;
+    }
+
+    /// <summary>Bod (x, y) je nad nebo pod čtvercem (střecha, podlaha).</summary>
+    public static bool Covers(Structure square, double x, double y, double margin = 0)
+    {
+        var half = square.Length / 2 + margin;
+        var (dx, dy) = (x - square.X, y - square.Y);
+        var (c, s) = (Math.Cos(square.Angle), Math.Sin(square.Angle));
         var along = dx * c + dy * s;
         var across = -dx * s + dy * c;
         return Math.Abs(along) <= half && Math.Abs(across) <= half;
     }
 
-    /// <summary>Kdo stojí na (x, y), má nad hlavou střechu, která drží (nepadá).</summary>
-    public static bool IsRoofed(Structures structures, double x, double y)
+    /// <summary>Kdo stojí na (x, y) v podlaží level, má nad hlavou desku, která drží (nepadá): chrání před deštěm.</summary>
+    public static bool IsRoofed(Structures structures, double x, double y, int level = 0)
     {
-        return structures.All.Any(s => s.Kind == BuildKind.Roof && s.CrackingSince is null && Covers(s, x, y));
+        return structures.All.Any(s => IsDeck(s) && DeckHeight(s) > level && s.CrackingSince is null && Covers(s, x, y));
     }
 
-    /// <summary>Kolik zdí a sloupků střechu přímo podpírá.</summary>
-    public static int DirectSupports(Structures structures, double x, double y, double angle)
+    /// <summary>V podlaží level (patro) je na (x, y) podlaha, na které se dá stát.</summary>
+    public static bool StandsOn(Structures structures, double x, double y, int level, double margin = 0)
+    {
+        return level > 0 && structures.Near(x, y, 0.5).Any(s => s.Kind == BuildKind.Floor && s.Level == level && Covers(s, x, y, margin));
+    }
+
+    /// <summary>Kolik stojících zdí a sloupků (o podlaží níž) desku ve výšce height přímo podpírá.</summary>
+    public static int DirectSupports(IEnumerable<Structure> standing, Structure deck)
     {
         var rules = GameData.Building.Roof;
-        var probe = new Structure(0, BuildKind.Roof, x, y, angle, rules.Size);
+        var below = DeckHeight(deck) - 1;
         var count = 0;
-        foreach (var s in structures.All)
+        foreach (var s in standing)
         {
-            if (s.Kind == BuildKind.Post && Covers(probe, s.X, s.Y, rules.SupportTolerance))
+            if (s.Level != below)
+            {
+                continue;
+            }
+
+            if (s.Kind == BuildKind.Post && Covers(deck, s.X, s.Y, rules.SupportTolerance))
             {
                 count++;
             }
-            else if (s.Kind is BuildKind.StickWall or BuildKind.DoorFrame && WallUnder(probe, s, rules) >= rules.MinWallSupport)
+            else if (s.Kind is BuildKind.StickWall or BuildKind.DoorFrame && WallUnder(deck, s, rules) >= rules.MinWallSupport)
             {
                 count++;
             }
@@ -50,31 +77,46 @@ public static class Roofs
     }
 
     /// <summary>
-    /// Které střechy drží: nejdřív ty, které mají dost přímých podpor, pak opakovaně ty, kterým podpory doplní
-    /// sousední střechy, které už drží (podpůrný graf). Extra = střecha navíc (zkouška před postavením).
+    /// Co drží (čísla staveb): všechno v přízemí kromě střech, pak po výškách desky (přímé podpory a sousední desky,
+    /// které už drží, opakovaně) a stavby v patře na podlahách, které drží. Extra = stavba navíc (zkouška před postavením).
     /// </summary>
     public static HashSet<int> Stable(Structures structures, Structure? extra = null)
     {
         var rules = GameData.Building.Roof;
-        var roofs = structures.All.Where(s => s.Kind == BuildKind.Roof).ToList();
+        var all = structures.All.ToList();
         if (extra is not null)
         {
-            roofs.Add(extra);
+            all.Add(extra);
         }
 
-        var direct = roofs.ToDictionary(r => r.Id, r => DirectSupports(structures, r.X, r.Y, r.Angle));
-        var stable = new HashSet<int>();
-        var changed = true;
-        while (changed)
+        var stable = all.Where(s => s.Level == 0 && !IsDeck(s)).Select(s => s.Id).ToHashSet();
+        for (var height = 1; height <= TopLevel + 1; height++)
         {
-            changed = false;
-            foreach (var roof in roofs.Where(r => !stable.Contains(r.Id)))
+            var standing = all.Where(s => stable.Contains(s.Id)).ToList();
+            var decks = all.Where(s => IsDeck(s) && DeckHeight(s) == height).ToList();
+            var direct = decks.ToDictionary(d => d.Id, d => DirectSupports(standing, d));
+            var changed = true;
+            while (changed)
             {
-                var neighbours = roofs.Count(o => o.Id != roof.Id && stable.Contains(o.Id) && Neighbours(roof, o, rules));
-                if (direct[roof.Id] + neighbours >= rules.MinSupports)
+                changed = false;
+                foreach (var deck in decks.Where(d => !stable.Contains(d.Id)))
                 {
-                    stable.Add(roof.Id);
-                    changed = true;
+                    var neighbours = decks.Count(o => o.Id != deck.Id && stable.Contains(o.Id) && Neighbours(deck, o, rules));
+                    if (direct[deck.Id] + neighbours >= rules.MinSupports)
+                    {
+                        stable.Add(deck.Id);
+                        changed = true;
+                    }
+                }
+            }
+
+            // Stavby v patře stojí na podlaze patra, která drží.
+            var floors = all.Where(s => s.Kind == BuildKind.Floor && s.Level == height && stable.Contains(s.Id)).ToList();
+            foreach (var s in all.Where(s => s.Level == height && !IsDeck(s) && s.Kind != BuildKind.Floor))
+            {
+                if (Footprint(s).All(p => floors.Any(f => Covers(f, p.X, p.Y, 0.1))))
+                {
+                    stable.Add(s.Id);
                 }
             }
         }
@@ -82,8 +124,20 @@ public static class Roofs
         return stable;
     }
 
-    /// <summary>Kolik metrů zdi leží pod střechou (i kousek za okrajem, supportTolerance).</summary>
-    private static double WallUnder(Structure roof, Structure wall, RoofRules rules)
+    /// <summary>Body, které musí stát na podlaze: u zdi konce a střed, jinak střed.</summary>
+    public static IEnumerable<Position> Footprint(Structure s)
+    {
+        if (s.Kind is BuildKind.StickWall or BuildKind.DoorFrame or BuildKind.Door)
+        {
+            var (x1, y1, x2, y2) = s.Ends;
+            return [new Position(x1, y1), new Position(s.X, s.Y), new Position(x2, y2)];
+        }
+
+        return [new Position(s.X, s.Y)];
+    }
+
+    /// <summary>Kolik metrů zdi leží pod deskou (i kousek za okrajem, supportTolerance).</summary>
+    private static double WallUnder(Structure deck, Structure wall, RoofRules rules)
     {
         var (x1, y1, x2, y2) = wall.Ends;
         var steps = Math.Max(1, (int)Math.Ceiling(wall.Length / 0.1));
@@ -91,7 +145,7 @@ public static class Roofs
         for (var i = 0; i <= steps; i++)
         {
             var t = (double)i / steps;
-            if (Covers(roof, x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, rules.SupportTolerance))
+            if (Covers(deck, x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, rules.SupportTolerance))
             {
                 inside++;
             }

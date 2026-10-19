@@ -100,7 +100,7 @@ public sealed partial class GameServer
     private void BroadcastSnapshot()
     {
         var players = InWorld
-            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping, p.Character.TorchLit, p.Inventory.Count(ItemKind.LogPiece) > 0, p.Inventory.Bag?.Kind))
+            .Select(p => new PlayerSnapshot(p.Id, (float)p.X, (float)p.Y, (float)p.Facing, p.Character.IsDead, p.Character.Sleeping, p.Character.TorchLit, p.Inventory.Count(ItemKind.LogPiece) > 0, p.Inventory.Bag?.Kind, (byte)p.Level))
             .ToArray();
         var snapshot = new Snapshot(Clock.TotalMinutes, Clock.CalendarMonths, players, CurrentWeather.Kind, (float)CurrentWeather.Intensity, (float)CurrentWeather.Wind);
         Broadcast(w => Messages.WriteSnapshot(w, snapshot), DeliveryMethod.Sequenced);
@@ -153,8 +153,8 @@ public sealed partial class GameServer
     /// <summary>Hráči ve hře, jak je vidí zvířata.</summary>
     private List<AnimalTarget> AnimalTargets()
     {
-        // Postava ve snu bez slov (nováček) zvířata nezajímá.
-        return InWorld.Where(p => _seconds >= p.DreamUntil).Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
+        // Postava ve snu bez slov (nováček) zvířata nezajímá, na lidi v patře zvířata nedosáhnou.
+        return InWorld.Where(p => _seconds >= p.DreamUntil && p.Level == 0).Select(p => new AnimalTarget(p.Id, p.X, p.Y, p.Character)).ToList();
     }
 
     /// <summary>
@@ -236,7 +236,7 @@ public sealed partial class GameServer
 
     private StructureView[] StructureViews()
     {
-        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId, s.DecorationId, s.CrackingSince is not null)).ToArray();
+        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId, s.DecorationId, s.CrackingSince is not null, (byte)s.Level)).ToArray();
     }
 
     private RockPileView[] RockPileViews()

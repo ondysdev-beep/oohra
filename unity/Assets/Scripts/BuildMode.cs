@@ -38,6 +38,15 @@ namespace Oohra.Client
         /// <summary>Dekorace: poloměr v metrech (pro náhled bez modelu).</summary>
         public float Radius { get; private set; } = 0.3f;
 
+        /// <summary>Podlaží stavby ze země (podlaha patra = 1). V patře se staví vždy v patře.</summary>
+        public int Level { get; private set; }
+
+        /// <summary>Podlaha patra (staví se ze země, drží na zdech a sloupcích jako střecha).</summary>
+        public static BuildOption UpperFloor()
+        {
+            return new BuildOption(BuildKind.Floor, "Podlaha patra 2 × 2 m (2 m nad zemí, na zdech nebo sloupcích)", "3 klacky", 3, 0, StructureViews.PanelSize) { Level = 1 };
+        }
+
         /// <summary>Položka nabídky pro dekoraci ze serveru.</summary>
         public static BuildOption ForDecoration(DecorationTypeView decoration)
         {
@@ -92,6 +101,8 @@ namespace Oohra.Client
             new BuildOption(BuildKind.Post, "Sloupek (podpírá střechu)", "1 klacek", 1, 0),
             new BuildOption(BuildKind.Floor, "Podlaha 2 × 2 m", "3 klacky", 3, 0, StructureViews.PanelSize),
             new BuildOption(BuildKind.Roof, "Střecha 2 × 2 m (na zdech nebo sloupcích)", "3 klacky", 3, 0, StructureViews.PanelSize),
+            BuildOption.UpperFloor(),
+            new BuildOption(BuildKind.Ladder, "Žebřík k patru (u okraje podlahy patra)", "3 klacky", 3, 0),
         };
 
         private ClientSession _session;
@@ -211,7 +222,7 @@ namespace Oohra.Client
 
         private void Send()
         {
-            _session.Place(Selected, Target.x, Target.y, TargetAngleDegrees * Mathf.Deg2Rad, TargetLength, SelectedOption.DecorationId);
+            _session.Place(Selected, Target.x, Target.y, TargetAngleDegrees * Mathf.Deg2Rad, TargetLength, SelectedOption.DecorationId, SelectedOption.Level);
         }
 
         private void Update()
@@ -391,7 +402,8 @@ namespace Oohra.Client
         {
             var ray = _camera.ScreenPointToRay(screen);
             float distance;
-            if (!new Plane(Vector3.up, Vector3.zero).Raycast(ray, out distance))
+            // V patře se míří na podlahu patra, ne na zem pod ní.
+            if (!new Plane(Vector3.up, Vector3.up * _session.SelfHeight).Raycast(ray, out distance))
             {
                 return null;
             }
@@ -434,7 +446,8 @@ namespace Oohra.Client
 
         private void ShowGhost()
         {
-            StructureViews.PlaceModel(_ghost.transform, Target.x, Target.y, TargetAngleDegrees * Mathf.Deg2Rad);
+            var level = _session.SelfLevel > 0 ? _session.SelfLevel : SelectedOption.Level;
+            StructureViews.PlaceModel(_ghost.transform, Target.x, Target.y, TargetAngleDegrees * Mathf.Deg2Rad, StructureViews.BaseHeight(Selected, level));
             if (Selected == BuildKind.StickWall)
             {
                 // Délka zdi se při dorovnávání mění, náhled se natáhne.

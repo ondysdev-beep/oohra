@@ -269,6 +269,20 @@ namespace Oohra.Core.World
 
         /// <summary>Střecha by neměla o co se opřít (potřebuje zdi, sloupky nebo sousední střechu).</summary>
         NoSupport,
+
+        /// <summary>V patře se staví jen na podlahu patra, žebřík jen k ní.</summary>
+        NoFloor,
+    }
+
+    /// <summary>Jak dopadlo lezení po žebříku.</summary>
+    public enum ClimbResult
+    {
+        Up,
+        Down,
+        TooFar,
+
+        /// <summary>Žebřík tu není, nebo nevede k podlaze patra.</summary>
+        NotFound,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>

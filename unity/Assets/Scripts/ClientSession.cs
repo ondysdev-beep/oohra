@@ -197,9 +197,25 @@ namespace Oohra.Client
         }
 
         /// <summary>Režim stavby: postavit stavbu se středem (x, y) a úhlem v radiánech. Rozhodne server.</summary>
-        public void Place(BuildKind kind, double x, double y, float angle, float length = 1f, string decoration = "")
+        public void Place(BuildKind kind, double x, double y, float angle, float length = 1f, string decoration = "", int level = 0)
         {
-            Connection.Place(kind, (float)x, (float)y, angle, length, decoration);
+            Connection.Place(kind, (float)x, (float)y, angle, length, decoration, (byte)level);
+        }
+
+        /// <summary>Podlaží moje postavy (0 přízemí, 1 patro).</summary>
+        public int SelfLevel
+        {
+            get
+            {
+                var self = Connection.SelfSnapshot();
+                return self.HasValue ? self.Value.Level : 0;
+            }
+        }
+
+        /// <summary>Výška, ve které moje postava stojí (podlaha patra, nebo zem).</summary>
+        public float SelfHeight
+        {
+            get { return SelfLevel * StructureViews.LevelHeight; }
         }
 
         /// <summary>Rozebrat stavbu, u které je otevřená nabídka.</summary>

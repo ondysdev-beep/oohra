@@ -151,6 +151,12 @@ public enum BodyEvent
 
     /// <summary>Střecha nad ním praská (ztratila podporu, za chvíli spadne).</summary>
     RoofCracking,
+
+    /// <summary>Spadl s podlahou patra.</summary>
+    Fell,
+
+    /// <summary>Seskočil z patra.</summary>
+    JumpedDown,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -196,6 +202,9 @@ public enum DeathCause
 
     /// <summary>Zavalila ho spadlá střecha.</summary>
     Collapse,
+
+    /// <summary>Zabil ho pád z patra.</summary>
+    Fall,
 }
 
 /// <summary>Viditelný příznak ve stavu těla.</summary>

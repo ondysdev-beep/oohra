@@ -192,6 +192,12 @@ namespace Oohra.Client
                 return;
             }
 
+            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.Fell)
+            {
+                Play(Crash(), _players.Self.position, 1f);
+                return;
+            }
+
             if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.HitByRoof)
             {
                 Play(Crash(), _players.Self.position, 1f);

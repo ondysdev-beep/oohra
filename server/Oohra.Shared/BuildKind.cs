@@ -36,7 +36,10 @@ namespace Oohra.Core.World
         /// <summary>Střecha: čtverec ve výšce zdí, musí mít podporu (statika).</summary>
         Roof = 9,
 
-        /// <summary>Podlaha: čtverec na zemi.</summary>
+        /// <summary>Podlaha: čtverec na zemi, nebo v patře (Level 1, drží jako střecha).</summary>
         Floor = 10,
+
+        /// <summary>Žebřík k podlaze patra.</summary>
+        Ladder = 11,
     }
 }

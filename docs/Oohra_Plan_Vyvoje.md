@@ -83,7 +83,7 @@ Rozhodnuto (19. 10.): zvěř podle návrhu (malá jeskyně vlčí doupě, střed
 ### Etapa 7: Patra, střechy a statika
 Rozhodnuto (19. 10.): statika postupně, nejdřív podpůrný graf (každý díl na něčem stojí), nosnost později. Oheň ve stavbě rozhodneme, až na něj dojde.
 - [x] První vlna (19. 10.): sloupek (1 klacek), podlaha 2 × 2 m (3 klacky), střecha 2 × 2 m (3 klacky) ve výšce zdí. Střecha drží se dvěma podporami (zeď, sloupek, sousední střecha, která drží), bez podpory nejde postavit; když podpora zmizí, zapraská a za 5 s spadne a zraní, kdo je pod ní. Před deštěm chrání střecha, zdi hřejí. V modulárním režimu se střecha a podlaha přichytí vedle sousední, první střecha se natočí podle zdi. Katalog Post, Floor, Roof.
-- [ ] Druhá vlna: druhé podlaží (výška postavy, žebřík a schody, zdi a podlaha nahoře, pád z výšky).
+- [x] Druhá vlna (19. 10.): **druhé podlaží**. Podlaha patra 2 × 2 m ve výšce 2 m (staví se ze země, drží na zdech, sloupcích a sousední podlaze patra, zároveň je strop přízemí). **Žebřík** u okraje podlahy patra (Vylézt nahoru, Slézt dolů). Nahoře se chodí jen po podlaze (z okraje se nespadne) a staví se zdi, zdi s otvorem, dveře, sloupky, další podlaha a střecha (ve 4 m). Tlačítko **Seskočit dolů** (malé zranění). Zvířata na lidi v patře nedosáhnou, ze země se nahoře nic nesebere. Když se podlaha zřítí, spadne i co na ní stálo a kdo na ní stál, spadne a zraní se. Schody a rampa zatím ne (stačí žebřík). Katalog **Ladder**.
 - [ ] Třetí vlna: střechy z materiálů (větve, kůra, kůže, došky, šindele), zatékání a opravy, oheň ve stavbě, zprůhlednění střechy nad postavou, nosnost.
 
 ### Později (mimo další kolo)

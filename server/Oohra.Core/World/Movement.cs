@@ -23,8 +23,16 @@ public static class Movement
     /// Postava o daném poloměru se na místo vejde: žádný ze čtyř rohů není ve vodě ani mimo mapu
     /// a postava nenaráží do kmene stromu ani do zdi. Rostliny nepřekáží.
     /// </summary>
-    public static bool CanStand(Island island, double x, double y, double radius)
+    public static bool CanStand(Island island, double x, double y, double radius, int level = 0)
     {
+        if (level > 0)
+        {
+            // V patře: všechny čtyři rohy na podlaze patra a nic v cestě ve stejném podlaží.
+            return Roofs.StandsOn(island.Structures, x - radius, y - radius, level) && Roofs.StandsOn(island.Structures, x + radius, y - radius, level)
+                && Roofs.StandsOn(island.Structures, x - radius, y + radius, level) && Roofs.StandsOn(island.Structures, x + radius, y + radius, level)
+                && !island.Structures.Blocks(x, y, radius, level);
+        }
+
         return !IsImpassable(island, Floor(x - radius), Floor(y - radius))
             && !IsImpassable(island, Floor(x + radius), Floor(y - radius))
             && !IsImpassable(island, Floor(x - radius), Floor(y + radius))
@@ -136,7 +144,7 @@ public static class Movement
     /// Když ani to nejde, osy se zkoušejí zvlášť a postava podél překážky klouže (jako v prototypu).
     /// Kolmo do zdi nebo vody se postava zastaví.
     /// </summary>
-    public static (double X, double Y) Step(Island island, double x, double y, double dirX, double dirY, double distance)
+    public static (double X, double Y) Step(Island island, double x, double y, double dirX, double dirY, double distance, int level = 0)
     {
         var length = Math.Sqrt(dirX * dirX + dirY * dirY);
         if (length <= 0)
@@ -152,25 +160,25 @@ public static class Movement
             var angle = degrees * Math.PI / 180;
             var sx = ux * Math.Cos(angle) - uy * Math.Sin(angle);
             var sy = ux * Math.Sin(angle) + uy * Math.Cos(angle);
-            if (CanStand(island, x + sx * distance, y + sy * distance, radius))
+            if (CanStand(island, x + sx * distance, y + sy * distance, radius, level))
             {
                 return (x + sx * distance, y + sy * distance);
             }
         }
 
-        if (TrunkSlide(island, x, y, ux, uy, radius) is var (tx, ty) && CanStand(island, x + tx * distance, y + ty * distance, radius))
+        if (level == 0 && TrunkSlide(island, x, y, ux, uy, radius) is var (tx, ty) && CanStand(island, x + tx * distance, y + ty * distance, radius))
         {
             return (x + tx * distance, y + ty * distance);
         }
 
         var dx = ux * distance;
         var dy = uy * distance;
-        if (CanStand(island, x + dx, y, radius))
+        if (CanStand(island, x + dx, y, radius, level))
         {
             x += dx;
         }
 
-        if (CanStand(island, x, y + dy, radius))
+        if (CanStand(island, x, y + dy, radius, level))
         {
             y += dy;
         }

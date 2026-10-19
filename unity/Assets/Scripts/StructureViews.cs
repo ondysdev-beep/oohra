@@ -21,6 +21,18 @@ namespace Oohra.Client
 
         /// <summary>Tloušťka střechy (leží na zdech, spodek ve výšce WallHeight).</summary>
         public const float RoofThickness = 0.14f;
+
+        /// <summary>Výška jednoho podlaží: podlaha patra je nahoře ve výšce zdí a střechy přízemí.</summary>
+        public const float LevelHeight = WallHeight + RoofThickness;
+
+        /// <summary>Tloušťka podlahy (na zemi i v patře, vršek podlahy patra je ve výšce LevelHeight).</summary>
+        public const float FloorThickness = 0.06f;
+
+        /// <summary>Kde je spodek modelu stavby v podlaží level (podlaha patra leží o svou tloušťku níž).</summary>
+        public static float BaseHeight(BuildKind kind, int level)
+        {
+            return level * LevelHeight - (kind == BuildKind.Floor && level > 0 ? FloorThickness : 0f);
+        }
         public const float WallThickness = 0.1f;
         public const float OpeningWidth = 0.8f;
         public const float DoorHeight = 1.9f;
@@ -114,7 +126,24 @@ namespace Oohra.Client
                     // Prkna z klacků: tři pruhy těsně vedle sebe.
                     for (var i = 0; i < 3; i++)
                     {
-                        Part(root.transform, "Prkna", new Vector3(0f, 0.03f, (i - 1) * length / 3), new Vector3(length, 0.06f, length / 3 - 0.02f), Palette.Hex("#8a6a48"));
+                        Part(root.transform, "Prkna", new Vector3(0f, FloorThickness / 2, (i - 1) * length / 3), new Vector3(length, FloorThickness, length / 3 - 0.02f), Palette.Hex("#8a6a48"));
+                    }
+
+                    break;
+                case BuildKind.Ladder:
+                    // Žebřík opřený o okraj patra: dvě bočnice a příčle, nakloněný k podlaze (osa X).
+                    var tilt = Mathf.Atan2(0.5f, LevelHeight) * Mathf.Rad2Deg;
+                    var ladder = new GameObject("Žebřík");
+                    ladder.transform.SetParent(root.transform, false);
+                    ladder.transform.localRotation = Quaternion.Euler(0f, 0f, -tilt);
+                    foreach (var side in new[] { -0.22f, 0.22f })
+                    {
+                        Part(ladder.transform, "Bočnice", new Vector3(0f, LevelHeight / 2 + 0.1f, side), new Vector3(0.06f, LevelHeight + 0.2f, 0.06f), WallColor);
+                    }
+
+                    for (var i = 1; i <= 6; i++)
+                    {
+                        Part(ladder.transform, "Příčel", new Vector3(0f, i * LevelHeight / 7, 0f), new Vector3(0.04f, 0.04f, 0.44f), WallColor);
                     }
 
                     break;
@@ -215,10 +244,10 @@ namespace Oohra.Client
             return null;
         }
 
-        /// <summary>Postaví kořen modelu na místo: střed (x, y) na mapě a úhel v radiánech.</summary>
-        public static void PlaceModel(Transform root, double x, double y, float angle)
+        /// <summary>Postaví kořen modelu na místo: střed (x, y) na mapě, úhel v radiánech a výška spodku (podlaží).</summary>
+        public static void PlaceModel(Transform root, double x, double y, float angle, float height = 0f)
         {
-            root.position = WorldCoords.ToUnity(x, y);
+            root.position = WorldCoords.ToUnity(x, y, height);
             root.rotation = Quaternion.Euler(0f, angle * Mathf.Rad2Deg, 0f);
         }
 
@@ -235,6 +264,7 @@ namespace Oohra.Client
                 case BuildKind.Post: return "Sloupek";
                 case BuildKind.Floor: return "Podlaha";
                 case BuildKind.Roof: return "Střecha";
+                case BuildKind.Ladder: return "Žebřík";
                 case BuildKind.Decoration: return "Dekorace";
                 default: return "Zeď";
             }
@@ -338,7 +368,7 @@ namespace Oohra.Client
             var decoration = DecorationOf(structure.Decoration);
             var root = CreateModel(structure.Kind, transform, structure.Length, structure.Decoration, decoration != null ? decoration.Radius : 0.3f);
             root.name = NameOf(structure.Kind) + " " + structure.Id;
-            PlaceModel(root.transform, structure.X, structure.Y, structure.Angle);
+            PlaceModel(root.transform, structure.X, structure.Y, structure.Angle, BaseHeight(structure.Kind, structure.Level));
 
             if (structure.Kind == BuildKind.Door)
             {

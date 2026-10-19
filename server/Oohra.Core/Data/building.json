@@ -50,6 +50,10 @@
     "supportTolerance": 0.3, "minWallSupport": 0.4, "minSupports": 2, "neighbourDistance": 2.15,
     "warnSeconds": 5, "damage": 25, "checkSeconds": 0.5
   },
+  // Žebřík k podlaze patra: staví se v přízemí do floorMargin metrů od podlahy patra. Lézt jde do reach metrů.
+  "ladder": { "sticksCost": 3, "sticksBack": 1, "reach": 1.6, "floorMargin": 0.7 },
+  // Patro: seskočit dolů ubere jumpDamage zdraví, pád se zřícenou podlahou fallDamage.
+  "storey": { "jumpDamage": 6, "fallDamage": 18 },
   "barricade": {
     // Zátaras u vchodu do jeskyně (návrh 0.8, kap. 4): staví se jen do entranceReach metrů od vchodu, jeden na vchod.
     // Dovnitř pak projde jen majitel a jeho kmen, ven každý.

@@ -72,7 +72,8 @@ namespace Oohra.Client
                 // Spánek a smrt ukáže animace, když ji model má (parametry Spi a Mrtvy). Jinak postava leží.
                 var dead = player.Dead && !AnimatorTools.Has(animator, DeadParameter, AnimatorControllerParameterType.Bool);
                 var asleep = player.Sleeping && !AnimatorTools.Has(animator, SleepParameter, AnimatorControllerParameterType.Bool);
-                var target = WorldCoords.ToUnity(player.X, player.Y, dead || asleep ? BodyRadius : BodyHeight / 2);
+                // V patře stojí postava na podlaze patra (o podlaží výš).
+                var target = WorldCoords.ToUnity(player.X, player.Y, player.Level * StructureViews.LevelHeight + (dead || asleep ? BodyRadius : BodyHeight / 2));
                 var before = view.transform.position;
                 // Průchod vchodem do jeskyně je skok daleko: postava se přenese hned, neklouže přes mapu.
                 view.transform.position = (target - before).sqrMagnitude > TeleportDistance * TeleportDistance

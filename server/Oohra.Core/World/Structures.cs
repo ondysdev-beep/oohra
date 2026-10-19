@@ -16,8 +16,9 @@ public readonly record struct Segment(double X1, double Y1, double X2, double Y2
 /// </summary>
 public sealed class Structure
 {
-    public Structure(int id, BuildKind kind, double x, double y, double angle, double length, int frameId = 0, int ownerId = -1, string? decorationId = null)
+    public Structure(int id, BuildKind kind, double x, double y, double angle, double length, int frameId = 0, int ownerId = -1, string? decorationId = null, int level = 0)
     {
+        Level = level;
         OwnerId = ownerId;
         DecorationId = decorationId ?? string.Empty;
         Store = kind == BuildKind.Stockpile ? new Inventory(GameData.Building.Stockpile.Capacity) : null;
@@ -33,6 +34,9 @@ public sealed class Structure
     public int Id { get; }
 
     public BuildKind Kind { get; }
+
+    /// <summary>Podlaží: 0 přízemí, 1 patro (stojí na podlaze patra, Roofs).</summary>
+    public int Level { get; }
 
     /// <summary>Dekorace: který druh z decorations.json (id). U ostatních staveb prázdné.</summary>
     public string DecorationId { get; }
@@ -168,9 +172,9 @@ public sealed class Structures
     /// Postaví stavbu bez materiálu a kontrol (pro testy a později pro načtení uloženého světa).
     /// length 0 = plná délka zdi.
     /// </summary>
-    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0, double length = 0, int ownerId = -1, string? decorationId = null)
+    public Structure Place(BuildKind kind, double x, double y, double angle, int frameId = 0, double length = 0, int ownerId = -1, string? decorationId = null, int level = 0)
     {
-        var structure = new Structure(_nextId++, kind, x, y, angle, length > 0 ? length : GameData.Building.Wall.Length, frameId, ownerId, decorationId);
+        var structure = new Structure(_nextId++, kind, x, y, angle, length > 0 ? length : GameData.Building.Wall.Length, frameId, ownerId, decorationId, level);
         _byId[structure.Id] = structure;
         foreach (var tile in TilesOf(structure))
         {
@@ -191,7 +195,7 @@ public sealed class Structures
     public List<StructureSave> Export()
     {
         return _byId.Values.OrderBy(s => s.Id).Select(s => new StructureSave(
-            s.Id, s.Kind, s.X, s.Y, s.Angle, s.Length, s.FrameId, s.OwnerId, s.DecorationId, s.Store?.Stacks.ToList(), s.Caught)).ToList();
+            s.Id, s.Kind, s.X, s.Y, s.Angle, s.Length, s.FrameId, s.OwnerId, s.DecorationId, s.Store?.Stacks.ToList(), s.Caught, s.Level)).ToList();
     }
 
     /// <summary>Obnoví stavby z uloženého světa se stejnými čísly.</summary>
@@ -200,7 +204,7 @@ public sealed class Structures
         foreach (var s in saved.OrderBy(s => s.Id))
         {
             _nextId = s.Id;
-            var structure = Place(s.Kind, s.X, s.Y, s.Angle, s.FrameId, s.Length, s.OwnerId, s.DecorationId);
+            var structure = Place(s.Kind, s.X, s.Y, s.Angle, s.FrameId, s.Length, s.OwnerId, s.DecorationId, s.Level);
             structure.Store?.Restore(s.Store ?? []);
             structure.Caught = s.Caught;
         }
@@ -217,8 +221,17 @@ public sealed class Structures
     public BuildResult Build(
         Island island, Fires fires, Inventory inventory, double playerX, double playerY,
         BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder = null,
-        int ownerId = -1, string? decorationId = null)
+        int ownerId = -1, string? decorationId = null, int level = 0)
     {
+        if (level > 0)
+        {
+            return BuildUpper(island, fires, inventory, playerX, playerY, kind, x, y, angle, length, players, builder, ownerId, level);
+        }
+
+        if (kind == BuildKind.Ladder)
+        {
+            return BuildLadder(inventory, playerX, playerY, x, y, angle, builder, ownerId);
+        }
         // Jeskyně (návrh 0.8, kap. 4): stěny dává skála, zdi a dveře se tu nestaví.
         if (island.InCave(x, y) && kind is BuildKind.StickWall or BuildKind.DoorFrame or BuildKind.Door)
         {
@@ -232,7 +245,7 @@ public sealed class Structures
 
         if (kind is BuildKind.Post or BuildKind.Roof or BuildKind.Floor)
         {
-            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId);
+            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId, 0);
         }
 
         if (kind == BuildKind.Decoration)
@@ -440,11 +453,17 @@ public sealed class Structures
     }
 
     /// <summary>Kruh (postava, oheň) o daném poloměru se překrývá s něčím, co blokuje pohyb.</summary>
-    public bool Blocks(double x, double y, double radius)
+    public bool Blocks(double x, double y, double radius, int level = 0)
     {
         var reach = radius + GameData.Building.Wall.Thickness / 2;
         foreach (var structure in Near(x, y, reach))
         {
+            // Překáží jen stavby ve stejném podlaží.
+            if (structure.Level != level)
+            {
+                continue;
+            }
+
             // Sloupek je kruh.
             if (structure.Kind == BuildKind.Post
                 && Math.Sqrt((structure.X - x) * (structure.X - x) + (structure.Y - y) * (structure.Y - y)) < radius + GameData.Building.Post.Radius)
@@ -515,6 +534,7 @@ public sealed class Structures
             case BuildKind.Post: return rules.Post.SticksCost;
             case BuildKind.Roof: return rules.Roof.SticksCost;
             case BuildKind.Floor: return rules.Floor.SticksCost;
+            case BuildKind.Ladder: return rules.Ladder.SticksCost;
             case BuildKind.Stockpile: return rules.Stockpile.SticksCost;
             case BuildKind.Decoration: return 0;
         }
@@ -543,6 +563,7 @@ public sealed class Structures
             case BuildKind.Post: return rules.Post.SticksBack;
             case BuildKind.Roof: return rules.Roof.SticksBack;
             case BuildKind.Floor: return rules.Floor.SticksBack;
+            case BuildKind.Ladder: return rules.Ladder.SticksBack;
             case BuildKind.Stockpile: return rules.Stockpile.SticksBack;
             case BuildKind.Decoration: return (GameData.Decoration(structure.DecorationId)?.Sticks ?? 0) / 2;
             default: return SticksCost(structure.Kind, structure.Length) / 2;
@@ -649,7 +670,7 @@ public sealed class Structures
     /// (Roofs.Stable), jinak NoSupport.
     /// </summary>
     private BuildResult BuildFrame(Island island, Fires fires, Inventory inventory, double playerX, double playerY, BuildKind kind,
-        double x, double y, double angle, IEnumerable<Position> players, Character? builder, int ownerId)
+        double x, double y, double angle, IEnumerable<Position> players, Character? builder, int ownerId, int level)
     {
         var rules = GameData.Building;
         var cost = SticksCost(kind, 0, builder);
@@ -666,9 +687,10 @@ public sealed class Structures
         double length;
         if (kind == BuildKind.Post)
         {
-            if (!PointFits(island, fires, x, y, rules.Post.Radius) || players.Any(p => Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y)) < GameData.Movement.Radius + rules.Post.Radius))
+            var fits = level == 0 ? PointFits(island, fires, x, y, rules.Post.Radius) : Roofs.StandsOn(this, x, y, level) && !Blocks(x, y, rules.Post.Radius, level);
+            if (!fits || players.Any(p => Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y)) < GameData.Movement.Radius + rules.Post.Radius))
             {
-                return BuildResult.CannotBuildHere;
+                return level == 0 || fits ? BuildResult.CannotBuildHere : BuildResult.NoFloor;
             }
 
             length = 0.01;
@@ -677,14 +699,17 @@ public sealed class Structures
         else
         {
             var size = kind == BuildKind.Roof ? rules.Roof.Size : rules.Floor.Size;
-            var probe = new Structure(-1, kind, x, y, angle, size);
-            var overlaps = All.Any(s => s.Kind == kind && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < size * 0.95);
-            if (overlaps || (kind == BuildKind.Floor && !Corners(probe).All(c => Placement.OnDryLand(island, c.X, c.Y))))
+            var probe = new Structure(-1, kind, x, y, angle, size, level: level);
+            // Ve stejné výšce se desky nepřekrývají (střecha přízemí a podlaha patra jsou obě ve výšce zdí).
+            var deck = Roofs.IsDeck(probe);
+            var overlaps = All.Any(s => (deck ? Roofs.IsDeck(s) && Roofs.DeckHeight(s) == Roofs.DeckHeight(probe) : s.Kind == kind && s.Level == level)
+                && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < size * 0.95);
+            if (overlaps || (!deck && !Corners(probe).All(c => Placement.OnDryLand(island, c.X, c.Y))))
             {
                 return BuildResult.CannotBuildHere;
             }
 
-            if (kind == BuildKind.Roof && !Roofs.Stable(this, probe).Contains(probe.Id))
+            if (deck && !Roofs.Stable(this, probe).Contains(probe.Id))
             {
                 return BuildResult.NoSupport;
             }
@@ -693,7 +718,93 @@ public sealed class Structures
         }
 
         inventory.TryRemove(ItemKind.Stick, cost);
-        Place(kind, x, y, angle, length: length, ownerId: ownerId);
+        Place(kind, x, y, angle, length: length, ownerId: ownerId, level: level);
+        builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
+        return BuildResult.Built;
+    }
+
+    /// <summary>
+    /// Stavba v patře (level 1): jen na podlahu patra, která drží. Zeď a zeď s otvorem celou délkou na podlaze,
+    /// dveře do zdi s otvorem ve stejném podlaží, sloupek, střecha (o patro výš) a další podlaha patra.
+    /// </summary>
+    private BuildResult BuildUpper(Island island, Fires fires, Inventory inventory, double playerX, double playerY, BuildKind kind,
+        double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder, int ownerId, int level)
+    {
+        if (kind is BuildKind.Post or BuildKind.Roof or BuildKind.Floor)
+        {
+            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId, level);
+        }
+
+        if (kind is not (BuildKind.StickWall or BuildKind.DoorFrame or BuildKind.Door))
+        {
+            return BuildResult.CannotBuildHere;
+        }
+
+        var rules = GameData.Building.Wall;
+        length = kind == BuildKind.StickWall ? length : rules.Length;
+        if (inventory.Count(ItemKind.Stick) < SticksCost(kind, length, builder))
+        {
+            return BuildResult.NeedMaterials;
+        }
+
+        if (!Placement.InReach(playerX, playerY, x, y))
+        {
+            return BuildResult.TooFar;
+        }
+
+        if (kind == BuildKind.Door)
+        {
+            var frame = FreeDoorway(x, y, level);
+            if (frame is null)
+            {
+                return BuildResult.NoDoorway;
+            }
+
+            inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
+            Place(BuildKind.Door, frame.X, frame.Y, frame.Angle, frame.Id, ownerId: ownerId, level: level);
+            return BuildResult.Built;
+        }
+
+        var probe = new Structure(-1, kind, x, y, angle, length, level: level);
+        if (!Roofs.Footprint(probe).All(p => Roofs.StandsOn(this, p.X, p.Y, level, 0.1)))
+        {
+            return BuildResult.NoFloor;
+        }
+
+        var (x1, y1, x2, y2) = probe.Ends;
+        if (players.Any(p => Geometry.DistanceToSegment(p.X, p.Y, x1, y1, x2, y2) < GameData.Movement.Radius + rules.Thickness / 2))
+        {
+            return BuildResult.CannotBuildHere;
+        }
+
+        inventory.TryRemove(ItemKind.Stick, SticksCost(kind, length, builder));
+        Place(kind, x, y, angle, length: length, ownerId: ownerId, level: level);
+        builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
+        return BuildResult.Built;
+    }
+
+    /// <summary>Žebřík: v přízemí u podlahy patra (do floorMargin od ní). Natočí se k ní, v chůzi nepřekáží.</summary>
+    private BuildResult BuildLadder(Inventory inventory, double playerX, double playerY, double x, double y, double angle, Character? builder, int ownerId)
+    {
+        var rules = GameData.Building.Ladder;
+        if (inventory.Count(ItemKind.Stick) < rules.SticksCost)
+        {
+            return BuildResult.NeedMaterials;
+        }
+
+        if (!Placement.InReach(playerX, playerY, x, y))
+        {
+            return BuildResult.TooFar;
+        }
+
+        var floor = Storeys.FloorAt(this, x, y, rules.FloorMargin);
+        if (floor is null)
+        {
+            return BuildResult.NoFloor;
+        }
+
+        inventory.TryRemove(ItemKind.Stick, rules.SticksCost);
+        Place(BuildKind.Ladder, x, y, Math.Atan2(floor.Y - y, floor.X - x), length: 0.6, ownerId: ownerId);
         builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
         return BuildResult.Built;
     }
@@ -730,7 +841,7 @@ public sealed class Structures
 
         _nextCheckAt = _time + rules.CheckSeconds;
         var stable = Roofs.Stable(this);
-        foreach (var roof in All.Where(s => s.Kind == BuildKind.Roof).ToList())
+        foreach (var roof in All.Where(s => Roofs.IsDeck(s) || s.Level > 0).ToList())
         {
             if (stable.Contains(roof.Id))
             {
@@ -770,11 +881,11 @@ public sealed class Structures
     }
 
     /// <summary>Nejbližší zeď s otvorem bez dveří, jejíž střed je do snapDistance od bodu.</summary>
-    private Structure? FreeDoorway(double x, double y)
+    private Structure? FreeDoorway(double x, double y, int level = 0)
     {
         var snap = GameData.Building.Door.SnapDistance;
         return Near(x, y, snap)
-            .Where(s => s.Kind == BuildKind.DoorFrame && DoorIn(s.Id) is null)
+            .Where(s => s.Kind == BuildKind.DoorFrame && s.Level == level && DoorIn(s.Id) is null)
             .Select(s => (Frame: s, Distance: Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y))))
             .Where(f => f.Distance <= snap)
             .OrderBy(f => f.Distance)
