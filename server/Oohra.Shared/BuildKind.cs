@@ -29,5 +29,14 @@ namespace Oohra.Core.World
 
         /// <summary>Zátaras u vchodu do jeskyně: dovnitř projde jen majitel a jeho kmen.</summary>
         Barricade = 7,
+
+        /// <summary>Sloupek: podpírá střechu.</summary>
+        Post = 8,
+
+        /// <summary>Střecha: čtverec ve výšce zdí, musí mít podporu (statika).</summary>
+        Roof = 9,
+
+        /// <summary>Podlaha: čtverec na zemi.</summary>
+        Floor = 10,
     }
 }

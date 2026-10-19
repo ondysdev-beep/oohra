@@ -397,6 +397,7 @@ namespace Oohra.Client
                 case BuildResult.BirthPlaceProtected: return "Tady se nedávno někdo narodil. Den po narození tu smí stavět jen on a jeho kmen.";
                 case BuildResult.NotInCave: return "V jeskyni stěny dává skála. Zeď ani dveře tu nepostavíš, ohniště, zásoby a ozdoby ano.";
                 case BuildResult.NoCaveEntrance: return "Zátaras patří k vchodu do jeskyně. Tady žádný není, nebo už zatarasený je.";
+                case BuildResult.NoSupport: return "Střecha by se neměla o co opřít. Potřebuje dvě podpory: zdi, sloupky nebo sousední střechu.";
                 default: return result.ToString();
             }
         }
@@ -529,6 +530,8 @@ namespace Oohra.Client
                 case BodyEvent.NestSmokedOut: return "Vosy prchají před kouřem.";
                 case BodyEvent.FoundCave: return "Za převislou skálou je úzká puklina. Vede dovnitř.";
                 case BodyEvent.Smoke: return "Kouř se drží pod stropem a dusí tě. Tahle jeskyně nemá kudy větrat.";
+                case BodyEvent.RoofCracking: return "Střecha nad tebou praská! Uteč, nebo ji rychle podepři.";
+                case BodyEvent.HitByRoof: return "Spadla na tebe střecha!";
                 default: return "Zemřel jsi.";
             }
         }
@@ -597,6 +600,7 @@ namespace Oohra.Client
                 case DeathCause.Wound: return "Zemřel jsi na následky zranění od zvířete.";
                 case DeathCause.FallingTree: return "Zabil tě padající strom.";
                 case DeathCause.Smoke: return "Udusil ses kouřem v jeskyni.";
+                case DeathCause.Collapse: return "Zavalila tě spadlá střecha.";
                 default: return "Zemřel jsi.";
             }
         }
