@@ -123,7 +123,8 @@ public readonly record struct FireView(int Id, float X, float Y, bool Burning);
 /// </summary>
 /// <summary>Stavba. Decoration: id dekorace (u ostatních staveb prázdné).</summary>
 /// <summary>Stavba. Cracking = střecha bez podpory praská (za chvíli spadne).</summary>
-public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "", bool Cracking = false, byte Level = 0);
+/// <summary>Decoration: id dekorace, u střechy materiál (RoofMaterial). Leaking = střecha zatéká, Burning = stavba hoří.</summary>
+public readonly record struct StructureView(int Id, BuildKind Kind, float X, float Y, float Angle, float Length, int Caught = -1, int OwnerId = -1, string Decoration = "", bool Cracking = false, byte Level = 0, bool Leaking = false, bool Burning = false);
 
 /// <summary>Druh dekorace z decorations.json na serveru: název do nabídky, cena, poloměr a jestli se přes ni dá projít.</summary>
 public sealed record DecorationTypeView(string Id, string Name, int Sticks, int Stones, float Radius, bool Blocks);
@@ -647,6 +648,18 @@ public static class Messages
     }
 
     public static int ReadUseLadder(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
+    /// <summary>Opravit střechu (zase nezatéká).</summary>
+    public static void WriteRepairStructure(NetDataWriter w, int structureId)
+    {
+        w.Put((byte)MessageType.RepairStructure);
+        w.Put(structureId);
+    }
+
+    public static int ReadRepairStructure(NetDataReader r)
     {
         return r.GetInt();
     }
@@ -1530,12 +1543,14 @@ public static class Messages
             w.Put(s.Decoration ?? string.Empty);
             w.Put(s.Cracking);
             w.Put(s.Level);
+            w.Put(s.Leaking);
+            w.Put(s.Burning);
         }
     }
 
     public static StructureView[] ReadStructures(NetDataReader r)
     {
-        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId), r.GetBool(), r.GetByte()));
+        return ReadList(r, () => new StructureView(r.GetInt(), (BuildKind)r.GetByte(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetInt(), r.GetInt(), r.GetString(MaxDecorationId), r.GetBool(), r.GetByte(), r.GetBool(), r.GetBool()));
     }
 
     /// <summary>Zvířata v okolí hráče. Posílá se často (jako snímek hráčů), každému jen jeho okolí.</summary>

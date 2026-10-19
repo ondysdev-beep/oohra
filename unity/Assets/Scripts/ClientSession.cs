@@ -565,6 +565,11 @@ namespace Oohra.Client
         /// <summary>Název stavby do nabídky: u dekorace její jméno ze serveru (Lavice…), jinak druh stavby.</summary>
         public string StructureName(StructureView structure)
         {
+            if (structure.Kind == BuildKind.Roof)
+            {
+                return Texts.RoofName(structure.Decoration);
+            }
+
             if (structure.Kind == BuildKind.Decoration)
             {
                 var decoration = Connection.DecorationTypes.FirstOrDefault(d => d.Id == structure.Decoration);

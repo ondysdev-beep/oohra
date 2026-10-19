@@ -272,6 +272,12 @@ namespace Oohra.Core.World
 
         /// <summary>V patře se staví jen na podlahu patra, žebřík jen k ní.</summary>
         NoFloor,
+
+        /// <summary>Střecha je opravená (zase nezatéká).</summary>
+        Repaired,
+
+        /// <summary>Opravovat jde jen střecha.</summary>
+        CannotRepair,
     }
 
     /// <summary>Jak dopadlo lezení po žebříku.</summary>

@@ -125,6 +125,9 @@ public sealed class Character
     /// <summary>Kolik pijavic na postavě visí.</summary>
     public int Leeches { get; set; }
 
+    /// <summary>Kdy naposledy hlásil hořící stavbu vedle sebe (herní minuty).</summary>
+    public double LastFireWarning { get; set; } = double.NegativeInfinity;
+
     /// <summary>Kdy naposledy hlásil kouř v jeskyni (herní minuty).</summary>
     public double LastSmokeWarning { get; set; } = double.NegativeInfinity;
 

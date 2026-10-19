@@ -65,6 +65,15 @@ public sealed class Structure
     /// <summary>Střecha bez podpory: od kdy praská (reálné sekundy Structures), null = drží.</summary>
     public double? CrackingSince { get; internal set; }
 
+    /// <summary>Střecha: z čeho je (Branches pro ostatní stavby).</summary>
+    public RoofMaterial Material { get; internal set; }
+
+    /// <summary>Střecha: kdy byla postavená nebo naposledy opravená (herní minuty).</summary>
+    public double RepairedAt { get; internal set; }
+
+    /// <summary>Hoří od (herní minuty), null = nehoří (BuildingFire).</summary>
+    public double? BurningSince { get; internal set; }
+
     /// <summary>Konce celé stavby (zeď, zeď s otvorem i dveře leží na úsečce dlouhé Length).</summary>
     public (double X1, double Y1, double X2, double Y2) Ends
     {
@@ -195,7 +204,8 @@ public sealed class Structures
     public List<StructureSave> Export()
     {
         return _byId.Values.OrderBy(s => s.Id).Select(s => new StructureSave(
-            s.Id, s.Kind, s.X, s.Y, s.Angle, s.Length, s.FrameId, s.OwnerId, s.DecorationId, s.Store?.Stacks.ToList(), s.Caught, s.Level)).ToList();
+            s.Id, s.Kind, s.X, s.Y, s.Angle, s.Length, s.FrameId, s.OwnerId, s.DecorationId, s.Store?.Stacks.ToList(), s.Caught, s.Level,
+            s.Material, s.RepairedAt, s.BurningSince)).ToList();
     }
 
     /// <summary>Obnoví stavby z uloženého světa se stejnými čísly.</summary>
@@ -207,6 +217,9 @@ public sealed class Structures
             var structure = Place(s.Kind, s.X, s.Y, s.Angle, s.FrameId, s.Length, s.OwnerId, s.DecorationId, s.Level);
             structure.Store?.Restore(s.Store ?? []);
             structure.Caught = s.Caught;
+            structure.Material = s.Material;
+            structure.RepairedAt = s.RepairedAt;
+            structure.BurningSince = s.BurningSince;
         }
     }
 
@@ -225,7 +238,7 @@ public sealed class Structures
     {
         if (level > 0)
         {
-            return BuildUpper(island, fires, inventory, playerX, playerY, kind, x, y, angle, length, players, builder, ownerId, level);
+            return BuildUpper(island, fires, inventory, playerX, playerY, kind, x, y, angle, length, players, builder, ownerId, level, decorationId);
         }
 
         if (kind == BuildKind.Ladder)
@@ -245,7 +258,7 @@ public sealed class Structures
 
         if (kind is BuildKind.Post or BuildKind.Roof or BuildKind.Floor)
         {
-            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId, 0);
+            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId, 0, decorationId);
         }
 
         if (kind == BuildKind.Decoration)
@@ -330,7 +343,9 @@ public sealed class Structures
         }
 
         var onPlayer = decoration.Blocks && players.Any(p => Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y)) < decoration.Radius + GameData.Movement.Radius);
-        if (onPlayer || !PointFits(island, fires, x, y, decoration.Radius))
+        // Kruh z kamenů se staví i kolem ohniště (pak oheň stavby nezapálí).
+        var ring = decoration.Id == GameData.Building.BuildingFire.RingDecoration;
+        if (onPlayer || !PointFits(island, ring ? new Fires() : fires, x, y, decoration.Radius))
         {
             return BuildResult.CannotBuildHere;
         }
@@ -670,11 +685,12 @@ public sealed class Structures
     /// (Roofs.Stable), jinak NoSupport.
     /// </summary>
     private BuildResult BuildFrame(Island island, Fires fires, Inventory inventory, double playerX, double playerY, BuildKind kind,
-        double x, double y, double angle, IEnumerable<Position> players, Character? builder, int ownerId, int level)
+        double x, double y, double angle, IEnumerable<Position> players, Character? builder, int ownerId, int level, string? variant = null)
     {
         var rules = GameData.Building;
-        var cost = SticksCost(kind, 0, builder);
-        if (inventory.Count(ItemKind.Stick) < cost)
+        var material = kind == BuildKind.Roof ? RoofMaterialOf(variant) : null;
+        var cost = material?.Sticks ?? SticksCost(kind, 0, builder);
+        if (inventory.Count(ItemKind.Stick) < cost || (material is { Count: > 0 } m && inventory.Count(m.Item) < m.Count))
         {
             return BuildResult.NeedMaterials;
         }
@@ -718,9 +734,97 @@ public sealed class Structures
         }
 
         inventory.TryRemove(ItemKind.Stick, cost);
-        Place(kind, x, y, angle, length: length, ownerId: ownerId, level: level);
+        if (material is { Count: > 0 })
+        {
+            inventory.TryRemove(material.Item, material.Count);
+        }
+
+        var placed = Place(kind, x, y, angle, length: length, ownerId: ownerId, level: level);
+        if (material is not null)
+        {
+            placed.Material = material.Material;
+            placed.RepairedAt = _now;
+        }
+
         builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
         return BuildResult.Built;
+    }
+
+    /// <summary>Materiál střechy podle názvu (z nabídky stavby), bez názvu větve.</summary>
+    public static RoofMaterialRules RoofMaterialOf(string? variant)
+    {
+        var all = GameData.Building.RoofMaterials;
+        return all.FirstOrDefault(m => string.Equals(m.Material.ToString(), variant, StringComparison.OrdinalIgnoreCase)) ?? all[0];
+    }
+
+    /// <summary>Herní čas (minuty) pro nové střechy a zatékání. Server ho nastavuje každý tick.</summary>
+    private double _now;
+
+    public void SetTime(double now)
+    {
+        _now = now;
+    }
+
+    /// <summary>Střecha zatéká (materiál dosloužil), před deštěm nechrání, dokud se neopraví.</summary>
+    public static bool Leaking(Structure roof, double now)
+    {
+        return roof.Kind == BuildKind.Roof && now - roof.RepairedAt > RoofMaterialOf(roof.Material.ToString()).Days * 1440;
+    }
+
+    /// <summary>Opravit střechu: stojí repairShare materiálu, zatékání začne počítat znovu.</summary>
+    public BuildResult Repair(int id, Inventory inventory, double playerX, double playerY, int playerId, Tribes? tribes, double now)
+    {
+        var roof = Find(id);
+        if (roof is null)
+        {
+            return BuildResult.NotFound;
+        }
+
+        if (roof.Kind != BuildKind.Roof || roof.BurningSince is not null)
+        {
+            return BuildResult.CannotRepair;
+        }
+
+        if (!MayTouch(roof, playerId, tribes))
+        {
+            return BuildResult.NotYours;
+        }
+
+        if (Math.Sqrt((roof.X - playerX) * (roof.X - playerX) + (roof.Y - playerY) * (roof.Y - playerY)) > GameData.Building.PlaceReach)
+        {
+            return BuildResult.TooFar;
+        }
+
+        var material = RoofMaterialOf(roof.Material.ToString());
+        var share = GameData.Building.RepairShare;
+        var (sticks, items) = ((int)Math.Ceiling(material.Sticks * share), (int)Math.Ceiling(material.Count * share));
+        if (inventory.Count(ItemKind.Stick) < sticks || (items > 0 && inventory.Count(material.Item) < items))
+        {
+            return BuildResult.NeedMaterials;
+        }
+
+        inventory.TryRemove(ItemKind.Stick, sticks);
+        if (items > 0)
+        {
+            inventory.TryRemove(material.Item, items);
+        }
+
+        roof.RepairedAt = now;
+        Version++;
+        return BuildResult.Repaired;
+    }
+
+    /// <summary>Stavba chytla (BuildingFire).</summary>
+    internal void Ignite(Structure s, double now)
+    {
+        s.BurningSince = now;
+        Version++;
+    }
+
+    /// <summary>Stavba shořela: zmizí i s tím, co v ní bylo (zásoby).</summary>
+    internal void Burn(Structure s)
+    {
+        Take(s, new Inventory(0));
     }
 
     /// <summary>
@@ -728,11 +832,11 @@ public sealed class Structures
     /// dveře do zdi s otvorem ve stejném podlaží, sloupek, střecha (o patro výš) a další podlaha patra.
     /// </summary>
     private BuildResult BuildUpper(Island island, Fires fires, Inventory inventory, double playerX, double playerY, BuildKind kind,
-        double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder, int ownerId, int level)
+        double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder, int ownerId, int level, string? variant)
     {
         if (kind is BuildKind.Post or BuildKind.Roof or BuildKind.Floor)
         {
-            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId, level);
+            return BuildFrame(island, fires, inventory, playerX, playerY, kind, x, y, angle, players, builder, ownerId, level, variant);
         }
 
         if (kind is not (BuildKind.StickWall or BuildKind.DoorFrame or BuildKind.Door))

@@ -42,4 +42,20 @@ namespace Oohra.Core.World
         /// <summary>Žebřík k podlaze patra.</summary>
         Ladder = 11,
     }
+
+    /// <summary>Z čeho je střecha (každý materiál chrání jinak dlouho, pak zatéká).</summary>
+    public enum RoofMaterial : byte
+    {
+        /// <summary>Větve a listí: hned, ale krátce.</summary>
+        Branches = 0,
+
+        /// <summary>Kůra (lýko).</summary>
+        Bark = 1,
+
+        /// <summary>Vyčiněná kůže.</summary>
+        Hide = 2,
+
+        /// <summary>Dřevěné šindele: vydrží nejdéle.</summary>
+        Shingles = 3,
+    }
 }

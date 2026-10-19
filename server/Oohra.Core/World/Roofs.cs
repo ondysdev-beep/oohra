@@ -39,9 +39,10 @@ public static class Roofs
     }
 
     /// <summary>Kdo stojí na (x, y) v podlaží level, má nad hlavou desku, která drží (nepadá): chrání před deštěm.</summary>
-    public static bool IsRoofed(Structures structures, double x, double y, int level = 0)
+    public static bool IsRoofed(Structures structures, double x, double y, int level = 0, double now = 0)
     {
-        return structures.All.Any(s => IsDeck(s) && DeckHeight(s) > level && s.CrackingSince is null && Covers(s, x, y));
+        return structures.Near(x, y, 0.5).Any(s => IsDeck(s) && DeckHeight(s) > level && s.CrackingSince is null && s.BurningSince is null
+            && !Structures.Leaking(s, now) && Covers(s, x, y));
     }
 
     /// <summary>V podlaží level (patro) je na (x, y) podlaha, na které se dá stát.</summary>

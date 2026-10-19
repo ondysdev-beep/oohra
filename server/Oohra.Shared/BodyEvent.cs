@@ -157,6 +157,9 @@ public enum BodyEvent
 
     /// <summary>Seskočil z patra.</summary>
     JumpedDown,
+
+    /// <summary>Stavba vedle něj hoří, pálí ho to.</summary>
+    BuildingOnFire,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -205,6 +208,9 @@ public enum DeathCause
 
     /// <summary>Zabil ho pád z patra.</summary>
     Fall,
+
+    /// <summary>Uhořel u hořící stavby.</summary>
+    Burned,
 }
 
 /// <summary>Viditelný příznak ve stavu těla.</summary>

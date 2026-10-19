@@ -394,6 +394,12 @@ public sealed class GameConnection : IDisposable
         Send(w => Messages.WriteUseLadder(w, ladderId));
     }
 
+    /// <summary>Opravit střechu, která zatéká (polovina materiálu).</summary>
+    public void RepairStructure(int structureId)
+    {
+        Send(w => Messages.WriteRepairStructure(w, structureId));
+    }
+
     /// <summary>Seskočit z patra dolů (trochu to bolí).</summary>
     public void JumpDown()
     {

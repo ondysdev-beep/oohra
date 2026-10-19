@@ -28,6 +28,18 @@ namespace Oohra.Client
         /// <summary>Tloušťka podlahy (na zemi i v patře, vršek podlahy patra je ve výšce LevelHeight).</summary>
         public const float FloorThickness = 0.06f;
 
+        /// <summary>Barva střechy podle materiálu (větve zelenohnědé, kůra hnědá, kůže světlá, šindele šedohnědé).</summary>
+        public static Color RoofColor(string material)
+        {
+            switch (material)
+            {
+                case "Bark": return Palette.Hex("#6b4a32");
+                case "Hide": return Palette.Hex("#a58a64");
+                case "Shingles": return Palette.Hex("#6f665a");
+                default: return Palette.Hex("#5e6a3a");
+            }
+        }
+
         /// <summary>Kde je spodek modelu stavby v podlaží level (podlaha patra leží o svou tloušťku níž).</summary>
         public static float BaseHeight(BuildKind kind, int level)
         {
@@ -148,7 +160,7 @@ namespace Oohra.Client
 
                     break;
                 case BuildKind.Roof:
-                    Part(root.transform, "Střecha", new Vector3(0f, WallHeight + RoofThickness / 2, 0f), new Vector3(length, RoofThickness, length), Palette.Hex("#6e5a3e"));
+                    Part(root.transform, "Střecha", new Vector3(0f, WallHeight + RoofThickness / 2, 0f), new Vector3(length, RoofThickness, length), RoofColor(decorationId));
                     break;
                 case BuildKind.Barricade:
                     // Zátaras: svislé klacky přes otvor a dva šikmé vzpěrné, vysoký asi 1,6 m.
@@ -270,6 +282,15 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Stav, při jehož změně se model postaví znovu: úlovek v pasti, zatékání, hoření.</summary>
+        private static int StateOf(StructureView structure)
+        {
+            return structure.Caught * 4 + (structure.Leaking ? 1 : 0) + (structure.Burning ? 2 : 0);
+        }
+
+        /// <summary>Kolik staveb teď hoří (pro testy).</summary>
+        public int BurningCount { get; private set; }
+
         /// <summary>Střechy, které praskají (třesou se, za chvíli spadnou).</summary>
         private readonly HashSet<int> _cracking = new HashSet<int>();
 
@@ -282,6 +303,7 @@ namespace Oohra.Client
         private void Update()
         {
             Shake();
+            Flicker();
             if (_connection == null || ReferenceEquals(_connection.Structures, _shown))
             {
                 return;
@@ -293,9 +315,9 @@ namespace Oohra.Client
             {
                 _current.Add(structure.Id);
                 int caught;
-                if (_views.ContainsKey(structure.Id) && _caught.TryGetValue(structure.Id, out caught) && caught != structure.Caught)
+                if (_views.ContainsKey(structure.Id) && _caught.TryGetValue(structure.Id, out caught) && caught != StateOf(structure))
                 {
-                    // Do pasti se něco chytilo (nebo úlovek někdo vzal): model se postaví znovu.
+                    // Do pasti se něco chytilo (nebo úlovek někdo vzal), střecha začala zatékat, stavba hoří: model znovu.
                     RemoveView(structure.Id);
                 }
 
@@ -312,7 +334,7 @@ namespace Oohra.Client
                 if (!_views.ContainsKey(structure.Id))
                 {
                     _views[structure.Id] = Create(structure);
-                    _caught[structure.Id] = structure.Caught;
+                    _caught[structure.Id] = StateOf(structure);
                 }
             }
 
@@ -329,6 +351,31 @@ namespace Oohra.Client
             {
                 RemoveView(id);
             }
+        }
+
+        /// <summary>Plameny hořících staveb se mihotají.</summary>
+        private void Flicker()
+        {
+            var count = 0;
+            foreach (var view in _views.Values)
+            {
+                var any = false;
+                foreach (Transform part in view.transform)
+                {
+                    if (part.name != "Plamen")
+                    {
+                        continue;
+                    }
+
+                    any = true;
+                    var h = 0.4f + 0.25f * Mathf.PerlinNoise(Time.time * 6f, part.GetSiblingIndex() * 1.7f);
+                    part.localScale = new Vector3(0.25f, h, 0.25f);
+                }
+
+                count += any ? 1 : 0;
+            }
+
+            BurningCount = count;
         }
 
         /// <summary>Praskající střecha se třese a kolébá.</summary>
@@ -348,6 +395,22 @@ namespace Oohra.Client
                     view.transform.localRotation = Quaternion.Euler(wobble, structure.Angle * Mathf.Rad2Deg, wobble * 0.5f);
                 }
             }
+        }
+
+        /// <summary>Hořící stavba: plameny (svítící kousky, které se mihotají) a kouř nad ní.</summary>
+        private static void AddFlames(Transform root, StructureView structure)
+        {
+            var top = structure.Kind == BuildKind.Roof ? WallHeight + RoofThickness : structure.Kind == BuildKind.Floor ? 0.1f : WallHeight * 0.6f;
+            var spread = Mathf.Max(0.3f, structure.Length * 0.4f);
+            for (var i = 0; i < 5; i++)
+            {
+                var flame = IslandView.Primitive(PrimitiveType.Sphere, "Plamen", root, Color.white);
+                flame.transform.localPosition = new Vector3((i - 2) * spread / 2, top, (i % 2 == 0 ? 0.1f : -0.1f));
+                flame.transform.localScale = new Vector3(0.25f, 0.5f, 0.25f);
+                Palette.SetGlow(flame, new Color(1f, 0.45f + 0.1f * i, 0.1f));
+            }
+
+            ParticleLook.CreateSmoke(root, new Vector3(0f, top + 0.3f, 0f), 1.5f).Play();
         }
 
         private void RemoveView(int id)
@@ -373,6 +436,20 @@ namespace Oohra.Client
             if (structure.Kind == BuildKind.Door)
             {
                 root.transform.Find("Pant").gameObject.AddComponent<DoorSwing>().Init(_connection, structure.X, structure.Y, structure.Angle);
+            }
+
+            if (structure.Leaking)
+            {
+                // Střecha, která zatéká: vybledlá, se skvrnami.
+                foreach (var renderer in root.GetComponentsInChildren<Renderer>())
+                {
+                    renderer.material.color = Color.Lerp(renderer.material.color, new Color(0.45f, 0.45f, 0.42f), 0.5f);
+                }
+            }
+
+            if (structure.Burning)
+            {
+                AddFlames(root.transform, structure);
             }
 
             if (structure.Kind == BuildKind.Trap && structure.Caught >= 0)

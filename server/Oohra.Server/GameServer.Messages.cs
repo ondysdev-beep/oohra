@@ -236,7 +236,8 @@ public sealed partial class GameServer
 
     private StructureView[] StructureViews()
     {
-        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId, s.DecorationId, s.CrackingSince is not null, (byte)s.Level)).ToArray();
+        return Island.Structures.All.Select(s => new StructureView(s.Id, s.Kind, (float)s.X, (float)s.Y, (float)s.Angle, (float)s.Length, s.Caught.HasValue ? (int)s.Caught.Value : -1, s.OwnerId, s.Kind == BuildKind.Roof ? s.Material.ToString() : s.DecorationId, s.CrackingSince is not null, (byte)s.Level,
+            Structures.Leaking(s, Clock.TotalMinutes), s.BurningSince is not null)).ToArray();
     }
 
     private RockPileView[] RockPileViews()
