@@ -8,5 +8,7 @@
 [
   { "id": "bench", "name": "Lavice", "sticks": 3, "stones": 0, "radius": 0.45, "blocks": true },
   { "id": "totem", "name": "Totem", "sticks": 4, "stones": 1, "radius": 0.3, "blocks": true },
-  { "id": "stone_circle", "name": "Kruh z kamenů", "sticks": 0, "stones": 4, "radius": 0.6, "blocks": false }
+  { "id": "stone_circle", "name": "Kruh z kamenů", "sticks": 0, "stones": 4, "radius": 0.6, "blocks": false },
+  // Sušák na maso (preserving.json): pověšené maso se ve dne za sucha usuší.
+  { "id": "drying_rack", "name": "Sušák na maso", "sticks": 5, "stones": 0, "radius": 0.55, "blocks": true }
 ]

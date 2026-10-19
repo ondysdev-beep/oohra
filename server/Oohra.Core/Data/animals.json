@@ -104,6 +104,9 @@
   // Maso (prototyp comp pro meat): výživa, dráždivost, toxin, nervový jed, povzbuzení, léčivost.
   "meat": {
     "raw": [0.85, 0.35, 0, 0, 0, 0],
-    "baked": [1, 0, 0, 0, 0, 0]
+    "baked": [1, 0, 0, 0, 0, 0],
+    // Uzené a sušené (preserving.json) sytí o něco méně než čerstvě upečené.
+    "smoked": [0.9, 0, 0, 0, 0, 0],
+    "dried": [0.8, 0, 0, 0, 0, 0]
   }
 }

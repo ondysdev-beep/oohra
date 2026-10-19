@@ -62,6 +62,7 @@ namespace Oohra.Client
             { "mosquito", "Komáři mohou přenášet nemoc. Drž se u ohně (kouř), nebo se natři bahnem či popelem." },
             { "leech", "Pijavice se chytají v bažině. Sundáš je u ohně nebo popelem z ohniště." },
             { "disease", "Je ti zle. Nemoc chce svůj lék: zkoušej rostliny a zapisuj si, co pomohlo. Pij hodně vody." },
+            { "smoking", "Maso visí v kouři. Udí se, dokud oheň hoří (asi 4 hodiny), a pak vydrží přes týden. Na sušáku se suší ve dne, když neprší." },
             { "ticks", "V trávě a v lese se přisávají klíšťata, potichu. Občas se prohlédni (tlačítko u příznaků), ať nemoc nestihnou přenést." },
             { "snake", "Hadi leží na skalách a loukách, ve dne a v teple. Když had syčí, ustup. Jed působí se zpožděním a má svůj lék." },
             { "wasps", "Vosí hnízdo ve stromě. Vosy štípou, kdo přijde blízko. Kouř z pochodně je odežene, s ní jde hnízdo vykouřit." },
@@ -192,6 +193,9 @@ namespace Oohra.Client
                     break;
                 case EventKind.Body when (BodyEvent)e.Code is BodyEvent.Leech:
                     Tip("leech");
+                    break;
+                case EventKind.Preserve when (PreserveResult)e.Code is PreserveResult.Hung:
+                    Tip("smoking");
                     break;
                 case EventKind.Body when (BodyEvent)e.Code is BodyEvent.TicksFound:
                     Tip("ticks");

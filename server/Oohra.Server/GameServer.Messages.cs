@@ -282,6 +282,13 @@ public sealed partial class GameServer
         return (byte)((int)Math.Round((turn < 0 ? turn + 1 : turn) * 256) % 256);
     }
 
+    private RackView[] RackViews()
+    {
+        return Racks.All.Select(r => new RackView(r.Key.Holder, r.Key.Id, r.Pieces
+            .Select(p => new RackPieceView(p.Item.Kind, p.Item.Cooking, (byte)Math.Round(255 * MeatRacks.Fraction(r.Key.Holder, p))))
+            .ToArray())).ToArray();
+    }
+
     private WaspNestView[] WaspNestViews()
     {
         return Island.Wasps.Active(Clock.TotalMinutes).Select(n => new WaspNestView(n.TileIndex, (float)n.X, (float)n.Y, Island.Wasps.IsAngry(n))).ToArray();

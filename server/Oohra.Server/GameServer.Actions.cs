@@ -159,6 +159,14 @@ public sealed partial class GameServer
             case MessageType.TeachRecipe:
                 TeachAction(player, Messages.ReadTeachRecipe(reader));
                 break;
+            case MessageType.HangMeat:
+                var (hangHolder, hangId, hangStack) = Messages.ReadHangMeat(reader);
+                PreserveAction(player, hangHolder, hangId, hanging: true, () => Racks.Hang(hangHolder, hangId, player.Inventory, hangStack, Clock.TotalMinutes));
+                break;
+            case MessageType.TakeFromRack:
+                var (rackHolder, rackId, rackPiece) = Messages.ReadTakeFromRack(reader);
+                PreserveAction(player, rackHolder, rackId, hanging: false, () => Racks.Take(rackHolder, rackId, rackPiece, player.Inventory));
+                break;
             case MessageType.ReadJournal:
                 SendJournal(player, Messages.ReadStackAction(reader));
                 break;
@@ -442,6 +450,56 @@ public sealed partial class GameServer
         var result = action();
         SendEvent(player, new GameEvent(EventKind.Wood, (byte)result, default, []));
         SendInventory(player);
+    }
+
+    /// <summary>
+    /// Maso do kouře nebo na sušák a zpátky: hráč musí stát blízko, oheň musí hořet (pověsit), sušák musí být
+    /// sušák a patřit jemu nebo jeho kmeni.
+    /// </summary>
+    private void PreserveAction(PlayerSession player, RackHolder holder, int id, bool hanging, Func<PreserveResult> action)
+    {
+        if (player.Character.IsDead)
+        {
+            return;
+        }
+
+        var result = RackCheck(player, holder, id);
+        if (result is null && hanging && holder == RackHolder.Fire && !Fires.Find(id)!.Burning)
+        {
+            result = PreserveResult.FireOut;
+        }
+
+        SendEvent(player, new GameEvent(EventKind.Preserve, (byte)(result ?? action()), default, []));
+        SendInventory(player);
+    }
+
+    /// <summary>Kontrola místa: null = v pořádku.</summary>
+    private PreserveResult? RackCheck(PlayerSession player, RackHolder holder, int id)
+    {
+        var reach = GameData.Preserving.Reach;
+        if (holder == RackHolder.Fire)
+        {
+            var fire = Fires.Find(id);
+            if (fire is null)
+            {
+                return PreserveResult.NothingHere;
+            }
+
+            return Math.Sqrt((fire.X - player.X) * (fire.X - player.X) + (fire.Y - player.Y) * (fire.Y - player.Y)) > reach ? PreserveResult.TooFar : null;
+        }
+
+        var rack = Island.Structures.All.FirstOrDefault(s => s.Id == id);
+        if (rack is null || rack.DecorationId != GameData.Preserving.RackDecoration)
+        {
+            return PreserveResult.NothingHere;
+        }
+
+        if (Math.Sqrt((rack.X - player.X) * (rack.X - player.X) + (rack.Y - player.Y) * (rack.Y - player.Y)) > reach + 0.5)
+        {
+            return PreserveResult.TooFar;
+        }
+
+        return Structures.MayTouch(rack, player.Id, Tribes) ? null : PreserveResult.NotYours;
     }
 
     /// <summary>Stavba: postavit nebo rozebrat. Seznam staveb se všem pošle v příštím ticku.</summary>

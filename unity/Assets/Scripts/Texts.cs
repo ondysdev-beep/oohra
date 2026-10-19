@@ -67,6 +67,10 @@ namespace Oohra.Client
                     warn = !(wood is WoodResult.AxeMade or WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut
                         or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.PickedUp or WoodResult.Dropped or WoodResult.BastStripped);
                     return For(wood);
+                case EventKind.Preserve:
+                    var preserve = (PreserveResult)e.Code;
+                    warn = !(preserve is PreserveResult.Hung or PreserveResult.Taken);
+                    return For(preserve);
                 case EventKind.Wasp:
                     var wasp = (WaspResult)e.Code;
                     warn = wasp != WaspResult.SmokedOut;
@@ -633,9 +637,8 @@ namespace Oohra.Client
             if (stack.Kind == ItemKind.Hook) return "Kostěný háček · zbývá " + stack.Uses + " použití";
             if (stack.Kind == ItemKind.LogPiece) return "Klad · " + TreeName(stack.Tree).ToLower();
             if (stack.Kind == ItemKind.Hide) return "Syrová kůže" + (stack.Spoiled ? " · zahnilá" : string.Empty);
+            if (stack.Kind == ItemKind.Meat || stack.Kind == ItemKind.Fish) return FleshName(stack.Kind, stack.Cooking) + (stack.Spoiled ? " · zapáchá" : string.Empty);
             if (stack.Kind != ItemKind.Plant) return ItemName(stack.Kind);
-            if (stack.Kind == ItemKind.Meat) return (stack.Cooking == Cooking.Baked ? "Maso · upečené" : "Maso · syrové") + (stack.Spoiled ? " · zapáchá" : string.Empty);
-            if (stack.Kind == ItemKind.Fish) return (stack.Cooking == Cooking.Baked ? "Ryba · upečená" : "Ryba · syrová") + (stack.Spoiled ? " · zapáchá" : string.Empty);
 
             var name = stack.Part == PlantPart.Leaf ? "List" : stack.Part == PlantPart.Root ? "Kořen" : "Plod";
             if (stack.Part == PlantPart.Fruit)
@@ -647,6 +650,37 @@ namespace Oohra.Client
             if (stack.Cooking == Cooking.Boiled) name += " · uvařený";
             if (stack.Spoiled) name += " · plesnivý";
             return name;
+        }
+
+        /// <summary>Maso nebo ryba i s úpravou (syrové, upečené, uzené, sušené).</summary>
+        public static string FleshName(ItemKind kind, Cooking cooking)
+        {
+            var fish = kind == ItemKind.Fish;
+            switch (cooking)
+            {
+                case Cooking.Baked: return fish ? "Ryba · upečená" : "Maso · upečené";
+                case Cooking.Smoked: return fish ? "Ryba · uzená" : "Maso · uzené";
+                case Cooking.Dried: return fish ? "Ryba · sušená" : "Maso · sušené";
+                default: return fish ? "Ryba · syrová" : "Maso · syrové";
+            }
+        }
+
+        /// <summary>Text k uzení a sušení masa.</summary>
+        public static string For(PreserveResult result)
+        {
+            switch (result)
+            {
+                case PreserveResult.Hung: return "Maso visí. Hotové bude, až ztmavne a ztvrdne.";
+                case PreserveResult.Taken: return "Vzal jsi maso.";
+                case PreserveResult.NotMeat: return "Pověsit jde jen syrové maso nebo ryba.";
+                case PreserveResult.Spoiled: return "Tohle už zapáchá. Kouř ho nezachrání.";
+                case PreserveResult.RackFull: return "Víc se sem nevejde.";
+                case PreserveResult.NothingHere: return "Nic tu nevisí.";
+                case PreserveResult.InventoryFull: return "Nemáš volné ruce ani místo v batohu.";
+                case PreserveResult.TooFar: return "Musíš blíž.";
+                case PreserveResult.FireOut: return "Bez ohně není kouř. Nejdřív oheň rozdělej.";
+                default: return "Cizí sušák. Sahat na něj smí jen ten, kdo ho postavil, a jeho kmen.";
+            }
         }
 
         public static string TreeName(TreeKind kind)

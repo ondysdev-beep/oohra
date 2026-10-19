@@ -165,6 +165,8 @@ public sealed record SleepRules(
 public sealed record SpoilageRules(
     double MeatRawDays,
     double MeatBakedDays,
+    double MeatSmokedDays,
+    double MeatDriedDays,
     double FruitRawDays,
     double FruitBakedDays,
     double NutritionFactor,

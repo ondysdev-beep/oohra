@@ -1,0 +1,18 @@
+// Uzení a sušení masa (návrh 0.8, kap. 5). Maso a ryby se kazí, uzené a sušené vydrží déle (body.json spoilage).
+{
+  // Uzení: syrové maso nebo ryba zavěšená v kouři hořícího ohně je uzená po smokeMinutes herních minut, kdy oheň
+  // hořel (když zhasne, uzení stojí). Nad jedním ohněm se vejde fireSlots kusů.
+  "smokeMinutes": 240,
+  "fireSlots": 4,
+
+  // Sušení: maso na sušáku (dekorace rackDecoration v decorations.json) je suché po dryMinutes herních minut,
+  // počítá se jen ve dne (denní světlo aspoň dryMinDaylight) a když neprší. Na sušák se vejde rackSlots kusů.
+  // Pověsit a brát smí jen majitel sušáku a jeho kmen.
+  "dryMinutes": 600,
+  "dryMinDaylight": 0.35,
+  "rackSlots": 8,
+  "rackDecoration": "drying_rack",
+
+  // Jak blízko musí hráč stát k ohni nebo sušáku (metry).
+  "reach": 2.2
+}

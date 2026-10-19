@@ -73,7 +73,7 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 
 ### Etapa 5: Sezónní nebezpečí, stopy, sušení a uzení (1 až 2 týdny)
 - [x] První vlna (19. 10.): **hladoví vlci v zimě** (o polovinu víc, loví už za soumraku, oheň je odradí jen zblízka, toulají se dál od doupěte, takže dojdou blíž k táborům). **Rozvodněná bažina na jaře:** voda se rozlije z bažiny do okolní trávy, lesa a písku až na 4 m (nejvíc ve druhém jarním měsíci, trochu i na konci zimy), zatopená souš zpomalí a chytají se tam pijavice. **Stopy v bahně** hráčů a zvířat (bažina a zatopená souš), zmizí za 12 herních hodin, v dešti 8× rychleji, každý hráč dostává jen stopy v okolí. Na zkoušení `startMonth` v server.json.
-- [ ] Druhá vlna: sušení a uzení masa.
+- [x] Druhá vlna (19. 10.): **uzení** syrového masa a ryb v kouři hořícího ohně (4 herní hodiny, nad ohněm 4 kusy, když oheň zhasne, uzení stojí) a **sušení** na sušáku (nová dekorace „Sušák na maso“, 10 hodin ve dne za sucha, 8 kusů, jen majitel a kmen). Uzené maso vydrží 10 dní, sušené 15 (syrové 1,5, pečené 4), sytí trochu méně než pečené. Kdo vezme kus dřív, má ho syrový. V katalogu políčko **MeatStrip** a sušák má id `drying_rack`. **Etapa 5 hotová.**
 
 ### Později (mimo další kolo)
 Jeskyně (etapa 6), patra, střechy a statika (7), mapa jako věc a vor (8).

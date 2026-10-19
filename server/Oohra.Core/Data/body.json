@@ -181,6 +181,9 @@
   "spoilage": {
     "meatRawDays": 1.5,
     "meatBakedDays": 4,
+    // Uzené a sušené maso (preserving.json) vydrží déle, počítá se ode dne, kdy bylo hotové.
+    "meatSmokedDays": 10,
+    "meatDriedDays": 15,
     "fruitRawDays": 3.5,
     "fruitBakedDays": 5,
     "nutritionFactor": 0.5,

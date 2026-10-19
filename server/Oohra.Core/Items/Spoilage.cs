@@ -6,7 +6,7 @@ namespace Oohra.Core.Items;
 
 /// <summary>
 /// Kažení jídla (prototyp spoiled v part2.js). Maso, ryba a plody se po několika dnech od získání zkazí,
-/// upečené vydrží déle. Syrová kůže zahnije (crafting.json). Listy a kořeny se nekazí. Stáří se měří od poloviny dne, kdy byla věc získaná.
+/// upečené vydrží déle, uzené a sušené (MeatRacks) nejdéle. Syrová kůže zahnije (crafting.json). Listy a kořeny se nekazí. Stáří se měří od poloviny dne, kdy byla věc získaná.
 /// </summary>
 public static class Spoilage
 {
@@ -15,7 +15,14 @@ public static class Spoilage
         var rules = GameData.Body.Spoilage;
         if (item.IsFlesh)
         {
-            return AgeDays(item.Day, now) > (item.Cooking == Cooking.Raw ? rules.MeatRawDays : rules.MeatBakedDays);
+            var days = item.Cooking switch
+            {
+                Cooking.Raw => rules.MeatRawDays,
+                Cooking.Smoked => rules.MeatSmokedDays,
+                Cooking.Dried => rules.MeatDriedDays,
+                _ => rules.MeatBakedDays,
+            };
+            return AgeDays(item.Day, now) > days;
         }
 
         if (item.Kind == ItemKind.Hide)
