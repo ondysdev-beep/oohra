@@ -43,6 +43,20 @@ Napiš příkaz do okna serveru a stiskni Enter.
 | `pocasi bourka` | vynutí počasí (`jasno`, `mlha`, `dest`, `bourka`), `pocasi auto` ho zase pustí samo, `pocasi` řekne, jaké je. Jen pro zkoušení, neukládá se. Od startu jde vynutit i v `server.json` (`forceWeather`) |
 | `konec` | uloží svět a vypne server |
 
+### Příkazy na zkoušení
+Jen pro správce v okně serveru (hráči je napsat nemůžou). Názvy věcí a míst jsou bez háčků a čárek.
+
+| Příkaz | Co udělá |
+|---|---|
+| `dat Ondra sekera` | dá věc (`dat Ondra kamen 9` víc kusů). Co se nevejde do rukou, položí na zem. Věci: klacek, kamen, pazourek, lyko, kost, kuze, vycinena, popel, drevo, trisky, maso, ryba, sekera, nuz, kopi, jehla, hacek, batoh, velkybatoh, denik |
+| `cas 21` | posune čas dopředu na tu hodinu (dnes, nebo zítra, když už byla) |
+| `mesic 10` | nastaví měsíc roku 1 až 12 (2 = jarní záplava, 10 až 12 = zima: vlci, hadi spí) |
+| `telo Ondra sytost 20` | nastaví sytost, voda, energie, teplo nebo zdravi (0 až 100) |
+| `uzdravit Ondra` | plné tělo, bez jedu a pijavic (skryté nemoci zůstanou) |
+| `presun Ondra more` | přenese postavu na nejbližší místo: more, bazina, skala (u kamenů), vrchovina, les, louka, voda (u jezírka), tabor (cizinci), ruiny, nebo souřadnice `presun Ondra 120 80` |
+| `recepty Ondra` | postava umí všechny recepty (smrtí je zapomene) |
+| `ohen Ondra` | rozdělá oheň před postavou, zadarmo |
+
 ## Co říct testerům
 - **Přihlášení:** kód pozvánky a přezdívka. Přezdívka může být jakákoli, jen ne sprostá.
 - **Postava patří počítači:** hra si při prvním spuštění vytvoří tajný klíč a uloží ho na počítači. Na jiném počítači se ke své postavě nedostanou, dokud správce postavu neodemkne (`odemknout`).

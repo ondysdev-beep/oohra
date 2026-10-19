@@ -7,17 +7,24 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Zvuky okolí (prototyp sfx): praskání nejbližšího ohně, kroky postavy, zachrochtání divočáka, který se zaměřil,
-    /// a vytí vlka, který se plíží (déšť a hrom hraje WeatherView). Nahrávky hra nemá, zvuky se skládají v kódu (šum, tóny). Hlasitost podle
-    /// SyllableVoice.Volume.
+    /// Zvuky okolí (prototyp sfx): praskání nejbližšího ohně, moře u pobřeží, kroky postavy, kručení v břiše při
+    /// hladu, zachrochtání divočáka, který se zaměřil, vytí vlka, který se plíží, a zvuky vlastních činností
+    /// (sekera, kámen, výroba z kamene, stavba). Déšť a hrom hraje WeatherView. Nahrávky jsou v katalogu zvuků
+    /// (SoundCatalog), co v něm chybí, se skládá v kódu (šum, tóny). Hlasitost podle SyllableVoice.Volume.
     /// </summary>
     public class Ambience : MonoBehaviour
     {
         private const int SampleRate = 22050;
         private const float FireHearDistance = 12f;
         private const float AnimalHearDistance = 22f;
+        // Moře je slyšet do této vzdálenosti od nejbližší mořské dlaždice (metry).
+        private const int SeaHearDistance = 30;
         // Krok zazní po každém kusu cesty (metry).
         private const float StepMeters = 0.9f;
+        // Kručení v břiše: pod touhle sytostí, jednou za chvíli (sekundy).
+        private const float HungrySatiety = 35f;
+        private const float GrowlMinSeconds = 40f;
+        private const float GrowlMaxSeconds = 100f;
 
         private static AudioClip _crackle;
         private static AudioClip _hiss;
@@ -35,9 +42,18 @@ namespace Oohra.Client
         private GameConnection _connection;
         private PlayerViews _players;
         private AudioSource _fire;
+        private LoopSound _fireLoop;
+        private LoopSound _sea;
+        private float _seaDistance = float.MaxValue;
+        private float _nextSeaCheck;
+        private float _nextGrowl;
         private Vector3 _lastSelf;
         private float _walked;
         private ClientSession _session;
+
+        // Vyrobená věc, u které se ještě neví, jestli byla z kamene (recept přijde ze serveru až po hlášce).
+        private int _pendingRecipe = -1;
+        private float _pendingUntil;
 
         public void Init(GameConnection connection, PlayerViews players, ClientSession session = null)
         {
@@ -49,26 +65,46 @@ namespace Oohra.Client
                 session.EventReceived += OnEvent;
             }
 
-            _fire = gameObject.AddComponent<AudioSource>();
-            _fire.clip = Crackle();
-            _fire.loop = true;
-            _fire.spatialBlend = 1f;
-            _fire.minDistance = 2f;
-            _fire.maxDistance = FireHearDistance;
-            _fire.rolloffMode = AudioRolloffMode.Linear;
+            var sounds = SoundCatalog.Current;
+            if (sounds.FireLoop != null)
+            {
+                _fireLoop = LoopSound.Create(transform, "Oheň (zvuk)", sounds.FireLoop, 1f, 2f, FireHearDistance);
+            }
+            else
+            {
+                _fire = gameObject.AddComponent<AudioSource>();
+                _fire.clip = Crackle();
+                _fire.loop = true;
+                _fire.spatialBlend = 1f;
+                _fire.minDistance = 2f;
+                _fire.maxDistance = FireHearDistance;
+                _fire.rolloffMode = AudioRolloffMode.Linear;
+            }
+
+            if (sounds.SeaLoop != null)
+            {
+                _sea = LoopSound.Create(transform, "Moře (zvuk)", sounds.SeaLoop, 0f);
+            }
+
+            _nextGrowl = Time.time + Random.Range(GrowlMinSeconds, GrowlMaxSeconds) / 2f;
         }
 
         private void Update()
         {
             if (_connection == null || _players == null || _players.Self == null || DreamView.Active)
             {
+                if (_fireLoop != null) _fireLoop.Stop();
+                if (_sea != null) _sea.Stop();
                 return;
             }
 
             var self = _players.Self.position;
             UpdateFire(self);
+            UpdateSea(self);
             UpdateSteps(self);
+            UpdateStomach(self);
             UpdateAnimals(self);
+            UpdatePendingCraft();
         }
 
         /// <summary>Praskání u nejbližšího hořícího ohně (i ohniště táborů).</summary>
@@ -84,6 +120,22 @@ namespace Oohra.Client
             foreach (var camp in _connection.World.Camps)
             {
                 Consider(true, WorldCoords.ToUnity(camp.X + 0.5, camp.Y + 0.5), self, ref nearest, ref best);
+            }
+
+            if (_fireLoop != null)
+            {
+                if (nearest.HasValue)
+                {
+                    _fireLoop.transform.position = nearest.Value;
+                    _fireLoop.Volume = SyllableVoice.Volume * SoundCatalog.Current.FireVolume;
+                    _fireLoop.Play();
+                }
+                else
+                {
+                    _fireLoop.Stop();
+                }
+
+                return;
             }
 
             if (nearest.HasValue)
@@ -108,7 +160,54 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Kroky: tiché ťuknutí po každém kusu cesty.</summary>
+        /// <summary>Moře: sílí, čím blíž je postava k moři (v jeskyni ho není slyšet).</summary>
+        private void UpdateSea(Vector3 self)
+        {
+            if (_sea == null)
+            {
+                return;
+            }
+
+            double x, y;
+            WorldCoords.FromUnity(self, out x, out y);
+            if (Time.time >= _nextSeaCheck)
+            {
+                // Hledání moře stačí dvakrát za sekundu.
+                _nextSeaCheck = Time.time + 0.5f;
+                _seaDistance = CaveView.IsCave(_connection.World, x, y) ? float.MaxValue : SeaDistance(_connection.World, x, y, SeaHearDistance);
+            }
+
+            var near = Mathf.Clamp01(1f - _seaDistance / SeaHearDistance);
+            _sea.Volume = SyllableVoice.Volume * SoundCatalog.Current.SeaVolume * near * near;
+            if (near > 0f) _sea.Play();
+            else _sea.Stop();
+        }
+
+        /// <summary>Vzdálenost k nejbližší mořské dlaždici do range metrů (dál = float.MaxValue).</summary>
+        public static float SeaDistance(WorldView world, double x, double y, int range)
+        {
+            var best = float.MaxValue;
+            var (cx, cy) = ((int)System.Math.Floor(x), (int)System.Math.Floor(y));
+            for (var ty = cy - range; ty <= cy + range; ty++)
+            {
+                for (var tx = cx - range; tx <= cx + range; tx++)
+                {
+                    if (tx < 0 || ty < 0 || tx >= world.Width || ty >= world.Height || world.TileAt(tx, ty) != TileType.Sea)
+                    {
+                        continue;
+                    }
+
+                    var dx = tx + 0.5 - x;
+                    var dy = ty + 0.5 - y;
+                    var distance = (float)System.Math.Sqrt(dx * dx + dy * dy);
+                    if (distance < best) best = distance;
+                }
+            }
+
+            return best;
+        }
+
+        /// <summary>Kroky po každém kusu cesty: nahrávka podle země pod nohama, jinak tiché ťuknutí.</summary>
         private void UpdateSteps(Vector3 self)
         {
             var moved = Vector2.Distance(new Vector2(self.x, self.z), new Vector2(_lastSelf.x, _lastSelf.z));
@@ -120,10 +219,80 @@ namespace Oohra.Client
             }
 
             _walked += moved;
-            if (_walked >= StepMeters)
+            if (_walked < StepMeters)
             {
-                _walked = 0f;
+                return;
+            }
+
+            _walked = 0f;
+            double x, y;
+            WorldCoords.FromUnity(self, out x, out y);
+            var recorded = StepClip(SoundCatalog.Current, _connection.World, x, y, _session != null ? _session.SelfLevel : 0, _connection.FloodedTiles);
+            if (recorded != null)
+            {
+                PlayVaried(recorded, self + Vector3.down * 0.8f, SoundCatalog.Current.StepsVolume, 0.1f);
+            }
+            else
+            {
                 Play(Step(), self + Vector3.down * 0.8f, 0.25f);
+            }
+        }
+
+        /// <summary>
+        /// Nahrávka kroku podle země: tráva, písek, skála a jeskyně, bažina a brod (i zatopená zem), podlaha patra.
+        /// Když pro tu zem nahrávka není, tráva. Když není ani tráva, null (ťuknutí z kódu).
+        /// </summary>
+        public static AudioClip StepClip(SoundCatalog sounds, WorldView world, double x, double y, int level, int[] flooded)
+        {
+            AudioClip[] clips;
+            var (tx, ty) = ((int)System.Math.Floor(x), (int)System.Math.Floor(y));
+            var tile = tx >= 0 && ty >= 0 && tx < world.Width && ty < world.Height ? world.TileAt(tx, ty) : TileType.Grass;
+            if (level > 0)
+            {
+                clips = sounds.StepsWood;
+            }
+            else if (tile == TileType.Bog || tile == TileType.Ford || System.Array.IndexOf(flooded, ty * world.Width + tx) >= 0)
+            {
+                clips = sounds.StepsMud;
+            }
+            else if (tile == TileType.Sand)
+            {
+                clips = sounds.StepsSand;
+            }
+            else if (tile == TileType.Rock || tile == TileType.LayeredRock || tile == TileType.CaveFloor)
+            {
+                clips = sounds.StepsStone;
+            }
+            else
+            {
+                clips = sounds.StepsGrass;
+            }
+
+            return SoundCatalog.Pick(clips) ?? SoundCatalog.Pick(sounds.StepsGrass);
+        }
+
+        /// <summary>Hlad: občas zakručí v břiše (jen nahrávka, v kódu se kručení neskládá).</summary>
+        private void UpdateStomach(Vector3 self)
+        {
+            var state = _connection.Self;
+            if (state == null || Time.time < _nextGrowl)
+            {
+                return;
+            }
+
+            _nextGrowl = Time.time + Random.Range(GrowlMinSeconds, GrowlMaxSeconds);
+            if (state.Satiety < HungrySatiety && !state.Dead && !state.Sleeping)
+            {
+                Growl(self);
+            }
+        }
+
+        private static void Growl(Vector3 self)
+        {
+            var growl = SoundCatalog.Pick(SoundCatalog.Current.Stomach);
+            if (growl != null)
+            {
+                PlayVaried(growl, self + Vector3.up, SoundCatalog.Current.StomachVolume, 0.08f);
             }
         }
 
@@ -157,6 +326,50 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>
+        /// Výroba se povedla: když byla z kamene nebo pazourku (nůž, sekera, kopí), je slyšet opracování kamene.
+        /// Nově naučený recept přijde ze serveru až po hlášce, proto se chvíli čeká.
+        /// </summary>
+        private void UpdatePendingCraft()
+        {
+            if (_pendingRecipe < 0)
+            {
+                return;
+            }
+
+            foreach (var recipe in _connection.Recipes)
+            {
+                if (recipe.Index != _pendingRecipe)
+                {
+                    continue;
+                }
+
+                _pendingRecipe = -1;
+                if (FromStone(recipe))
+                {
+                    PlayRecorded(SoundCatalog.Current.StoneWork, _players.Self.position, SoundCatalog.Current.StoneWorkVolume);
+                }
+
+                return;
+            }
+
+            if (Time.time > _pendingUntil)
+            {
+                _pendingRecipe = -1;
+            }
+        }
+
+        /// <summary>Recept je z kamene nebo pazourku (opracování kamene).</summary>
+        public static bool FromStone(RecipeView recipe)
+        {
+            foreach (var input in recipe.Inputs)
+            {
+                if (input.Kind == Oohra.Core.Items.ItemKind.Stone || input.Kind == Oohra.Core.Items.ItemKind.Flint) return true;
+            }
+
+            return false;
+        }
+
         private void OnDestroy()
         {
             if (_session != null)
@@ -165,7 +378,7 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Vlastní seknutí sekerou je slyšet (do stromu i do dřeva na zemi).</summary>
+        /// <summary>Zvuky vlastních činností a toho, co se stalo tělu.</summary>
         private void OnEvent(GameEvent e)
         {
             if (_players == null || _players.Self == null)
@@ -173,40 +386,30 @@ namespace Oohra.Client
                 return;
             }
 
-            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.MosquitoBite)
+            var self = _players.Self.position;
+            var sounds = SoundCatalog.Current;
+            if (e.Kind == EventKind.Body)
             {
-                Play(Buzz(), _players.Self.position + Vector3.up, 0.5f);
+                OnBodyEvent((BodyEvent)e.Code, self);
                 return;
             }
 
-            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.WaspSting)
+            if (e.Kind == EventKind.Material && (MaterialResult)e.Code is MaterialResult.GotStone or MaterialResult.GotFlint)
             {
-                // Vosy bzučí hlasitěji než komár.
-                Play(Buzz(), _players.Self.position + Vector3.up, 0.9f);
+                PlayRecorded(sounds.TakeStone, self, sounds.TakeStoneVolume);
                 return;
             }
 
-            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.RoofCracking)
+            if (e.Kind == EventKind.Build && (BuildResult)e.Code is BuildResult.Built or BuildResult.Removed or BuildResult.Repaired)
             {
-                Play(Creak(), _players.Self.position + Vector3.up * 2f, 0.9f);
+                PlayRecorded(sounds.Build, self, sounds.BuildVolume);
                 return;
             }
 
-            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.Fell)
+            if (e.Kind == EventKind.Craft && (CraftResult)e.Code is CraftResult.Made or CraftResult.Learned)
             {
-                Play(Crash(), _players.Self.position, 1f);
-                return;
-            }
-
-            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.HitByRoof)
-            {
-                Play(Crash(), _players.Self.position, 1f);
-                return;
-            }
-
-            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.SnakeWarning)
-            {
-                Play(Hiss(), _players.Self.position, 0.7f);
+                _pendingRecipe = e.Subject;
+                _pendingUntil = Time.time + 1.5f;
                 return;
             }
 
@@ -218,8 +421,46 @@ namespace Oohra.Client
             var result = (WoodResult)e.Code;
             if (result is WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.AxeBroke)
             {
-                Play(Chop(), _players.Self.position, 0.8f);
+                var chop = SoundCatalog.Pick(sounds.Chop);
+                if (chop != null) PlayVaried(chop, self, sounds.ChopVolume, 0.08f);
+                else Play(Chop(), self, 0.8f);
             }
+        }
+
+        private void OnBodyEvent(BodyEvent bodyEvent, Vector3 self)
+        {
+            switch (bodyEvent)
+            {
+                case BodyEvent.MosquitoBite:
+                    Play(Buzz(), self + Vector3.up, 0.5f);
+                    break;
+                case BodyEvent.WaspSting:
+                    // Vosy bzučí hlasitěji než komár.
+                    Play(Buzz(), self + Vector3.up, 0.9f);
+                    break;
+                case BodyEvent.RoofCracking:
+                    Play(Creak(), self + Vector3.up * 2f, 0.9f);
+                    break;
+                case BodyEvent.Fell:
+                case BodyEvent.HitByRoof:
+                    Play(Crash(), self, 1f);
+                    break;
+                case BodyEvent.SnakeWarning:
+                    Play(Hiss(), self, 0.7f);
+                    break;
+                case BodyEvent.BellyAche:
+                    Growl(self);
+                    break;
+            }
+        }
+
+        /// <summary>Dopad padajícího stromu: nahrávka z katalogu, jinak rána složená v kódu.</summary>
+        public static void PlayTreeFall(Vector3 at)
+        {
+            var sounds = SoundCatalog.Current;
+            var fall = SoundCatalog.Pick(sounds.TreeFall);
+            if (fall != null) PlayVaried(fall, at, sounds.TreeFallVolume, 0.05f);
+            else Play(Crash(), at, 1f);
         }
 
         /// <summary>Zvuk v místě (padající strom, dopad), hlasitost podle SyllableVoice.Volume.</summary>
@@ -234,6 +475,40 @@ namespace Oohra.Client
             {
                 AudioSource.PlayClipAtPoint(clip, at, SyllableVoice.Volume * volume);
             }
+        }
+
+        /// <summary>Nahrávka z katalogu (náhodná z políčka). Když políčko je prázdné, nic nehraje.</summary>
+        private static void PlayRecorded(AudioClip[] clips, Vector3 at, float volume)
+        {
+            var clip = SoundCatalog.Pick(clips);
+            if (clip != null)
+            {
+                PlayVaried(clip, at, volume, 0.06f);
+            }
+        }
+
+        /// <summary>
+        /// Nahrávka v místě, pokaždé trochu jinak vysoko (o ±pitch), ať se stejný zvuk neopakuje jako stroj.
+        /// </summary>
+        public static void PlayVaried(AudioClip clip, Vector3 at, float volume, float pitch)
+        {
+            if (!Application.isPlaying || SyllableVoice.Volume <= 0f || clip == null)
+            {
+                return;
+            }
+
+            var go = new GameObject("Zvuk " + clip.name);
+            go.transform.position = at;
+            var source = go.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.spatialBlend = 1f;
+            source.minDistance = 2f;
+            source.maxDistance = 30f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.pitch = 1f + Random.Range(-pitch, pitch);
+            source.volume = SyllableVoice.Volume * volume;
+            source.Play();
+            Destroy(go, clip.length / source.pitch + 0.2f);
         }
 
         // ---------- zvuky složené v kódu ----------

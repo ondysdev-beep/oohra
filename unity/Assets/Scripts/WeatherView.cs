@@ -33,6 +33,8 @@ namespace Oohra.Client
         private Camera _camera;
         private ParticleSystem _rain;
         private AudioSource _rainSound;
+        private LoopSound _rainLoop;
+        private LoopSound _stormLoop;
         private float _nextLightning;
         private float _thunderAt = -1f;
         private float _flashStarted = -10f;
@@ -77,6 +79,10 @@ namespace Oohra.Client
             _rainSound.loop = true;
             _rainSound.spatialBlend = 0f;
             _rainSound.volume = 0f;
+            // Nahrávky deště a bouřky z katalogu zvuků (bez nich šum z kódu). Hrom k bleskům hraje dál kód.
+            var sounds = SoundCatalog.Current;
+            if (sounds.RainLoop != null) _rainLoop = LoopSound.Create(transform, "Déšť (zvuk)", sounds.RainLoop, 0f);
+            if (sounds.StormLoop != null) _stormLoop = LoopSound.Create(transform, "Bouřka (zvuk)", sounds.StormLoop, 0f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             _nextLightning = Time.time + 5f;
@@ -169,7 +175,18 @@ namespace Oohra.Client
             var velocity = _rain.velocityOverLifetime;
             velocity.x = new ParticleSystem.MinMaxCurve(Wind * 6f);
 
-            var volume = SyllableVoice.Volume * 0.55f * Mathf.Clamp01(RainAmount * 1.3f) * (DreamView.Active ? 0f : 1f) * (1f - 0.85f * CaveAmount);
+            var loudness = Mathf.Clamp01(RainAmount * 1.3f) * (DreamView.Active ? 0f : 1f) * (1f - 0.85f * CaveAmount);
+            if (_rainLoop != null)
+            {
+                // Nahrávka: při bouřce se déšť přelije do nahrávky bouřky (když je).
+                var storm = _stormLoop != null ? Mathf.Clamp01(StormAmount * 1.5f) : 0f;
+                var sounds = SoundCatalog.Current;
+                Loop(_rainLoop, SyllableVoice.Volume * sounds.RainVolume * loudness * (1f - storm));
+                if (_stormLoop != null) Loop(_stormLoop, SyllableVoice.Volume * sounds.StormVolume * loudness * storm);
+                return;
+            }
+
+            var volume = SyllableVoice.Volume * 0.55f * loudness;
             _rainSound.volume = volume;
             if (volume > 0.001f && !_rainSound.isPlaying)
             {
@@ -179,6 +196,13 @@ namespace Oohra.Client
             {
                 _rainSound.Stop();
             }
+        }
+
+        private static void Loop(LoopSound loop, float volume)
+        {
+            loop.Volume = volume;
+            if (volume > 0.001f) loop.Play();
+            else loop.Stop();
         }
 
         /// <summary>V bouřce občas blýskne (dvojitý záblesk) a za chvíli zahřmí, podle vzdálenosti blesku.</summary>

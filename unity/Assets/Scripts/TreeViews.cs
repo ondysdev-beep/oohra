@@ -211,7 +211,7 @@ namespace Oohra.Client
             {
                 if (_falling.ContainsKey(tileIndex))
                 {
-                    Ambience.PlayAt(Ambience.Crash(), tree.transform.position, 1f);
+                    Ambience.PlayTreeFall(tree.transform.position);
                 }
 
                 tree.SetActive(false);
