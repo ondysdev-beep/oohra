@@ -19,6 +19,8 @@ MonoBehaviour:
   - {fileID: 6879069806676925136, guid: 9eb814cd8b9b7bd40812e05f2d1b345e, type: 3}
   - {fileID: 1154760010325916134, guid: 87b3de9dbda859a4bbfedccb38e33a39, type: 3}
   TreeHeight: 5
+  OakTrees:
+  - {fileID: 919132149155446097, guid: f65c541fefc2c5f43b37a1ba2dfb2151, type: 3}
   Plants:
   - {fileID: 6887655973843577847, guid: 4c85c0f2b59552040802df6b7573f619, type: 3}
   - {fileID: 5268203991766783212, guid: 6bb9617c747924f4e97a57b52cf40644, type: 3}

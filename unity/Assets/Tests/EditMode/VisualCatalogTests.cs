@@ -26,12 +26,22 @@ namespace Oohra.Client.Tests
             var catalog = Resources.Load<VisualCatalog>(VisualCatalog.Resource);
             var models = new System.Collections.Generic.List<GameObject>();
             models.AddRange(catalog.Trees);
+            models.AddRange(catalog.OakTrees);
+            models.AddRange(catalog.ConiferTrees);
+            models.AddRange(catalog.BirchTrees);
+            models.AddRange(catalog.WillowTrees);
+            models.AddRange(catalog.DeadTrees);
+            models.AddRange(catalog.Stumps);
+            models.AddRange(catalog.Saplings);
             models.AddRange(catalog.Plants);
             models.AddRange(new[] { catalog.Wall, catalog.DoorFrame, catalog.Door, catalog.Trap, catalog.Stockpile });
             models.AddRange(new[] { catalog.Boar, catalog.Rabbit, catalog.Deer, catalog.Wolf });
             models.AddRange(catalog.Rocks);
             models.AddRange(catalog.Grass);
             models.AddRange(new[] { catalog.Player, catalog.PlayerAncient, catalog.PlayerThird, catalog.Campfire, catalog.Flame });
+            models.AddRange(new[] { catalog.Log, catalog.LogPiece, catalog.Torch, catalog.SmallBag, catalog.LargeBag, catalog.Snake, catalog.WaspNest });
+            models.AddRange(new[] { catalog.Barricade, catalog.Post, catalog.Floor, catalog.Roof, catalog.Ladder, catalog.MeatStrip });
+            models.AddRange(new[] { catalog.CaveEntrance, catalog.HiddenCaveEntrance, catalog.CaveExit });
             foreach (var decoration in catalog.Decorations)
             {
                 models.Add(decoration.Prefab);
@@ -52,6 +62,34 @@ namespace Oohra.Client.Tests
                         Assert.IsNotNull(material, model.name + ": část " + renderer.name + " nemá materiál.");
                         Assert.IsTrue(material.shader.isSupported && material.shader.name != "Hidden/InternalErrorShader",
                             model.name + ": materiál " + material.name + " má nefunkční shader (použij URP Lit).");
+                    }
+                }
+            }
+        }
+
+        /// <summary>Stromy z katalogu (podle druhu) mají v materiálu barevnou texturu, jinak by byly jednobarevné.</summary>
+        [Test]
+        public void CatalogTreesHaveColorTextures()
+        {
+            var catalog = Resources.Load<VisualCatalog>(VisualCatalog.Resource);
+            var trees = new System.Collections.Generic.List<GameObject>();
+            trees.AddRange(catalog.OakTrees);
+            trees.AddRange(catalog.ConiferTrees);
+            trees.AddRange(catalog.BirchTrees);
+            trees.AddRange(catalog.WillowTrees);
+            trees.AddRange(catalog.DeadTrees);
+            foreach (var tree in trees)
+            {
+                if (tree == null)
+                {
+                    continue;
+                }
+
+                foreach (var renderer in tree.GetComponentsInChildren<Renderer>(true))
+                {
+                    foreach (var material in renderer.sharedMaterials)
+                    {
+                        Assert.IsNotNull(material.GetTexture("_BaseMap"), tree.name + ": materiál " + material.name + " nemá Base Map (barevnou texturu).");
                     }
                 }
             }
