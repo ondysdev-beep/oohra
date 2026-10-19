@@ -363,6 +363,21 @@ public sealed partial class GameServer
     {
         // V patře se staví v patře, ze země jde postavit jen podlaha patra (Level 1).
         var level = player.Level > 0 ? player.Level : place.Kind == BuildKind.Floor ? Math.Min((int)place.Level, Roofs.TopLevel) : 0;
+        if (BuildGrid.OnGrid(place.Kind))
+        {
+            // Zdi, podlahy, střechy a sloupky se přichytí ke stavební mřížce (server rozhodne, kde díl stojí).
+            var snap = Island.Structures.Snap(place.Kind, place.X, place.Y, place.Angle);
+            if (level == 0 && GuardedBirthPlace(player, place.Kind, snap.X, snap.Y, snap.Angle, snap.Length))
+            {
+                BuildAction(player, () => BuildResult.BirthPlaceProtected);
+                return;
+            }
+
+            BuildAction(player, () => Island.Structures.BuildOnGrid(
+                Island, Fires, player.Inventory, player.X, player.Y, place.Kind, snap, PlayerPositions(level), player.Character, player.Id, place.Decoration, level));
+            return;
+        }
+
         if (level > 0)
         {
             BuildAction(player, () => Island.Structures.Build(

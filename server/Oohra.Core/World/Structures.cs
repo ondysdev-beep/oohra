@@ -74,6 +74,9 @@ public sealed class Structure
     /// <summary>Hoří od (herní minuty), null = nehoří (BuildingFire).</summary>
     public double? BurningSince { get; internal set; }
 
+    /// <summary>K jakému plánu stavební mřížky díl patří (0 = stojí volně: oheň, past, koš, dekorace, dveře…).</summary>
+    public int PlanId { get; internal set; }
+
     /// <summary>Konce celé stavby (zeď, zeď s otvorem i dveře leží na úsečce dlouhé Length).</summary>
     public (double X1, double Y1, double X2, double Y2) Ends
     {
@@ -205,7 +208,77 @@ public sealed class Structures
     {
         return _byId.Values.OrderBy(s => s.Id).Select(s => new StructureSave(
             s.Id, s.Kind, s.X, s.Y, s.Angle, s.Length, s.FrameId, s.OwnerId, s.DecorationId, s.Store?.Stacks.ToList(), s.Caught, s.Level,
-            s.Material, s.RepairedAt, s.BurningSince)).ToList();
+            s.Material, s.RepairedAt, s.BurningSince, s.PlanId)).ToList();
+    }
+
+    // Plány stavební mřížky (BuildGrid): počátek a natočení, číslo plánu mají jeho díly (Structure.PlanId).
+    private readonly Dictionary<int, GridPlan> _plans = [];
+    private int _nextPlanId = 1;
+
+    /// <summary>Plány, ke kterým patří aspoň jeden díl (prázdné se nepočítají).</summary>
+    public IReadOnlyList<GridPlan> Plans
+    {
+        get
+        {
+            var used = _byId.Values.Select(s => s.PlanId).ToHashSet();
+            return _plans.Values.Where(p => used.Contains(p.Id)).OrderBy(p => p.Id).ToList();
+        }
+    }
+
+    /// <summary>Díly stavby v mřížce (číslo plánu a střed).</summary>
+    public IEnumerable<GridPiece> GridPieces()
+    {
+        return _byId.Values.Where(s => s.PlanId > 0).Select(s => new GridPiece(s.PlanId, s.X, s.Y));
+    }
+
+    /// <summary>Kam by se díl s kurzorem v (x, y) a úhlem hráče přichytil (BuildGrid.Snap).</summary>
+    public GridSnap Snap(BuildKind kind, double x, double y, double angle)
+    {
+        return BuildGrid.Snap(Plans, GridPieces(), kind, x, y, angle);
+    }
+
+    /// <summary>
+    /// Postaví díl přichycený k mřížce (zeď, zeď s otvorem, podlaha, střecha, sloupek). První díl daleko od
+    /// ostatních založí nový plán. Pravidla stavby jsou stejná jako u Build.
+    /// </summary>
+    public BuildResult BuildOnGrid(
+        Island island, Fires fires, Inventory inventory, double playerX, double playerY, BuildKind kind, GridSnap snap,
+        IEnumerable<Position> players, Character? builder = null, int ownerId = -1, string? decorationId = null, int level = 0)
+    {
+        var id = _nextId;
+        var result = Build(island, fires, inventory, playerX, playerY, kind, snap.X, snap.Y, snap.Angle, snap.Length, players, builder, ownerId, decorationId, level);
+        if (result == BuildResult.Built && Find(id) is { } placed)
+        {
+            placed.PlanId = snap.NewPlan ? NewPlan(snap.PlanX, snap.PlanY, snap.PlanAngle) : snap.PlanId;
+            Version++;
+        }
+
+        return result;
+    }
+
+    private int NewPlan(double x, double y, double angle)
+    {
+        var plan = new GridPlan(_nextPlanId++, x, y, angle);
+        _plans[plan.Id] = plan;
+        return plan.Id;
+    }
+
+    /// <summary>Plány k uložení světa (jen ty, ke kterým patří nějaký díl).</summary>
+    public List<GridPlanSave> ExportPlans()
+    {
+        return Plans.Select(p => new GridPlanSave(p.Id, p.X, p.Y, p.Angle)).ToList();
+    }
+
+    public int NextPlanId => _nextPlanId;
+
+    public void RestorePlans(IEnumerable<GridPlanSave> saved, int nextId)
+    {
+        foreach (var p in saved)
+        {
+            _plans[p.Id] = new GridPlan(p.Id, p.X, p.Y, p.Angle);
+        }
+
+        _nextPlanId = Math.Max(nextId, _plans.Count == 0 ? 1 : _plans.Keys.Max() + 1);
     }
 
     /// <summary>Obnoví stavby z uloženého světa se stejnými čísly.</summary>
@@ -220,6 +293,7 @@ public sealed class Structures
             structure.Material = s.Material;
             structure.RepairedAt = s.RepairedAt;
             structure.BurningSince = s.BurningSince;
+            structure.PlanId = s.PlanId;
         }
     }
 
@@ -468,13 +542,13 @@ public sealed class Structures
     }
 
     /// <summary>Kruh (postava, oheň) o daném poloměru se překrývá s něčím, co blokuje pohyb.</summary>
-    public bool Blocks(double x, double y, double radius, int level = 0)
+    public bool Blocks(double x, double y, double radius, int level = 0, Func<Structure, bool>? ignore = null)
     {
         var reach = radius + GameData.Building.Wall.Thickness / 2;
         foreach (var structure in Near(x, y, reach))
         {
-            // Překáží jen stavby ve stejném podlaží.
-            if (structure.Level != level)
+            // Překáží jen stavby ve stejném podlaží (a ne ty, které volající přeskočí).
+            if (structure.Level != level || ignore?.Invoke(structure) == true)
             {
                 continue;
             }
@@ -559,10 +633,12 @@ public sealed class Structures
             return rules.Wall.ShortSticksCost;
         }
 
+        // Za plnou délku sticksCost, kratší zeď úměrně (nahoru). Zkušený stavitel ušetří cheapWallSticks.
+        var cost = (int)Math.Ceiling(rules.Wall.SticksCost * Math.Min(length, rules.Wall.Length) / rules.Wall.Length - 1e-9);
         var effects = GameData.Skills.Effects;
         return builder is not null && builder.Skills.Level(SkillKind.Build) >= effects.CheapWallLevel
-            ? effects.CheapWallSticks
-            : rules.Wall.SticksCost;
+            ? Math.Max(1, cost - effects.CheapWallSticks)
+            : cost;
     }
 
     /// <summary>Kolik klacků se vrátí rozebráním: u zdi polovina ceny (dolů), jinak podle building.json.</summary>
@@ -637,11 +713,11 @@ public sealed class Structures
     }
 
     /// <summary>Past a zásoby: suchá zem, ne na kmeni, zdi, ohni ani jiné pasti či zásobách.</summary>
-    private bool PointFits(Island island, Fires fires, double x, double y, double footprint)
+    private bool PointFits(Island island, Fires fires, double x, double y, double footprint, Func<Structure, bool>? ignore = null)
     {
         return Placement.OnDryLand(island, x, y)
             && Placement.ClearOfTrunks(island, x, y, x, y, footprint)
-            && !Blocks(x, y, footprint)
+            && !Blocks(x, y, footprint, ignore: ignore)
             && !fires.All.Any(f => Math.Sqrt((f.X - x) * (f.X - x) + (f.Y - y) * (f.Y - y)) < 2 * footprint)
             && !Near(x, y, footprint).Any(s => RadiusOf(s) > 0 && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < footprint + RadiusOf(s));
     }
@@ -703,7 +779,11 @@ public sealed class Structures
         double length;
         if (kind == BuildKind.Post)
         {
-            var fits = level == 0 ? PointFits(island, fires, x, y, rules.Post.Radius) : Roofs.StandsOn(this, x, y, level) && !Blocks(x, y, rules.Post.Radius, level);
+            // Sloupek smí stát v rohu, kde končí zeď (roh stavební mřížky), ne uprostřed zdi.
+            bool WallEndHere(Structure s) => s.Kind is BuildKind.StickWall or BuildKind.DoorFrame && WallEndNear(s, x, y);
+            var fits = level == 0
+                ? PointFits(island, fires, x, y, rules.Post.Radius, WallEndHere)
+                : Roofs.StandsOn(this, x, y, level) && !Blocks(x, y, rules.Post.Radius, level, WallEndHere);
             if (!fits || players.Any(p => Math.Sqrt((p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y)) < GameData.Movement.Radius + rules.Post.Radius))
             {
                 return level == 0 || fits ? BuildResult.CannotBuildHere : BuildResult.NoFloor;
@@ -753,6 +833,14 @@ public sealed class Structures
 
         builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
         return BuildResult.Built;
+    }
+
+    /// <summary>Jeden z konců zdi je u bodu (x, y) (roh, kde se zdi a sloupek potkávají).</summary>
+    private static bool WallEndNear(Structure wall, double x, double y)
+    {
+        var (x1, y1, x2, y2) = wall.Ends;
+        const double near = 0.2;
+        return Math.Sqrt((x1 - x) * (x1 - x) + (y1 - y) * (y1 - y)) < near || Math.Sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y)) < near;
     }
 
     /// <summary>Nová stavba by něco přetížila (nebo sama neunesla): něco, co teď drží, by po ní nedrželo.</summary>

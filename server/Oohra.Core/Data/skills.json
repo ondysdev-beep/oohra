@@ -25,7 +25,7 @@
     // Řemeslo od této úrovně: oheň za méně klacků.
     "cheapFireLevel": 3,
     "cheapFireSticks": 2,
-    // Stavění od této úrovně: plná zeď za méně klacků.
+    // Stavění od této úrovně: zeď o tolik klacků levnější (nejmíň za jeden).
     "cheapWallLevel": 3,
     "cheapWallSticks": 1
   }

@@ -88,7 +88,7 @@ public class TribeServerTests
     [Fact]
     public void ForeignWallCannotBeRemoved()
     {
-        using var net = new TestNetwork(configure: c => c.StartSticks = 2);
+        using var net = new TestNetwork(configure: c => c.StartSticks = 4);
         var a = net.Join("Ondra");
         var b = net.Join("Petr");
         var (x, y) = OpenSpot(net.Server.Island);

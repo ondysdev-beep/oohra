@@ -37,6 +37,8 @@ public sealed partial class GameServer
             Island = new IslandSave
             {
                 Structures = Island.Structures.Export(),
+                Plans = Island.Structures.ExportPlans(),
+                NextPlanId = Island.Structures.NextPlanId,
                 Fires = Fires.Export(),
                 NextFireId = Fires.NextId,
                 Plants = Plants.Export(),
@@ -76,6 +78,7 @@ public sealed partial class GameServer
         _nextPlayerId = save.NextPlayerId;
         _rng = new Mulberry32(save.RngState);
         Island.Structures.Restore(save.Island.Structures);
+        Island.Structures.RestorePlans(save.Island.Plans, save.Island.NextPlanId);
         Fires.Restore(save.Island.Fires, save.Island.NextFireId);
         Plants.Restore(save.Island.Plants);
         Island.Rocks.Restore(save.Island.Rocks);

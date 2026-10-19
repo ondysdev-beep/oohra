@@ -300,10 +300,19 @@ namespace Oohra.Client
                 y += 32;
             }
 
-            var mode = _buildMode.Modular ? "MODULÁRNĚ (napojí a dorovná, Q, E po 15°)" : "VOLNĚ (Q, E plynule otáčí)";
-            if (GUI.Button(new Rect(x, y + 2, 332, 28), "R  " + mode))
+            if (BuildGrid.OnGrid(_buildMode.Selected))
             {
-                _buildMode.Modular = !_buildMode.Modular;
+                // Zdi, podlahy, střechy a sloupky: vždy stavební mřížka.
+                var grid = _buildMode.OnExistingPlan ? "MŘÍŽKA (Q, E otočí zeď o 90°)" : "NOVÝ PLÁN 2 × 2 m (Q, E po 15°)";
+                GUI.Label(new Rect(x, y + 6, 332, 22), grid, _label);
+            }
+            else
+            {
+                var mode = _buildMode.Modular ? "PO 15° (Q, E)" : "PLYNULE (Q, E)";
+                if (GUI.Button(new Rect(x, y + 2, 332, 28), "R  otáčení " + mode))
+                {
+                    _buildMode.Modular = !_buildMode.Modular;
+                }
             }
 
             GUI.Label(new Rect(x, y + 36, 332, 44), "levé tlačítko postavit (do 10 m) · Q a E otočit\npravé tlačítko myši kamera · Esc konec", _label);

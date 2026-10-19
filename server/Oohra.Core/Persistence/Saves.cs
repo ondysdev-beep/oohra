@@ -109,7 +109,11 @@ public sealed record WordSave(byte[] Word, int Heard, int[] Contexts, Concept? M
 /// <summary>Stavba (u koše i s obsahem, u pasti s úlovkem).</summary>
 public sealed record StructureSave(
     int Id, BuildKind Kind, double X, double Y, double Angle, double Length, int FrameId, int OwnerId, string DecorationId,
-    List<ItemStack>? Store, AnimalKind? Caught, int Level = 0, RoofMaterial Material = RoofMaterial.Branches, double RepairedAt = 0, double? BurningSince = null);
+    List<ItemStack>? Store, AnimalKind? Caught, int Level = 0, RoofMaterial Material = RoofMaterial.Branches, double RepairedAt = 0, double? BurningSince = null,
+    int PlanId = 0);
+
+/// <summary>Plán stavební mřížky: počátek a natočení.</summary>
+public sealed record GridPlanSave(int Id, double X, double Y, double Angle);
 
 public sealed record FireSave(int Id, double X, double Y, double BurnMinutes, double Burned = 0, int AshDay = -1);
 
@@ -134,6 +138,10 @@ public sealed record CorpseSave(int Id, double X, double Y, int OwnerId, int Gen
 public sealed class IslandSave
 {
     public List<StructureSave> Structures { get; init; } = [];
+
+    public List<GridPlanSave> Plans { get; init; } = [];
+
+    public int NextPlanId { get; init; } = 1;
 
     public List<FireSave> Fires { get; init; } = [];
 

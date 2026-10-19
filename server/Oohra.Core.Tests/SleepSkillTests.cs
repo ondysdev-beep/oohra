@@ -1,3 +1,4 @@
+using Oohra.Core.Data;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
@@ -182,7 +183,10 @@ public class SleepSkillTests
     {
         Assert.Equal(2, Structures.SticksCost(BuildKind.StickWall, 1.0, new Character(0, new Mulberry32(1))));
         Assert.Equal(1, Structures.SticksCost(BuildKind.StickWall, 1.0, Trained(SkillKind.Build, 18)));
-        Assert.Equal(2, Structures.SticksCost(BuildKind.DoorFrame, 1.0, Trained(SkillKind.Build, 18)));
+        Assert.Equal(GameData.Building.DoorFrame.SticksCost, Structures.SticksCost(BuildKind.DoorFrame, 1.0, Trained(SkillKind.Build, 18)));
+        // Plná zeď (2 m) za 4 klacky, zkušený stavitel za 3.
+        Assert.Equal(4, Structures.SticksCost(BuildKind.StickWall, GameData.Building.Wall.Length));
+        Assert.Equal(3, Structures.SticksCost(BuildKind.StickWall, GameData.Building.Wall.Length, Trained(SkillKind.Build, 18)));
     }
 
     /// <summary>Postava s utvrzenými body dovednosti (Pradávný, učí se tempem 1).</summary>

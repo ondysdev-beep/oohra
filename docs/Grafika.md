@@ -50,7 +50,7 @@ Kolize (Collider) v prefabu nevadí, hra je smaže. Kudy se dá projít, počít
 | **OakTrees**, **ConiferTrees**, **BirchTrees**, **WillowTrees**, **DeadTrees** (dub, jehličnan, bříza, vrba, suchý strom) | libovolná, hra strom srovná na **výšku ze serveru** (dub 5 až 8 m, jehličnan 6 až 8 m, bříza 4 až 7 m, vrba 3 až 5 m, suchý 3 až 6 m, čísla v `trees.json`) | na středu nezáleží | Políčko druhu má přednost. Víc modelů v políčku = víc variant, každý strom dostane jednu. Hra strom natočí podle místa. Na serveru je kmen kruh o poloměru 12 cm, tlustší kmen by hráč „prošel“. |
 | **Trees** (společné stromy) | jako výše | | Použijí se pro druh, jehož políčko je prázdné (tvoje dosavadní modely tu zůstaly). Když je prázdné i tohle, hra nakreslí tvar z kódu podle druhu. |
 | **Plants** (rostliny) | libovolná, hra ji srovná na výšku **PlantHeight** (0,45 m) ±15 % | na středu nezáleží | Jen **4 políčka** (0 až 3) = 4 tvary druhů, další se nepoužijí. Obarví se barvou druhu, aby šly druhy rozeznat (viz níže). |
-| **Wall** (zeď) | 1 m dlouhá, 2 m vysoká, 10 cm tlustá | dole uprostřed, délka podél osy X | Kratší zeď (poloviční, dorovnání) hra zmáčkne podél X. |
+| **Wall** (zeď) | 2 m dlouhá (hrana políčka stavební mřížky), 2 m vysoká, 10 cm tlustá | dole uprostřed, délka podél osy X | Kratší zeď hra zmáčkne podél X. |
 | **DoorFrame** (zeď s otvorem) | 1 m × 2 m, otvor 0,8 m uprostřed, vysoký 1,9 m | dole uprostřed, délka podél X | Sloupky po krajích jsou po 10 cm. |
 | **Door** (dveře) | 0,8 m široké, 1,9 m vysoké, asi 5 cm tlusté | dole uprostřed křídla, šířka podél X | Pant na levém kraji přidá hra sama (dveře se otáčejí kolem něj). |
 | **Trap** (past) | asi 0,6 × 0,6 m | dole uprostřed | Úlovek v pasti zatím kreslí hra (hnědá koule). |

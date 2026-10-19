@@ -131,7 +131,7 @@ namespace Oohra.Client.Tests
             VisualCatalog.Current = catalog;
 
             var wall = StructureViews.CreateModel(BuildKind.StickWall, null, 0.5f);
-            Assert.AreEqual(0.5f, wall.transform.GetChild(0).localScale.x, 1e-5f);
+            Assert.AreEqual(0.5f / StructureViews.WallLength, wall.transform.GetChild(0).localScale.x, 1e-5f);
 
             var door = StructureViews.CreateModel(BuildKind.Door, null);
             var hinge = door.transform.Find("Pant");

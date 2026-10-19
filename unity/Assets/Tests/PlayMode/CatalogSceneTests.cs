@@ -22,7 +22,7 @@ namespace Oohra.Client.Tests
         [UnitySetUp]
         public IEnumerator StartServer()
         {
-            _server = PlayTestTools.StartServer(TestPort, "\"startSticks\": 2");
+            _server = PlayTestTools.StartServer(TestPort, "\"startSticks\": 4");
             VisualCatalog.Current = TestCatalog();
             SceneManager.LoadScene("Ostrov");
             yield return new WaitForSecondsRealtime(2f);
