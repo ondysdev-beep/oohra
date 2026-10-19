@@ -38,6 +38,12 @@ namespace Oohra.Client.Tests
                 extraJson = extraJson.Length > 0 ? extraJson + ", \"animals\": false" : "\"animals\": false";
             }
 
+            // Vosy jen v testech, které je chtějí (hnízdo u místa narození by štípalo).
+            if (!extraJson.Contains("\"wasps\""))
+            {
+                extraJson += ", \"wasps\": false";
+            }
+
             // Nový hráč v testech nesní sen bez slov (test snu si ho zapne sám).
             DreamView.Disabled = true;
 

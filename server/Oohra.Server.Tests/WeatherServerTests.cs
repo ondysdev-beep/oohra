@@ -36,8 +36,14 @@ public class WeatherServerTests
 
         a.LightTorch();
 
-        Assert.True(net.Pump(() => b.Snapshot?.Players.Any(p => p.Id == player.Id && p.Torch) == true));
-        Assert.Contains(a.TakeEvents(), e => e.Kind == EventKind.Fire && e.Code == (byte)FireResult.TorchLit);
+        // Snímek (nespolehlivý kanál) může přijít dřív než hláška, proto se čeká na obojí.
+        var events = new List<GameEvent>();
+        Assert.True(net.Pump(() =>
+        {
+            events.AddRange(a.TakeEvents());
+            return b.Snapshot?.Players.Any(p => p.Id == player.Id && p.Torch) == true
+                && events.Any(e => e.Kind == EventKind.Fire && e.Code == (byte)FireResult.TorchLit);
+        }));
         Assert.True(net.Pump(() => a.Inventory.Stacks.Length == 0));
     }
 }

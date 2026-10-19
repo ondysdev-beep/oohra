@@ -46,6 +46,8 @@ public sealed partial class GameServer : IDisposable
     private int _sentStructuresVersion;
     private int _sentSignsVersion;
     private int _sentRocksVersion;
+    private int _sentWaspsVersion;
+    private int _sentWaspsForestryVersion;
     private int _sentCorpsesVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
@@ -173,6 +175,10 @@ public sealed partial class GameServer : IDisposable
         Fires.Burn(minutes * Weather.BurnMultiplier(CurrentWeather));
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
         Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock);
+        if (_config.Wasps)
+        {
+            Island.Wasps.Update(realSeconds, Clock.TotalMinutes, AnimalTargets());
+        }
         UpdateStrangers(realSeconds);
 
         foreach (var player in InWorld.ToList())
@@ -227,6 +233,14 @@ public sealed partial class GameServer : IDisposable
         {
             _sentCorpsesVersion = Island.Corpses.Version;
             Broadcast(w => Messages.WriteCorpses(w, CorpseViews()));
+        }
+
+        // Hnízdo zmizí i s pokáceným stromem, proto se hlídá i verze kácení.
+        if (Island.Wasps.Version != _sentWaspsVersion || Island.Forestry.Version != _sentWaspsForestryVersion)
+        {
+            _sentWaspsVersion = Island.Wasps.Version;
+            _sentWaspsForestryVersion = Island.Forestry.Version;
+            Broadcast(w => Messages.WriteWaspNests(w, WaspNestViews()));
         }
 
         Island.Rocks.Regrow(Clock.TotalMinutes);
@@ -382,6 +396,7 @@ public sealed partial class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteSigns(w, SignViews()));
         SendTo(peer, w => Messages.WriteDecorationTypes(w, DecorationTypeViews()));
         SendTo(peer, w => Messages.WriteRockPiles(w, RockPileViews()));
+        SendTo(peer, w => Messages.WriteWaspNests(w, WaspNestViews()));
         SendTo(peer, w => Messages.WriteCorpses(w, CorpseViews()));
         SendSignature(player);
         player.SentTribeVersion = -1;

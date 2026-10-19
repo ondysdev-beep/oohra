@@ -69,7 +69,7 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 
 ### Etapa 4: Nebezpečí (2 až 3 týdny)
 - [x] První vlna (19. 10.): komáři v bažině a u vody (léto, svítání a soumrak, kousnutí přenese bahenní zimnici: horečka ve vlnách, únava), pijavice při chůzi bažinou (ubírají zdraví, sundají se u ohně nebo popelem), bahenní voda dá úplavici (průjem, žízeň). Obrana: kouř z ohně, natřít se bahnem nebo popelem (4 h). Rozhodnuto: **každá nemoc má vlastní lék** ve skrytém složení (`cures` v archetypes.json), upečené léčí slaběji, bez léku nemoc za pár dní odezní. Jméno nemoci hra nikde nepíše. **Kožené oblečení zatím ne** (bude s oblečením).
-- [ ] Druhá vlna: klíšťata, vosí hnízda, hadi.
+- [x] Druhá vlna (19. 10.): **klíšťata** v trávě a lese od jara do podzimu se přisají potichu, najde je jen tlačítko „Prohlédnout se“; přisáté přes 12 h může přenést klíšťovou horečku (horečka, bolest kloubů, kulhání). **Hadi** (nové zvíře) na vrchovině, vrstvené skále a loukách, aktivní jen ve dne a v teple: varují (vztyčí se, syčí), zblízka kousnou, jed působí se zpožděním (jed v těle, oteklá noha), zabije je jedna rána. **Vosí hnízda** ve stromech v lese a na loukách ze seedu: kdo přijde blízko, vosy se rozzuří a štípou (jed a zranění), kouř z hořící pochodně je odežene a hnízdo jde vykouřit (na 5 dní zmizí, pokácený strom hnízdo nemá). Klíšťová horečka i hadí jed mají vlastní lék v rostlinách. Políčka katalogu **Snake** a **WaspNest**.
 
 ### Etapa 5: Sezónní nebezpečí, stopy, sušení a uzení (1 až 2 týdny)
 

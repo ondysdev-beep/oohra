@@ -57,6 +57,10 @@ public sealed class WorldSaveTests : IDisposable
             ondra.Character.Learn("smallBag");
             Diseases.Start(ondra.Character, DiseaseKind.MarshFever, 60, net.Server.Clock.TotalMinutes);
             ondra.Character.Leeches = 2;
+            ondra.Character.AddTick(net.Server.Clock.TotalMinutes - 5);
+            var nest = net.Server.Island.Wasps.Active(0).First();
+            ondra.Character.TorchMinutes = 9999;
+            Assert.Equal(WaspResult.SmokedOut, net.Server.Island.Wasps.SmokeOut(nest.TileIndex, ondra.Character, nest.X, nest.Y, net.Server.Clock.TotalMinutes));
             var journal = net.Server.Journals.Create();
             net.Server.Journals.Draw(journal.Ref, 0, Enumerable.Repeat((byte)255, SignBits.ByteCount).ToArray());
             ondra.Inventory.TryAdd(journal);
@@ -85,6 +89,8 @@ public sealed class WorldSaveTests : IDisposable
         Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.Knows("smallBag"));
         Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.HasDisease(DiseaseKind.MarshFever));
         Assert.Equal(2, restarted.Server.FindPlayer("Ondra")!.Character.Leeches);
+        Assert.Single(restarted.Server.FindPlayer("Ondra")!.Character.Ticks);
+        Assert.Single(restarted.Server.Island.Wasps.Export());
         var savedJournal = restarted.Server.FindPlayer("Ondra")!.Inventory.Stacks.Single(s => s.Item.Kind == Oohra.Core.Items.ItemKind.Journal).Item;
         Assert.True(SignBits.Get(restarted.Server.Journals.Pages(savedJournal.Ref)![0], 0, 0));
         Assert.Equal(Oohra.Core.Items.ItemKind.LargeBag, restarted.Server.FindPlayer("Ondra")!.Inventory.Bag!.Kind);

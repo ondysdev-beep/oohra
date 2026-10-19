@@ -53,6 +53,19 @@ namespace Oohra.Core.World
         LearnedFromOther,
     }
 
+    /// <summary>Jak dopadlo vykuřování vosího hnízda.</summary>
+    public enum WaspResult
+    {
+        /// <summary>Vosy odletěly, hnízdo je na pár dní pryč.</summary>
+        SmokedOut,
+
+        /// <summary>Bez hořící pochodně to nejde.</summary>
+        NeedTorch,
+
+        TooFar,
+        NotFound,
+    }
+
     /// <summary>Jak dopadlo kácení, sekání kmene, štípání, nošení kladu nebo výroba sekery.</summary>
     public enum WoodResult
     {

@@ -8,7 +8,11 @@ public sealed record HazardRules(
     double BakedCureMultiplier,
     MosquitoRules Mosquitoes,
     double SmearMinutes,
-    LeechRules Leeches);
+    LeechRules Leeches,
+    TickFeverRules TickFever,
+    SnakeVenomRules SnakeVenom,
+    TickRules Ticks,
+    WaspRules Wasps);
 
 public sealed record MarshFeverRules(
     double IncubationMin, double IncubationRange, double StrengthMin, double StrengthRange,
@@ -23,3 +27,17 @@ public sealed record MosquitoRules(
     double BiteEveryMinutes, double InfectChance, double SmokeRange, double WarnEveryMinutes);
 
 public sealed record LeechRules(double ChancePerMinute, int Max, double HealthPerLeechPerMinute);
+
+public sealed record TickFeverRules(
+    double IncubationMin, double IncubationRange, double StrengthMin, double StrengthRange,
+    double FeverFactor, double Limp, double HealPerDay);
+
+public sealed record SnakeVenomRules(
+    double IncubationMin, double IncubationRange, double StrengthMin, double StrengthRange,
+    double ToxinPerMinute, double Limp, double HealPerDay);
+
+public sealed record TickRules(double[] Seasons, double ChancePerMinute, int Max, double TransmitMinutes, double InfectChance);
+
+public sealed record WaspRules(
+    double ChancePerTree, double AngerRange, double AngrySeconds, double ChaseRange,
+    double StingSeconds, double StingToxin, double StingDamage, double SmokeReach, double RegrowDays);

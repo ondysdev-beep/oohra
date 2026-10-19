@@ -67,6 +67,10 @@ namespace Oohra.Client
                     warn = !(wood is WoodResult.AxeMade or WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut
                         or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.PickedUp or WoodResult.Dropped or WoodResult.BastStripped);
                     return For(wood);
+                case EventKind.Wasp:
+                    var wasp = (WaspResult)e.Code;
+                    warn = wasp != WaspResult.SmokedOut;
+                    return For(wasp);
                 case EventKind.Stranger:
                     var stranger = (StrangerResult)e.Code;
                     warn = stranger != StrangerResult.Gift && stranger != StrangerResult.Accepted;
@@ -297,6 +301,18 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Text k vykuřování vosího hnízda.</summary>
+        public static string For(WaspResult result)
+        {
+            switch (result)
+            {
+                case WaspResult.SmokedOut: return "Kouř vosy vyhnal. Hnízdo je na pár dní prázdné.";
+                case WaspResult.NeedTorch: return "Vosy odežene jen kouř. Zapal si pochodeň u ohně.";
+                case WaspResult.TooFar: return "K hnízdu musíš blíž.";
+                default: return "Hnízdo tu už není.";
+            }
+        }
+
         /// <summary>Text ke kácení, dřevu a sekeře. Obyčejné seknutí nic nepíše (je ho slyšet).</summary>
         public static string For(WoodResult result)
         {
@@ -428,6 +444,8 @@ namespace Oohra.Client
                 case BodyEvent.SkillLevelUp:
                 case BodyEvent.LeechesRemoved:
                 case BodyEvent.Smeared:
+                case BodyEvent.NoTicks:
+                case BodyEvent.NestSmokedOut:
                 case BodyEvent.Relief:
                 case BodyEvent.Recovered:
                     return false;
@@ -490,6 +508,14 @@ namespace Oohra.Client
                 case BodyEvent.BellyAche: return "Bolí tě břicho a pořád musíš odbíhat.";
                 case BodyEvent.Relief: return "Po jídle se ti trochu ulevilo.";
                 case BodyEvent.Recovered: return "Je ti zase dobře. Nemoc odešla.";
+                case BodyEvent.TicksFound: return "Prohlédl ses a našel přisátá klíšťata. Vytáhl jsi je.";
+                case BodyEvent.NoTicks: return "Prohlédl ses. Nic na tobě není.";
+                case BodyEvent.AchingJoints: return "Bolí tě klouby a pálí tě čelo. Něco v tobě roste už pár dní.";
+                case BodyEvent.SnakeBite: return "Had tě uštkl! Noha pálí.";
+                case BodyEvent.SnakeWarning: return "Had se vztyčil a syčí. Pomalu ustup.";
+                case BodyEvent.VenomSpreads: return "Noha otéká a točí se ti hlava. Jed se rozlévá.";
+                case BodyEvent.WaspSting: return "Vosy! Štípou tě. Uteč od hnízda, kouř je odežene.";
+                case BodyEvent.NestSmokedOut: return "Vosy prchají před kouřem.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -578,6 +604,8 @@ namespace Oohra.Client
                 case Symptom.BellyAche: return "bolí tě břicho";
                 case Symptom.Leeches: return "na noze ti visí pijavice";
                 case Symptom.Smeared: return "natřený (komáři neštípou)";
+                case Symptom.AchingJoints: return "bolí tě klouby";
+                case Symptom.Swelling: return "oteklá noha";
                 default: return symptom.ToString();
             }
         }

@@ -14,6 +14,9 @@ namespace Oohra.Core.World
 
         /// <summary>Vlk: teritoriální predátor, v noci se plíží k lidem mimo oheň a úkryt.</summary>
         Wolf = 3,
+
+        /// <summary>Had: na skalách a loukách, varuje a kousne zblízka (jed se zpožděním).</summary>
+        Snake = 4,
     }
 
     /// <summary>Co zvíře právě dělá. Klient podle toho mění vzhled (výpad, vyčerpání, smrt).</summary>

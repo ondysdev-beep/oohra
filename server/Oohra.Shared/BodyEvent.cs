@@ -115,6 +115,30 @@ public enum BodyEvent
 
     /// <summary>Nemoc odezněla.</summary>
     Recovered,
+
+    /// <summary>Prohlédl se a vytáhl klíšťata.</summary>
+    TicksFound,
+
+    /// <summary>Prohlédl se, klíště nenašel.</summary>
+    NoTicks,
+
+    /// <summary>Bolí ho klouby a je mu horko (začala nemoc, jméno hráč nevidí).</summary>
+    AchingJoints,
+
+    /// <summary>Uštkl ho had.</summary>
+    SnakeBite,
+
+    /// <summary>Had se vztyčil a syčí (varování).</summary>
+    SnakeWarning,
+
+    /// <summary>Jed se rozlévá: noha otéká (po kousnutí hada).</summary>
+    VenomSpreads,
+
+    /// <summary>Štípají ho vosy.</summary>
+    WaspSting,
+
+    /// <summary>Vykouřil vosí hnízdo.</summary>
+    NestSmokedOut,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -180,6 +204,12 @@ public enum Symptom
 
     /// <summary>Natřený bahnem nebo popelem (komáři neštípou).</summary>
     Smeared,
+
+    /// <summary>Bolí klouby (nemoc od klíštěte).</summary>
+    AchingJoints,
+
+    /// <summary>Otok po uštknutí hadem.</summary>
+    Swelling,
 }
 
 /// <summary>

@@ -3,7 +3,7 @@
 // reálného času. Herní minuty jsou označené „Minutes“.
 {
   // Počty zvířat na ostrov 84 × 84 (prototyp). Na větší ostrov se přepočítají podle plochy.
-  "population": { "boar": 7, "rabbit": 12, "deer": 5, "wolf": 2, "referenceArea": 7056 },
+  "population": { "boar": 7, "rabbit": 12, "deer": 5, "wolf": 2, "snake": 2, "referenceArea": 7056 },
   // Když zvířat ubude (lov), jedno chybějící se doplní za tolik herních minut.
   "respawnMinutes": 720,
   // Mrtvé zvíře (nestažené) zmizí za den.
@@ -40,6 +40,14 @@
     "alertRange": 3.2, "alertSeconds": 0.8,
     "chargeSpeed": 8, "chargeSeconds": 0.9, "exhaustSeconds": 1.6, "exhaustAfterHitSeconds": 2,
     "woundMin": 10, "woundRange": 14
+  },
+  // Had (návrh 0.8, kap. 5): na skalách, kamenité půdě a loukách. Aktivní jen ve dne a v teplém období
+  // (activeSeasons: jaro, léto, podzim, zima), jinak leží stočený a nekouše. Kdo přijde blíž než warnRange, had se
+  // vztyčí a varuje, kdo blíž než biteRange, toho kousne (jed se zpožděním, hazards.json snakeVenom). Zabije ho rána.
+  "snake": {
+    "hp": 1, "meat": 1, "radius": 0.15, "spawnAvoid": 10,
+    "wanderSpeed": 0.4, "wanderRange": 3, "warnRange": 2.2, "biteRange": 0.9, "biteCooldownSeconds": 5,
+    "activeSeasons": [ 0.6, 1, 0.7, 0 ], "activeMinDaylight": 0.4
   },
   "rabbit": {
     "hp": 1, "meat": 1, "radius": 0.2, "spawnAvoid": 6,

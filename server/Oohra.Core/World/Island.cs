@@ -55,6 +55,7 @@ public sealed class Island
         _treeTiles = trees.Select(t => t.TileIndex).ToHashSet();
         _treeByTile = trees.ToDictionary(t => t.TileIndex);
         Rocks = new RockPiles(this);
+        Wasps = new WaspNests(this);
     }
 
     public int Seed { get; }
@@ -98,6 +99,9 @@ public sealed class Island
 
     /// <summary>Hromady kamenů na skalách (berou se z nich kameny, prázdné se za čas obnoví).</summary>
     public RockPiles Rocks { get; }
+
+    /// <summary>Vosí hnízda ve stromech (ze seedu, vykouřená na čas zmizí).</summary>
+    public WaspNests Wasps { get; }
 
     /// <summary>Značky a rytiny hráčů a staré rytiny u ruin (ty přidá server při startu, AddAncient).</summary>
     public Signs Signs { get; } = new();

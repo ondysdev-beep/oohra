@@ -322,6 +322,12 @@ public static class Physiology
                 case EffectType.Dysentery:
                     Diseases.Start(c, DiseaseKind.Dysentery, effect.Strength, now);
                     break;
+                case EffectType.TickFever:
+                    Diseases.Start(c, DiseaseKind.TickFever, effect.Strength, now);
+                    break;
+                case EffectType.SnakeVenom:
+                    Diseases.Start(c, DiseaseKind.SnakeVenom, effect.Strength, now);
+                    break;
             }
         }
     }

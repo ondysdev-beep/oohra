@@ -275,14 +275,15 @@ public sealed class Bot : IDisposable
         return false;
     }
 
-    /// <summary>Rozzuřený divočák nebo plížící se vlk poblíž, nebo vyčerpaný divočák na ránu.</summary>
+    /// <summary>Rozzuřený divočák, plížící se vlk nebo syčící had poblíž, nebo vyčerpaný divočák na ránu.</summary>
     private AnimalView? Danger(float x, float y)
     {
         foreach (var a in Connection.Animals)
         {
             var d = Dist(a.X, a.Y, x, y);
             var angry = (a.Kind == AnimalKind.Boar && a.State is AnimalState.Alert or AnimalState.Charge && d < 7)
-                || (a.Kind == AnimalKind.Wolf && a.State is AnimalState.Stalk or AnimalState.Alert or AnimalState.Charge && d < 9);
+                || (a.Kind == AnimalKind.Wolf && a.State is AnimalState.Stalk or AnimalState.Alert or AnimalState.Charge && d < 9)
+                || (a.Kind == AnimalKind.Snake && a.State == AnimalState.Alert && d < 3);
             var beatable = a.State == AnimalState.Exhaust && d < 2.5;
             if (angry || beatable)
             {

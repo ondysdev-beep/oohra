@@ -244,6 +244,11 @@ public sealed partial class GameServer
         return Island.Rocks.All.Select(p => new RockPileView(p.TileIndex, p.Stones, p.MaxStones)).ToArray();
     }
 
+    private WaspNestView[] WaspNestViews()
+    {
+        return Island.Wasps.Active(Clock.TotalMinutes).Select(n => new WaspNestView(n.TileIndex, (float)n.X, (float)n.Y, Island.Wasps.IsAngry(n))).ToArray();
+    }
+
     private static DecorationTypeView[] DecorationTypeViews()
     {
         return GameData.Decorations.Select(d => new DecorationTypeView(d.Id, d.Name, d.Sticks, d.Stones, (float)d.Radius, d.Blocks)).ToArray();

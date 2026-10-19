@@ -184,6 +184,13 @@ namespace Oohra.Client
         public GameObject Deer;
         public GameObject Wolf;
 
+        [Tooltip("Had (creature_snake): délka asi 1 m, leží na zemi, hlava ve směru osy Z. Animator parametr Stav (4 spí stočený, 6 varuje vztyčený, 0 leze, 9 mrtvý).")]
+        public GameObject Snake;
+
+        [Header("Nebezpečí")]
+        [Tooltip("Vosí hnízdo (creature_wasp_nest): visí na větvi asi 2,6 m nad zemí, velké asi 0,3 × 0,4 m, úchyt nahoře uprostřed.")]
+        public GameObject WaspNest;
+
         /// <summary>
         /// Katalog, který hra používá (z Resources). Když soubor chybí, je prázdný (všude tvary z kódu).
         /// Testy si sem můžou dát vlastní.
@@ -313,6 +320,7 @@ namespace Oohra.Client
                 case AnimalKind.Boar: return Boar;
                 case AnimalKind.Rabbit: return Rabbit;
                 case AnimalKind.Deer: return Deer;
+                case AnimalKind.Snake: return Snake;
                 default: return Wolf;
             }
         }

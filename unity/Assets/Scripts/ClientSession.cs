@@ -505,6 +505,27 @@ namespace Oohra.Client
         }
 
         /// <summary>Hromada kamenů na dlaždici, ve které ještě něco je, nebo null.</summary>
+        /// <summary>Vosí hnízdo ve stromě na dlaždici (tileX, tileY), nebo null.</summary>
+        public WaspNestView? NestAt(int tileX, int tileY)
+        {
+            var world = Connection.World;
+            if (world == null)
+            {
+                return null;
+            }
+
+            var index = tileY * world.Width + tileX;
+            foreach (var nest in Connection.WaspNests)
+            {
+                if (nest.TileIndex == index)
+                {
+                    return nest;
+                }
+            }
+
+            return null;
+        }
+
         public RockPileView? RockPileAt(int tileX, int tileY)
         {
             var world = Connection.World;

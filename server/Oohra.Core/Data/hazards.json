@@ -15,6 +15,19 @@
     "strengthMin": 40, "strengthRange": 30,
     "diarrheaAbove": 15, "hydrationPerMinute": 0.02, "healPerDay": 20
   },
+  // Klíšťová horečka (od klíštěte, které zůstalo přisáté): stálá horečka (severity × feverFactor) a bolest
+  // kloubů (kulhání). Odeznívá pomalu.
+  "tickFever": {
+    "incubationMin": 1440, "incubationRange": 2880,
+    "strengthMin": 40, "strengthRange": 30,
+    "feverFactor": 0.6, "limp": 30, "healPerDay": 8
+  },
+  // Hadí jed: krátce po kousnutí roste jed v těle (toxinPerMinute × síla) a postava kulhá. Odezní za pár hodin.
+  "snakeVenom": {
+    "incubationMin": 20, "incubationRange": 40,
+    "strengthMin": 40, "strengthRange": 30,
+    "toxinPerMinute": 0.04, "limp": 40, "healPerDay": 60
+  },
   // Lék: kolik síly nemoci ubere jedno snězení části s lékem 1,0 (ochutnání méně podle dávky). Upečené léčí slaběji.
   "cureFactor": 60,
   "bakedCureMultiplier": 0.7,
@@ -38,5 +51,18 @@
 
   // Pijavice: při chůzi bažinou se s šancí chancePerMinute přisaje pijavice (nejvýš max). Každá ubírá zdraví.
   // Sundají se u ohně nebo popelem.
-  "leeches": { "chancePerMinute": 0.04, "max": 4, "healthPerLeechPerMinute": 0.02 }
+  "leeches": { "chancePerMinute": 0.04, "max": 4, "healthPerLeechPerMinute": 0.02 },
+
+  // Klíšťata: v trávě a lese (dlaždice Grass a Forest) se podle ročního období (jaro, léto, podzim, zima) přisají
+  // potichu, hra to neohlásí. Hráč se musí prohlédnout. Klíště přisáté déle než transmitMinutes přenese horečku
+  // se šancí infectChance (jednou za klíště).
+  "ticks": { "seasons": [ 1, 0.8, 0.6, 0 ], "chancePerMinute": 0.004, "max": 5, "transmitMinutes": 720, "infectChance": 0.5 },
+
+  // Vosí hnízda: ve stromech v lese a na loukách (chancePerTree stromů). Kdo přijde blíž než angerRange, vosy se
+  // rozzuří na angrySeconds a štípou každého do chaseRange jednou za stingSeconds (každé žihadlo stingToxin jedu
+  // a stingDamage zdraví). Hořící pochodeň (kouř) je odežene, s ní jde hnízdo vykouřit (zmizí na regrowDays dní).
+  "wasps": {
+    "chancePerTree": 0.015, "angerRange": 2.5, "angrySeconds": 15, "chaseRange": 7,
+    "stingSeconds": 1.5, "stingToxin": 2, "stingDamage": 1.5, "smokeReach": 2.5, "regrowDays": 5
+  }
 }

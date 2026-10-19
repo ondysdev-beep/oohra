@@ -138,6 +138,24 @@ public sealed partial class GameServer
                 SendInventory(player);
                 SendSelfState(player);
                 break;
+            case MessageType.InspectBody:
+                if (!player.Character.IsDead)
+                {
+                    Hazards.Inspect(player.Character, Clock.TotalMinutes);
+                    SendBodyEvents(player);
+                }
+
+                break;
+            case MessageType.SmokeOutNest:
+                var nest = Messages.ReadSmokeOutNest(reader);
+                if (!player.Character.IsDead)
+                {
+                    var smoked = Island.Wasps.SmokeOut(nest, player.Character, player.X, player.Y, Clock.TotalMinutes);
+                    SendEvent(player, new GameEvent(EventKind.Wasp, (byte)smoked, default, []));
+                    SendBodyEvents(player);
+                }
+
+                break;
             case MessageType.TeachRecipe:
                 TeachAction(player, Messages.ReadTeachRecipe(reader));
                 break;

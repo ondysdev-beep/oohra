@@ -13,6 +13,7 @@ public sealed record AnimalRules(
     double NightDaylightBelow,
     BoarRules Boar,
     WolfRules Wolf,
+    SnakeRules Snake,
     PreyRules Rabbit,
     PreyRules Deer,
     TrapCatchRules Traps,
@@ -21,7 +22,12 @@ public sealed record AnimalRules(
     WoundRules Wounds,
     MeatRules Meat);
 
-public sealed record PopulationRules(int Boar, int Rabbit, int Deer, int Wolf, double ReferenceArea);
+public sealed record PopulationRules(int Boar, int Rabbit, int Deer, int Wolf, int Snake, double ReferenceArea);
+
+/// <summary>Had: aktivní jen ve dne a v teple, varuje (vztyčí se) a kousne zblízka.</summary>
+public sealed record SnakeRules(
+    int Hp, int Meat, double Radius, double SpawnAvoid, double WanderSpeed, double WanderRange,
+    double WarnRange, double BiteRange, double BiteCooldownSeconds, double[] ActiveSeasons, double ActiveMinDaylight);
 
 public sealed record BoarRules(
     int Hp, int Meat, double Radius, double SpawnAvoid,
