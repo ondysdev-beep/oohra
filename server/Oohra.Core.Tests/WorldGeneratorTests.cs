@@ -100,7 +100,8 @@ public class WorldGeneratorTests
     {
         var world = World(seed);
 
-        Assert.InRange(world.Trees.Count, 2000, 12000);
+        // Velké stromy s rozestupy: méně stromů než dřív (ve starém světě 2 000 až 12 000 malých).
+        Assert.InRange(world.Trees.Count, 800, 4000);
         Assert.All(world.Trees, t => Assert.DoesNotContain(world.Tiles[t.TileIndex], new[]
         {
             TileType.Sea, TileType.Pond, TileType.Ford, TileType.Sand, TileType.Rock, TileType.LayeredRock,
@@ -151,6 +152,45 @@ public class WorldGeneratorTests
     }
 
     /// <summary>Brod: dá se po něm jít a pít z něj (čistá voda), stavět na něm nejde.</summary>
+    /// <summary>
+    /// Stromy nestojí v mřížce uprostřed dlaždic, ale kdekoli v nich, a žádné dva nejsou blíž, než dovolí rozestup
+    /// jejich druhů (spacing v trees.json). Výšky jsou skutečné (15 až 25 m).
+    /// </summary>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(7)]
+    public void TreesKeepSpacingAndStandAnywhereInTile(int seed)
+    {
+        var world = WorldGenerator.Build(seed, Size, Size);
+        var rules = GameData.Trees;
+        Assert.Contains(world.Trees, t => Math.Abs(t.X % 1 - 0.5) > 0.1 || Math.Abs(t.Y % 1 - 0.5) > 0.1);
+        Assert.All(world.Trees, t => Assert.InRange(t.Height, 15, 25));
+        Assert.All(world.Trees, t => Assert.Equal(t.TileIndex, world.Index((int)Math.Floor(t.X), (int)Math.Floor(t.Y))));
+
+        var byCell = world.Trees.GroupBy(t => ((int)(t.X / 8), (int)(t.Y / 8))).ToDictionary(g => g.Key, g => g.ToList());
+        foreach (var tree in world.Trees)
+        {
+            var (cx, cy) = ((int)(tree.X / 8), (int)(tree.Y / 8));
+            for (var dy = -1; dy <= 1; dy++)
+            {
+                for (var dx = -1; dx <= 1; dx++)
+                {
+                    if (!byCell.TryGetValue((cx + dx, cy + dy), out var others))
+                    {
+                        continue;
+                    }
+
+                    foreach (var other in others.Where(o => o.TileIndex != tree.TileIndex))
+                    {
+                        var need = (rules.For(tree.Kind).Spacing + rules.For(other.Kind).Spacing) / 2;
+                        var distance = Math.Sqrt((tree.X - other.X) * (tree.X - other.X) + (tree.Y - other.Y) * (tree.Y - other.Y));
+                        Assert.True(distance >= need - 1e-9, $"Stromy {tree.TileIndex} a {other.TileIndex} jsou {distance:0.00} m od sebe (aspoň {need}).");
+                    }
+                }
+            }
+        }
+    }
+
     [Fact]
     public void FordCanBeCrossedAndDrunkFrom()
     {

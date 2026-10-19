@@ -177,6 +177,15 @@ public sealed class Island
         return _treeTiles.Contains(tileIndex) || Forestry.HasYoungTrunk(tileIndex);
     }
 
+    /// <summary>
+    /// Kde na dlaždici stojí kmen: strom ze seedu kdekoli v dlaždici, dorostlý a mladý strom a pařez po stromu ze
+    /// seedu tam, kde strom stál, jinak střed dlaždice.
+    /// </summary>
+    public (double X, double Y) TrunkPosition(int tileIndex)
+    {
+        return TreeAt(tileIndex) is { } tree ? (tree.X, tree.Y) : (tileIndex % Width + 0.5, tileIndex / Width + 0.5);
+    }
+
     /// <summary>V okolí (čtverec o poloměru radius) je jezírko.</summary>
     public bool PondNear(int x, int y, int radius)
     {

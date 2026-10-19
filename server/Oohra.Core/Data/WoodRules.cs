@@ -12,6 +12,7 @@ public sealed record WoodRules(
     double FallSeverity,
     int FallAnimalDamage,
     double StumpHeight,
+    double TrunkShare,
     double TrunkRadius,
     int SplintersPerWood,
     double CarrySpeed,

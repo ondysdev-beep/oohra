@@ -44,53 +44,63 @@ public class MovementTests
         Assert.True(x > tx + 1, $"Postava se zasekla o kmen na x = {x:0.00}.");
     }
 
-    /// <summary>Mezi dvěma stromy vedle sebe se dá projít, i když postava nemíří přesně doprostřed mezery.</summary>
+    /// <summary>
+    /// Mezerou mezi dvěma sousedními stromy (stojí aspoň rozestup od sebe) se dá projít, i když postava nemíří
+    /// přesně doprostřed mezery.
+    /// </summary>
     [Theory]
-    [InlineData(0.85)]
-    [InlineData(1.0)]
-    [InlineData(1.15)]
+    [InlineData(-0.8)]
+    [InlineData(0.0)]
+    [InlineData(0.8)]
     public void WalksBetweenNeighbouringTrees(double offset)
     {
-        var (tx, ty) = TreePairOnDryLand();
-        var (x, y) = (tx - 1.5, ty + offset);
+        var (a, b) = TreePairOnDryLand();
+        var (ax, ay) = ((b.X - a.X) / Distance(a, b), (b.Y - a.Y) / Distance(a, b));
+        var (px, py) = (-ay, ax);
+        var (mx, my) = ((a.X + b.X) / 2 + ax * offset, (a.Y + b.Y) / 2 + ay * offset);
+        var (x, y) = (mx - px * 3, my - py * 3);
 
-        for (var i = 0; i < 80; i++)
+        for (var i = 0; i < 160; i++)
         {
-            (x, y) = Movement.Step(_island, x, y, 1, 0, 0.05);
+            (x, y) = Movement.Step(_island, x, y, px, py, 0.05);
         }
 
-        Assert.True(x > tx + 1.5, $"Postava se mezi stromy zasekla na x = {x:0.00}, y = {y:0.00}.");
+        var passed = (x - mx) * px + (y - my) * py;
+        Assert.True(passed > 2, $"Postava se mezi stromy zasekla na x = {x:0.00}, y = {y:0.00}.");
     }
 
-    /// <summary>Dva stromy nad sebou (tx, ty) a (tx, ty + 1), okolo sucho a žádné další stromy.</summary>
-    private static (int X, int Y) TreePairOnDryLand()
+    private static double Distance(Tree a, Tree b)
     {
-        foreach (var tree in _island.Trees)
+        return Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+    }
+
+    /// <summary>Dva stromy 4 až 6 m od sebe, kolem nich (5 m od středu mezery) sucho a žádné další stromy.</summary>
+    private static (Tree A, Tree B) TreePairOnDryLand()
+    {
+        var trees = _island.Trees.ToList();
+        foreach (var a in trees)
         {
-            int tx = (int)tree.X, ty = (int)tree.Y;
-            if (!_island.InBounds(tx + 2, ty + 2) || !_island.InBounds(tx - 2, ty - 1) || !_island.HasTree(_island.Index(tx, ty + 1)))
+            foreach (var b in trees)
             {
-                continue;
-            }
-
-            var clear = true;
-            for (var y = ty - 1; y <= ty + 2; y++)
-            {
-                for (var x = tx - 2; x <= tx + 2; x++)
+                var d = Distance(a, b);
+                if (a.TileIndex >= b.TileIndex || d < 4 || d > 6)
                 {
-                    var tile = _island.TileAt(x, y);
-                    var isPair = x == tx && (y == ty || y == ty + 1);
-                    clear &= tile != TileType.Sea && tile != TileType.Pond && (isPair || !_island.HasTree(_island.Index(x, y)));
+                    continue;
                 }
-            }
 
-            if (clear)
-            {
-                return (tx, ty);
+                var (mx, my) = ((a.X + b.X) / 2, (a.Y + b.Y) / 2);
+                var lonely = trees.All(t => t.TileIndex == a.TileIndex || t.TileIndex == b.TileIndex
+                    || Math.Sqrt((t.X - mx) * (t.X - mx) + (t.Y - my) * (t.Y - my)) > 6);
+                var dry = Enumerable.Range(-5, 11).All(dy => Enumerable.Range(-5, 11).All(dx =>
+                    _island.InBounds((int)mx + dx, (int)my + dy) && _island.TileAt((int)mx + dx, (int)my + dy) is not (TileType.Sea or TileType.Pond or TileType.Rock or TileType.LayeredRock)));
+                if (lonely && dry)
+                {
+                    return (a, b);
+                }
             }
         }
 
-        throw new InvalidOperationException("Na ostrově nejsou dva osamělé stromy nad sebou.");
+        throw new InvalidOperationException("Na ostrově nejsou dva osamělé sousední stromy.");
     }
 
     /// <summary>Rostliny nepřekáží: postava jimi projde.</summary>

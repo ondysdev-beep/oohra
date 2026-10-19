@@ -151,6 +151,12 @@ namespace Oohra.Client
             return new InteractionTarget(TargetKind.Timber, timberId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
         }
 
+        /// <summary>Strom na dlaždici, kmen stojí v (x, y) (ne nutně uprostřed dlaždice).</summary>
+        public static InteractionTarget ForTree(int tileX, int tileY, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Tree, -1, tileX, tileY, x, y);
+        }
+
         /// <summary>Dlaždice: voda, strom nebo skála.</summary>
         public static InteractionTarget ForTile(TargetKind kind, int tileX, int tileY)
         {

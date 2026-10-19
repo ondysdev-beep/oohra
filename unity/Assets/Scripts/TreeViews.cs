@@ -14,8 +14,8 @@ namespace Oohra.Client
     /// </summary>
     public class TreeViews : MonoBehaviour
     {
-        // Kmen v tvaru z kódu má tloušťku kolize na serveru (treeTrunkRadius 0,12 v movement.json).
-        private const float TrunkWidth = 0.24f;
+        // Kmen v tvaru z kódu má tloušťku kolize na serveru (treeTrunkRadius 0,3 v movement.json).
+        private const float TrunkWidth = 0.6f;
 
         // Když server časy pádu nepošle (starší zpráva), praská a padá tolik sekund (jako woodcutting.json).
         private const float DefaultCrack = 2f;
@@ -28,6 +28,9 @@ namespace Oohra.Client
         // Stromy, které nejsou ze seedu (mladé a dorostlé): dlaždice → druh a jak vysoký je teď nakreslený.
         private readonly Dictionary<int, TreeStateView> _young = new Dictionary<int, TreeStateView>();
         private readonly Dictionary<int, TreeKind> _kinds = new Dictionary<int, TreeKind>();
+
+        // Kde na mapě stojí strom ze seedu (už ne uprostřed dlaždice). Pařez po něm je na stejném místě.
+        private readonly Dictionary<int, Vector2> _positions = new Dictionary<int, Vector2>();
         private WorldView _world;
         private SeeThrough _crowns;
         private GameConnection _connection;
@@ -75,6 +78,7 @@ namespace Oohra.Client
             _connection = connection;
             foreach (var tree in world.Trees)
             {
+                if (tree.X > 0f || tree.Y > 0f) _positions[tree.TileIndex] = new Vector2(tree.X, tree.Y);
                 _trees[tree.TileIndex] = Build(tree);
                 _kinds[tree.TileIndex] = tree.Kind;
             }
@@ -240,8 +244,7 @@ namespace Oohra.Client
 
             _falling.Remove(tileIndex);
             _crowns.Remove(tileIndex);
-            var x = tileIndex % _world.Width + 0.5;
-            var y = tileIndex / _world.Width + 0.5;
+            var (x, y) = PositionOf(tileIndex);
             TreeKind kind;
             if (!_kinds.TryGetValue(tileIndex, out kind)) kind = TreeKind.Oak;
             _young.Remove(tileIndex);
@@ -272,18 +275,41 @@ namespace Oohra.Client
         /// <summary>Mladý stromek z katalogu (Saplings), srovnaný na výšku podle růstu. Kliknout na něj jde (nabídka se zavře).</summary>
         private GameObject Sapling(GameObject prefab, TreeView tree)
         {
-            var x = tree.TileIndex % _world.Width + 0.5;
-            var y = tree.TileIndex / _world.Width + 0.5;
+            var (x, y) = PositionOf(tree.TileIndex);
             var model = VisualCatalog.Spawn(prefab, transform, "Mladý strom " + tree.TileIndex, height: tree.Height);
             model.transform.position = WorldCoords.ToUnity(x, y);
             model.transform.rotation = Quaternion.Euler(0f, tree.TileIndex * 137 % 360, 0f);
             return model;
         }
 
+        /// <summary>Kde stojí strom na dlaždici: strom ze seedu na svém místě, mladý a dorostlý uprostřed dlaždice.</summary>
+        private (double X, double Y) PositionOf(int tileIndex)
+        {
+            Vector2 position;
+            return _positions.TryGetValue(tileIndex, out position)
+                ? (position.x, position.y)
+                : (tileIndex % _world.Width + 0.5, tileIndex / _world.Width + 0.5);
+        }
+
+        /// <summary>
+        /// Nejširší koruna vůči výšce stromu podle druhu (dub a vrba široké, jehličnan a bříza úzké). Model z katalogu,
+        /// který je širší, se do šířky zúží, ať sousední stromy nevypadají každý jinak velký.
+        /// </summary>
+        public static float MaxCrownRatio(TreeKind kind)
+        {
+            switch (kind)
+            {
+                case TreeKind.Oak: return 0.7f;
+                case TreeKind.Willow: return 0.75f;
+                case TreeKind.Conifer: return 0.38f;
+                case TreeKind.Birch: return 0.42f;
+                default: return 0.55f;
+            }
+        }
+
         private GameObject Build(TreeView tree)
         {
-            var x = tree.TileIndex % _world.Width + 0.5;
-            var y = tree.TileIndex / _world.Width + 0.5;
+            var (x, y) = PositionOf(tree.TileIndex);
             var prefab = VisualCatalog.Current.Tree(tree.Kind, tree.Variant);
             var root = prefab != null ? Model(prefab, tree, x, y) : Shape(tree, x, y);
             root.name = "Strom " + tree.TileIndex + " (" + Texts.TreeName(tree.Kind) + ")";
@@ -300,6 +326,17 @@ namespace Oohra.Client
             model.transform.position = WorldCoords.ToUnity(x, y);
             model.transform.rotation = Quaternion.Euler(0f, tree.TileIndex * 137 % 360, 0f);
             var bounds = VisualCatalog.BoundsOf(model);
+            var width = Mathf.Max(bounds.size.x, bounds.size.z);
+            var widest = MaxCrownRatio(tree.Kind) * bounds.size.y;
+            if (width > widest && width > 0.01f)
+            {
+                // Moc široký model se do šířky zúží (výška zůstane).
+                var squeeze = widest / width;
+                var scale = model.transform.localScale;
+                model.transform.localScale = new Vector3(scale.x * squeeze, scale.y, scale.z * squeeze);
+                bounds = VisualCatalog.BoundsOf(model);
+            }
+
             var radius = Mathf.Max(bounds.extents.x, bounds.extents.z);
             _crowns.Add(tree.TileIndex, model, null, x, y, radius, bounds.max.y * 0.4f, bounds.max.y);
             Pickable.Attach(model, Target(tree));
@@ -348,10 +385,11 @@ namespace Oohra.Client
             branch.transform.localPosition = new Vector3(0f, height, 0f) + branch.transform.up * (length / 2);
         }
 
-        /// <summary>Strom jako cíl kliknutí: dlaždice stromu (nasbírat klacky, později kácet).</summary>
+        /// <summary>Strom jako cíl kliknutí: dlaždice stromu (nasbírat klacky, kácet), postava jde ke kmeni.</summary>
         private InteractionTarget Target(TreeView tree)
         {
-            return InteractionTarget.ForTile(TargetKind.Tree, tree.TileIndex % _world.Width, tree.TileIndex / _world.Width);
+            var (x, y) = PositionOf(tree.TileIndex);
+            return InteractionTarget.ForTree(tree.TileIndex % _world.Width, tree.TileIndex / _world.Width, x, y);
         }
 
         /// <summary>Jak vypadá tvar z kódu: barvy, podíl výšky kmene, tvar, velikost a výška koruny (podíly výšky stromu).</summary>

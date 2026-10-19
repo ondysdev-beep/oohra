@@ -19,7 +19,7 @@ public static class WorldViews
             Height = island.Height,
             Tiles = island.Tiles.ToArray(),
             Shore = island.Shore.ToArray(),
-            Trees = island.Trees.Select(t => new TreeView(t.TileIndex, (float)t.Variant, t.Kind, (float)t.Height)).ToArray(),
+            Trees = island.Trees.Select(t => new TreeView(t.TileIndex, (float)t.Variant, t.Kind, (float)t.Height, (float)t.X, (float)t.Y)).ToArray(),
             Plants = island.Plants.Select(p => new PlantView(p.SpeciesId, (float)p.X, (float)p.Y)).ToArray(),
             Species = island.Species
                 .Select(s => new SpeciesView((float)s.Hue, (float)s.Saturation, (float)s.Lightness, (short)s.FruitHue, (byte)s.Shape))

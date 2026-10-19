@@ -23,7 +23,8 @@ public sealed class Materials
         }
 
         var rules = GameData.Fire;
-        if (!InReach(tileX, tileY, playerX, playerY, rules.Reach.Tree))
+        var (trunkX, trunkY) = island.TrunkPosition(island.Index(tileX, tileY));
+        if (Math.Sqrt((trunkX - playerX) * (trunkX - playerX) + (trunkY - playerY) * (trunkY - playerY)) > rules.Reach.Tree)
         {
             return MaterialResult.TooFar;
         }

@@ -69,7 +69,8 @@ public static class Placement
             for (var tx = minX; tx <= maxX; tx++)
             {
                 if (island.InBounds(tx, ty) && island.HasTrunk(island.Index(tx, ty))
-                    && Geometry.DistanceToSegment(tx + 0.5, ty + 0.5, x1, y1, x2, y2) < reach)
+                    && island.TrunkPosition(island.Index(tx, ty)) is var (trunkX, trunkY)
+                    && Geometry.DistanceToSegment(trunkX, trunkY, x1, y1, x2, y2) < reach)
                 {
                     return false;
                 }

@@ -13,9 +13,10 @@ namespace Oohra.Client
         [SerializeField] private float _pitch = 55f;
         [SerializeField] private float _minPitch = 20f;
         [SerializeField] private float _maxPitch = 85f;
-        [SerializeField] private float _distance = 18f;
+        // Stromy mají 15 až 25 m: výchozí kamera je nad korunami (asi 25 m nad zemí), přiblížit jde až k postavě.
+        [SerializeField] private float _distance = 30f;
         [SerializeField] private float _minDistance = 6f;
-        [SerializeField] private float _maxDistance = 40f;
+        [SerializeField] private float _maxDistance = 60f;
         [SerializeField] private float _keyTurnSpeed = 120f;
         [SerializeField] private float _mouseTurnSpeed = 0.3f;
         [SerializeField] private float _mousePitchSpeed = 0.2f;

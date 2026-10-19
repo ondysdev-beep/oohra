@@ -485,7 +485,10 @@ public sealed class WorldGenerator
 
     /// <summary>
     /// Projde dlaždice po řádcích a náhodně na ně dá strom, nebo rostlinu (šance podle dlaždice ve worldgen.json).
-    /// Druh rostliny se losuje s vahou 4 pro druhy, kterým dlaždice svědčí, jinak 1. Kolem táborů a ruin nic neroste.
+    /// Strom stojí kdekoli v dlaždici (ne jen uprostřed), šanci násobí šum shluků a mýtin (treeClumps) a strom se
+    /// nepostaví blíž k sousedovi, než dovolí rozestup obou druhů (spacing v trees.json). Kde se strom nevejde,
+    /// může růst rostlina. Druh rostliny se losuje s vahou 4 pro druhy, kterým dlaždice svědčí, jinak 1.
+    /// Kolem táborů a ruin nic neroste.
     /// </summary>
     private (List<Tree> Trees, List<PlantInstance> Plants) PlaceTreesAndPlants(
         IReadOnlyList<GridPoint> camps,
@@ -496,20 +499,29 @@ public sealed class WorldGenerator
         var freshWater = DistanceFrom(i => _tiles[i] is TileType.Pond or TileType.Ford, i => true);
         var trees = new List<Tree>();
         var plants = new List<PlantInstance>();
+        var nearby = new TreeGrid(_width, _height);
         for (var i = 0; i < _tiles.Length; i++)
         {
             var (x, y) = (i % _width, i / _width);
             var tile = _tiles[i];
             var clear = IsClearZone(x, y, camps, ruins);
-            if (_rules.TreeChance.TryGetValue(tile, out var treeChance) && rng.NextDouble() < treeChance)
+            if (_rules.TreeChance.TryGetValue(tile, out var treeChance) && rng.NextDouble() < treeChance * Clumps(x, y))
             {
-                if (!clear)
+                var (tx, ty) = (x + 0.15 + 0.7 * rng.NextDouble(), y + 0.15 + 0.7 * rng.NextDouble());
+                var variant = rng.NextDouble();
+                if (clear)
                 {
-                    var (kind, height) = TreeSpecies(i, freshWater);
-                    trees.Add(new Tree(i, x + 0.5, y + 0.5, rng.NextDouble(), kind, height));
+                    continue;
                 }
 
-                continue;
+                var (kind, height) = TreeSpecies(i, freshWater);
+                if (nearby.HasRoom(tx, ty, GameData.Trees.For(kind).Spacing))
+                {
+                    var tree = new Tree(i, tx, ty, variant, kind, height);
+                    trees.Add(tree);
+                    nearby.Add(tree);
+                    continue;
+                }
             }
 
             if (_rules.PlantChance.TryGetValue(tile, out var plantChance) && rng.NextDouble() < plantChance)
@@ -562,6 +574,58 @@ public sealed class WorldGenerator
         var species = rules.For(kind);
         var height = species.MinHeight + (species.MaxHeight - species.MinHeight) * Hash.Hash2(x, y, unchecked(salt + 2));
         return (kind, Math.Round(height, 1));
+    }
+
+    /// <summary>Šum shluků stromů a mýtin: násobí šanci na strom (treeClumps ve worldgen.json).</summary>
+    private double Clumps(int x, int y)
+    {
+        var rules = _rules.TreeClumps;
+        var noise = Noise.Value(x / rules.Scale, y / rules.Scale, unchecked(_seed ^ 0x7C1));
+        return rules.Min + (rules.Max - rules.Min) * noise;
+    }
+
+    /// <summary>Stromy podle čtverců 8 × 8 m, aby se rozestup od sousedů hledal jen v okolí.</summary>
+    private sealed class TreeGrid
+    {
+        private const int Cell = 8;
+        private readonly List<Tree>[] _cells;
+        private readonly int _columns;
+        private readonly int _rows;
+
+        public TreeGrid(int width, int height)
+        {
+            _columns = width / Cell + 1;
+            _rows = height / Cell + 1;
+            _cells = new List<Tree>[_columns * _rows];
+        }
+
+        public void Add(Tree tree)
+        {
+            var index = (int)(tree.Y / Cell) * _columns + (int)(tree.X / Cell);
+            (_cells[index] ??= []).Add(tree);
+        }
+
+        /// <summary>Strom s rozestupem spacing se sem vejde (od každého souseda aspoň průměr obou rozestupů).</summary>
+        public bool HasRoom(double x, double y, double spacing)
+        {
+            var (cx, cy) = ((int)(x / Cell), (int)(y / Cell));
+            for (var row = Math.Max(0, cy - 1); row <= Math.Min(_rows - 1, cy + 1); row++)
+            {
+                for (var column = Math.Max(0, cx - 1); column <= Math.Min(_columns - 1, cx + 1); column++)
+                {
+                    foreach (var other in _cells[row * _columns + column] ?? [])
+                    {
+                        var need = (spacing + GameData.Trees.For(other.Kind).Spacing) / 2;
+                        if ((other.X - x) * (other.X - x) + (other.Y - y) * (other.Y - y) < need * need)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
+        }
     }
 
     private static int PickSpecies(Mulberry32 rng, TileType tile, IReadOnlyList<SpeciesSecret> secrets)

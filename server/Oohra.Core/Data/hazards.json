@@ -62,7 +62,7 @@
   // rozzuří na angrySeconds a štípou každého do chaseRange jednou za stingSeconds (každé žihadlo stingToxin jedu
   // a stingDamage zdraví). Hořící pochodeň (kouř) je odežene, s ní jde hnízdo vykouřit (zmizí na regrowDays dní).
   "wasps": {
-    "chancePerTree": 0.015, "angerRange": 2.5, "angrySeconds": 15, "chaseRange": 7,
+    "chancePerTree": 0.05, "angerRange": 2.5, "angrySeconds": 15, "chaseRange": 7,
     "stingSeconds": 1.5, "stingToxin": 2, "stingDamage": 1.5, "smokeReach": 2.5, "regrowDays": 5
   }
 }

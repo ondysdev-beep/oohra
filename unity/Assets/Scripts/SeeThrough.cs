@@ -21,8 +21,11 @@ namespace Oohra.Client
         private const float FeetHeight = 0.2f;
         private const float SideClearance = 0.5f;
 
+        // Jak blízko u kamery (metry) musí koruna být, aby zprůhledněla, i když nestojí mezi kamerou a postavou.
+        private const float CameraClearance = 2f;
+
         // Nejdál, kde se zakrývající věci hledají (při nízkém sklonu kamery).
-        private const float MaxSearch = 18f;
+        private const float MaxSearch = 30f;
 
         private readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>();
         private readonly Dictionary<Vector2Int, List<Entry>> _grid = new Dictionary<Vector2Int, List<Entry>>();
@@ -42,6 +45,9 @@ namespace Oohra.Client
             public float Top;
             public float Alpha = 1f;
             public bool Near;
+
+            // Kamera je v koruně: schová se úplně, ne jen zprůhlední.
+            public bool AroundCamera;
         }
 
         /// <summary>
@@ -109,7 +115,7 @@ namespace Oohra.Client
             for (var i = _fading.Count - 1; i >= 0; i--)
             {
                 var entry = _fading[i];
-                var target = entry.Near ? FadedAlpha : 1f;
+                var target = entry.Near ? (entry.AroundCamera ? 0f : FadedAlpha) : 1f;
                 entry.Alpha = Mathf.MoveTowards(entry.Alpha, target, FadeSpeed * Time.deltaTime);
                 Apply(entry);
                 if (!entry.Near && entry.Alpha >= 1f)
@@ -124,6 +130,7 @@ namespace Oohra.Client
             foreach (var entry in _fading)
             {
                 entry.Near = false;
+                entry.AroundCamera = false;
             }
 
             var player = new Vector2(_players.Self.position.x, -_players.Self.position.z);
@@ -136,7 +143,8 @@ namespace Oohra.Client
 
             // Jak rychle paprsky ke kameře stoupají (výška na metr vodorovně).
             var rise = horizontal > 0.001f ? toCameraUnity.y / horizontal : 1000f;
-            var reach = Mathf.Min(MaxSearch, Mathf.Max(0f, _tallest - floor - FeetHeight) / Mathf.Max(rise, 0.05f) + 3f);
+            // Hledá se až ke kameře a kousek za ni (koruny kolem kamery).
+            var reach = Mathf.Min(MaxSearch, Mathf.Max(horizontal + 10f, Mathf.Max(0f, _tallest - floor - FeetHeight) / Mathf.Max(rise, 0.05f) + 3f));
             var r = Mathf.CeilToInt(reach);
             var cx = Mathf.FloorToInt(player.x);
             var cy = Mathf.FloorToInt(player.y);
@@ -152,10 +160,13 @@ namespace Oohra.Client
 
                     foreach (var entry in cell)
                     {
-                        if (!Covers(entry.Position, entry.Radius, entry.Bottom - floor, entry.Top - floor, player, toCamera, rise))
+                        var around = AroundCamera(entry.Position, entry.Radius, entry.Bottom - floor, entry.Top - floor, player + toCamera * horizontal, toCameraUnity.y);
+                        if (!around && !Covers(entry.Position, entry.Radius, entry.Bottom - floor, entry.Top - floor, player, toCamera, rise))
                         {
                             continue;
                         }
+
+                        entry.AroundCamera = around;
 
                         if (!_fading.Contains(entry))
                         {
@@ -200,6 +211,15 @@ namespace Oohra.Client
             var lowest = FeetHeight + near * rise;
             var highest = PlayerViews.BodyHeight + far * rise;
             return lowest <= top && highest >= bottom;
+        }
+
+        /// <summary>
+        /// Kamera je v koruně nebo těsně u ní (vysoké stromy 15 až 25 m: kamera je níž než jejich vršky). Taková
+        /// koruna by zakryla kus obrazu, i když nestojí přímo mezi kamerou a postavou.
+        /// </summary>
+        public static bool AroundCamera(Vector2 position, float radius, float bottom, float top, Vector2 camera, float cameraHeight)
+        {
+            return (position - camera).magnitude < radius + CameraClearance && cameraHeight > bottom - CameraClearance && cameraHeight < top + CameraClearance;
         }
 
         /// <summary>Průhledná věc má průhledný materiál, úplně neprůhledná zase obyčejný (kvůli stínům a pořadí kreslení).</summary>

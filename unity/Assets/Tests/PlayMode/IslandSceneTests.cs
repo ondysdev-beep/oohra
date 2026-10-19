@@ -90,12 +90,13 @@ namespace Oohra.Client.Tests
             var crowns = Object.FindAnyObjectByType<SeeThrough>();
             yield return WaitFor(() => connection.SelfSnapshot() != null, 5f, "Chybí poloha postavy.");
 
-            var until = Time.realtimeSinceStartup + 8f;
+            // Stromy stojí s rozestupy, k nejbližšímu může být kus cesty.
+            var until = Time.realtimeSinceStartup + 30f;
             while (crowns.FadedCount == 0 && Time.realtimeSinceStartup < until)
             {
                 var self = connection.SelfSnapshot().Value;
                 var tree = connection.World.Trees
-                    .Select(t => new Vector2(t.TileIndex % connection.World.Width + 0.5f, t.TileIndex / connection.World.Width + 0.5f))
+                    .Select(t => new Vector2(t.X, t.Y))
                     .OrderBy(t => Vector2.Distance(t, new Vector2(self.X, self.Y)))
                     .First();
                 var direction = (tree - new Vector2(self.X, self.Y)).normalized;

@@ -172,7 +172,7 @@ public sealed class Forestry
         }
 
         var tile = island.Index(tileX, tileY);
-        var (tx, ty) = (tileX + 0.5, tileY + 0.5);
+        var (tx, ty) = island.TrunkPosition(tile);
         var check = CanSwing(playerId, Distance(tx, ty, playerX, playerY), inventory);
         if (check is not null)
         {
@@ -556,7 +556,8 @@ public sealed class Forestry
         }
 
         animals.Crush(tree.X, tree.Y, x2, y2, half, rules.FallAnimalDamage, now);
-        var length = Math.Max(1, (int)Math.Floor(tree.Height - rules.StumpHeight));
+        // Na klady jde jen spodní část kmene (trunkShare výšky), koruna dá klacky.
+        var length = Math.Max(1, (int)Math.Floor(tree.Height * rules.TrunkShare - rules.StumpHeight));
         var start = rules.TrunkRadius + 0.1;
         var center = start + length / 2.0;
         _timbers.Add(new Timber(_nextId++, TimberKind.Trunk, tree.Kind, tree.X + dx * center, tree.Y + dy * center, angle, length));

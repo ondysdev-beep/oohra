@@ -21,6 +21,7 @@ public sealed record WorldGenRules(
     CampRules Camps,
     RuinRules Ruins,
     Dictionary<TileType, double> TreeChance,
+    TreeClumpRules TreeClumps,
     Dictionary<TileType, double> PlantChance);
 
 /// <summary>Podíl oblastí z celé souše (zbytek po pláži, vodě a ostatních oblastech je louka).</summary>
@@ -42,3 +43,6 @@ public sealed record PondRules(int Count, double MinRadius, double MaxRadius);
 public sealed record CampRules(int Count, int MinDistance, int WaterWithin);
 
 public sealed record RuinRules(int Count, int MinDistance, int CampDistance);
+
+/// <summary>Shluky stromů a mýtiny: šum o velikosti skvrn Scale metrů násobí šanci na strom (Min až Max).</summary>
+public sealed record TreeClumpRules(double Scale, double Min, double Max);
