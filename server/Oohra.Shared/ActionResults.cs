@@ -53,6 +53,20 @@ namespace Oohra.Core.World
         LearnedFromOther,
     }
 
+    /// <summary>Jak dopadl průchod vchodem do jeskyně.</summary>
+    public enum CaveResult
+    {
+        /// <summary>Vešel do jeskyně.</summary>
+        Entered,
+
+        /// <summary>Vyšel ven.</summary>
+        Left,
+        TooFar,
+
+        /// <summary>Takový vchod postava nezná (nenápadný a ještě ho neobjevila).</summary>
+        Unknown,
+    }
+
     /// <summary>Kde maso visí: v kouři ohně (číslo ohně), nebo na sušáku (číslo stavby).</summary>
     public enum RackHolder : byte
     {
@@ -243,6 +257,9 @@ namespace Oohra.Core.World
 
         /// <summary>Tady se nedávno narodil cizí hráč: místo je ještě chráněné před stavbou.</summary>
         BirthPlaceProtected,
+
+        /// <summary>V jeskyni se nestaví zdi ani dveře (jen ohniště, zásoby, pasti a dekorace).</summary>
+        NotInCave,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>

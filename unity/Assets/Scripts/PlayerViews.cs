@@ -13,6 +13,9 @@ namespace Oohra.Client
     /// </summary>
     public class PlayerViews : MonoBehaviour
     {
+        /// <summary>Skok delší než tohle (metry) se nevyhlazuje (vchod do jeskyně).</summary>
+        public const float TeleportDistance = 20f;
+
         private const float Smoothing = 15f;
 
         // 1 dlaždice = 1 metr. Postava je vysoká 1,8 m a široká jako kolize na serveru (radius 0,28 v movement.json).
@@ -71,7 +74,10 @@ namespace Oohra.Client
                 var asleep = player.Sleeping && !AnimatorTools.Has(animator, SleepParameter, AnimatorControllerParameterType.Bool);
                 var target = WorldCoords.ToUnity(player.X, player.Y, dead || asleep ? BodyRadius : BodyHeight / 2);
                 var before = view.transform.position;
-                view.transform.position = Vector3.Lerp(before, target, 1 - Mathf.Exp(-Smoothing * Time.deltaTime));
+                // Průchod vchodem do jeskyně je skok daleko: postava se přenese hned, neklouže přes mapu.
+                view.transform.position = (target - before).sqrMagnitude > TeleportDistance * TeleportDistance
+                    ? target
+                    : Vector3.Lerp(before, target, 1 - Mathf.Exp(-Smoothing * Time.deltaTime));
                 // Úhel na mapě (y dolů) převedený na otočení v Unity (z nahoru).
                 var facing = Quaternion.Euler(0f, 90f + player.Facing * Mathf.Rad2Deg, 0f);
                 // Mrtvá i spící postava leží (spící ve směru, kam se dívala).

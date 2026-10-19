@@ -56,6 +56,12 @@ public sealed class WorldGenerator
         return new WorldGenerator(seed, width, height).Generate();
     }
 
+    /// <summary>Celý svět pro hru: ostrov a pod ním podzemí s jeskyněmi (Caves.Dig).</summary>
+    public static Island BuildWorld(int seed, int width, int height)
+    {
+        return Caves.Dig(Build(seed, width, height));
+    }
+
     private Island Generate()
     {
         ShapeIsland();

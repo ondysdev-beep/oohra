@@ -47,6 +47,8 @@ public sealed class CharacterSave
 
     public List<double> Ticks { get; init; } = [];
 
+    public List<int> KnownCaves { get; init; } = [];
+
     public double SmearedUntil { get; init; } = double.NegativeInfinity;
 
     public double LastMosquitoWarning { get; init; } = double.NegativeInfinity;

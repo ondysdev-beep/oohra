@@ -2,7 +2,7 @@ using Oohra.Core.World;
 
 namespace Oohra.Server.Tests;
 
-/// <summary>Svět 384 × 384 (návrh 0.8): klient dostane celou mapu a narodí se na souši.</summary>
+/// <summary>Svět 384 × 384 (návrh 0.8) s podzemím pod ostrovem: klient dostane celou mapu a narodí se na souši.</summary>
 public class BigWorldServerTests
 {
     [Fact]
@@ -14,7 +14,10 @@ public class BigWorldServerTests
         Assert.True(client.LoggedIn, client.LoginError);
         var world = client.World!;
         var island = net.Server.Island;
-        Assert.Equal(384 * 384, world.Tiles.Length);
+        Assert.Equal(384, island.SurfaceHeight);
+        Assert.True(island.Height > 384, "Pod ostrovem je podzemí s jeskyněmi.");
+        Assert.Equal(384 * island.Height, world.Tiles.Length);
+        Assert.Contains(TileType.CaveFloor, world.Tiles);
         Assert.Equal(island.Tiles, world.Tiles);
         Assert.Equal(island.Shore, world.Shore);
         Assert.Contains(TileType.Ford, world.Tiles);

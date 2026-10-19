@@ -110,6 +110,11 @@ public static class GameData
 
     public static CraftingRules Crafting => _crafting.Value;
 
+    private static readonly Lazy<CaveRules> _caves =
+        new(() => Load<CaveRules>("caves.json"));
+
+    public static CaveRules Caves => _caves.Value;
+
     private static readonly Lazy<PreservingRules> _preserving =
         new(() => Load<PreservingRules>("preserving.json"));
 

@@ -688,6 +688,30 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Vchod do jeskyně podle čísla, nebo null.</summary>
+        public CaveEntranceView? CaveEntrance(int id)
+        {
+            foreach (var entrance in Connection.CaveEntrances)
+            {
+                if (entrance.Id == id)
+                {
+                    return entrance;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Moje postava je v jeskyni.</summary>
+        public bool InCave
+        {
+            get
+            {
+                var self = Connection.SelfSnapshot();
+                return self.HasValue && Connection.World != null && CaveView.IsCave(Connection.World, self.Value.X, self.Value.Y);
+            }
+        }
+
         /// <summary>Maso v kouři ohně nebo na sušáku (prázdné, když nic nevisí).</summary>
         public RackPieceView[] RackOn(RackHolder holder, int id)
         {

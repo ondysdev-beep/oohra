@@ -103,6 +103,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Hromady kamenů na skalách (i prázdné, Stones 0).</summary>
     public RockPileView[] RockPiles { get; private set; } = [];
 
+    /// <summary>Vchody do jeskyní, které moje postava zná.</summary>
+    public CaveEntranceView[] CaveEntrances { get; private set; } = [];
+
     /// <summary>Maso v kouři ohňů a na sušácích.</summary>
     public RackView[] Racks { get; private set; } = [];
 
@@ -312,6 +315,12 @@ public sealed class GameConnection : IDisposable
     public void RemoveLeeches()
     {
         Send(Messages.WriteRemoveLeeches);
+    }
+
+    /// <summary>Projít vchodem do jeskyně (dovnitř, nebo ven).</summary>
+    public void UseCave(int entranceId)
+    {
+        Send(w => Messages.WriteUseCave(w, entranceId));
     }
 
     /// <summary>Pověsit syrové maso z hromádky do kouře ohně (Fire) nebo na sušák (Structure).</summary>
@@ -676,6 +685,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Racks:
                 Racks = Messages.ReadRacks(reader);
+                break;
+            case MessageType.CaveEntrances:
+                CaveEntrances = Messages.ReadCaveEntrances(reader);
                 break;
             case MessageType.Corpses:
                 Corpses = Messages.ReadCorpses(reader);

@@ -21,6 +21,9 @@ namespace Oohra.Client
 
         /// <summary>Dřevo na zemi: ležící kmen nebo klad (číslo dřeva).</summary>
         Timber,
+
+        /// <summary>Vchod do jeskyně venku nebo východ uvnitř (číslo vchodu).</summary>
+        Cave,
     }
 
     /// <summary>Na co hráč kliknul: rostlina, oheň, stavba nebo zvíře (číslo), nebo dlaždice (voda, strom, skála).</summary>
@@ -74,6 +77,7 @@ namespace Oohra.Client
                     case TargetKind.Player: return 2.5;
                     case TargetKind.Stranger: return 2.2;
                     case TargetKind.Timber: return 1.5;
+                    case TargetKind.Cave: return 1.6;
                     default: return 1.3;
                 }
             }
@@ -127,6 +131,12 @@ namespace Oohra.Client
         }
 
         /// <summary>Kmen nebo klad na zemi (číslo dřeva). (x, y) je jeho střed.</summary>
+        /// <summary>Vchod do jeskyně (číslo vchodu). (x, y) je místo, kde se stojí: venku u skály, nebo uvnitř u východu.</summary>
+        public static InteractionTarget ForCave(int entranceId, double x, double y)
+        {
+            return new InteractionTarget(TargetKind.Cave, entranceId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);
+        }
+
         public static InteractionTarget ForTimber(int timberId, double x, double y)
         {
             return new InteractionTarget(TargetKind.Timber, timberId, (int)System.Math.Floor(x), (int)System.Math.Floor(y), x, y);

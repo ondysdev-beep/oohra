@@ -132,6 +132,9 @@ public readonly record struct RockPileView(int TileIndex, int Stones, int MaxSto
 /// <summary>Stopa v bahně: poloha, směr (0 až 255 = celý kruh), kdo ji udělal a jak je čerstvá (255 nová, 0 mizí).</summary>
 public readonly record struct TrackView(float X, float Y, byte Dir, TrackMaker Maker, byte Fresh);
 
+/// <summary>Vchod do jeskyně: venku (X, Y, Facing = směr ke skále) a uvnitř (InsideX, InsideY). Hidden = nenápadný.</summary>
+public readonly record struct CaveEntranceView(int Id, float X, float Y, float Facing, float InsideX, float InsideY, bool Hidden);
+
 /// <summary>Kus masa v kouři nebo na sušáku: co to je (Cooking Smoked/Dried = hotové) a jak je hotový (0 až 255).</summary>
 public readonly record struct RackPieceView(ItemKind Kind, Cooking Cooking, byte Progress);
 
@@ -494,6 +497,40 @@ public static class Messages
     {
         return ReadList(r, () => new RackView((RackHolder)r.GetByte(), r.GetInt(),
             ReadList(r, () => new RackPieceView((ItemKind)r.GetByte(), (Cooking)r.GetByte(), r.GetByte()))));
+    }
+
+    /// <summary>Projít vchodem do jeskyně (dovnitř, nebo ven, podle toho, kde hráč stojí).</summary>
+    public static void WriteUseCave(NetDataWriter w, int entranceId)
+    {
+        w.Put((byte)MessageType.UseCave);
+        w.Put(entranceId);
+    }
+
+    public static int ReadUseCave(NetDataReader r)
+    {
+        return r.GetInt();
+    }
+
+    /// <summary>Vchody do jeskyní, které hráč zná (všechny viditelné a jím objevené nenápadné).</summary>
+    public static void WriteCaveEntrances(NetDataWriter w, IReadOnlyList<CaveEntranceView> entrances)
+    {
+        w.Put((byte)MessageType.CaveEntrances);
+        w.Put(entrances.Count);
+        foreach (var e in entrances)
+        {
+            w.Put(e.Id);
+            w.Put(e.X);
+            w.Put(e.Y);
+            w.Put(e.Facing);
+            w.Put(e.InsideX);
+            w.Put(e.InsideY);
+            w.Put(e.Hidden);
+        }
+    }
+
+    public static CaveEntranceView[] ReadCaveEntrances(NetDataReader r)
+    {
+        return ReadList(r, () => new CaveEntranceView(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetBool()));
     }
 
     public static void WriteInspectBody(NetDataWriter w)

@@ -72,6 +72,9 @@ public sealed class PlayerSession
 
     public double NextTracksAt { get; set; }
 
+    /// <summary>Komu (které postavě) a kolik objevených jeskyní se naposledy poslalo v seznamu vchodů.</summary>
+    public (object? Character, int Known) SentCaves { get; set; }
+
     /// <summary>Naposledy poslaný seznam stop byl prázdný.</summary>
     public bool SentTracksEmpty { get; set; }
 

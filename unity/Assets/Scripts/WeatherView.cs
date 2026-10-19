@@ -95,8 +95,23 @@ namespace Oohra.Client
             UpdateLightning();
         }
 
+        /// <summary>Jak moc je moje postava v jeskyni (0 venku, 1 uvnitř; plynule se mění). Uvnitř neprší a je tma.</summary>
+        public float CaveAmount { get; private set; }
+
+        /// <summary>Dohled v jeskyni (metry za postavou, pak černá).</summary>
+        private const float CaveSight = 12f;
+
         private void BlendTowards(Snapshot snapshot)
         {
+            var inCave = false;
+            if (_players != null && _players.Self != null && _connection.World != null)
+            {
+                double x, y;
+                WorldCoords.FromUnity(_players.Self.position, out x, out y);
+                inCave = CaveView.IsCave(_connection.World, x, y);
+            }
+
+            CaveAmount = Mathf.MoveTowards(CaveAmount, inCave ? 1f : 0f, Time.deltaTime * 1.5f);
             var intensity = snapshot.WeatherIntensity;
             var fog = snapshot.Weather == WeatherKind.Fog ? intensity : 0f;
             var rain = snapshot.Weather == WeatherKind.Rain || snapshot.Weather == WeatherKind.Storm ? intensity : 0f;
@@ -124,6 +139,7 @@ namespace Oohra.Client
             var sight = Mathf.Lerp(ClearSight, RainSight, RainAmount);
             sight = Mathf.Lerp(sight, StormSight, StormAmount);
             sight = Mathf.Lerp(sight, FogSight, FogAmount);
+            sight = Mathf.Lerp(sight, CaveSight, CaveAmount);
             RenderSettings.fogStartDistance = Mathf.Max(0f, cameraDistance + sight * 0.15f - 5f * FogAmount);
             RenderSettings.fogEndDistance = cameraDistance + sight;
 
@@ -131,6 +147,7 @@ namespace Oohra.Client
             var day = Color.Lerp(DayHaze, DayFog, FogAmount) * (1f - 0.35f * Mathf.Max(RainAmount, StormAmount));
             var color = Color.Lerp(NightFog, day, daylight);
             color = Color.Lerp(color, new Color(0.75f, 0.8f, 0.95f), Flash * 0.6f);
+            color = Color.Lerp(color, Color.black, CaveAmount);
             RenderSettings.fogColor = color;
             if (_camera != null)
             {
@@ -148,11 +165,11 @@ namespace Oohra.Client
             }
 
             var emission = _rain.emission;
-            emission.rateOverTime = RainPerSecond * RainAmount * (1f + StormAmount * 0.6f);
+            emission.rateOverTime = RainPerSecond * RainAmount * (1f + StormAmount * 0.6f) * (1f - CaveAmount);
             var velocity = _rain.velocityOverLifetime;
             velocity.x = new ParticleSystem.MinMaxCurve(Wind * 6f);
 
-            var volume = SyllableVoice.Volume * 0.55f * Mathf.Clamp01(RainAmount * 1.3f) * (DreamView.Active ? 0f : 1f);
+            var volume = SyllableVoice.Volume * 0.55f * Mathf.Clamp01(RainAmount * 1.3f) * (DreamView.Active ? 0f : 1f) * (1f - 0.85f * CaveAmount);
             _rainSound.volume = volume;
             if (volume > 0.001f && !_rainSound.isPlaying)
             {
@@ -167,7 +184,7 @@ namespace Oohra.Client
         /// <summary>V bouřce občas blýskne (dvojitý záblesk) a za chvíli zahřmí, podle vzdálenosti blesku.</summary>
         private void UpdateLightning()
         {
-            if (StormAmount > 0.35f && Time.time >= _nextLightning)
+            if (StormAmount > 0.35f && CaveAmount < 0.5f && Time.time >= _nextLightning)
             {
                 _nextLightning = Time.time + Random.Range(7f, 22f) / StormAmount;
                 _flashStarted = Time.time;

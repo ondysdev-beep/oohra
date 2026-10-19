@@ -49,7 +49,9 @@ public sealed class RockPiles
         for (var i = 0; i < island.Tiles.Length; i++)
         {
             var (x, y) = (i % island.Width, i / island.Width);
-            if (island.Tiles[i] is not (TileType.Rock or TileType.LayeredRock) || island.HasTree(i) || Hash.Hash2(x, y, seed) >= rules.PileChance)
+            // V jeskyni je na vrstvené skále hromada vždycky (pazourek pod zemí).
+            var cave = island.Regions[i] == RegionKind.Cave;
+            if (island.Tiles[i] is not (TileType.Rock or TileType.LayeredRock) || island.HasTree(i) || (!cave && Hash.Hash2(x, y, seed) >= rules.PileChance))
             {
                 continue;
             }

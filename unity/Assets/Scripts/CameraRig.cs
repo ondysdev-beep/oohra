@@ -44,7 +44,10 @@ namespace Oohra.Client
 
             ReadKeys();
             ReadMouse();
-            _focus = Vector3.Lerp(_focus, _target.position, 1 - Mathf.Exp(-_followSpeed * Time.deltaTime));
+            // Po skoku (vchod do jeskyně) kamera přeskočí hned za postavou.
+            _focus = (_target.position - _focus).sqrMagnitude > PlayerViews.TeleportDistance * PlayerViews.TeleportDistance
+                ? _target.position
+                : Vector3.Lerp(_focus, _target.position, 1 - Mathf.Exp(-_followSpeed * Time.deltaTime));
             Apply();
         }
 

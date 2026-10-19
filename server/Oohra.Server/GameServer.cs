@@ -66,7 +66,7 @@ public sealed partial class GameServer : IDisposable
     {
         _config = config;
         var size = config.WorldSize > 0 ? config.WorldSize : GameData.Settings.WorldWidth;
-        Island = WorldGenerator.Build(config.Seed, size, size);
+        Island = WorldGenerator.BuildWorld(config.Seed, size, size);
         Clock = GameClock.FromSettings(config.StartHour * 60);
         if (config.StartMonth > 0)
         {
@@ -198,8 +198,13 @@ public sealed partial class GameServer : IDisposable
             Move(player, realSeconds);
             if (_seconds >= player.DreamUntil)
             {
-                Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), Shelter.IsSheltered(Island, player.X, player.Y), CurrentWeather);
-                Torch.Burn(player.Character, Clock.TotalMinutes, minutes, CurrentWeather);
+                // V jeskyni neprší, nefouká a teplota je stálá.
+                var inCave = Island.InCave(player.X, player.Y);
+                var weather = inCave ? WeatherState.Calm : CurrentWeather;
+                var sheltered = inCave || Shelter.IsSheltered(Island, player.X, player.Y);
+                Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), sheltered, weather, inCave ? GameData.Caves.Temperature : null);
+                Torch.Burn(player.Character, Clock.TotalMinutes, minutes, weather);
+                Caves.Discover(Island, player.Character, player.X, player.Y, Clock.TotalMinutes);
                 Hazards.Update(player.Character, Island, Fires, player.X, player.Y, Clock, minutes, _rng);
             }
 
@@ -223,6 +228,7 @@ public sealed partial class GameServer : IDisposable
 
             SendRecipes(player);
             SendTracks(player);
+            SendCaveEntrances(player);
 
             SendTribeState(player);
         }

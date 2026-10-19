@@ -16,7 +16,7 @@ public static class Physiology
     /// nearFire: postava je u hořícího ohně (Fires.WarmsAt), sheltered: je v úkrytu (Shelter.IsSheltered).
     /// Teplo těla se pak blíží vyšší hodnotě.
     /// </summary>
-    public static void Update(Character c, GameClock clock, double minutes, bool nearFire = false, bool sheltered = false, WeatherState weather = default)
+    public static void Update(Character c, GameClock clock, double minutes, bool nearFire = false, bool sheltered = false, WeatherState weather = default, double? ambient = null)
     {
         if (c.IsDead)
         {
@@ -27,7 +27,7 @@ public static class Physiology
         c.LastNow = clock.TotalMinutes;
         RunDueEffects(c, clock.TotalMinutes);
         Diseases.Update(c, clock.TotalMinutes, minutes);
-        UpdateWarmth(c, clock, minutes, nearFire, sheltered, weather, rules.Warmth);
+        UpdateWarmth(c, clock, minutes, nearFire, sheltered, weather, rules.Warmth, ambient);
         UpdateNeeds(c, minutes, rules.Needs);
         UpdateRecoveryAndFever(c, clock.TotalMinutes, minutes, rules);
         UpdatePoisonProtection(c, rules.FirstPoisonProtection);
@@ -83,9 +83,10 @@ public static class Physiology
         }
     }
 
-    private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, bool sheltered, WeatherState weather, WarmthRules rules)
+    /// <summary>Teplo těla se blíží cíli. Ambient přebije teplotu okolí (v jeskyni je stálá).</summary>
+    private static void UpdateWarmth(Character c, GameClock clock, double minutes, bool nearFire, bool sheltered, WeatherState weather, WarmthRules rules, double? fixedAmbient)
     {
-        var ambient = AmbientTemperature(clock, rules);
+        var ambient = fixedAmbient ?? AmbientTemperature(clock, rules);
         var fire = nearFire ? GameData.Fire.Fire.WarmthBonus : 0;
         var shelter = sheltered ? GameData.Building.Shelter.WarmthBonus : 0;
         var sleeping = c.Sleeping ? GameData.Body.Sleep.WarmthBonus : 0;

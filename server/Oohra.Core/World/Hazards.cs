@@ -86,7 +86,8 @@ public static class Hazards
             return;
         }
 
-        var strength = MosquitoStrength(island, x, y, clock);
+        // V jeskyni komáři nejsou (kaluže kapající vody je nelákají).
+        var strength = island.InCave(x, y) ? 0 : MosquitoStrength(island, x, y, clock);
         if (strength <= 0 || rng.NextDouble() >= strength * minutes / rules.BiteEveryMinutes)
         {
             return;

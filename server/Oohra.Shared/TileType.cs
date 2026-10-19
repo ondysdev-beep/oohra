@@ -24,4 +24,10 @@ public enum TileType : byte
 
     /// <summary>Vrstvená skála ve vrchovině (později pazourek na nejlepší nářadí).</summary>
     LayeredRock = 9,
+
+    /// <summary>Podlaha jeskyně (v podzemí pod ostrovem).</summary>
+    CaveFloor = 10,
+
+    /// <summary>Skála kolem jeskyně: nedá se na ni vstoupit.</summary>
+    CaveWall = 11,
 }
