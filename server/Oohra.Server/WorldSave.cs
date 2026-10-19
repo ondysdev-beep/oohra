@@ -70,6 +70,11 @@ public sealed class ServerSave
 
     public TribesSave Tribes { get; init; } = new();
 
+    /// <summary>Deníky (stránky podle čísla deníku).</summary>
+    public List<JournalSave> Journals { get; init; } = [];
+
+    public int NextJournalId { get; init; } = 1;
+
     /// <summary>Hráči vyloučení příkazem vyloucit (k bannedNicknames ze server.json).</summary>
     public List<string> Banned { get; init; } = [];
 }

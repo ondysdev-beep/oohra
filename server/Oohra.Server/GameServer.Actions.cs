@@ -117,6 +117,20 @@ public sealed partial class GameServer
             case MessageType.Craft:
                 CraftAction(player, Messages.ReadCraft(reader));
                 break;
+            case MessageType.TeachRecipe:
+                TeachAction(player, Messages.ReadTeachRecipe(reader));
+                break;
+            case MessageType.ReadJournal:
+                SendJournal(player, Messages.ReadStackAction(reader));
+                break;
+            case MessageType.DrawJournal:
+                var page = Messages.ReadDrawJournal(reader);
+                if (JournalOf(player, page.StackIndex) is { } drawn && Journals.Draw(drawn, page.Page, page.Bits))
+                {
+                    SendJournal(player, page.StackIndex);
+                }
+
+                break;
             case MessageType.WearBag:
                 player.Inventory.WearBag(Messages.ReadStackAction(reader));
                 SendInventory(player);
@@ -316,6 +330,46 @@ public sealed partial class GameServer
         SendRecipes(player);
     }
 
+    /// <summary>Ukázat jinému hráči, jak se dělá recept. Oba dostanou hlášku, ten druhý i nový seznam receptů.</summary>
+    private void TeachAction(PlayerSession teacher, (int PlayerId, string RecipeId) teach)
+    {
+        var recipe = GameData.Crafting.Find(teach.RecipeId);
+        var learner = InWorld.FirstOrDefault(p => p.Id == teach.PlayerId);
+        if (teacher.Character.IsDead || recipe is null || learner is null || learner == teacher)
+        {
+            return;
+        }
+
+        var distance = Math.Sqrt((teacher.X - learner.X) * (teacher.X - learner.X) + (teacher.Y - learner.Y) * (teacher.Y - learner.Y));
+        var result = Crafting.Teach(teacher.Character, learner.Character, recipe.Id, distance);
+        var subject = (byte)GameData.Crafting.IndexOf(recipe);
+        SendEvent(teacher, new GameEvent(EventKind.Craft, (byte)result, default, [], Subject: subject));
+        if (result == CraftResult.Taught)
+        {
+            SendRecipes(learner);
+            SendEvent(learner, new GameEvent(EventKind.Craft, (byte)CraftResult.LearnedFromOther, default, [], Subject: subject));
+        }
+    }
+
+    /// <summary>Číslo deníku na hromádce v batohu hráče, nebo null (není to deník).</summary>
+    private static int? JournalOf(PlayerSession player, int stackIndex)
+    {
+        var stacks = player.Inventory.Stacks;
+        return stackIndex >= 0 && stackIndex < stacks.Count && stacks[stackIndex].Item is { Kind: ItemKind.Journal, Ref: > 0 } item ? item.Ref : null;
+    }
+
+    /// <summary>Pošle hráči obsah deníku, který drží (jen svému hráči, deník čte jen ten, kdo ho má).</summary>
+    private void SendJournal(PlayerSession player, int stackIndex)
+    {
+        if (player.Peer is null || JournalOf(player, stackIndex) is not { } id || Journals.Pages(id) is not { } pages)
+        {
+            return;
+        }
+
+        var view = new JournalView(stackIndex, pages.ToArray());
+        SendTo(player.Peer, w => Messages.WriteJournal(w, view));
+    }
+
     /// <summary>Kde hráč stojí: u sladké nebo bahenní vody (činění) a u ohně.</summary>
     private CraftPlace PlaceOf(PlayerSession player)
     {
@@ -335,7 +389,7 @@ public sealed partial class GameServer
             }
         }
 
-        return new CraftPlace(nearWater, Fires.WarmsAt(Island, player.X, player.Y), Clock.TotalMinutes);
+        return new CraftPlace(nearWater, Fires.WarmsAt(Island, player.X, player.Y), Clock.TotalMinutes, Journals);
     }
 
     /// <summary>Kácení, dřevo a sekera. Stav stromů a dřeva na zemi se všem pošle v příštím ticku.</summary>

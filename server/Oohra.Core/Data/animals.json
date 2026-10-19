@@ -8,6 +8,9 @@
   "respawnMinutes": 720,
   // Mrtvé zvíře (nestažené) zmizí za den.
   "corpseMinutes": 1440,
+  // Mršiny v lese (návrh 0.8, kap. 3): při každém doplňování zvířat (respawnMinutes) se s šancí chance objeví
+  // mrtvé zvíře v lese, aspoň minPlayerDistance metrů od hráčů. Nejvýš maxPerArea mršin na referenceArea plochy.
+  "carcasses": { "chance": 0.5, "kinds": [ "Deer", "Boar", "Rabbit" ], "minPlayerDistance": 25, "maxPerArea": 1 },
   // Nové zvíře se nenarodí blíž k hráči než spawnAvoid (u každého druhu) a ne do tábora.
   "campDistance": 8,
   // Noc pro zvířata: denní světlo pod touto hodnotou (vlci loví, králíci spí).
@@ -61,7 +64,8 @@
   "traps": { "catchRange": 0.7, "rabbitChance": 0.9, "deerChance": 0.6, "rateFactor": 2, "deerMeat": 3, "otherMeat": 1, "practiceBuild": 2 },
 
   // Rybaření s kopím u jezírka nebo moře (prototyp fish). Šance roste s dovedností Lov.
-  "fishing": { "reach": 1.7, "cooldownSeconds": 1.2, "baseChance": 0.32, "chancePerLevel": 0.07, "practiceCatch": 1.5, "practiceMiss": 0.4 },
+  // Rybaření: s kopím, nebo s kostěným háčkem (hookBonus k šanci, háček se opotřebuje).
+  "fishing": { "reach": 1.7, "cooldownSeconds": 1.2, "baseChance": 0.32, "chancePerLevel": 0.07, "practiceCatch": 1.5, "practiceMiss": 0.4, "hookBonus": 0.2 },
 
   // Lov (prototyp attack).
   "hunt": {

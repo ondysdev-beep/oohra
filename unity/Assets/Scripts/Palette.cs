@@ -167,6 +167,9 @@ namespace Oohra.Client
                 case Oohra.Core.Items.ItemKind.Ash: return Hex("#7a7672");
                 case Oohra.Core.Items.ItemKind.Knife: return Hex("#8d8a80");
                 case Oohra.Core.Items.ItemKind.Flint: return Hex("#5d6470");
+                case Oohra.Core.Items.ItemKind.Needle: return Hex("#d8cfb8");
+                case Oohra.Core.Items.ItemKind.Hook: return Hex("#cfc5ac");
+                case Oohra.Core.Items.ItemKind.Journal: return Hex("#8a6142");
                 default: return Hex("#9a948a");
             }
         }

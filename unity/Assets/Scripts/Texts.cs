@@ -60,7 +60,7 @@ namespace Oohra.Client
                     return For(tribe);
                 case EventKind.Craft:
                     var craft = (CraftResult)e.Code;
-                    warn = craft != CraftResult.Made && craft != CraftResult.Learned;
+                    warn = !(craft is CraftResult.Made or CraftResult.Learned or CraftResult.Taught or CraftResult.LearnedFromOther);
                     return For(craft, RecipeName(e.Subject));
                 case EventKind.Wood:
                     var wood = (WoodResult)e.Code;
@@ -247,6 +247,11 @@ namespace Oohra.Client
                 case CraftResult.NothingToRepair: return "Není co opravovat.";
                 case CraftResult.Rotten: return "Kůže už zahnila. Syrovou kůži je potřeba vyčinit do dvou dnů.";
                 case CraftResult.InventoryFull: return "Nemáš kam to dát. Něco odlož.";
+                case CraftResult.Taught: return "Ukázal jsi, jak se dělá " + what + ".";
+                case CraftResult.AlreadyKnows: return "To už umí.";
+                case CraftResult.TooFarToTeach: return "Musíš stát blíž, aby viděl, jak to děláš.";
+                case CraftResult.DontKnow: return "Co neumíš, neukážeš.";
+                case CraftResult.LearnedFromOther: return "Někdo ti ukázal, jak se dělá " + what + ". Teď to umíš.";
                 default: return result.ToString();
             }
         }
@@ -285,6 +290,9 @@ namespace Oohra.Client
                 case ItemKind.Ash: return "Popel";
                 case ItemKind.Knife: return "Nůž";
                 case ItemKind.Flint: return "Pazourek";
+                case ItemKind.Needle: return "Kostěná jehla";
+                case ItemKind.Hook: return "Kostěný háček";
+                case ItemKind.Journal: return "Deník";
                 default: return "Rostlina";
             }
         }
@@ -577,6 +585,8 @@ namespace Oohra.Client
             if (stack.Kind == ItemKind.Spear) return "Kopí";
             if (stack.Kind == ItemKind.Axe) return "Sekera · zbývá " + stack.Uses + " seknutí";
             if (stack.Kind == ItemKind.Knife) return "Nůž · zbývá " + stack.Uses + " použití";
+            if (stack.Kind == ItemKind.Needle) return "Kostěná jehla · zbývá " + stack.Uses + " použití";
+            if (stack.Kind == ItemKind.Hook) return "Kostěný háček · zbývá " + stack.Uses + " použití";
             if (stack.Kind == ItemKind.LogPiece) return "Klad · " + TreeName(stack.Tree).ToLower();
             if (stack.Kind == ItemKind.Hide) return "Syrová kůže" + (stack.Spoiled ? " · zahnilá" : string.Empty);
             if (stack.Kind != ItemKind.Plant) return ItemName(stack.Kind);

@@ -60,11 +60,11 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 - [x] Ruce (19. 10.): dvě místa (hromádky). Batoh se nosí na zádech (nezabírá místo, vidí ho ostatní), malý +6, velký +12, Noví k tomu bonus generace. Nováček začíná bez ničeho (nápověda „Máš jen dvě ruce“). Roboti a testy: `startBag` v server.json.
 - [x] Recepty jako data (`crafting.json`), u postavy seznam receptů (`Character.Recipes`, smrtí se ztratí, Pradávní znají kopí, sekeru a nůž). Zkoušení: v batohu zaškrtnout věci a „Zkusit spojit“, neznámý recept se napoprvé může nepovést (40 %, kus materiálu vniveč), přednost má recept, který postava ještě neumí. Umíné recepty jsou tlačítka v batohu.
 - [x] Nářadí: sekera (kámen 60, pazourek 130 seknutí), nůž (kámen, pazourek, kost), kopí, opotřebení a oprava (sekera kámen a lýko, nůž kámen). Pazourek padá z vrstvené skály (35 %).
-- [x] Lýko nožem z kůry ležícího kmene nebo kladu (vrba 3, bříza 2, ostatní 1 na metr, jen jednou). Kůže a kosti z divočáka a jelena (králík a vlk jen kost), syrová kůže zahnije za 2 dny, činění popelem u vody, popel z ohniště (jednou za den). **Mršiny v lese zatím ne.**
+- [x] Lýko nožem z kůry ležícího kmene nebo kladu (vrba 3, bříza 2, ostatní 1 na metr, jen jednou). Kůže a kosti z divočáka a jelena (králík a vlk jen kost), syrová kůže zahnije za 2 dny, činění popelem u vody, popel z ohniště (jednou za den). Mršiny v lese (19. 10.): při doplňování zvířat se s šancí objeví mrtvý jelen, divočák nebo králík v lese, daleko od hráčů.
 - [x] Malý batoh (4 lýka, 2 klacky) a velký batoh (2 vyčiněné kůže, 2 kosti, lýko, nůž), v katalogu políčka SmallBag a LargeBag.
-- [ ] Deník: věc s obsahem (kresby 12 × 12 a poznámky), ukládá se, zůstane u těla.
-- [ ] Kosti: jehla a háček (zbytek později).
-- [ ] Ukázání receptu jiným hráčem.
+- [x] Deník (19. 10.): z vyčiněné kůže a lýka, ušije se kostěnou jehlou, 12 stránek kreseb 12 × 12 (jako značky, bez volného textu), obsah je na serveru podle čísla deníku (`Journals`, `Item.Ref`), ukládá se, zůstane u těla a kdo ho vezme, přečte ho. V Unity `JournalHud` (Otevřít v batohu).
+- [x] Kosti: jehla (na deník) a háček (rybaření bez kopí, +20 % šance, opotřebí se).
+- [x] Ukázání receptu jiným hráčem (nabídka hráče „Ukázat, jak se dělá“, do 2,5 m): ten druhý ho pak umí bez zkoušení. **Etapa 3 hotová.**
 
 ### Etapa 4: Nebezpečí (2 až 3 týdny)
 - [ ] První vlna: komáři, pijavice, bahenní voda v bažině. Nemoci se zpožděním, léky v rostlinách. Obrana: kouř, bahno nebo popel na kůži, kožené oblečení.

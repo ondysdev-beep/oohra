@@ -136,6 +136,9 @@ public sealed partial class GameServer : IDisposable
     /// <summary>Kmeny hráčů (patří hráči, ne postavě, takže přežijí smrt).</summary>
     internal Tribes Tribes { get; } = new();
 
+    /// <summary>Obsah deníků (stránky podle čísla deníku). Ukládá se se světem.</summary>
+    public Journals Journals { get; } = new();
+
     /// <summary>Nahlášení od hráčů (tlačítko Nahlásit), zapisují se do souboru reportsFile.</summary>
     public ReportLog Reports { get; }
 

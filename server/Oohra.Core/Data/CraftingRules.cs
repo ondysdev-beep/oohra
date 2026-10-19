@@ -9,6 +9,8 @@ public sealed record CraftingRules(
     Dictionary<ItemKind, int> BagSlots,
     double FailChance,
     List<Recipe> Recipes,
+    int JournalPages,
+    double TeachReach,
     double FlintChance,
     Dictionary<TreeKind, int> BastPerMeter,
     Dictionary<AnimalKind, CarcassRules> Carcass,

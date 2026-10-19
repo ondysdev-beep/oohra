@@ -311,7 +311,8 @@ public sealed class Animals
     public HuntResult Fish(Island island, int tileX, int tileY, AnimalTarget fisher, Inventory inventory, double now)
     {
         var rules = GameData.Animals.Fishing;
-        if (inventory.Count(ItemKind.Spear) == 0)
+        var hook = inventory.Count(ItemKind.Hook) > 0;
+        if (inventory.Count(ItemKind.Spear) == 0 && !hook)
         {
             return HuntResult.NeedSpear;
         }
@@ -333,7 +334,13 @@ public sealed class Animals
 
         _lastFish[fisher.Id] = _time;
         var c = fisher.Character;
-        if (_rng.NextDouble() >= rules.BaseChance + rules.ChancePerLevel * c.Skills.Level(SkillKind.Hunt))
+        if (hook)
+        {
+            inventory.WearOne(ItemKind.Hook);
+        }
+
+        var chance = rules.BaseChance + rules.ChancePerLevel * c.Skills.Level(SkillKind.Hunt) + (hook ? rules.HookBonus : 0);
+        if (_rng.NextDouble() >= chance)
         {
             c.Practice(SkillKind.Hunt, rules.PracticeMiss);
             return HuntResult.FishEscaped;
@@ -813,6 +820,40 @@ public sealed class Animals
                 Spawn(island, kind, players);
             }
         }
+
+        PlaceCarcass(island, now, players);
+    }
+
+    /// <summary>
+    /// Mršina v lese (návrh 0.8, kap. 3): s šancí se objeví mrtvé zvíře v lese, daleko od hráčů, ať jde získat
+    /// kůže a kosti i bez lovu. Zmizí jako každé mrtvé zvíře (corpseMinutes).
+    /// </summary>
+    public Animal? PlaceCarcass(Island island, double now, IReadOnlyList<AnimalTarget> players)
+    {
+        var rules = GameData.Animals.Carcasses;
+        var max = Math.Max(1, (int)Math.Round(rules.MaxPerArea * island.Width * island.Height / GameData.Animals.Population.ReferenceArea));
+        if (_animals.Count(a => a.IsDead) >= max || _rng.NextDouble() >= rules.Chance)
+        {
+            return null;
+        }
+
+        var kind = rules.Kinds[_rng.NextInt(rules.Kinds.Count)];
+        for (var n = 0; n < 200; n++)
+        {
+            var (tx, ty) = (_rng.NextInt(island.Width), _rng.NextInt(island.Height));
+            var (x, y) = (tx + 0.5, ty + 0.5);
+            if (island.RegionAt(tx, ty) != RegionKind.Forest || !Movement.CanStand(island, x, y, 0.3)
+                || players.Any(p => Distance(p.X, p.Y, x, y) < rules.MinPlayerDistance))
+            {
+                continue;
+            }
+
+            var carcass = Place(kind, x, y);
+            Kill(carcass, now);
+            return carcass;
+        }
+
+        return null;
     }
 
     /// <summary>

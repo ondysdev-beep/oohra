@@ -199,6 +199,9 @@ namespace Oohra.Client
             gameObject.AddComponent<TribeHud>().Init(_session);
             gameObject.AddComponent<CorpseHud>().Init(_session);
             gameObject.AddComponent<SignatureHud>().Init(_session);
+            var journal = gameObject.AddComponent<JournalHud>();
+            journal.Init(_session);
+            _session.Journal = journal;
             gameObject.AddComponent<ReportHud>().Init(_session);
             gameObject.AddComponent<Hints>().Init(_session, _nickname);
             gameObject.AddComponent<Ambience>().Init(_connection, _players, _session);
