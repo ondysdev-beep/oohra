@@ -63,6 +63,8 @@ namespace Oohra.Client
                 case TileType.Forest: return Forest;
                 case TileType.Rock:
                 case TileType.LayeredRock:
+                case TileType.CaveFloor:
+                case TileType.CaveWall:
                     return Rock;
                 case TileType.Highland: return Highland;
                 case TileType.Bog:

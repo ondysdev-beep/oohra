@@ -42,8 +42,10 @@ namespace Oohra.Client
             var daylight = (float)_clock.Daylight;
             var overcast = _weather != null ? _weather.Overcast : 0f;
             var flash = _weather != null ? _weather.Flash : 0f;
-            _sun.intensity = Mathf.Lerp(_nightIntensity, _dayIntensity, daylight) * (1f - 0.7f * overcast) + flash * 1.6f;
-            RenderSettings.ambientIntensity = Mathf.Lerp(_nightAmbient, _dayAmbient, daylight) * (1f - 0.35f * overcast) + flash * 0.7f;
+            // V jeskyni slunce nesvítí a okolí je skoro černé: vidět je jen u ohně, pochodně a východu.
+            var cave = _weather != null ? _weather.CaveAmount : 0f;
+            _sun.intensity = (Mathf.Lerp(_nightIntensity, _dayIntensity, daylight) * (1f - 0.7f * overcast) + flash * 1.6f) * (1f - cave);
+            RenderSettings.ambientIntensity = Mathf.Lerp(Mathf.Lerp(_nightAmbient, _dayAmbient, daylight) * (1f - 0.35f * overcast) + flash * 0.7f, _nightAmbient, cave);
             // Pod mrakem a v mlze je světlo rozptýlené: stíny skoro zmizí.
             _sun.shadowStrength = 1f - 0.85f * overcast;
             var color = Color.Lerp(NightColor, DayColor, daylight);

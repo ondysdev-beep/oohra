@@ -16,7 +16,7 @@ public static class SpawnPoint
         for (var n = 0; n < rules.Attempts; n++)
         {
             var x = rng.NextInt(island.Width);
-            var y = rng.NextInt(island.Height);
+            var y = rng.NextInt(island.SurfaceHeight);
             var tile = island.TileAt(x, y);
             var tileOk = n < rules.SandOnlyAttempts
                 ? tile == TileType.Sand
@@ -49,7 +49,7 @@ public static class SpawnPoint
             return new Position(x + 0.5, y + 0.5);
         }
 
-        return new Position(island.Width / 2.0, island.Height / 2.0);
+        return new Position(island.Width / 2.0, island.SurfaceHeight / 2.0);
     }
 
     /// <summary>

@@ -1,0 +1,39 @@
+// Jeskyně (návrh 0.8, kap. 4). Jeskyně leží v podzemním pásu pod ostrovem (stejná mapa, daleko od pevniny,
+// oddělená mořem gap dlaždic). Vchod ve skále na ostrově přenese hráče dovnitř, východ zpátky ven.
+{
+  // Mezera mořem mezi ostrovem a podzemím (dlaždice) a velikost čtverce pro jednu jeskyni.
+  "gap": 64,
+  "cellSize": 44,
+
+  // Kolik jeskyní: jedna na tilesPerCave dlaždic vrchoviny, aspoň minCaves, nejvýš maxCaves.
+  "tilesPerCave": 1500,
+  "minCaves": 2,
+  "maxCaves": 24,
+
+  // Velikosti (váha = jak často): rooms síní spojených chodbami, poloměr síně roomRadius (od, do) metrů,
+  // síně od sebe roomStep (od, do) metrů. Malá skrýš 1 síň, střední pár síní, velká síť chodeb.
+  "sizes": [
+    { "size": "Small", "weight": 0.45, "rooms": 1, "roomRadius": [ 2.5, 3.5 ], "roomStep": [ 0, 0 ] },
+    { "size": "Medium", "weight": 0.35, "rooms": 3, "roomRadius": [ 2.5, 4 ], "roomStep": [ 7, 10 ] },
+    { "size": "Large", "weight": 0.2, "rooms": 7, "roomRadius": [ 2.5, 4.5 ], "roomStep": [ 7, 11 ] }
+  ],
+  // Šířka chodby mezi síněmi (poloměr v metrech).
+  "corridorRadius": 1.1,
+
+  // Druhý východ jinde ve skále (jen střední a velké), nenápadný vchod (najde se až zblízka).
+  "secondExitChance": 0.4,
+  "hiddenChance": 0.35,
+  // Nenápadný vchod hráč objeví, když k němu dojde blíž než discoverRange metrů. Pamatuje si ho jen postava
+  // (smrtí ho zapomene).
+  "discoverRange": 4,
+  // Vchody aspoň entranceSpacing metrů od sebe a campDistance od táborů. Projít vchodem jde do useReach metrů.
+  "entranceSpacing": 28,
+  "campDistance": 20,
+  "useReach": 2.5,
+
+  // Uvnitř: v síni s šancí poolChance kaluž kapající vody (jezírko, dá se pít), na podlaze místa vrstvené skály
+  // (pazourek) s šancí flintChance na síň. Stálá teplota okolí (jako teplota ve stupních pro body.json warmth).
+  "poolChance": 0.5,
+  "flintChance": 0.6,
+  "temperature": 11
+}

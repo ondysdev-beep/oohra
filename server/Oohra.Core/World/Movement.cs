@@ -35,7 +35,7 @@ public static class Movement
             && !island.Forestry.Blocks(x, y, radius);
     }
 
-    /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko.</summary>
+    /// <summary>Dlaždice, na kterou nejde vůbec vstoupit: mimo mapu, moře, jezírko, skála kolem jeskyně.</summary>
     private static bool IsImpassable(Island island, int tx, int ty)
     {
         if (!island.InBounds(tx, ty))
@@ -43,7 +43,8 @@ public static class Movement
             return true;
         }
 
-        return IsWaterTile(island.TileAt(tx, ty));
+        var tile = island.TileAt(tx, ty);
+        return IsWaterTile(tile) || tile == TileType.CaveWall;
     }
 
     /// <summary>Voda, do které se nedá vstoupit (moře, jezírko, jezero, řeka). Brod se přejít dá.</summary>

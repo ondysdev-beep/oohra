@@ -58,6 +58,7 @@ public sealed class WorldSaveTests : IDisposable
             Diseases.Start(ondra.Character, DiseaseKind.MarshFever, 60, net.Server.Clock.TotalMinutes);
             ondra.Character.Leeches = 2;
             ondra.Character.AddTick(net.Server.Clock.TotalMinutes - 5);
+            ondra.Character.LearnCave(3);
             var meat = new Oohra.Core.Items.Inventory(2);
             meat.TryAdd(Oohra.Core.Items.Item.RawMeat(net.Server.Clock.Day));
             Assert.Equal(PreserveResult.Hung, net.Server.Racks.Hang(RackHolder.Structure, net.Server.Island.Structures.All.First().Id, meat, 0, net.Server.Clock.TotalMinutes));
@@ -93,6 +94,7 @@ public sealed class WorldSaveTests : IDisposable
         Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.HasDisease(DiseaseKind.MarshFever));
         Assert.Equal(2, restarted.Server.FindPlayer("Ondra")!.Character.Leeches);
         Assert.Single(restarted.Server.FindPlayer("Ondra")!.Character.Ticks);
+        Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.KnowsCave(3));
         Assert.Single(restarted.Server.Island.Wasps.Export());
         Assert.Single(restarted.Server.Racks.Export());
         var savedJournal = restarted.Server.FindPlayer("Ondra")!.Inventory.Stacks.Single(s => s.Item.Kind == Oohra.Core.Items.ItemKind.Journal).Item;

@@ -58,6 +58,9 @@ Kolize (Collider) v prefabu nevadí, hra je smaže. Kudy se dá projít, počít
 | **Boar, Rabbit, Deer, Wolf** (zvířata) | divočák 1 m dlouhý, vlk 0,95 m, jelen 1,1 m, králík 0,35 m | nohy dole, hlava ve směru osy Z (dopředu) | Mrtvé zvíře hra položí na bok. |
 | **Snake** (had) | asi 1 m dlouhý, leží na zemi | břicho dole, hlava ve směru osy Z | Animator parametr `Stav`: 4 spí stočený (zima, noc), 6 varuje (vztyčený, syčí), 0 leze, 9 mrtvý. |
 | **MeatStrip** (kus masa) | asi 0,08 × 0,25 m | úchyt nahoře uprostřed | Visí v kouři nad ohněm a na sušáku. Hra ho obarví podle stavu (syrové, uzené, sušené), model má být světlý nebo šedý. Model sušáku může mít maso namalované, hra pověsí skutečné kusy do výšky 1 m. |
+| **CaveEntrance**, **HiddenCaveEntrance** (vchod do jeskyně) | otvor asi 1,5 × 2 m, nenápadný úzká puklina | otvor ve směru osy Z, zadní strana se opře o skálu, dole uprostřed | Stojí na hraně skály u chodného místa. Nenápadný vidí jen ten, kdo ho objevil. |
+| **CaveExit** (východ uvnitř) | podle chuti, třeba suť pod otvorem | dole uprostřed | Hra k němu přidá světlo shora. Prázdné = průsvitný sloup světla. |
+| **CaveWallColor** (barva, ne model) | | | Barva skalních stěn jeskyně (bloky vysoké 1,6 m). |
 | **FloodColor** (barva, ne model) | | | Barva kalné vody jarní záplavy nad zatopenou souší, průhlednost v alfě. |
 | **WaspNest** (vosí hnízdo) | asi 0,3 × 0,4 m | úchyt nahoře uprostřed | Hra ho pověsí na strom asi 2,6 m nad zem. Rozzuřené vosy kolem kreslí hra sama (roj teček). |
 
@@ -277,6 +280,7 @@ kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůh
 | `creature_wasp_nest` | **WaspNest** |
 | `player_ancient`, `player_new`, `player_third` | **PlayerAncient**, **Player**, **PlayerThird** |
 | `item_torch` | **Torch** |
+| `cave_entrance_a`, `cave_entrance_b` | **CaveEntrance**, **HiddenCaveEntrance** |
 | `item_bag_small`, `item_bag_large` | **SmallBag**, **LargeBag** (na zádech, strana k zádům na -Z) |
 | `build_wall`, `build_doorframe`, `build_door`, `build_trap`, `build_stockpile`, `build_campfire` | **Wall**, **DoorFrame**, **Door**, **Trap**, **Stockpile**, **Campfire** |
 | `deco_bench`, `deco_totem`, `deco_stone_circle`, `deco_drying_rack` | **Decorations** s id `bench`, `totem`, `stone_circle`, `drying_rack` (sušák na maso) |

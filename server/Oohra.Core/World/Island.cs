@@ -38,8 +38,14 @@ public sealed class Island
         IReadOnlyList<PlantInstance> plants,
         IReadOnlyList<PlantSpecies> species,
         IReadOnlyList<SpeciesSecret> speciesSecrets,
-        RegionKind[]? regions = null)
+        RegionKind[]? regions = null,
+        int surfaceHeight = 0,
+        IReadOnlyList<Cave>? caves = null,
+        IReadOnlyList<CaveEntrance>? caveEntrances = null)
     {
+        SurfaceHeight = surfaceHeight > 0 ? surfaceHeight : height;
+        Caves = caves ?? [];
+        CaveEntrances = caveEntrances ?? [];
         Seed = seed;
         Width = width;
         Height = height;
@@ -64,6 +70,22 @@ public sealed class Island
     public int Width { get; }
 
     public int Height { get; }
+
+    /// <summary>Výška samotného ostrova (řádky pod ní jsou moře a podzemí s jeskyněmi).</summary>
+    public int SurfaceHeight { get; }
+
+    /// <summary>Jeskyně v podzemním pásu pod ostrovem (Caves.Dig).</summary>
+    public IReadOnlyList<Cave> Caves { get; }
+
+    /// <summary>Vchody do jeskyní (venku ve skále a uvnitř).</summary>
+    public IReadOnlyList<CaveEntrance> CaveEntrances { get; }
+
+    /// <summary>Místo je v jeskyni (tma, stálá teplota, neprší).</summary>
+    public bool InCave(double x, double y)
+    {
+        var (tx, ty) = ((int)Math.Floor(x), (int)Math.Floor(y));
+        return InBounds(tx, ty) && Regions[Index(tx, ty)] == RegionKind.Cave;
+    }
 
     /// <summary>Dlaždice po řádcích: index = y * Width + x.</summary>
     public TileType[] Tiles { get; }

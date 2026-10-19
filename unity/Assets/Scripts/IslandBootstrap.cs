@@ -209,6 +209,7 @@ namespace Oohra.Client
             new GameObject("Značky").AddComponent<SignViews>().Init(_connection);
             new GameObject("Vosí hnízda").AddComponent<WaspNestViews>().Init(_connection);
             new GameObject("Záplava").AddComponent<FloodView>().Init(_connection);
+            new GameObject("Vchody do jeskyní").AddComponent<CaveEntranceViews>().Init(_connection);
             new GameObject("Stopy").AddComponent<TrackViews>().Init(_connection);
             new GameObject("Maso v kouři a na sušácích").AddComponent<RackViews>().Init(_connection);
         }

@@ -67,6 +67,10 @@ namespace Oohra.Client
                     warn = !(wood is WoodResult.AxeMade or WoodResult.Chopped or WoodResult.TreeFalling or WoodResult.PieceCut
                         or WoodResult.PieceSplit or WoodResult.WoodSplit or WoodResult.PickedUp or WoodResult.Dropped or WoodResult.BastStripped);
                     return For(wood);
+                case EventKind.Cave:
+                    var cave = (CaveResult)e.Code;
+                    warn = !(cave is CaveResult.Entered or CaveResult.Left);
+                    return For(cave);
                 case EventKind.Preserve:
                     var preserve = (PreserveResult)e.Code;
                     warn = !(preserve is PreserveResult.Hung or PreserveResult.Taken);
@@ -391,6 +395,7 @@ namespace Oohra.Client
                 case BuildResult.NotYours: return "Cizí stavbu může rozebrat jen ten, kdo ji postavil, a jeho kmen.";
                 case BuildResult.NotEmpty: return "V koši něco je. Napřed ho vyber.";
                 case BuildResult.BirthPlaceProtected: return "Tady se nedávno někdo narodil. Den po narození tu smí stavět jen on a jeho kmen.";
+                case BuildResult.NotInCave: return "V jeskyni stěny dává skála. Zeď ani dveře tu nepostavíš, ohniště, zásoby a ozdoby ano.";
                 default: return result.ToString();
             }
         }
@@ -450,6 +455,7 @@ namespace Oohra.Client
                 case BodyEvent.Smeared:
                 case BodyEvent.NoTicks:
                 case BodyEvent.NestSmokedOut:
+                case BodyEvent.FoundCave:
                 case BodyEvent.Relief:
                 case BodyEvent.Recovered:
                     return false;
@@ -520,6 +526,7 @@ namespace Oohra.Client
                 case BodyEvent.VenomSpreads: return "Noha otéká a točí se ti hlava. Jed se rozlévá.";
                 case BodyEvent.WaspSting: return "Vosy! Štípou tě. Uteč od hnízda, kouř je odežene.";
                 case BodyEvent.NestSmokedOut: return "Vosy prchají před kouřem.";
+                case BodyEvent.FoundCave: return "Za převislou skálou je úzká puklina. Vede dovnitř.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -662,6 +669,18 @@ namespace Oohra.Client
                 case Cooking.Smoked: return fish ? "Ryba · uzená" : "Maso · uzené";
                 case Cooking.Dried: return fish ? "Ryba · sušená" : "Maso · sušené";
                 default: return fish ? "Ryba · syrová" : "Maso · syrové";
+            }
+        }
+
+        /// <summary>Text k průchodu vchodem do jeskyně.</summary>
+        public static string For(CaveResult result)
+        {
+            switch (result)
+            {
+                case CaveResult.Entered: return "Vešel jsi do tmy. Bez ohně tu skoro nic neuvidíš.";
+                case CaveResult.Left: return "Vyšel jsi ven na světlo.";
+                case CaveResult.TooFar: return "Musíš blíž k otvoru.";
+                default: return "Tudy cesta nevede.";
             }
         }
 

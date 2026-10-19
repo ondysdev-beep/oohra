@@ -45,7 +45,10 @@ namespace Oohra.Client.Tests
             yield return WaitFor(() => bootstrap.Session != null, 15f, "Unity se nepřipojilo k serveru.");
 
             var session = bootstrap.Session;
-            Assert.AreEqual(128 * 128, session.Connection.World.Tiles.Length);
+            // Ostrov 128 × 128 a pod ním podzemí s jeskyněmi.
+            Assert.AreEqual(128, session.Connection.World.Width);
+            Assert.Greater(session.Connection.World.Height, 128);
+            Assert.AreEqual(128 * session.Connection.World.Height, session.Connection.World.Tiles.Length);
             yield return WaitFor(() => GameObject.Find("Postava") != null, 5f, "Vlastní postava se neobjevila.");
 
             _second = new GameConnection();

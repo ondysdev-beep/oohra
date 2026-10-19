@@ -125,7 +125,7 @@ public sealed partial class Animals
             _ => population.Wolf,
         };
         var factor = kind == AnimalKind.Wolf && season == Season.Winter ? GameData.Seasons.WinterWolves.PopulationFactor : 1;
-        return (int)Math.Round(count * factor * island.Width * island.Height / population.ReferenceArea);
+        return (int)Math.Round(count * factor * island.Width * island.SurfaceHeight / population.ReferenceArea);
     }
 
     /// <summary>Zabydlí ostrov zvířaty (prototyp initAnimals). Jeleni začínají u jednoho stáda.</summary>
@@ -854,7 +854,7 @@ public sealed partial class Animals
     public Animal? PlaceCarcass(Island island, double now, IReadOnlyList<AnimalTarget> players)
     {
         var rules = GameData.Animals.Carcasses;
-        var max = Math.Max(1, (int)Math.Round(rules.MaxPerArea * island.Width * island.Height / GameData.Animals.Population.ReferenceArea));
+        var max = Math.Max(1, (int)Math.Round(rules.MaxPerArea * island.Width * island.SurfaceHeight / GameData.Animals.Population.ReferenceArea));
         if (_animals.Count(a => a.IsDead) >= max || _rng.NextDouble() >= rules.Chance)
         {
             return null;
@@ -863,7 +863,7 @@ public sealed partial class Animals
         var kind = rules.Kinds[_rng.NextInt(rules.Kinds.Count)];
         for (var n = 0; n < 200; n++)
         {
-            var (tx, ty) = (_rng.NextInt(island.Width), _rng.NextInt(island.Height));
+            var (tx, ty) = (_rng.NextInt(island.Width), _rng.NextInt(island.SurfaceHeight));
             var (x, y) = (tx + 0.5, ty + 0.5);
             if (island.RegionAt(tx, ty) != RegionKind.Forest || !Movement.CanStand(island, x, y, 0.3)
                 || players.Any(p => Distance(p.X, p.Y, x, y) < rules.MinPlayerDistance))
@@ -928,7 +928,7 @@ public sealed partial class Animals
             else
             {
                 x = _rng.NextInt(island.Width) + 0.5;
-                y = _rng.NextInt(island.Height) + 0.5;
+                y = _rng.NextInt(island.SurfaceHeight) + 0.5;
             }
 
             if (!GoodGround(island, kind, x, y)

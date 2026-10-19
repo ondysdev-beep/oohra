@@ -216,6 +216,12 @@ public sealed class Structures
         BuildKind kind, double x, double y, double angle, double length, IEnumerable<Position> players, Character? builder = null,
         int ownerId = -1, string? decorationId = null)
     {
+        // Jeskyně (návrh 0.8, kap. 4): stěny dává skála, zdi a dveře se tu nestaví.
+        if (island.InCave(x, y) && kind is BuildKind.StickWall or BuildKind.DoorFrame or BuildKind.Door)
+        {
+            return BuildResult.NotInCave;
+        }
+
         if (kind == BuildKind.Decoration)
         {
             return BuildDecoration(island, fires, inventory, playerX, playerY, x, y, angle, players, builder, ownerId, decorationId);

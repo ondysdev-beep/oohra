@@ -125,6 +125,19 @@ public sealed class Character
     /// <summary>Kolik pijavic na postavě visí.</summary>
     public int Leeches { get; set; }
 
+    private readonly HashSet<int> _knownCaves = [];
+
+    /// <summary>Postava zná nenápadný vchod do jeskyně (objevila ho). Smrtí se zapomene.</summary>
+    public bool KnowsCave(int entranceId)
+    {
+        return _knownCaves.Contains(entranceId);
+    }
+
+    public void LearnCave(int entranceId)
+    {
+        _knownCaves.Add(entranceId);
+    }
+
     private readonly List<double> _ticks = [];
 
     /// <summary>SKRYTÉ: přisátá klíšťata (kdy se přisála). Hráč je najde, jen když se prohlédne.</summary>
@@ -520,6 +533,7 @@ public sealed class Character
             Diseases = [.. _diseases],
             Leeches = Leeches,
             Ticks = [.. _ticks],
+            KnownCaves = [.. _knownCaves.OrderBy(id => id)],
             SmearedUntil = SmearedUntil,
             LastMosquitoWarning = LastMosquitoWarning,
             Toxin = Toxin,
@@ -593,6 +607,7 @@ public sealed class Character
         c._diseases.AddRange(save.Diseases);
         c.Leeches = save.Leeches;
         c._ticks.AddRange(save.Ticks);
+        c._knownCaves.UnionWith(save.KnownCaves);
         c.SmearedUntil = save.SmearedUntil;
         c.LastMosquitoWarning = save.LastMosquitoWarning;
         c._recipes.Clear();

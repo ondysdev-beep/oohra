@@ -187,6 +187,19 @@ namespace Oohra.Client
         [Tooltip("Had (creature_snake): délka asi 1 m, leží na zemi, hlava ve směru osy Z. Animator parametr Stav (4 spí stočený, 6 varuje vztyčený, 0 leze, 9 mrtvý).")]
         public GameObject Snake;
 
+        [Header("Jeskyně")]
+        [Tooltip("Viditelný vchod do jeskyně (cave_entrance_a): skála s otvorem asi 1,5 × 2 m. Otvor ve směru osy Z, zadní strana se opře o skálu.")]
+        public GameObject CaveEntrance;
+
+        [Tooltip("Nenápadný vchod (cave_entrance_b): úzká puklina. Vidí ho jen ten, kdo ho objevil. Prázdné = CaveEntrance.")]
+        public GameObject HiddenCaveEntrance;
+
+        [Tooltip("Východ uvnitř jeskyně: třeba sloup světla shora nebo hromada sutě pod otvorem. Prázdné = světlo z kódu.")]
+        public GameObject CaveExit;
+
+        [Tooltip("Barva skalních stěn jeskyně.")]
+        public Color CaveWallColor = new Color(0.27f, 0.25f, 0.23f);
+
         [Header("Uzení a sušení")]
         [Tooltip("Kus masa, který visí v kouři nad ohněm nebo na sušáku: asi 0,08 × 0,25 m, úchyt nahoře uprostřed. Hra ho obarví podle toho, jestli je syrový, uzený, nebo sušený.")]
         public GameObject MeatStrip;

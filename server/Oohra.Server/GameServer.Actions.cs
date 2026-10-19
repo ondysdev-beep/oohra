@@ -159,6 +159,20 @@ public sealed partial class GameServer
             case MessageType.TeachRecipe:
                 TeachAction(player, Messages.ReadTeachRecipe(reader));
                 break;
+            case MessageType.UseCave:
+                var entrance = Messages.ReadUseCave(reader);
+                if (!player.Character.IsDead)
+                {
+                    var (passed, to) = Caves.Pass(Island, player.Character, entrance, player.X, player.Y);
+                    if (passed is CaveResult.Entered or CaveResult.Left)
+                    {
+                        (player.X, player.Y) = (to.X, to.Y);
+                    }
+
+                    SendEvent(player, new GameEvent(EventKind.Cave, (byte)passed, default, []));
+                }
+
+                break;
             case MessageType.HangMeat:
                 var (hangHolder, hangId, hangStack) = Messages.ReadHangMeat(reader);
                 PreserveAction(player, hangHolder, hangId, hanging: true, () => Racks.Hang(hangHolder, hangId, player.Inventory, hangStack, Clock.TotalMinutes));

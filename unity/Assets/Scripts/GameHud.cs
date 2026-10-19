@@ -438,6 +438,9 @@ namespace Oohra.Client
                 case TargetKind.Stranger:
                     DrawStrangerMenu(target, titleRect, ref buttonRect);
                     break;
+                case TargetKind.Cave:
+                    DrawCaveMenu(target, titleRect, ref buttonRect);
+                    break;
             }
 
             return y - 6;
@@ -630,6 +633,27 @@ namespace Oohra.Client
             if (smoking.Length > 0 && Button(ref buttonRect, "Vzít maso")) _session.Connection.TakeFromRack(RackHolder.Fire, fire.Value.Id);
             if (Button(ref buttonRect, "Nabrat popel")) _session.TakeAsh();
             if (fire.Value.Burning && !_session.TorchLit && Button(ref buttonRect, "Zapálit pochodeň")) _session.LightTorch();
+        }
+
+        /// <summary>Vchod do jeskyně: venku Vstoupit, uvnitř u východu Vyjít ven.</summary>
+        private void DrawCaveMenu(InteractionTarget target, Rect titleRect, ref Rect buttonRect)
+        {
+            var entrance = _session.CaveEntrance(target.Id);
+            if (entrance == null)
+            {
+                _session.Menu = null;
+                _session.Selected = null;
+                return;
+            }
+
+            var inside = _session.InCave;
+            GUI.Label(titleRect, inside ? "VÝCHOD Z JESKYNĚ" : entrance.Value.Hidden ? "NENÁPADNÁ PUKLINA VE SKÁLE" : "VCHOD DO JESKYNĚ", _title);
+            if (Button(ref buttonRect, inside ? "Vyjít ven" : "Vstoupit"))
+            {
+                _session.Connection.UseCave(target.Id);
+                _session.Menu = null;
+                _session.Selected = null;
+            }
         }
 
         /// <summary>Kolik kusů masa visí a kolik je hotových, za název ohně nebo sušáku.</summary>

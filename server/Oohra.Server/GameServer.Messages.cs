@@ -282,6 +282,23 @@ public sealed partial class GameServer
         return (byte)((int)Math.Round((turn < 0 ? turn + 1 : turn) * 256) % 256);
     }
 
+    /// <summary>Vchody, které hráčova postava zná. Pošle se, když postava objeví nový nebo když je to nová postava.</summary>
+    private void SendCaveEntrances(PlayerSession player)
+    {
+        var c = player.Character;
+        var key = ((object?)c, Island.CaveEntrances.Count(e => e.Hidden && c.KnowsCave(e.Id)));
+        if (key == player.SentCaves)
+        {
+            return;
+        }
+
+        player.SentCaves = key;
+        var views = Caves.Visible(Island, c)
+            .Select(e => new CaveEntranceView(e.Id, (float)e.X, (float)e.Y, (float)e.Facing, (float)e.InsideX, (float)e.InsideY, e.Hidden))
+            .ToList();
+        SendTo(player.Peer!, w => Messages.WriteCaveEntrances(w, views));
+    }
+
     private RackView[] RackViews()
     {
         return Racks.All.Select(r => new RackView(r.Key.Holder, r.Key.Id, r.Pieces

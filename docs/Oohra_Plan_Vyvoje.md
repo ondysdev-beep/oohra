@@ -75,8 +75,13 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 - [x] První vlna (19. 10.): **hladoví vlci v zimě** (o polovinu víc, loví už za soumraku, oheň je odradí jen zblízka, toulají se dál od doupěte, takže dojdou blíž k táborům). **Rozvodněná bažina na jaře:** voda se rozlije z bažiny do okolní trávy, lesa a písku až na 4 m (nejvíc ve druhém jarním měsíci, trochu i na konci zimy), zatopená souš zpomalí a chytají se tam pijavice. **Stopy v bahně** hráčů a zvířat (bažina a zatopená souš), zmizí za 12 herních hodin, v dešti 8× rychleji, každý hráč dostává jen stopy v okolí. Na zkoušení `startMonth` v server.json.
 - [x] Druhá vlna (19. 10.): **uzení** syrového masa a ryb v kouři hořícího ohně (4 herní hodiny, nad ohněm 4 kusy, když oheň zhasne, uzení stojí) a **sušení** na sušáku (nová dekorace „Sušák na maso“, 10 hodin ve dne za sucha, 8 kusů, jen majitel a kmen). Uzené maso vydrží 10 dní, sušené 15 (syrové 1,5, pečené 4), sytí trochu méně než pečené. Kdo vezme kus dřív, má ho syrový. V katalogu políčko **MeatStrip** a sušák má id `drying_rack`. **Etapa 5 hotová.**
 
+### Etapa 6: Jeskyně
+Rozhodnuto (19. 10.): zvěř podle návrhu (malá jeskyně vlčí doupě, střední divočáci, velká vlčí smečka) a zátaras u vchodu (projde jen majitel a kmen, zvěř neprojde).
+- [x] První vlna (19. 10.): jeskyně v podzemí pod ostrovem (stejná mapa za mořem, ze seedu), tři velikosti (skrýš, pár síní, síť chodeb), vchody ve skále na ostrově (některé nenápadné: najdou se zblízka, postava si je pamatuje, smrtí zapomene), u středních a velkých někdy druhý východ. Uvnitř tma (jen oheň, pochodeň a světlo u východu), stálá teplota (v zimě tepleji), neprší, kaluže kapající vody, pazourek. Stavět jde ohniště, zásoby, pasti a ozdoby, zdi a dveře ne. Katalog: CaveEntrance (`cave_entrance_a`), HiddenCaveEntrance (`cave_entrance_b`), CaveExit, barva stěn.
+- [ ] Druhá vlna: zvěř v jeskyních, zátaras u vchodu, kouř z ohně bez odvětrání dusí.
+
 ### Později (mimo další kolo)
-Jeskyně (etapa 6), patra, střechy a statika (7), mapa jako věc a vor (8).
+Patra, střechy a statika (7), mapa jako věc a vor (8).
 
 ### Rozhodnout před etapou
 - **2:** souhlas s odložením nošení kmene ve více lidech.

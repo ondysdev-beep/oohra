@@ -139,6 +139,9 @@ public enum BodyEvent
 
     /// <summary>Vykouřil vosí hnízdo.</summary>
     NestSmokedOut,
+
+    /// <summary>Všiml si nenápadného vchodu do jeskyně.</summary>
+    FoundCave,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
