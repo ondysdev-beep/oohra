@@ -32,8 +32,11 @@
   "camps": { "count": 2, "minDistance": 110, "waterWithin": 14 },
   // Zříceniny Pradávných se starými rytinami.
   "ruins": { "count": 6, "minDistance": 45, "campDistance": 30 },
-  // Šance na strom na dlaždici. Míň stromů než ve starém světě (les 0,42), ale budou vyšší.
+  // Šance na strom na dlaždici. Stromy stojí kdekoli v dlaždici a ne blíž než spacing (trees.json), takže les je
+  // hustý jen tak, jak koruny dovolí.
   "treeChance": { "Forest": 0.2, "Grass": 0.01, "Bog": 0.04, "Highland": 0.04 },
+  // Shluky a mýtiny: šance na strom se násobí šumem (velikost skvrn scale metrů) mezi min a max.
+  "treeClumps": { "scale": 22, "min": 0.15, "max": 1.6 },
   // Šance na rostlinu na dlaždici.
   "plantChance": { "Forest": 0.08, "Grass": 0.07, "Bog": 0.10, "Sand": 0.025, "Rock": 0.01, "Highland": 0.03 }
 }

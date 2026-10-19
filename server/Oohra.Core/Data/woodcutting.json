@@ -16,8 +16,10 @@
   "fallWidth": 1.4,
   "fallSeverity": 40,
   "fallAnimalDamage": 5,
-  // Pařez: kolik metrů stromu zůstane stát. Zbytek je ležící kmen, z každého celého metru je jeden klad.
+  // Pařez: kolik metrů stromu zůstane stát. Ležící kmen je spodní část stromu (trunkShare výšky bez pařezu),
+  // z každého celého metru je jeden klad. Zbytek je koruna (klacky, crownSticks).
   "stumpHeight": 0.6,
+  "trunkShare": 0.6,
   // Ležící kmen blokuje cestu jako válec o tomto poloměru (metry). Klad na zemi neblokuje.
   "trunkRadius": 0.22,
   // Kolik třísek dá jeden díl dřeva.

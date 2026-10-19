@@ -1,15 +1,16 @@
-// Stromy (návrh 0.8, kap. 2). Výška každého stromu je ze seedu v rozsahu druhu (metry).
+// Stromy (návrh 0.8, kap. 2). Výška každého stromu je ze seedu v rozsahu druhu (metry, skutečné výšky 15 až 25 m).
 // weights: jak často druh roste v oblasti (poměr mezi druhy, v oblasti bez druhů stromy nerostou).
 // hits: kolik seknutí sekerou strom vydrží, než padne. woodPerPiece: kolik dílů dřeva dá jeden klad (1 m kmene).
-// Kolik stromů na dlaždici, říká worldgen.json (treeChance).
+// spacing: nejmenší rozestup od sousedního stromu (metry, podle šířky koruny; dvou druhů průměr).
+// Kolik stromů na dlaždici, říká worldgen.json (treeChance a treeClumps).
 {
   "seedSalt": 4421,
   "species": [
-    { "kind": "Oak",     "minHeight": 5, "maxHeight": 8, "hits": 14, "woodPerPiece": 4, "weights": { "Forest": 0.40, "Meadow": 0.55 } },
-    { "kind": "Conifer", "minHeight": 6, "maxHeight": 8, "hits": 10, "woodPerPiece": 3, "weights": { "Forest": 0.30, "Highland": 0.85 } },
-    { "kind": "Birch",   "minHeight": 4, "maxHeight": 7, "hits": 8,  "woodPerPiece": 3, "weights": { "Forest": 0.25, "Meadow": 0.30, "Marsh": 0.30 } },
-    { "kind": "Willow",  "minHeight": 3, "maxHeight": 5, "hits": 6,  "woodPerPiece": 2, "weights": { "Marsh": 0.70 } },
-    { "kind": "Dead",    "minHeight": 3, "maxHeight": 6, "hits": 5,  "woodPerPiece": 2, "weights": { "Forest": 0.05, "Meadow": 0.15, "Highland": 0.15 } }
+    { "kind": "Oak",     "minHeight": 17, "maxHeight": 25, "spacing": 7,   "hits": 18, "woodPerPiece": 4, "weights": { "Forest": 0.40, "Meadow": 0.55 } },
+    { "kind": "Conifer", "minHeight": 18, "maxHeight": 25, "spacing": 4.5, "hits": 14, "woodPerPiece": 3, "weights": { "Forest": 0.30, "Highland": 0.85 } },
+    { "kind": "Birch",   "minHeight": 15, "maxHeight": 21, "spacing": 4.5, "hits": 11, "woodPerPiece": 3, "weights": { "Forest": 0.25, "Meadow": 0.30, "Marsh": 0.30 } },
+    { "kind": "Willow",  "minHeight": 15, "maxHeight": 19, "spacing": 6,   "hits": 9,  "woodPerPiece": 2, "weights": { "Marsh": 0.70 } },
+    { "kind": "Dead",    "minHeight": 15, "maxHeight": 20, "spacing": 4,   "hits": 7,  "woodPerPiece": 2, "weights": { "Forest": 0.05, "Meadow": 0.15, "Highland": 0.15 } }
   ],
   // U sladké vody (jezero, řeka, jezírko) do waterDistance metrů roste místo jiného stromu vrba se šancí willowNearWater.
   "waterDistance": 3,

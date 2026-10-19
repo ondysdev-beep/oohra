@@ -69,7 +69,7 @@ public class ForestryTests
         var trunk = Assert.Single(forestry.Timbers);
         Assert.Equal(TimberKind.Trunk, trunk.Kind);
         Assert.Equal(tree.Kind, trunk.Tree);
-        Assert.Equal((int)Math.Floor(tree.Height - GameData.Wood.StumpHeight), trunk.Length);
+        Assert.Equal((int)Math.Floor(tree.Height * GameData.Wood.TrunkShare - GameData.Wood.StumpHeight), trunk.Length);
         Assert.True(trunk.X > tree.X + 0.5, "Kmen leží na straně od sekáče.");
         Assert.Contains(victim.Character.TakeMessages(), m => m.Event == BodyEvent.HitByTree);
         Assert.DoesNotContain(chopper.Character.TakeMessages(), m => m.Event == BodyEvent.HitByTree);

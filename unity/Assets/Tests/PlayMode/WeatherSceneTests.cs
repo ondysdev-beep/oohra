@@ -46,7 +46,9 @@ namespace Oohra.Client.Tests
             yield return WaitFor(() => weather.RainAmount > 0.5f && weather.RainParticles > 200, 10f, "Déšť nepadá.");
             Assert.Greater(weather.StormAmount, 0.3f);
             Assert.IsTrue(RenderSettings.fog);
-            Assert.Less(RenderSettings.fogEndDistance, 18f + 40f, "V bouřce má být dohled kratší.");
+            // Mlha končí za kamerou o dohled (jasno 55 m, v bouřce méně).
+            var cameraDistance = Vector3.Distance(Camera.main.transform.position, Object.FindAnyObjectByType<PlayerViews>().Self.position);
+            Assert.Less(RenderSettings.fogEndDistance - cameraDistance, 40f, "V bouřce má být dohled kratší.");
 
             var buildMode = Object.FindAnyObjectByType<BuildMode>();
             buildMode.Open(Oohra.Core.World.BuildKind.Campfire);

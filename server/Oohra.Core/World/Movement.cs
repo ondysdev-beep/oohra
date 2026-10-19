@@ -61,7 +61,7 @@ public static class Movement
         return tile == TileType.Sea || tile == TileType.Pond;
     }
 
-    /// <summary>Postava by se překrývala s kmenem stromu (kmen stojí uprostřed své dlaždice).</summary>
+    /// <summary>Postava by se překrývala s kmenem stromu (kmen stojí kdekoli ve své dlaždici, Island.TrunkPosition).</summary>
     private static bool HitsTrunk(Island island, double x, double y, double radius)
     {
         var reach = radius + GameData.Movement.TreeTrunkRadius;
@@ -76,8 +76,9 @@ public static class Movement
                     continue;
                 }
 
-                var dx = xx + 0.5 - x;
-                var dy = yy + 0.5 - y;
+                var (trunkX, trunkY) = island.TrunkPosition(island.Index(xx, yy));
+                var dx = trunkX - x;
+                var dy = trunkY - y;
                 if (dx * dx + dy * dy < reach * reach)
                 {
                     return true;
@@ -205,8 +206,9 @@ public static class Movement
                 }
 
                 // n: od středu kmene k postavě. Když postava jde proti kmeni (u · n < 0), jde se po tečně.
-                var nx = x - (xx + 0.5);
-                var ny = y - (yy + 0.5);
+                var (trunkX, trunkY) = island.TrunkPosition(island.Index(xx, yy));
+                var nx = x - trunkX;
+                var ny = y - trunkY;
                 var d = Math.Sqrt(nx * nx + ny * ny);
                 if (d > reach || d <= 0)
                 {

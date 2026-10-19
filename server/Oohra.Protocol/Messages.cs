@@ -13,7 +13,8 @@ namespace Oohra.Protocol;
 // Pořadí zápisu a čtení musí být stejné. Když se zpráva změní, zvyš ProtocolInfo.Version.
 
 /// <summary>Strom na mapě: dlaždice, varianta modelu (0 až 1), druh a výška v metrech.</summary>
-public readonly record struct TreeView(int TileIndex, float Variant, TreeKind Kind = TreeKind.Oak, float Height = 5);
+/// <summary>Strom ze seedu: dlaždice, varianta modelu, druh, výška (metry) a kde v dlaždici stojí (X, Y na mapě).</summary>
+public readonly record struct TreeView(int TileIndex, float Variant, TreeKind Kind = TreeKind.Oak, float Height = 5, float X = 0, float Y = 0);
 
 /// <summary>Rostlina na mapě. Její číslo (id) je pořadí v seznamu.</summary>
 public readonly record struct PlantView(int SpeciesId, float X, float Y);
@@ -1221,8 +1222,10 @@ public static class Messages
             w.Put(t.TileIndex);
             w.Put(t.Variant);
             w.Put((byte)t.Kind);
-            // Výška v decimetrech (stromy mají 3 až 8 m), stačí jeden bajt.
-            w.Put((byte)Math.Round(t.Height * 10));
+            // Výška v decimetrech, poloha na mapě (strom stojí kdekoli v dlaždici).
+            w.Put((ushort)Math.Round(t.Height * 10));
+            w.Put(t.X);
+            w.Put(t.Y);
         }
 
         w.Put(world.Plants.Length);
@@ -1296,7 +1299,7 @@ public static class Messages
         var width = r.GetInt();
         var height = r.GetInt();
         var (tiles, shore) = GetTiles(r, width * height);
-        var trees = ReadList(r, () => new TreeView(r.GetInt(), r.GetFloat(), (TreeKind)r.GetByte(), r.GetByte() / 10f));
+        var trees = ReadList(r, () => new TreeView(r.GetInt(), r.GetFloat(), (TreeKind)r.GetByte(), r.GetUShort() / 10f, r.GetFloat(), r.GetFloat()));
         var plants = ReadList(r, () => new PlantView(r.GetInt(), r.GetFloat(), r.GetFloat()));
         var species = ReadList(r, () => new SpeciesView(r.GetFloat(), r.GetFloat(), r.GetFloat(), r.GetShort(), r.GetByte()));
         var camps = ReadList(r, () => new CampView(r.GetInt(), r.GetInt()));
