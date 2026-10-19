@@ -18,9 +18,23 @@ MonoBehaviour:
   - {fileID: 6584972577766378564, guid: d4b71a6ce5cddea479bcd87e460c9a57, type: 3}
   - {fileID: 6879069806676925136, guid: 9eb814cd8b9b7bd40812e05f2d1b345e, type: 3}
   - {fileID: 1154760010325916134, guid: 87b3de9dbda859a4bbfedccb38e33a39, type: 3}
-  TreeHeight: 5
   OakTrees:
   - {fileID: 919132149155446097, guid: f65c541fefc2c5f43b37a1ba2dfb2151, type: 3}
+  ConiferTrees:
+  - {fileID: 919132149155446097, guid: aee47017046805c42a28a45d259b7d2e, type: 3}
+  BirchTrees:
+  - {fileID: 919132149155446097, guid: a656fb4f9f1391145b57bdebbafd909f, type: 3}
+  WillowTrees:
+  - {fileID: 919132149155446097, guid: fb9346ede9f85a54f8b004d7d71d931e, type: 3}
+  DeadTrees:
+  - {fileID: 919132149155446097, guid: 5692d0b05d50a9244967debfdd50a3d1, type: 3}
+  Stumps: []
+  Log: {fileID: 0}
+  LogPiece: {fileID: 0}
+  Saplings: []
+  Torch: {fileID: 0}
+  SmallBag: {fileID: 0}
+  LargeBag: {fileID: 0}
   Plants:
   - {fileID: 6887655973843577847, guid: 4c85c0f2b59552040802df6b7573f619, type: 3}
   - {fileID: 5268203991766783212, guid: 6bb9617c747924f4e97a57b52cf40644, type: 3}
@@ -38,42 +52,50 @@ MonoBehaviour:
   Door: {fileID: 0}
   Trap: {fileID: 0}
   Stockpile: {fileID: 0}
+  Barricade: {fileID: 0}
+  Post: {fileID: 0}
+  Floor: {fileID: 0}
+  Roof: {fileID: 0}
+  Ladder: {fileID: 0}
   Decorations: []
   GrassTexture: {fileID: 0}
   SandTexture: {fileID: 0}
   ForestTexture: {fileID: 0}
   RockTexture: {fileID: 0}
   BogTexture: {fileID: 0}
+  HighlandTexture: {fileID: 0}
   GroundTextureSize: 4
   Rocks:
-  - {fileID: 6627928173202147823, guid: 99fc2a8d6198f0b4094b42fa6f22d055, type: 3}
-  - {fileID: 4392374139655778112, guid: 25b2c6cd01eb2984289405b0c5630c79, type: 3}
-  - {fileID: 8326338799085073278, guid: 30341d14ac7701c4d98f93cc7e7fc747, type: 3}
-  - {fileID: 3098550211319787307, guid: d9ddf19eacd4f2a43ae7312261511d81, type: 3}
-  - {fileID: 6142644470582631958, guid: 1f317b53cda66eb41bc261297cd9c166, type: 3}
-  - {fileID: 7718055000384658500, guid: 31c6908be6824ba4ba12a1359a8ee40e, type: 3}
-  - {fileID: 6324864460766391841, guid: 1f475b8b9661e5f4ba04be7c6fd7f0da, type: 3}
-  - {fileID: 3394907288064244817, guid: 3d1ce29006014924a80da7628fb2b4b6, type: 3}
-  - {fileID: 8940962466641769734, guid: b4474f9d0bfee044fa5f456a197bdbb1, type: 3}
-  - {fileID: 3411743564861290590, guid: e644c16c780ca4948947fafbe5db3fc0, type: 3}
-  - {fileID: 6686823240032269789, guid: d4f6d455d2649164aaebdf0317378ae6, type: 3}
-  - {fileID: 3787026813779523426, guid: 12472b102cc4f5c4f8da06f6df840f22, type: 3}
-  - {fileID: 5112067364858557263, guid: d7d16e259a61cfa4e88065f59996f7bf, type: 3}
-  - {fileID: 2367486897356952710, guid: acd4dc441e341234188ace961d48e9cb, type: 3}
+  - {fileID: 919132149155446097, guid: c6c8d120dc3cd194c86da35f6958dc23, type: 3}
+  - {fileID: 919132149155446097, guid: 7b0847c1cc3c366439bb7d84c5d5e60d, type: 3}
+  - {fileID: 919132149155446097, guid: f9e0512f6faa90e4c89b2c49ee91972d, type: 3}
+  - {fileID: 919132149155446097, guid: f8f19410ef370f747b1d6e7f1e59f3ba, type: 3}
   RockMinSize: 0.4
   RockMaxSize: 0.6
   WaterColor: {r: 0.16, g: 0.38, b: 0.50980395, a: 0.72}
   WaterNormalMap: {fileID: 0}
   WaveSize: 3
   WaveSpeed: 0.08
+  WaterUvSize: 50
   WaterMaterial: {fileID: 2100000, guid: 8759ec410a6774b4ea13ae32dc2b8d2e, type: 2}
+  CustomWaterDrop: 0.2
   WaterReflectionCamera: {fileID: 0}
   FoamColor: {r: 0.95, g: 0.97, b: 1, a: 0.8}
   FoamWidth: 0.45
   Player: {fileID: 0}
+  PlayerAncient: {fileID: 5904967436162879721, guid: 29cdd284f39d7e14ea4c5f9e1216508a, type: 3}
+  PlayerThird: {fileID: 0}
   Campfire: {fileID: 0}
   Flame: {fileID: 0}
-  Boar: {fileID: 0}
+  Boar: {fileID: 6950771208402130012, guid: c8b3f2cb00c16ac468f86dbb6842de7e, type: 3}
   Rabbit: {fileID: 0}
   Deer: {fileID: 0}
   Wolf: {fileID: 0}
+  Snake: {fileID: 0}
+  CaveEntrance: {fileID: 0}
+  HiddenCaveEntrance: {fileID: 0}
+  CaveExit: {fileID: 0}
+  CaveWallColor: {r: 0.27, g: 0.25, b: 0.23, a: 1}
+  MeatStrip: {fileID: 0}
+  FloodColor: {r: 0.3, g: 0.29, b: 0.2, a: 0.55}
+  WaspNest: {fileID: 0}
