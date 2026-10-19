@@ -95,6 +95,56 @@ namespace Oohra.Client
             return smoke;
         }
 
+        /// <summary>
+        /// Prach a listí při dopadu stromu: jednorázový oblak podél ležícího kmene (od místa from ve směru direction,
+        /// délka v metrech). Sám se po pár sekundách smaže.
+        /// </summary>
+        public static ParticleSystem DustBurst(Vector3 from, Vector3 direction, float length)
+        {
+            var go = new GameObject("Prach");
+            go.transform.position = from + direction.normalized * (length / 2) + Vector3.up * 0.3f;
+            go.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+            var dust = go.AddComponent<ParticleSystem>();
+            dust.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            var main = dust.main;
+            main.loop = false;
+            main.duration = 0.3f;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.5f, 3f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.3f, 1.4f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.5f, 1.4f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+            main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.42f, 0.36f, 0.27f, 0.45f), new Color(0.3f, 0.36f, 0.2f, 0.5f));
+            main.gravityModifier = -0.02f;
+            main.maxParticles = 120;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.stopAction = ParticleSystemStopAction.Destroy;
+
+            var emission = dust.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)Mathf.Clamp(length * 4f, 20f, 100f)) });
+
+            var shape = dust.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(1.6f, 0.3f, length);
+
+            var size = dust.sizeOverLifetime;
+            size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 0.6f, 1f, 2.2f));
+
+            var color = dust.colorOverLifetime;
+            color.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0.9f, 0f), new GradientAlphaKey(0.5f, 0.4f), new GradientAlphaKey(0f, 1f) });
+            color.color = fade;
+
+            Setup(dust, Soft);
+            dust.Play();
+            return dust;
+        }
+
         private static Material Create(string name, Texture2D texture)
         {
             var material = new Material(Palette.Foam) { name = name };

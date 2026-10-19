@@ -64,6 +64,7 @@ namespace Oohra.Client.Editor
             EnsureMaterial(Palette.LitResource, "Universal Render Pipeline/Lit");
             EnsureMaterial(Palette.GlowResource, "Universal Render Pipeline/Unlit");
             EnsureMaterial(Palette.FadeResource, "Universal Render Pipeline/Lit", transparent: true);
+            EnsureMaterial(Palette.FadeNormalResource, "Universal Render Pipeline/Lit", transparent: true, normalMap: true);
             EnsureMaterial(Palette.TerrainResource, "Universal Render Pipeline/Terrain/Lit");
             EnsureMaterial(Palette.WaterResource, "Universal Render Pipeline/Lit", transparent: true, water: true);
             EnsureMaterial(Palette.FoamResource, "Universal Render Pipeline/Particles/Simple Lit", transparent: true, foam: true);
@@ -95,7 +96,27 @@ namespace Oohra.Client.Editor
             return catalog;
         }
 
-        private static void EnsureMaterial(string resource, string shader, bool transparent = false, bool water = false, bool foam = false)
+        /// <summary>Plochá normálová mapa 4 × 4 (Assets/Resources/OohraFlatNormal.png), vytvoří ji, když chybí.</summary>
+        private static Texture2D FlatNormalMap()
+        {
+            const string path = "Assets/Resources/OohraFlatNormal.png";
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(path) == null)
+            {
+                var texture = new Texture2D(4, 4);
+                var pixels = new Color[16];
+                for (var i = 0; i < pixels.Length; i++) pixels[i] = new Color(0.5f, 0.5f, 1f);
+                texture.SetPixels(pixels);
+                File.WriteAllBytes(path, texture.EncodeToPNG());
+                AssetDatabase.ImportAsset(path);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.textureType = TextureImporterType.NormalMap;
+                importer.SaveAndReimport();
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        private static void EnsureMaterial(string resource, string shader, bool transparent = false, bool water = false, bool foam = false, bool normalMap = false)
         {
             var path = "Assets/Resources/" + resource + ".mat";
             if (AssetDatabase.LoadAssetAtPath<Material>(path) != null)
@@ -119,6 +140,15 @@ namespace Oohra.Client.Editor
                 // Pěna: obě strany (na otočení sítě nezáleží), barvu a průhlednost bere i z vrcholů sítě.
                 material.SetFloat("_Cull", 0f);
                 material.SetColor("_BaseColor", Color.white);
+            }
+
+            if (normalMap)
+            {
+                // Přesně jako průhledná kopie modelu z Meshy za běhu (bez instancingu, s normálovou mapou). Unity bez
+                // textury normál slovo _NORMALMAP samo vyhodí, proto dostane plochou normálovou mapu.
+                material.enableInstancing = false;
+                material.SetTexture("_BumpMap", FlatNormalMap());
+                material.EnableKeyword("_NORMALMAP");
             }
 
             if (water)

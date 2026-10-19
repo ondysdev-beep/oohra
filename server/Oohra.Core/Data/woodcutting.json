@@ -5,8 +5,13 @@
   // Jak blízko musí postava být ke stromu a ke dřevu na zemi (metry) a jak rychle jde sekat po sobě (sekundy).
   "reach": 1.7,
   "chopCooldownSeconds": 0.7,
-  // Strom před pádem zapraská a padá tolik sekund. Pak dopadne: kdo je v pruhu pádu, je zraněný.
-  "warnSeconds": 1.5,
+  // Strom napřed crackSeconds praská a kymácí se, pak fallSeconds padá (čím dál rychleji). Pak dopadne: kdo je
+  // v pruhu pádu, je zraněný.
+  "crackSeconds": 2,
+  "fallSeconds": 3.5,
+  // Z koruny pokáceného stromu spadnou klacky (věci na zemi u koruny): perMeter na metr výšky stromu, nejmíň min,
+  // nejvíc max, suchý strom deadMultiplier krát víc. Rozdělí se do piles hromádek.
+  "crownSticks": { "perMeter": 0.6, "min": 5, "max": 15, "deadMultiplier": 1.5, "piles": 3 },
   // Pruh pádu: šířka (metry) a délka podle výšky stromu. Síla zranění hráče a zvířete (body života zvířete).
   "fallWidth": 1.4,
   "fallSeverity": 40,

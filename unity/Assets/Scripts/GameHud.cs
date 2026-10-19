@@ -306,7 +306,7 @@ namespace Oohra.Client
                 _buildMode.Modular = !_buildMode.Modular;
             }
 
-            GUI.Label(new Rect(x, y + 36, 332, 44), "levé tlačítko postavit (do 3,5 m)\npravé tlačítko nebo Esc konec", _label);
+            GUI.Label(new Rect(x, y + 36, 332, 44), "levé tlačítko postavit (do 10 m) · Q a E otočit\npravé tlačítko myši kamera · Esc konec", _label);
         }
 
         /// <summary>Pět pruhů a příznaky dole uprostřed. Vrací horní okraj (pro další prvky nad nimi).</summary>
@@ -868,7 +868,7 @@ namespace Oohra.Client
             "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
             "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
             "H nakreslit značku · P podpis (jméno ze slabik a znak)",
-            "Q a E otočit kamerou · kolečko přiblížit · F1 tento přehled",
+            "Q a E nebo pravé tlačítko myši: otočit kamerou (při stavění Q a E otáčí stavbou) · kolečko přiblížit · F1 tento přehled",
             "Nahlásit (tlačítko nahoře): problém nebo chyba ve hře",
         };
 

@@ -273,11 +273,14 @@ public sealed partial class GameServer
                 break;
             case MessageType.Attack:
                 var target = Messages.ReadAnimalAction(reader);
-                HuntAction(player, target, () => Animals.Attack(target, new AnimalTarget(player.Id, player.X, player.Y, player.Character), player.Inventory, Clock.TotalMinutes));
+                HuntAction(player, target, () => Animals.Attack(target, new AnimalTarget(player.Id, player.X, player.Y, player.Character), player.Inventory, Clock.TotalMinutes, Island));
                 break;
             case MessageType.Butcher:
                 var corpse = Messages.ReadAnimalAction(reader);
-                HuntAction(player, corpse, () => Animals.Butcher(corpse, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
+                // Mršinu přes zeď stáhnout nejde.
+                HuntAction(player, corpse, () => Animals.Find(corpse) is { } carcass && !Sight.Clear(Island, player.X, player.Y, carcass.X, carcass.Y)
+                    ? HuntResult.Blocked
+                    : Animals.Butcher(corpse, player.Inventory, player.X, player.Y, Clock.TotalMinutes));
                 break;
             case MessageType.MakeSpear:
                 CraftAction(player, "spear");
@@ -448,7 +451,7 @@ public sealed partial class GameServer
             return;
         }
 
-        var result = Island.Ground.PickUp(pileId, player.Inventory, player.X, player.Y, player.Level);
+        var result = Island.Ground.PickUp(Island, pileId, player.Inventory, player.X, player.Y, player.Level);
         SendEvent(player, new GameEvent(EventKind.Ground, (byte)result, default, []));
         SendInventory(player);
     }

@@ -5,7 +5,9 @@ public sealed record WoodRules(
     AxeRules Axe,
     double Reach,
     double ChopCooldownSeconds,
-    double WarnSeconds,
+    double CrackSeconds,
+    double FallSeconds,
+    CrownStickRules CrownSticks,
     double FallWidth,
     double FallSeverity,
     int FallAnimalDamage,
@@ -13,6 +15,13 @@ public sealed record WoodRules(
     double TrunkRadius,
     int SplintersPerWood,
     double CarrySpeed,
-    double WoodBurnMultiplier);
+    double WoodBurnMultiplier)
+{
+    /// <summary>Od posledního seknutí do dopadu (praskání a pád).</summary>
+    public double WarnSeconds => CrackSeconds + FallSeconds;
+}
 
 public sealed record AxeRules(int Sticks, int Stones, int Uses);
+
+/// <summary>Klacky z koruny pokáceného stromu (na metr výšky, rozsah, suchý strom víc, kolik hromádek).</summary>
+public sealed record CrownStickRules(double PerMeter, int Min, int Max, double DeadMultiplier, int Piles);

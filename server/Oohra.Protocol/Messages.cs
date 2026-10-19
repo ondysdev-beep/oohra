@@ -109,7 +109,12 @@ public sealed record JournalView(int StackIndex, byte[][] Pages);
 /// Strom, který není celý ze seedu: padá (úhel pádu), pařez, mladý strom (druh, výška, až doroste, růst 0 až 1),
 /// nebo dorostlý strom (druh a výška).
 /// </summary>
-public readonly record struct TreeStateView(int TileIndex, TreeState State, float Angle, TreeKind Kind = TreeKind.Oak, float Height = 0, float Growth = 1);
+/// <summary>
+/// Padající strom (Falling): Elapsed = kolik sekund už padá, Crack = jak dlouho praská a kymácí se, Fall = jak
+/// dlouho pak padá (sekundy, do dopadu Crack + Fall).
+/// </summary>
+public readonly record struct TreeStateView(
+    int TileIndex, TreeState State, float Angle, TreeKind Kind = TreeKind.Oak, float Height = 0, float Growth = 1, float Elapsed = 0, float Crack = 0, float Fall = 0);
 
 /// <summary>Dřevo na zemi: kmen nebo klad, druh stromu, střed, směr (radiány) a délka (metry).</summary>
 public readonly record struct TimberView(int Id, TimberKind Kind, TreeKind Tree, float X, float Y, float Angle, int Length);
@@ -1545,14 +1550,24 @@ public static class Messages
             w.Put((byte)t.State);
             w.Put(t.Angle);
             w.Put((byte)t.Kind);
-            w.Put((byte)Math.Round(t.Height * 10));
+            w.Put((ushort)Math.Round(t.Height * 10));
             w.Put((byte)Math.Round(t.Growth * 100));
+            if (t.State == TreeState.Falling)
+            {
+                w.Put(t.Elapsed);
+                w.Put(t.Crack);
+                w.Put(t.Fall);
+            }
         }
     }
 
     public static TreeStateView[] ReadTreeStates(NetDataReader r)
     {
-        return ReadList(r, () => new TreeStateView(r.GetInt(), (TreeState)r.GetByte(), r.GetFloat(), (TreeKind)r.GetByte(), r.GetByte() / 10f, r.GetByte() / 100f));
+        return ReadList(r, () =>
+        {
+            var view = new TreeStateView(r.GetInt(), (TreeState)r.GetByte(), r.GetFloat(), (TreeKind)r.GetByte(), r.GetUShort() / 10f, r.GetByte() / 100f);
+            return view.State == TreeState.Falling ? view with { Elapsed = r.GetFloat(), Crack = r.GetFloat(), Fall = r.GetFloat() } : view;
+        });
     }
 
     /// <summary>Všechno dřevo na zemi (kmeny a klady). Posílá se po přihlášení a při každé změně.</summary>

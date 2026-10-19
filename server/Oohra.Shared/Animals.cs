@@ -97,5 +97,8 @@ namespace Oohra.Core.World
 
         /// <summary>Cizí past: úlovek smí vzít jen majitel a jeho kmen.</summary>
         NotYours,
+
+        /// <summary>Mezi lovcem a zvířetem je zeď nebo jiná překážka.</summary>
+        Blocked,
     }
 }

@@ -17,9 +17,9 @@ namespace Oohra.Client
         // Kmen v tvaru z kódu má tloušťku kolize na serveru (treeTrunkRadius 0,12 v movement.json).
         private const float TrunkWidth = 0.24f;
 
-        // Jak dlouho strom před dopadem praská (jako warnSeconds ve woodcutting.json) a kolik z toho se jen kymácí.
-        private const float WarnSeconds = 1.5f;
-        private const float ShakeSeconds = 0.6f;
+        // Když server časy pádu nepošle (starší zpráva), praská a padá tolik sekund (jako woodcutting.json).
+        private const float DefaultCrack = 2f;
+        private const float DefaultFall = 3.5f;
 
         private readonly Dictionary<int, GameObject> _trees = new Dictionary<int, GameObject>();
         private readonly Dictionary<int, Felling> _falling = new Dictionary<int, Felling>();
@@ -36,8 +36,11 @@ namespace Oohra.Client
         private sealed class Felling
         {
             public float Started;
+            public float Crack;
+            public float Fall;
             public Vector3 Direction;
             public Quaternion Upright;
+            public float Height;
         }
 
         /// <summary>Kolik mladých a dorostlých stromů (ne ze seedu) je ve scéně, pro testy.</summary>
@@ -88,7 +91,7 @@ namespace Oohra.Client
                     switch (state.State)
                     {
                         case TreeState.Falling:
-                            StartFalling(state.TileIndex, state.Angle);
+                            StartFalling(state);
                             break;
                         case TreeState.Stump:
                             Stump(state.TileIndex);
@@ -164,38 +167,54 @@ namespace Oohra.Client
             }
         }
 
-        /// <summary>Strom začal padat (server): zapraská a začne se kymácet.</summary>
-        private void StartFalling(int tileIndex, float angle)
+        /// <summary>
+        /// Strom začal padat (server): zapraská a začne se kymácet. Časy jsou ze serveru (kolik už padá, jak dlouho
+        /// praská a padá), takže hráč, který přišel uprostřed pádu, vidí totéž.
+        /// </summary>
+        private void StartFalling(TreeStateView state)
         {
             GameObject tree;
-            if (_falling.ContainsKey(tileIndex) || !_trees.TryGetValue(tileIndex, out tree) || !tree.activeSelf)
+            if (_falling.ContainsKey(state.TileIndex) || !_trees.TryGetValue(state.TileIndex, out tree) || !tree.activeSelf)
             {
                 return;
             }
 
-            _falling[tileIndex] = new Felling
+            var angle = state.Angle;
+            _falling[state.TileIndex] = new Felling
             {
-                Started = Time.time,
+                Started = Time.time - state.Elapsed,
+                Crack = state.Crack > 0f ? state.Crack : DefaultCrack,
+                Fall = state.Fall > 0f ? state.Fall : DefaultFall,
                 Direction = new Vector3(Mathf.Cos(angle), 0f, -Mathf.Sin(angle)),
                 Upright = tree.transform.rotation,
+                Height = Mathf.Max(2f, VisualCatalog.BoundsOf(tree).size.y),
             };
             Ambience.PlayAt(Ambience.Creak(), tree.transform.position + Vector3.up * 2f, 0.8f);
         }
 
-        /// <summary>Kymácení a pak pád (nakloní se od svislice ke směru pádu, pomalu a pak čím dál rychleji).</summary>
+        /// <summary>
+        /// Praskání (strom se kymácí čím dál víc), pak pád: nakloní se ke směru pádu pomalu a pak čím dál rychleji,
+        /// jako by ho táhla tíha (úhel roste s druhou mocninou času).
+        /// </summary>
         private static void Animate(Transform tree, Felling felling)
         {
-            var t = Time.time - felling.Started;
-            var down = Quaternion.FromToRotation(Vector3.up, felling.Direction);
-            if (t < ShakeSeconds)
+            tree.rotation = Quaternion.Slerp(Quaternion.identity, Quaternion.FromToRotation(Vector3.up, felling.Direction), Tilt(Time.time - felling.Started, felling.Crack, felling.Fall)) * felling.Upright;
+        }
+
+        /// <summary>
+        /// Jak moc je strom nakloněný (0 stojí, 1 leží) v čase t od posledního seknutí: během praskání se kymácí
+        /// o pár stupňů (víc a víc), pak padá s druhou mocninou času. Těsně před dopadem je skoro vodorovně.
+        /// </summary>
+        public static float Tilt(float t, float crack, float fall)
+        {
+            if (t < crack)
             {
-                var wobble = Mathf.Sin(t * 40f) * 1.5f;
-                tree.rotation = Quaternion.Slerp(Quaternion.identity, down, wobble / 90f) * felling.Upright;
-                return;
+                var grow = t / crack;
+                return Mathf.Sin(t * 9f) * 0.02f * grow + 0.03f * grow * grow;
             }
 
-            var fall = Mathf.Clamp01((t - ShakeSeconds) / (WarnSeconds - ShakeSeconds));
-            tree.rotation = Quaternion.Slerp(Quaternion.identity, down, fall * fall * 0.97f) * felling.Upright;
+            var u = Mathf.Clamp01((t - crack) / fall);
+            return Mathf.Lerp(0.03f, 0.97f, u * u);
         }
 
         /// <summary>Ze stromu zbyl pařez: strom zmizí (kmen na zemi kreslí TimberViews), na jeho místě je pařez.</summary>
@@ -209,9 +228,11 @@ namespace Oohra.Client
             GameObject tree;
             if (_trees.TryGetValue(tileIndex, out tree))
             {
-                if (_falling.ContainsKey(tileIndex))
+                Felling felling;
+                if (_falling.TryGetValue(tileIndex, out felling))
                 {
                     Ambience.PlayTreeFall(tree.transform.position);
+                    ParticleLook.DustBurst(tree.transform.position, felling.Direction, felling.Height);
                 }
 
                 tree.SetActive(false);

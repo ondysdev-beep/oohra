@@ -109,7 +109,8 @@ public sealed class Forestry
     {
         foreach (var falling in _falling)
         {
-            yield return (falling.Key, TreeState.Falling, falling.Value.Angle, default, 0, 1);
+            // U padajícího stromu je místo růstu, kolik sekund už padá (klient podle toho dopočítá pohyb).
+            yield return (falling.Key, TreeState.Falling, falling.Value.Angle, default, 0, GameData.Wood.WarnSeconds - falling.Value.SecondsLeft);
         }
 
         foreach (var stump in _stumps.Keys)
@@ -559,10 +560,41 @@ public sealed class Forestry
         var start = rules.TrunkRadius + 0.1;
         var center = start + length / 2.0;
         _timbers.Add(new Timber(_nextId++, TimberKind.Trunk, tree.Kind, tree.X + dx * center, tree.Y + dy * center, angle, length));
+        DropCrownSticks(island, tree, dx, dy, now);
         _falling.Remove(tile);
         _stumps[tile] = now;
         PlantSapling(island, tree, clock.CalendarMonths);
         Version++;
+    }
+
+    /// <summary>Kolik klacků spadne z koruny stromu (podle výšky, suchý strom víc).</summary>
+    public static int CrownSticks(Tree tree)
+    {
+        var rules = GameData.Wood.CrownSticks;
+        var count = tree.Height * rules.PerMeter * (tree.Kind == TreeKind.Dead ? rules.DeadMultiplier : 1);
+        return Math.Clamp((int)Math.Round(count), rules.Min, rules.Max);
+    }
+
+    /// <summary>
+    /// Klacky z koruny leží na zemi v hromádkách podél horní části kmene (od 60 % výšky ke špičce), střídavě
+    /// trochu vlevo a vpravo. Do vody ani skály nepadnou.
+    /// </summary>
+    private static void DropCrownSticks(Island island, Tree tree, double dx, double dy, double now)
+    {
+        var rules = GameData.Wood.CrownSticks;
+        var total = CrownSticks(tree);
+        var piles = Math.Max(1, rules.Piles);
+        for (var i = 0; i < piles; i++)
+        {
+            var count = total / piles + (i < total % piles ? 1 : 0);
+            var along = tree.Height * (0.6 + 0.35 * i / Math.Max(1, piles - 1));
+            var side = (i % 2 == 0 ? 1 : -1) * 0.8;
+            var (x, y) = (tree.X + dx * along - dy * side, tree.Y + dy * along + dx * side);
+            if (count > 0 && Placement.OnDryLand(island, x, y))
+            {
+                island.Ground.PutAt(island, Item.Stick, count, x, y, 0, now);
+            }
+        }
     }
 
     /// <summary>Odsekne metr od špičky kmene. Poslední metr kmene je rovnou klad.</summary>

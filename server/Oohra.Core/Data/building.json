@@ -3,7 +3,7 @@
 // mají přesnou polohu a úhel. Vzdálenosti v metrech (1 dlaždice = 1 m).
 {
   // Jak daleko od sebe smí postava stavět (střed stavby od středu postavy). Dál, ať je na stavbu vidět.
-  "placeReach": 3.5,
+  "placeReach": 10,
   "wall": {
     // Příčka z klacků: plná délka a tloušťka stěny. Zeď s otvorem má vždy plnou délku.
     "length": 1.0,

@@ -16,5 +16,8 @@ namespace Oohra.Core.World
 
         /// <summary>Do rukou ani do batohu se už nic nevejde.</summary>
         InventoryFull = 4,
+
+        /// <summary>Mezi postavou a hromádkou je zeď nebo jiná překážka.</summary>
+        Blocked = 5,
     }
 }

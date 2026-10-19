@@ -35,7 +35,11 @@ public sealed partial class GameServer
             return;
         }
 
-        var result = Island.Corpses.Take(corpseId, stackIndex, player.Inventory, player.X, player.Y, player.Id, Tribes, Clock.TotalMinutes);
+        // Z těla přes zeď brát nejde.
+        var body = Island.Corpses.Find(corpseId);
+        var result = body is not null && !Sight.Clear(Island, player.X, player.Y, body.X, body.Y, player.Level)
+            ? CorpseResult.Blocked
+            : Island.Corpses.Take(corpseId, stackIndex, player.Inventory, player.X, player.Y, player.Id, Tribes, Clock.TotalMinutes);
         SendEvent(player, new GameEvent(EventKind.Corpse, (byte)result, default, []));
         SendInventory(player);
     }

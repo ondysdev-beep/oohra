@@ -3,8 +3,8 @@ using UnityEngine;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Svítící kruh na zemi pod vybranou věcí (rostlina, strom, skála, voda, oheň, stavba, později zvíře),
-    /// aby hráč viděl, na co kliknul. Kruh jemně pulzuje.
+    /// Svítící kruh na zemi pod vybranou věcí (rostlina, strom, skála, oheň, stavba, zvíře, hráč, tělo, věc na zemi),
+    /// aby hráč viděl, na co kliknul. Kruh jemně pulzuje. Zóny (voda, bažina, brod) kruh nemají (ShowsRing).
     /// </summary>
     public class SelectionRing : MonoBehaviour
     {
@@ -55,9 +55,16 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Kruh jen pod modely, ne pod zónou (voda, bažina, brod: tam stačí nabídka s názvem).</summary>
+        public static bool ShowsRing(TargetKind kind)
+        {
+            return kind != TargetKind.Water;
+        }
+
         private void Update()
         {
             var target = _session == null ? null : _session.Selected;
+            if (target != null && !ShowsRing(target.Kind)) target = null;
             _line.enabled = target != null;
             if (target == null)
             {

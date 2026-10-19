@@ -78,6 +78,49 @@ public class ForestryTests
         Assert.False(Movement.CanStand(island, trunk.X, trunk.Y, 0.28), "Ležící kmen blokuje cestu.");
     }
 
+    /// <summary>Z koruny pokáceného stromu spadnou klacky (5 až 15 podle výšky) do hromádek u horní části kmene.</summary>
+    [Fact]
+    public void FallenTreeDropsSticksFromCrown()
+    {
+        var island = World();
+        var tree = OpenTree(island);
+        var chopper = new AnimalTarget(1, tree.X - 1, tree.Y, Person());
+        var expected = Forestry.CrownSticks(tree);
+        var rules = GameData.Wood.CrownSticks;
+        Assert.InRange(expected, rules.Min, rules.Max);
+
+        Fell(island, tree, chopper, new Animals(1), [chopper]);
+
+        var piles = island.Ground.All;
+        Assert.NotEmpty(piles);
+        Assert.All(piles, p => Assert.Equal(ItemKind.Stick, p.Item.Kind));
+        Assert.InRange(piles.Sum(p => p.Count), 1, expected);
+        // Klacky leží u koruny (padá od sekáče, tedy na východ), ne u pařezu.
+        Assert.All(piles, p => Assert.True(p.X - tree.X > tree.Height * 0.5, "Klacky mají ležet u koruny."));
+    }
+
+    /// <summary>Strom napřed praská, pak padá. Dopadne až po obojím (crackSeconds + fallSeconds).</summary>
+    [Fact]
+    public void TreeLandsOnlyAfterCrackingAndFalling()
+    {
+        var island = World();
+        var tree = OpenTree(island);
+        var chopper = new AnimalTarget(1, tree.X - 1, tree.Y, Person());
+        var inventory = WithAxe();
+        while (island.Forestry.Chop(island, Tx(tree), Ty(tree), chopper.Id, chopper.X, chopper.Y, inventory) != WoodResult.TreeFalling)
+        {
+            Swing(island);
+        }
+
+        var rules = GameData.Wood;
+        island.Forestry.Update(island, new Animals(1), [chopper], rules.WarnSeconds - 0.2, TestPlants.Clock());
+        Assert.Empty(island.Forestry.Timbers);
+        Assert.Contains(island.Forestry.TreeStates(), t => t.State == TreeState.Falling && t.Growth > rules.CrackSeconds);
+
+        island.Forestry.Update(island, new Animals(1), [chopper], 0.3, TestPlants.Clock());
+        Assert.Single(island.Forestry.Timbers);
+    }
+
     /// <summary>Kmen se rozseká na klady, klad na díly dřeva (podle druhu), díl dřeva na třísky.</summary>
     [Fact]
     public void TrunkIsCutIntoPiecesWoodAndSplinters()

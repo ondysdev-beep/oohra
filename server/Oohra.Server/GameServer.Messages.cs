@@ -221,7 +221,10 @@ public sealed partial class GameServer
 
     private TreeStateView[] TreeStateViews()
     {
-        return Island.Forestry.TreeStates().Select(t => new TreeStateView(t.TileIndex, t.State, (float)t.Angle, t.Kind, (float)t.Height, (float)t.Growth)).ToArray();
+        var rules = GameData.Wood;
+        return Island.Forestry.TreeStates().Select(t => t.State == TreeState.Falling
+            ? new TreeStateView(t.TileIndex, t.State, (float)t.Angle, Elapsed: (float)t.Growth, Crack: (float)rules.CrackSeconds, Fall: (float)rules.FallSeconds)
+            : new TreeStateView(t.TileIndex, t.State, (float)t.Angle, t.Kind, (float)t.Height, (float)t.Growth)).ToArray();
     }
 
     private TimberView[] TimberViews()

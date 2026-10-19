@@ -16,6 +16,9 @@ namespace Oohra.Core.World
 
         /// <summary>V těle už nic není.</summary>
         Empty = 5,
+
+        /// <summary>Mezi postavou a tělem je zeď nebo jiná překážka.</summary>
+        Blocked = 6,
     }
 
     /// <summary>

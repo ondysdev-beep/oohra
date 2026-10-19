@@ -1,3 +1,4 @@
+using Oohra.Core.Data;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Rng;
@@ -30,7 +31,7 @@ public class StructureTests
         var (x, y) = OpenSpot(island);
 
         Assert.Equal(BuildResult.NeedMaterials, Build(island, Sticks(1), x, y, x + 1, y, 0));
-        Assert.Equal(BuildResult.TooFar, Build(island, Sticks(2), x, y, x + 3.6, y, 0));
+        Assert.Equal(BuildResult.TooFar, Build(island, Sticks(2), x, y, x + GameData.Building.PlaceReach + 0.1, y, 0));
         Assert.Empty(island.Structures.All);
     }
 

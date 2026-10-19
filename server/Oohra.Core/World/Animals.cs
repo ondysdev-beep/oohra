@@ -200,7 +200,7 @@ public sealed partial class Animals
     /// Rána zvířeti (prototyp attack). Králíka chytí hned. Ostatním ubere životy: pěst málo, kopí víc
     /// (zkušený lovec ještě víc), vyčerpané zvíře po výpadu dostane dvojnásobek. Procvičí lov.
     /// </summary>
-    public HuntResult Attack(int animalId, AnimalTarget hunter, Inventory inventory, double now)
+    public HuntResult Attack(int animalId, AnimalTarget hunter, Inventory inventory, double now, Island? island = null)
     {
         var rules = GameData.Animals.Hunt;
         var animal = Find(animalId);
@@ -212,6 +212,12 @@ public sealed partial class Animals
         if (Distance(animal.X, animal.Y, hunter.X, hunter.Y) > rules.Reach)
         {
             return HuntResult.TooFar;
+        }
+
+        // Přes zeď ani kmen se udeřit nedá.
+        if (island is not null && !Sight.Clear(island, hunter.X, hunter.Y, animal.X, animal.Y))
+        {
+            return HuntResult.Blocked;
         }
 
         if (_lastAttack.TryGetValue(hunter.Id, out var last) && _time - last < rules.CooldownSeconds)
@@ -804,7 +810,9 @@ public sealed partial class Animals
         var moved = Move(island, a, a.ChargeX * speed * dt, a.ChargeY * speed * dt, radius);
         foreach (var p in players)
         {
-            if (!p.Character.IsDead && p.Character.StunSeconds <= 0 && Distance(p.X, p.Y, a.X, a.Y) < HitDistance)
+            // Přes zeď zvíře nezasáhne (narazí do ní).
+            if (!p.Character.IsDead && p.Character.StunSeconds <= 0 && Distance(p.X, p.Y, a.X, a.Y) < HitDistance
+                && Sight.Clear(island, a.X, a.Y, p.X, p.Y))
             {
                 p.Character.Wound(woundMin + _rng.NextDouble() * woundRange, a.Kind, clock.TotalMinutes);
                 a.State = AnimalState.Exhaust;

@@ -1,3 +1,4 @@
+using Oohra.Core.Data;
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.Plants;
@@ -134,7 +135,7 @@ public class FireTests
         var (x, y) = SpotWithFreeEast();
         var fires = new Fires();
 
-        Assert.Equal(FireResult.TooFar, fires.Light(_island, WithMaterials(3, 1), x, y, x + 3.6, y));
+        Assert.Equal(FireResult.TooFar, fires.Light(_island, WithMaterials(3, 1), x, y, x + GameData.Building.PlaceReach + 0.1, y));
         Assert.Equal(FireResult.Lit, fires.Light(_island, WithMaterials(3, 1), x, y, x + 0.83, y + 0.27));
 
         Assert.Equal((x + 0.83, y + 0.27), (fires.All[0].X, fires.All[0].Y));
