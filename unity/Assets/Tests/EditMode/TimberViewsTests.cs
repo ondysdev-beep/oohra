@@ -43,6 +43,33 @@ namespace Oohra.Client.Tests
             }
         }
 
+        /// <summary>Kmen z katalogu (6 m dlouhý, podél osy Z jako z Meshy) se natáhne na délku kmene a tloušťku 0,44 m.</summary>
+        [Test]
+        public void CatalogLogOfAnyLengthFitsTrunk()
+        {
+            var catalog = ScriptableObject.CreateInstance<VisualCatalog>();
+            var prefab = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            prefab.transform.localScale = new Vector3(0.4f, 0.4f, 6f);
+            catalog.Log = prefab;
+            VisualCatalog.Current = catalog;
+            var parent = new GameObject("Dřevo");
+            try
+            {
+                var trunk = TimberViews.Create(parent.transform, new TimberView(1, TimberKind.Trunk, TreeKind.Oak, 0f, 0f, 0f, 4));
+                var bounds = VisualCatalog.BoundsOf(trunk.transform.Find("Model").gameObject);
+
+                Assert.AreEqual(4f, bounds.size.x, 0.05f, "Délka kmene podél směru (osa X).");
+                Assert.AreEqual(TimberViews.Thickness, bounds.size.y, 0.02f);
+                Assert.AreEqual(TimberViews.Thickness, bounds.size.z, 0.02f);
+                Assert.AreEqual(0f, bounds.min.y, 0.02f, "Kmen leží na zemi.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(parent);
+                Object.DestroyImmediate(prefab);
+            }
+        }
+
         [Test]
         public void StumpIsLowCylinder()
         {

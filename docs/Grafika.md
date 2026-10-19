@@ -120,9 +120,11 @@ postava kruh o poloměru 28 cm, takže model by neměl být o moc širší.
 
 | Políčko | Velikost | Střed | Poznámka |
 |---|---|---|---|
-| **Stump** (pařez) | hra ho srovná na výšku 0,6 m | na středu nezáleží | Zůstane po pokáceném stromu (všech druhů). |
-| **Log** (ležící kmen) | model **podél osy X**, hra ho srovná na 1 m (nejdelší rozměr) a natáhne na délku kmene (3 až 7 m) | na středu nezáleží | Tloušťka by měla odpovídat asi 0,44 m (na serveru kmen blokuje jako válec o poloměru 22 cm). Konce kmene se při natažení protáhnou, hodí se jednoduchý válec s kůrou. |
-| **LogPiece** (klad) | model **podél osy X**, hra ho srovná na 1 m | na středu nezáleží | Kus kmene 1 m: leží na zemi a postava ho nese na rameni. |
+| **Stumps** (pařezy) | hra je srovná na výšku 0,6 m | na středu nezáleží | Zůstanou po pokáceném stromu. Víc variant = víc políček (třeba dub, borovice, bříza), každý pařez dostane jednu. |
+| **Log** (ležící kmen) | jakkoli dlouhý model ležící **podél osy X nebo Z** (třeba 6 m z Meshy). Hra ho natáhne na délku kmene (3 až 7 m) a tloušťku srovná na 0,44 m | na středu nezáleží | Na serveru kmen blokuje jako válec o poloměru 22 cm. Konce se při natažení protáhnou. |
+| **LogPiece** (klad) | stejně jako kmen, hra ho srovná na 1 m délky a 0,44 m tloušťky | na středu nezáleží | Kus kmene 1 m: leží na zemi a postava ho nese na rameni. |
+| **Saplings** (mladé stromky) | hra je srovná na výšku podle růstu | na středu nezáleží | Dokud mladý strom roste. Dorostlý strom pak použije model svého druhu. Prázdné = zmenšený strom druhu. |
+| **Torch** (pochodeň, nezapálená) | hra ji srovná na 0,6 m | na středu nezáleží | V ruce postavy, plamen, kouř a světlo přidá hra nahoře sama. |
 
 Prázdné políčko = válec z kódu v barvě kůry podle druhu stromu (bříza světlá, suchý strom šedý).
 
@@ -253,6 +255,27 @@ server podle dlaždic). Podél břehu leží na hladině pruh pěny, který poma
 
 Když strom nebo stavba zakryje postavu, hra je zprůhlední. U vlastních modelů hra použije průhledné
 kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůhlední se celý model najednou.
+
+## Modely z Meshy (Oohra_Meshy_Prompty.md): kam s nimi
+
+| Soubor | Políčko katalogu |
+|---|---|
+| `tree_oak_*`, `tree_pine_*` (i smrk), `tree_birch_*`, `tree_willow_*`, `tree_dead_*` | **OakTrees**, **ConiferTrees**, **BirchTrees**, **WillowTrees**, **DeadTrees** (výšku dá hra podle druhu, nemusíš ji ladit) |
+| `stump_*` | **Stumps** (víc variant) |
+| `trunk_6m` | **Log** |
+| `log_1m` | **LogPiece** |
+| `sapling_01` | **Saplings** |
+| `plant_shape0` až `plant_shape3` | **Plants**, políčka 0 až 3 |
+| `grass_tuft_01`, `grass_tuft_02` | **Grass** |
+| `rock_stone_01` až `03` | **Rocks** (kameny v hromadách na skalách) |
+| `animal_boar`, `animal_wolf`, `animal_rabbit`, `animal_deer` | **Boar**, **Wolf**, **Rabbit**, **Deer** |
+| `player_ancient`, `player_new`, `player_third` | **PlayerAncient**, **Player**, **PlayerThird** |
+| `item_torch` | **Torch** |
+| `item_bag_small`, `item_bag_large` | **SmallBag**, **LargeBag** (na zádech, strana k zádům na -Z) |
+| `build_wall`, `build_doorframe`, `build_door`, `build_trap`, `build_stockpile`, `build_campfire` | **Wall**, **DoorFrame**, **Door**, **Trap**, **Stockpile**, **Campfire** |
+| `deco_bench`, `deco_totem`, `deco_stone_circle`, `deco_drying_rack` | **Decorations** s id `bench`, `totem`, `stone_circle` (sušák jen když přidáš id `drying_rack` do decorations.json) |
+
+**Zatím se nepoužijí** (můžeš je mít připravené): `wood_piece`, `splinters` a ostatní věci `item_*` (sekera, nůž, kopí, klacek, kámen, kůže, kost, jehla, lýko, deník, pazourek). Hra věci zatím nekreslí v ruce ani na zemi, jen v batohu jako barevný čtvereček. Dál houba a bylinka (rostliny mají jen 4 tvary), rákos, orobinec a kapradí na ozdobu, balvan, vrstvená skála a drobné kameny (skály jsou dlaždice terénu), vchody do jeskyní (etapa jeskyně), had, pijavice, klíště, vosí hnízdo a netopýr (etapa nebezpečí), patra, střechy, žebřík a schody (etapa staveb), chýše cizích kmenů a zříceniny Pradávných (zatím tvary z kódu, políčka přidám, až budou modely).
 
 ## Co hlídat
 

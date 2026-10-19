@@ -93,12 +93,7 @@ namespace Oohra.Client
             var prefab = timber.Kind == TimberKind.Trunk ? VisualCatalog.Current.Log : VisualCatalog.Current.LogPiece;
             if (prefab != null)
             {
-                // Model se srovná na 1 m (nejdelší rozměr) a pak natáhne podél osy X na délku kmene.
-                var model = VisualCatalog.Spawn(prefab, root.transform, "Model", largest: 1f);
-                model.transform.localPosition = new Vector3(0f, -Thickness / 2, 0f);
-                model.transform.localRotation = Quaternion.identity;
-                var scale = model.transform.localScale;
-                model.transform.localScale = new Vector3(scale.x * timber.Length, scale.y, scale.z);
+                Fit(VisualCatalog.Spawn(prefab, root.transform, "Model"), timber.Length);
             }
             else
             {
@@ -111,6 +106,41 @@ namespace Oohra.Client
 
             Pickable.Attach(root, InteractionTarget.ForTimber(timber.Id, timber.X, timber.Y));
             return root;
+        }
+
+        /// <summary>
+        /// Natáhne model kmene na délku (podél osy X kořene) a tloušťku Thickness. Model může ležet podél X i Z
+        /// a mít jakoukoli délku (třeba 6 m kmen z Meshy): delší z vodorovných rozměrů je délka kmene.
+        /// </summary>
+        public static void Fit(GameObject model, float length)
+        {
+            var transform = model.transform;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
+            var size = Local(model).size;
+            var alongZ = size.z > size.x;
+
+            // Model ležící podél Z se otočí o 90°, jeho osa Z pak míří podél kmene (osa X kořene).
+            transform.localRotation = alongZ ? Quaternion.Euler(0f, 90f, 0f) : Quaternion.identity;
+            var lengthwise = Mathf.Max(0.01f, alongZ ? size.z : size.x);
+            var across = Mathf.Max(0.01f, alongZ ? size.x : size.z);
+            var thick = Thickness / across;
+            var stretch = length / lengthwise;
+            transform.localScale = alongZ
+                ? new Vector3(thick, Thickness / Mathf.Max(0.01f, size.y), stretch)
+                : new Vector3(stretch, Thickness / Mathf.Max(0.01f, size.y), thick);
+            transform.localPosition = new Vector3(0f, -Thickness / 2, 0f);
+        }
+
+        /// <summary>Rozměry modelu v souřadnicích jeho rodiče (bez otočení kořene ve světě).</summary>
+        private static Bounds Local(GameObject model)
+        {
+            var parent = model.transform.parent;
+            var (position, rotation) = (parent.position, parent.rotation);
+            parent.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            var bounds = VisualCatalog.BoundsOf(model);
+            parent.SetPositionAndRotation(position, rotation);
+            return bounds;
         }
 
         /// <summary>Barva kůry podle druhu stromu (bříza světlá, suchý strom šedý).</summary>

@@ -48,14 +48,20 @@ namespace Oohra.Client
         public GameObject[] DeadTrees = new GameObject[0];
 
         [Header("Kácení (prázdné = tvar z kódu)")]
-        [Tooltip("Pařez po pokáceném stromu. Hra ho srovná na výšku 0,6 m.")]
-        public GameObject Stump;
+        [Tooltip("Pařezy po pokáceném stromu (víc variant = víc políček, každý pařez dostane jednu). Hra je srovná na výšku 0,6 m.")]
+        public GameObject[] Stumps = new GameObject[0];
 
-        [Tooltip("Ležící kmen: model 1 m dlouhý podél osy X (hra ho srovná na 1 m a natáhne na délku kmene).")]
+        [Tooltip("Ležící kmen (třeba trunk_6m): jakkoli dlouhý model ležící podél osy X nebo Z. Hra ho natáhne na délku kmene a tloušťku srovná na 0,44 m.")]
         public GameObject Log;
 
-        [Tooltip("Klad (kus kmene 1 m) na zemi a na rameni postavy: model podél osy X, hra ho srovná na 1 m.")]
+        [Tooltip("Klad (kus kmene 1 m, třeba log_1m) na zemi a na rameni postavy. Hra ho srovná na 1 m délky a tloušťku 0,44 m.")]
         public GameObject LogPiece;
+
+        [Tooltip("Mladý stromek, dokud roste (třeba sapling_01). Hra ho srovná na výšku podle růstu. Prázdné = zmenšený strom druhu.")]
+        public GameObject[] Saplings = new GameObject[0];
+
+        [Tooltip("Pochodeň v ruce, nezapálená (třeba item_torch). Hra ji srovná na 0,6 m, plamen, kouř a světlo přidá nahoře sama.")]
+        public GameObject Torch;
 
         [Header("Batohy na zádech postavy (prázdné = kvádr z kódu)")]
         [Tooltip("Malý batoh z lýka. Přední strana (k zádům) míří k -Z modelu, hra ho srovná na výšku 0,4 m.")]
@@ -217,6 +223,18 @@ namespace Oohra.Client
                 case TreeKind.Willow: return WillowTrees;
                 default: return DeadTrees;
             }
+        }
+
+        /// <summary>Pařez podle varianty (0 až 1), nebo null.</summary>
+        public GameObject Stump(float variant)
+        {
+            return Pick(Stumps, variant);
+        }
+
+        /// <summary>Mladý stromek podle varianty (0 až 1), nebo null.</summary>
+        public GameObject Sapling(float variant)
+        {
+            return Pick(Saplings, variant);
         }
 
         /// <summary>Model ze seznamu podle varianty (prázdná políčka se přeskočí), nebo null.</summary>
