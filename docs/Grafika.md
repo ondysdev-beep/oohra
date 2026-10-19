@@ -57,6 +57,7 @@ Kolize (Collider) v prefabu nevadí, hra je smaže. Kudy se dá projít, počít
 | **Stockpile** (koš) | průměr asi 0,6 m, výška 0,45 m | dole uprostřed | |
 | **Boar, Rabbit, Deer, Wolf** (zvířata) | divočák 1 m dlouhý, vlk 0,95 m, jelen 1,1 m, králík 0,35 m | nohy dole, hlava ve směru osy Z (dopředu) | Mrtvé zvíře hra položí na bok. |
 | **Snake** (had) | asi 1 m dlouhý, leží na zemi | břicho dole, hlava ve směru osy Z | Animator parametr `Stav`: 4 spí stočený (zima, noc), 6 varuje (vztyčený, syčí), 0 leze, 9 mrtvý. |
+| **FloodColor** (barva, ne model) | | | Barva kalné vody jarní záplavy nad zatopenou souší, průhlednost v alfě. |
 | **WaspNest** (vosí hnízdo) | asi 0,3 × 0,4 m | úchyt nahoře uprostřed | Hra ho pověsí na strom asi 2,6 m nad zem. Rozzuřené vosy kolem kreslí hra sama (roj teček). |
 
 ## Rostliny a barva druhu
