@@ -66,6 +66,12 @@ public sealed partial class GameServer
             return;
         }
 
+        if (player.Level > 0 && GroundOnly(type))
+        {
+            // Z patra se na zem nedosáhne (sbírat, pít, lovit, rozdělat oheň…).
+            return;
+        }
+
         switch (type)
         {
             case MessageType.Input:
@@ -159,6 +165,29 @@ public sealed partial class GameServer
             case MessageType.TeachRecipe:
                 TeachAction(player, Messages.ReadTeachRecipe(reader));
                 break;
+            case MessageType.UseLadder:
+                var ladder = Messages.ReadUseLadder(reader);
+                if (!player.Character.IsDead)
+                {
+                    var (climbed, level, top) = Storeys.Climb(Island, ladder, player.Level, player.X, player.Y);
+                    if (climbed is ClimbResult.Up or ClimbResult.Down)
+                    {
+                        (player.Level, player.X, player.Y) = (level, top.X, top.Y);
+                    }
+
+                    SendEvent(player, new GameEvent(EventKind.Climb, (byte)climbed, default, []));
+                }
+
+                break;
+            case MessageType.JumpDown:
+                if (!player.Character.IsDead && player.Level > 0)
+                {
+                    player.Level = 0;
+                    Storeys.JumpDown(player.Character, Clock.TotalMinutes);
+                    SendBodyEvents(player);
+                }
+
+                break;
             case MessageType.UseCave:
                 var entrance = Messages.ReadUseCave(reader);
                 if (!player.Character.IsDead)
@@ -224,6 +253,14 @@ public sealed partial class GameServer
                 break;
             case MessageType.RemoveStructure:
                 var structureId = Messages.ReadRemoveStructure(reader);
+                // Rozebrat jde stavbu ve stejném podlaží, nebo desku těsně nad hlavou (strop, střechu).
+                var removing = Island.Structures.Find(structureId);
+                if (removing is not null && removing.Level != player.Level && !(Roofs.IsDeck(removing) && Roofs.DeckHeight(removing) == player.Level + 1))
+                {
+                    BuildAction(player, () => BuildResult.TooFar);
+                    break;
+                }
+
                 BuildAction(player, () => Island.Structures.Remove(structureId, player.Inventory, player.X, player.Y, player.Id, Tribes));
                 break;
             case MessageType.Attack:
@@ -311,8 +348,18 @@ public sealed partial class GameServer
     }
 
     /// <summary>Režim stavby: zeď jde do staveb, oheň mezi ohně. Kam a pod jakým úhlem, určil hráč.</summary>
-    private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle, float Length, string Decoration) place)
+    private void Place(PlayerSession player, (BuildKind Kind, float X, float Y, float Angle, float Length, string Decoration, byte Level) place)
     {
+        // V patře se staví v patře, ze země jde postavit jen podlaha patra (Level 1).
+        var level = player.Level > 0 ? player.Level : place.Kind == BuildKind.Floor ? Math.Min((int)place.Level, Roofs.TopLevel) : 0;
+        if (level > 0)
+        {
+            BuildAction(player, () => Island.Structures.Build(
+                Island, Fires, player.Inventory, player.X, player.Y, place.Kind, place.X, place.Y, place.Angle, place.Length,
+                PlayerPositions(level), player.Character, player.Id, place.Decoration, level));
+            return;
+        }
+
         if (place.Kind == BuildKind.Campfire)
         {
             FireAction(player, () => Fires.Light(Island, player.Inventory, player.X, player.Y, place.X, place.Y, player.Character));
@@ -538,9 +585,20 @@ public sealed partial class GameServer
     }
 
     /// <summary>Kde stojí hráči ve hře (zeď se nesmí postavit na nikoho z nich).</summary>
-    private List<Position> PlayerPositions()
+    private List<Position> PlayerPositions(int level = 0)
     {
-        return InWorld.Select(p => new Position(p.X, p.Y)).ToList();
+        return InWorld.Where(p => p.Level == level).Select(p => new Position(p.X, p.Y)).ToList();
+    }
+
+    /// <summary>Úmysly, které míří na zem (z patra nejdou).</summary>
+    private static bool GroundOnly(MessageType type)
+    {
+        return type is MessageType.Harvest or MessageType.Drink or MessageType.GatherSticks or MessageType.TakeStone
+            or MessageType.FeedFire or MessageType.Bake or MessageType.Attack or MessageType.Butcher or MessageType.Fish
+            or MessageType.TakeCatch or MessageType.DrawSign or MessageType.EraseSign or MessageType.StoreItem or MessageType.TakeItem
+            or MessageType.TakeFromCorpse or MessageType.GiveToStranger or MessageType.LightTorch or MessageType.ChopTree
+            or MessageType.ChopTimber or MessageType.PickUpTimber or MessageType.DropTimber or MessageType.StripBark or MessageType.TakeAsh
+            or MessageType.Smear or MessageType.SmokeOutNest or MessageType.HangMeat or MessageType.TakeFromRack or MessageType.UseCave;
     }
 
     private void GatherMaterial(PlayerSession player, MessageType type, (int TileX, int TileY) tile)

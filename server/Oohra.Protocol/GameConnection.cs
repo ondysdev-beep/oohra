@@ -383,9 +383,21 @@ public sealed class GameConnection : IDisposable
     }
 
     /// <summary>Režim stavby: postavit stavbu se středem (x, y), úhlem v radiánech a délkou zdi v metrech.</summary>
-    public void Place(BuildKind kind, float x, float y, float angle, float length = 1f, string decoration = "")
+    public void Place(BuildKind kind, float x, float y, float angle, float length = 1f, string decoration = "", byte level = 0)
     {
-        Send(w => Messages.WritePlace(w, kind, x, y, angle, length, decoration));
+        Send(w => Messages.WritePlace(w, kind, x, y, angle, length, decoration, level));
+    }
+
+    /// <summary>Vylézt nahoru nebo slézt dolů po žebříku.</summary>
+    public void UseLadder(int ladderId)
+    {
+        Send(w => Messages.WriteUseLadder(w, ladderId));
+    }
+
+    /// <summary>Seskočit z patra dolů (trochu to bolí).</summary>
+    public void JumpDown()
+    {
+        Send(Messages.WriteJumpDown);
     }
 
     /// <summary>Rozebrat stavbu (u zdi se vrátí klacek).</summary>

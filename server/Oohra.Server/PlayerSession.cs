@@ -72,6 +72,9 @@ public sealed class PlayerSession
 
     public double NextTracksAt { get; set; }
 
+    /// <summary>Podlaží: 0 přízemí, 1 patro (na podlaze patra).</summary>
+    public int Level { get; set; }
+
     /// <summary>Komu (které postavě) a kolik objevených jeskyní se naposledy poslalo v seznamu vchodů.</summary>
     public (object? Character, int Known) SentCaves { get; set; }
 

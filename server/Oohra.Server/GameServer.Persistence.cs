@@ -102,6 +102,7 @@ public sealed partial class GameServer
             X = p.X,
             Y = p.Y,
             Facing = p.Facing,
+            Level = p.Level,
             Lives = p.Lives,
             Signature = p.Signature,
             BodyLeft = p.BodyLeft,
@@ -124,6 +125,7 @@ public sealed partial class GameServer
         {
             KeyHash = save.KeyHash,
             Facing = save.Facing,
+            Level = save.Level,
             Lives = save.Lives,
             Signature = save.Signature,
             BodyLeft = save.BodyLeft,

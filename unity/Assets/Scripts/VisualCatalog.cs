@@ -114,6 +114,9 @@ namespace Oohra.Client
         [Tooltip("Střecha 2 × 2 m: spodek ve výšce 2 m nad zemí (model ho má mít v sobě), střed dole uprostřed čtverce.")]
         public GameObject Roof;
 
+        [Tooltip("Žebřík k patru: asi 2,2 m vysoký, opřený ve směru osy X (k podlaze patra), dole uprostřed.")]
+        public GameObject Ladder;
+
         [Header("Dekorace (id stejné jako v server/Oohra.Core/Data/decorations.json)")]
         [Tooltip("Pro každou dekoraci její id a prefab (střed dole uprostřed, velikost podle radius v decorations.json).")]
         public DecorationModel[] Decorations = new DecorationModel[0];
@@ -309,6 +312,7 @@ namespace Oohra.Client
                 case BuildKind.Post: return Post;
                 case BuildKind.Floor: return Floor;
                 case BuildKind.Roof: return Roof;
+                case BuildKind.Ladder: return Ladder;
                 case BuildKind.Campfire: return Campfire;
                 default: return null;
             }

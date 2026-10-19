@@ -202,13 +202,16 @@ public sealed partial class GameServer : IDisposable
                 // V jeskyni neprší, nefouká a teplota je stálá.
                 var inCave = Island.InCave(player.X, player.Y);
                 var weather = inCave ? WeatherState.Calm : CurrentWeather;
-                var sheltered = inCave || Shelter.IsSheltered(Island, player.X, player.Y);
-                var roofed = inCave || Roofs.IsRoofed(Island.Structures, player.X, player.Y);
+                var sheltered = inCave || Shelter.IsSheltered(Island, player.X, player.Y, player.Level);
+                var roofed = inCave || Roofs.IsRoofed(Island.Structures, player.X, player.Y, player.Level);
                 Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), sheltered, weather, inCave ? GameData.Caves.Temperature : null, roofed);
                 Torch.Burn(player.Character, Clock.TotalMinutes, minutes, weather);
                 Caves.Discover(Island, player.Character, player.X, player.Y, Clock.TotalMinutes);
                 Caves.Smoke(Island, Fires, player.Character, player.X, player.Y, minutes, Clock.TotalMinutes);
-                Hazards.Update(player.Character, Island, Fires, player.X, player.Y, Clock, minutes, _rng);
+                if (player.Level == 0)
+                {
+                    Hazards.Update(player.Character, Island, Fires, player.X, player.Y, Clock, minutes, _rng);
+                }
             }
 
             if (player.Character.IsDead && !player.BodyLeft)
@@ -390,15 +393,23 @@ public sealed partial class GameServer : IDisposable
                 continue;
             }
 
-            if (cracked.Any(r => Roofs.Covers(r, player.X, player.Y)))
+            // Varování: praská deska nad hlavou nebo podlaha patra pod nohama.
+            if (cracked.Any(r => Roofs.IsDeck(r) && Roofs.DeckHeight(r) >= player.Level && Roofs.Covers(r, player.X, player.Y)))
             {
                 c.Report(now, BodyEvent.RoofCracking);
             }
 
-            if (fallen.Any(r => Roofs.Covers(r, player.X, player.Y)))
+            if (fallen.Any(r => Roofs.IsDeck(r) && Roofs.DeckHeight(r) > player.Level && Roofs.Covers(r, player.X, player.Y)))
             {
                 c.TakeDamage(GameData.Building.Roof.Damage, DeathCause.Collapse);
                 c.Report(now, BodyEvent.HitByRoof);
+            }
+
+            // Pod nohama v patře už podlaha není (spadla, nebo ji někdo rozebral): postava spadne.
+            if (player.Level > 0 && !Roofs.StandsOn(Island.Structures, player.X, player.Y, player.Level, GameData.Movement.Radius))
+            {
+                player.Level = 0;
+                Storeys.Fall(c, now);
             }
         }
     }
@@ -572,7 +583,7 @@ public sealed partial class GameServer : IDisposable
         }
 
         var distance = Movement.Distance(Island, c, player.X, player.Y, realSeconds) * Movement.CarryMultiplier(player.Inventory);
-        var (x, y) = Movement.Step(Island, player.X, player.Y, player.InputX, player.InputY, distance);
+        var (x, y) = Movement.Step(Island, player.X, player.Y, player.InputX, player.InputY, distance, player.Level);
         player.X = x;
         player.Y = y;
         player.Facing = Math.Atan2(player.InputY, player.InputX);

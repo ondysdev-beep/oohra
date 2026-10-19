@@ -87,7 +87,8 @@ namespace Oohra.Client
 
             var ray = _camera.ScreenPointToRay(mouse.position.ReadValue());
             float distance;
-            if (!new Plane(Vector3.up, Vector3.zero).Raycast(ray, out distance))
+            // V patře se kliká na podlahu patra (ve výšce postavy), jinak na zem.
+            if (!new Plane(Vector3.up, Vector3.up * _session.SelfHeight).Raycast(ray, out distance))
             {
                 return;
             }

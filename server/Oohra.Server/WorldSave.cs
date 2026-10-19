@@ -20,6 +20,9 @@ public sealed class PlayerSave
 
     public double Facing { get; init; }
 
+    /// <summary>Podlaží (0 přízemí, 1 patro).</summary>
+    public int Level { get; init; }
+
     public int Lives { get; init; }
 
     public Signature? Signature { get; init; }
