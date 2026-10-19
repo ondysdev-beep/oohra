@@ -48,7 +48,7 @@ public sealed partial class Animals
             near.Character.Report(now, BodyEvent.SnakeWarning);
         }
 
-        if (d > rules.BiteRange || a.Aggro > 0)
+        if (d > rules.BiteRange || a.Aggro > 0 || !Sight.Clear(island, a.X, a.Y, near.X, near.Y))
         {
             return;
         }

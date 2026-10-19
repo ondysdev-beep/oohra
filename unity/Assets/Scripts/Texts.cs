@@ -114,6 +114,7 @@ namespace Oohra.Client
                 case GroundResult.Dropped: return "Položil jsi to na zem.";
                 case GroundResult.TooFar: return "Na to odsud nedosáhneš.";
                 case GroundResult.InventoryFull: return "Víc neuneseš. Polož něco na zem (B batoh, Položit).";
+                case GroundResult.Blocked: return "Mezi vámi je překážka (zeď nebo kmen).";
                 default: return "To už tu neleží.";
             }
         }
@@ -128,6 +129,7 @@ namespace Oohra.Client
                 case CorpseResult.NotFound: return "To už tu není.";
                 case CorpseResult.InventoryFull: return "Batoh je plný.";
                 case CorpseResult.TribeOnly: return "Prvních 24 hodin si věci smí vzít jen jeho kmen.";
+                case CorpseResult.Blocked: return "Mezi vámi je překážka (zeď nebo kmen).";
                 default: return "U těla už nic není.";
             }
         }
@@ -398,6 +400,7 @@ namespace Oohra.Client
                 case HuntResult.NeedSpear: return "Na rybaření potřebuješ kopí.";
                 case HuntResult.NotWater: return "Tady se rybařit nedá.";
                 case HuntResult.NotYours: return "Cizí past. Úlovek patří tomu, kdo ji postavil, a jeho kmeni.";
+                case HuntResult.Blocked: return "Mezi vámi je překážka (zeď nebo kmen).";
                 default: return result.ToString();
             }
         }

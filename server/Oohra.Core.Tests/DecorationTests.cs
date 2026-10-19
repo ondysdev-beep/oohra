@@ -62,7 +62,7 @@ public class DecorationTests
 
         Assert.Equal(BuildResult.NeedMaterials, Build(_island, Bag(sticks: 4, stones: 0), x, y, x + 1, y, "totem"));
         Assert.Equal(BuildResult.CannotBuildHere, Build(_island, Bag(sticks: 9, stones: 9), x, y, x + 1, y, "neexistuje"));
-        Assert.Equal(BuildResult.TooFar, Build(_island, Bag(sticks: 9, stones: 9), x, y, x + 5, y, "totem"));
+        Assert.Equal(BuildResult.TooFar, Build(_island, Bag(sticks: 9, stones: 9), x, y, x + GameData.Building.PlaceReach + 0.1, y, "totem"));
     }
 
     /// <summary>Dvě dekorace se nepřekrývají a ta, přes kterou se nedá projít, nevyroste na hráči.</summary>

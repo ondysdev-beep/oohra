@@ -19,6 +19,13 @@ namespace Oohra.Client
         /// <summary>Průhledný materiál URP/Lit (koruny stromů u postavy). Průhlednost je alfa v barvě.</summary>
         public const string FadeResource = "OohraFade";
 
+        /// <summary>
+        /// Průhledný URP/Lit s normálovou mapou. Hra ho nepoužívá, jen drží v sestavené hře verzi shaderu, kterou
+        /// potřebují průhledné kopie modelů z Meshy (FadeTarget). Bez něj by ji sestavení vyhodilo a stromy by
+        /// v Oohra.exe nezprůhledněly (v editoru ano).
+        /// </summary>
+        public const string FadeNormalResource = "OohraFadeNormal";
+
         /// <summary>Materiál zemi (URP/Terrain/Lit), míchá textury dlaždic.</summary>
         public const string TerrainResource = "OohraTerrain";
 
@@ -98,9 +105,14 @@ namespace Oohra.Client
         /// <summary>Nastaví URP/Lit na průhledný povrch (jako v inspektoru Surface Type: Transparent, Blending: Alpha).</summary>
         public static void MakeTransparent(Material material)
         {
+            // Stejně jako to nastaví Unity samo (průhlednost Alpha se zachovaným leskem): barva se předem vynásobí
+            // průhledností (_ALPHAPREMULTIPLY_ON), proto SrcBlend One. Tak má kopie za běhu stejná klíčová slova
+            // jako materiály v projektu a sestavená hra má její verzi shaderu.
             material.SetFloat("_Surface", 1f);
             material.SetFloat("_Blend", 0f);
-            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetFloat("_BlendModePreserveSpecular", 1f);
+            material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.One);
             material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             material.SetFloat("_SrcBlendAlpha", (float)UnityEngine.Rendering.BlendMode.One);
             material.SetFloat("_DstBlendAlpha", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);

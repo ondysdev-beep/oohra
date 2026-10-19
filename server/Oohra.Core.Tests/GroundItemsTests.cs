@@ -58,9 +58,9 @@ public class GroundItemsTests
         Assert.Equal(4, Assert.Single(ground.All).Count);
 
         // Zdálky nic, zblízka se sebere celá hromádka.
-        Assert.Equal(GroundResult.TooFar, ground.PickUp(pile.Id, hands, x + 5, y, 0));
-        Assert.Equal(GroundResult.TooFar, ground.PickUp(pile.Id, hands, x, y, 1));
-        Assert.Equal(GroundResult.Taken, ground.PickUp(pile.Id, hands, x, y, 0));
+        Assert.Equal(GroundResult.TooFar, ground.PickUp(_island, pile.Id, hands, x + 5, y, 0));
+        Assert.Equal(GroundResult.TooFar, ground.PickUp(_island, pile.Id, hands, x, y, 1));
+        Assert.Equal(GroundResult.Taken, ground.PickUp(_island, pile.Id, hands, x, y, 0));
         Assert.Empty(ground.All);
         Assert.Equal(4, hands.Count(ItemKind.Stick));
     }
@@ -75,10 +75,10 @@ public class GroundItemsTests
         hands.TryAdd(Item.Stick);
         hands.TryAdd(Item.Bast);
 
-        Assert.Equal(GroundResult.InventoryFull, ground.PickUp(pile.Id, hands, x, y, 0));
+        Assert.Equal(GroundResult.InventoryFull, ground.PickUp(_island, pile.Id, hands, x, y, 0));
 
         hands.Drop(1);
-        Assert.Equal(GroundResult.Taken, ground.PickUp(pile.Id, hands, x, y, 0));
+        Assert.Equal(GroundResult.Taken, ground.PickUp(_island, pile.Id, hands, x, y, 0));
         Assert.Equal(GameData.Gathering.Inventory.StackSize, hands.Count(ItemKind.Stone));
         Assert.Equal(12 - GameData.Gathering.Inventory.StackSize, Assert.Single(ground.All).Count);
     }

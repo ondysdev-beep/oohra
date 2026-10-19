@@ -86,8 +86,8 @@ namespace Oohra.Client
 
     /// <summary>
     /// Režim stavby pro všechny stavby. G ho zapne a vypne, F ho otevře rovnou s ohněm, 1 až 9 vybírá stavbu (za stavbami z kódu jsou dekorace ze serveru).
-    /// U kurzoru je průsvitný náhled stavby, nejdál 3,5 m od postavy. Levé tlačítko staví, pravé tlačítko
-    /// nebo Esc režim ukončí. R přepíná volnou a modulární stavbu:
+    /// U kurzoru je průsvitný náhled stavby, nejdál Reach od postavy. Levé tlačítko staví, Esc nebo G režim ukončí,
+    /// pravé tlačítko myši otáčí kamerou (Q a E v režimu stavby otáčí stavbou). R přepíná volnou a modulární stavbu:
     /// volně Q a E stavbou plynule otáčejí; modulárně se zeď přichytí ke konci jiné zdi (směr určí kurzor,
     /// Q a E ji kolem toho konce natáčejí po 15°) a v mezeře mezi dvěma konci se natáhne tak, aby zapadla.
     /// Dveře se vždy vsadí do nejbližší zdi s otvorem. Jestli se stavba opravdu postaví, rozhodne server.
@@ -95,7 +95,7 @@ namespace Oohra.Client
     public class BuildMode : MonoBehaviour
     {
         // Jak daleko smí postava stavět (jako placeReach v building.json, server to stejně ověří).
-        public const float Reach = 3.5f;
+        public const float Reach = 10f;
 
         // Jak blízko u otvoru musí kurzor být, aby se do něj vsadily dveře (jako snapDistance v building.json).
         private const float DoorSnap = 0.7f;
@@ -289,10 +289,7 @@ namespace Oohra.Client
                 Send();
             }
 
-            if (mouse.rightButton.wasPressedThisFrame)
-            {
-                Close();
-            }
+            // Pravé tlačítko myši otáčí kamerou (CameraRig), stavění zavře Esc nebo G.
         }
 
         private void ReadKeys()

@@ -71,7 +71,8 @@ namespace Oohra.Client
                 return;
             }
 
-            if (mouse.middleButton.isPressed)
+            // Otáčení myší: držet pravé nebo prostřední tlačítko (v režimu stavby jen tak, Q a E otáčí stavbou).
+            if (mouse.middleButton.isPressed || mouse.rightButton.isPressed)
             {
                 var delta = mouse.delta.ReadValue();
                 _yaw += delta.x * _mouseTurnSpeed;

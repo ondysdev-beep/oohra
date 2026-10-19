@@ -56,6 +56,13 @@ public sealed class GroundItems
             (x, y) = (playerX, playerY);
         }
 
+        return PutAt(island, item, count, x, y, level, now);
+    }
+
+    /// <summary>Položí věci přesně na místo (třeba klacky z koruny stromu). Stejná věc blízko se přidá na hromádku.</summary>
+    public GroundPile PutAt(Island island, Item item, int count, double x, double y, int level, double now)
+    {
+        var rules = GameData.Ground;
         var same = _piles.FindIndex(p => p.Level == level && p.Item == item && p.Count + count <= rules.MaxPile && Distance(p, x, y) <= rules.MergeRadius);
         Version++;
         if (same >= 0)
@@ -83,8 +90,8 @@ public sealed class GroundItems
         return GroundResult.Dropped;
     }
 
-    /// <summary>Sebere hromádku do batohu (kolik se vejde, zbytek leží dál).</summary>
-    public GroundResult PickUp(int pileId, Inventory inventory, double playerX, double playerY, int level)
+    /// <summary>Sebere hromádku do batohu (kolik se vejde, zbytek leží dál). Přes zeď ne.</summary>
+    public GroundResult PickUp(Island island, int pileId, Inventory inventory, double playerX, double playerY, int level)
     {
         var index = _piles.FindIndex(p => p.Id == pileId);
         if (index < 0)
@@ -96,6 +103,11 @@ public sealed class GroundItems
         if (pile.Level != level || Distance(pile, playerX, playerY) > GameData.Ground.Reach)
         {
             return GroundResult.TooFar;
+        }
+
+        if (!Sight.Clear(island, playerX, playerY, pile.X, pile.Y, level))
+        {
+            return GroundResult.Blocked;
         }
 
         var taken = 0;
