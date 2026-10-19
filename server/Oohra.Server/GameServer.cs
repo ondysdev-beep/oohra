@@ -400,7 +400,9 @@ public sealed partial class GameServer : IDisposable
     /// <summary>Statika střech: kdo je pod praskající střechou, dostane varování, kdo pod padající, ránu.</summary>
     private void RoofStatics(double realSeconds)
     {
-        var (cracked, fallen) = Island.Structures.Update(realSeconds);
+        // Lidé v patře váží (nosnost podlahy patra).
+        var people = InWorld.Where(p => p.Level > 0 && !p.Character.IsDead).Select(p => (p.X, p.Y, p.Level)).ToList();
+        var (cracked, fallen) = Island.Structures.Update(realSeconds, people);
         var now = Clock.TotalMinutes;
         foreach (var player in InWorld)
         {

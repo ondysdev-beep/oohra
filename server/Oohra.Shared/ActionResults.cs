@@ -278,6 +278,9 @@ namespace Oohra.Core.World
 
         /// <summary>Opravovat jde jen střecha.</summary>
         CannotRepair,
+
+        /// <summary>Tolik by podpory neunesly (nosnost): přidej sloupky nebo zdi, nebo lehčí materiál.</summary>
+        TooHeavy,
     }
 
     /// <summary>Jak dopadlo lezení po žebříku.</summary>
