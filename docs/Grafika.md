@@ -56,6 +56,8 @@ Kolize (Collider) v prefabu nevadí, hra je smaže. Kudy se dá projít, počít
 | **Trap** (past) | asi 0,6 × 0,6 m | dole uprostřed | Úlovek v pasti zatím kreslí hra (hnědá koule). |
 | **Stockpile** (koš) | průměr asi 0,6 m, výška 0,45 m | dole uprostřed | |
 | **Boar, Rabbit, Deer, Wolf** (zvířata) | divočák 1 m dlouhý, vlk 0,95 m, jelen 1,1 m, králík 0,35 m | nohy dole, hlava ve směru osy Z (dopředu) | Mrtvé zvíře hra položí na bok. |
+| **Snake** (had) | asi 1 m dlouhý, leží na zemi | břicho dole, hlava ve směru osy Z | Animator parametr `Stav`: 4 spí stočený (zima, noc), 6 varuje (vztyčený, syčí), 0 leze, 9 mrtvý. |
+| **WaspNest** (vosí hnízdo) | asi 0,3 × 0,4 m | úchyt nahoře uprostřed | Hra ho pověsí na strom asi 2,6 m nad zem. Rozzuřené vosy kolem kreslí hra sama (roj teček). |
 
 ## Rostliny a barva druhu
 
@@ -269,13 +271,15 @@ kopie jejich materiálů a pak vrátí původní, textury tedy zůstanou. Zprůh
 | `grass_tuft_01`, `grass_tuft_02` | **Grass** |
 | `rock_stone_01` až `03` | **Rocks** (kameny v hromadách na skalách) |
 | `animal_boar`, `animal_wolf`, `animal_rabbit`, `animal_deer` | **Boar**, **Wolf**, **Rabbit**, **Deer** |
+| `creature_snake` | **Snake** |
+| `creature_wasp_nest` | **WaspNest** |
 | `player_ancient`, `player_new`, `player_third` | **PlayerAncient**, **Player**, **PlayerThird** |
 | `item_torch` | **Torch** |
 | `item_bag_small`, `item_bag_large` | **SmallBag**, **LargeBag** (na zádech, strana k zádům na -Z) |
 | `build_wall`, `build_doorframe`, `build_door`, `build_trap`, `build_stockpile`, `build_campfire` | **Wall**, **DoorFrame**, **Door**, **Trap**, **Stockpile**, **Campfire** |
 | `deco_bench`, `deco_totem`, `deco_stone_circle`, `deco_drying_rack` | **Decorations** s id `bench`, `totem`, `stone_circle` (sušák jen když přidáš id `drying_rack` do decorations.json) |
 
-**Zatím se nepoužijí** (můžeš je mít připravené): `wood_piece`, `splinters` a ostatní věci `item_*` (sekera, nůž, kopí, klacek, kámen, kůže, kost, jehla, lýko, deník, pazourek). Hra věci zatím nekreslí v ruce ani na zemi, jen v batohu jako barevný čtvereček. Dál houba a bylinka (rostliny mají jen 4 tvary), rákos, orobinec a kapradí na ozdobu, balvan, vrstvená skála a drobné kameny (skály jsou dlaždice terénu), vchody do jeskyní (etapa jeskyně), had, pijavice, klíště, vosí hnízdo a netopýr (etapa nebezpečí), patra, střechy, žebřík a schody (etapa staveb), chýše cizích kmenů a zříceniny Pradávných (zatím tvary z kódu, políčka přidám, až budou modely).
+**Zatím se nepoužijí** (můžeš je mít připravené): `wood_piece`, `splinters` a ostatní věci `item_*` (sekera, nůž, kopí, klacek, kámen, kůže, kost, jehla, lýko, deník, pazourek). Hra věci zatím nekreslí v ruce ani na zemi, jen v batohu jako barevný čtvereček. Dál houba a bylinka (rostliny mají jen 4 tvary), rákos, orobinec a kapradí na ozdobu, balvan, vrstvená skála a drobné kameny (skály jsou dlaždice terénu), vchody do jeskyní (etapa jeskyně), pijavice a klíště (hra je nekreslí, jsou jen v příznacích), netopýr (s jeskyněmi), patra, střechy, žebřík a schody (etapa staveb), chýše cizích kmenů a zříceniny Pradávných (zatím tvary z kódu, políčka přidám, až budou modely).
 
 ## Co hlídat
 

@@ -71,6 +71,9 @@ public sealed class ServerConfig
     /// <summary>Cizí kmeny (NPC) v táborech ostrova.</summary>
     public bool Strangers { get; set; } = true;
 
+    /// <summary>Vosí hnízda štípou (v testech vypnuté, ať náhodné hnízdo u místa narození nic nezkazí).</summary>
+    public bool Wasps { get; set; } = true;
+
     /// <summary>Kam se zapisují nahlášení (tlačítko Nahlásit), jeden záznam JSON na řádek. Čte je správce.</summary>
     public string ReportsFile { get; set; } = "reports.jsonl";
 

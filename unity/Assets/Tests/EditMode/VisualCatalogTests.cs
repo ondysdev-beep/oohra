@@ -67,6 +67,21 @@ namespace Oohra.Client.Tests
             Object.DestroyImmediate(wall);
         }
 
+        /// <summary>Had a vosí hnízdo mají svá políčka v katalogu (modely creature_snake a creature_wasp_nest).</summary>
+        [Test]
+        public void SnakeAndWaspNestHaveSlots()
+        {
+            var catalog = ScriptableObject.CreateInstance<VisualCatalog>();
+            catalog.Snake = new GameObject("had");
+            catalog.Wolf = new GameObject("vlk");
+
+            Assert.AreSame(catalog.Snake, catalog.Animal(AnimalKind.Snake));
+            Assert.AreSame(catalog.Wolf, catalog.Animal(AnimalKind.Wolf));
+            Assert.IsNull(catalog.WaspNest);
+            Object.DestroyImmediate(catalog.Snake);
+            Object.DestroyImmediate(catalog.Wolf);
+        }
+
         /// <summary>Zeď z katalogu se zkrátí podél osy X, dveře dostanou pant (DoorSwing jím otáčí).</summary>
         [Test]
         public void WallIsStretchedAndDoorGetsHinge()

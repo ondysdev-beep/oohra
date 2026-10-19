@@ -51,6 +51,7 @@ namespace Oohra.Client
                 case AnimalKind.Boar: return "Divočák";
                 case AnimalKind.Deer: return "Jelen";
                 case AnimalKind.Wolf: return "Vlk";
+                case AnimalKind.Snake: return "Had";
                 default: return "Malé zvíře";
             }
         }
@@ -103,8 +104,8 @@ namespace Oohra.Client
             view.Shown = animal.State;
             if (view.Body != null)
             {
-                // Tvar z kódu: spící se přikrčí, barva ukazuje nebezpečí a únavu.
-                root.localScale = animal.State == AnimalState.Asleep ? new Vector3(1f, 0.6f, 1f) : Vector3.one;
+                // Tvar z kódu: spící se přikrčí (had se stočí), varující had se vztyčí, barva ukazuje nebezpečí a únavu.
+                root.localScale = ShapeScale(animal.Kind, animal.State);
                 Palette.SetColor(view.Body.gameObject, ColorFor(view.Color, animal.State));
             }
             else
@@ -112,6 +113,18 @@ namespace Oohra.Client
                 // Vlastní model: stav ze serveru jde do animace (parametr Stav, čísla podle AnimalState).
                 AnimatorTools.SetInt(view.Animator, StateParameter, (int)animal.State);
             }
+        }
+
+        private static Vector3 ShapeScale(AnimalKind kind, AnimalState state)
+        {
+            if (kind == AnimalKind.Snake)
+            {
+                if (state == AnimalState.Asleep) return new Vector3(3f, 1f, 0.35f);
+                if (state == AnimalState.Alert) return new Vector3(1f, 3f, 0.8f);
+                return Vector3.one;
+            }
+
+            return state == AnimalState.Asleep ? new Vector3(1f, 0.6f, 1f) : Vector3.one;
         }
 
         private static Color ColorFor(Color normal, AnimalState state)
@@ -152,6 +165,8 @@ namespace Oohra.Client
                     return Build(root, Palette.Hex("#9b6b3c"), new Vector3(0.38f, 0.45f, 1.1f), 0.95f, new Vector3(0.22f, 0.25f, 0.35f), 0.75f, PrimitiveType.Cube);
                 case AnimalKind.Wolf:
                     return Build(root, Palette.Hex("#7d7f84"), new Vector3(0.32f, 0.36f, 0.95f), 0.6f, new Vector3(0.24f, 0.24f, 0.34f), 0.42f, PrimitiveType.Cube);
+                case AnimalKind.Snake:
+                    return Build(root, Palette.Hex("#5a5a3a"), new Vector3(0.09f, 0.07f, 0.9f), 0.04f, new Vector3(0.11f, 0.06f, 0.14f), 0f, PrimitiveType.Cube);
                 default:
                     return Build(root, Palette.Hex("#4a3a30"), new Vector3(0.55f, 0.55f, 1.0f), 0.48f, new Vector3(0.42f, 0.36f, 0.36f), 0.25f, PrimitiveType.Cube);
             }

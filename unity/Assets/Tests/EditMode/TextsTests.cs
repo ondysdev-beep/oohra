@@ -68,6 +68,18 @@ namespace Oohra.Client.Tests
         }
 
         [Test]
+        public void EveryWaspResultHasTextAndSnakeHasName()
+        {
+            foreach (WaspResult result in Enum.GetValues(typeof(WaspResult)))
+            {
+                Assert.AreNotEqual(result.ToString(), Texts.For(result));
+            }
+
+            Assert.AreEqual("Had padl.", Texts.For(HuntResult.Killed, AnimalKind.Snake));
+            Assert.AreEqual("oteklá noha", Texts.For(Symptom.Swelling));
+        }
+
+        [Test]
         public void EveryFireResultHasText()
         {
             foreach (FireResult result in Enum.GetValues(typeof(FireResult)))

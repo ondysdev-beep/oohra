@@ -335,9 +335,11 @@ namespace Oohra.Client
 
             var symptomText = self.Symptoms.Length == 0 ? string.Empty : "PŘÍZNAKY  " + string.Join(" · ", self.Symptoms.Select(Texts.For));
             var leeches = self.Symptoms.Contains(Symptom.Leeches);
-            GUI.Label(new Rect(x + 10, y + 36, panelWidth - (leeches ? 170 : 20), 22), symptomText, _warn);
+            GUI.Label(new Rect(x + 10, y + 36, panelWidth - (leeches ? 300 : 150), 22), symptomText, _warn);
+            // Klíšťata se přisají potichu: najde je jen prohlídka.
+            if (GUI.Button(new Rect(x + panelWidth - 130, y + 34, 120, 22), "Prohlédnout se")) _session.Connection.InspectBody();
             // Pijavice jdou sundat u ohně, nebo popelem z batohu.
-            if (leeches && GUI.Button(new Rect(x + panelWidth - 160, y + 34, 150, 22), "Sundat pijavice")) _session.Connection.RemoveLeeches();
+            if (leeches && GUI.Button(new Rect(x + panelWidth - 280, y + 34, 140, 22), "Sundat pijavice")) _session.Connection.RemoveLeeches();
             return y - 6;
         }
 
@@ -398,7 +400,10 @@ namespace Oohra.Client
                         break;
                     }
 
-                    GUI.Label(titleRect, TreeTitle(target), _title);
+                    var nest = _session.NestAt(target.TileX, target.TileY);
+                    GUI.Label(titleRect, TreeTitle(target) + (nest.HasValue ? " · VOSÍ HNÍZDO" : string.Empty), _title);
+                    // Vosy odežene kouř: s hořící pochodní jde hnízdo vykouřit.
+                    if (nest.HasValue && _session.TorchLit && Button(ref buttonRect, "Vykouřit vosy")) _session.Connection.SmokeOutNest(nest.Value.TileIndex);
                     if (Button(ref buttonRect, "Nasbírat klacky")) _session.GatherMaterial();
                     if (_session.Count(ItemKind.Axe) > 0 && Button(ref buttonRect, "Kácet (sekera)")) _session.ChopTree();
                     break;

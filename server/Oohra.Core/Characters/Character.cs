@@ -26,6 +26,12 @@ public enum EffectType
 
     /// <summary>Začátek úplavice (po bahenní vodě).</summary>
     Dysentery,
+
+    /// <summary>Začátek klíšťové horečky (po klíštěti).</summary>
+    TickFever,
+
+    /// <summary>Hadí jed začíná působit (po kousnutí).</summary>
+    SnakeVenom,
 }
 
 /// <summary>Účinek, který nastane v čase At (herní minuty). Strength je síla účinku.</summary>
@@ -118,6 +124,31 @@ public sealed class Character
 
     /// <summary>Kolik pijavic na postavě visí.</summary>
     public int Leeches { get; set; }
+
+    private readonly List<double> _ticks = [];
+
+    /// <summary>SKRYTÉ: přisátá klíšťata (kdy se přisála). Hráč je najde, jen když se prohlédne.</summary>
+    public IReadOnlyList<double> Ticks => _ticks;
+
+    /// <summary>Přisálo se klíště (nejvýš max).</summary>
+    public void AddTick(double now)
+    {
+        _ticks.Add(now);
+    }
+
+    /// <summary>Klíště už přeneslo (nebo nepřeneslo) nemoc: zůstává, ale znovu se nepočítá.</summary>
+    public void MarkTickChecked(int index)
+    {
+        _ticks[index] = double.PositiveInfinity;
+    }
+
+    /// <summary>Prohlédl se a vytáhl všechna klíšťata. Vrací, kolik jich bylo.</summary>
+    public int RemoveTicks()
+    {
+        var count = _ticks.Count;
+        _ticks.Clear();
+        return count;
+    }
 
     /// <summary>Do kdy je natřená bahnem nebo popelem (komáři neštípou), herní minuty.</summary>
     public double SmearedUntil { get; set; } = double.NegativeInfinity;
@@ -444,6 +475,16 @@ public sealed class Character
             list.Add(Symptom.BellyAche);
         }
 
+        if (HasDisease(DiseaseKind.TickFever))
+        {
+            list.Add(Symptom.AchingJoints);
+        }
+
+        if (HasDisease(DiseaseKind.SnakeVenom))
+        {
+            list.Add(Symptom.Swelling);
+        }
+
         if (Leeches > 0)
         {
             list.Add(Symptom.Leeches);
@@ -478,6 +519,7 @@ public sealed class Character
             Recipes = [.. _recipes],
             Diseases = [.. _diseases],
             Leeches = Leeches,
+            Ticks = [.. _ticks],
             SmearedUntil = SmearedUntil,
             LastMosquitoWarning = LastMosquitoWarning,
             Toxin = Toxin,
@@ -550,6 +592,7 @@ public sealed class Character
 
         c._diseases.AddRange(save.Diseases);
         c.Leeches = save.Leeches;
+        c._ticks.AddRange(save.Ticks);
         c.SmearedUntil = save.SmearedUntil;
         c.LastMosquitoWarning = save.LastMosquitoWarning;
         c._recipes.Clear();

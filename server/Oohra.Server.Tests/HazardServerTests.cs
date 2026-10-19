@@ -1,10 +1,14 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Items;
 using Oohra.Core.World;
+using Oohra.Protocol;
 
 namespace Oohra.Server.Tests;
 
-/// <summary>Bažina přes síť: pijavice a jejich sundání popelem, natření bahnem proti komárům.</summary>
+/// <summary>
+/// Nebezpečí přes síť: pijavice a jejich sundání popelem, natření bahnem proti komárům, prohlídka (klíšťata),
+/// vosí hnízda (štípou, pochodeň je vykouří).
+/// </summary>
 public class HazardServerTests
 {
     [Fact]
@@ -27,5 +31,43 @@ public class HazardServerTests
 
         a.Smear(ash: false);
         Assert.True(net.Pump(() => a.Self!.Symptoms.Contains(Symptom.Smeared)));
+    }
+
+    [Fact]
+    public void InspectionFindsTicks()
+    {
+        using var net = new TestNetwork();
+        var a = net.Join("Ondra");
+        var player = net.Server.FindPlayer("Ondra")!;
+        player.Character.AddTick(net.Server.Clock.TotalMinutes);
+
+        a.InspectBody();
+        Assert.True(net.Pump(() => a.TakeEvents().Any(e => e.Kind == EventKind.Body && e.Code == (byte)BodyEvent.TicksFound)));
+        Assert.Empty(player.Character.Ticks);
+
+        a.InspectBody();
+        Assert.True(net.Pump(() => a.TakeEvents().Any(e => e.Kind == EventKind.Body && e.Code == (byte)BodyEvent.NoTicks)));
+    }
+
+    [Fact]
+    public void WaspsStingAndTorchSmokesNestOut()
+    {
+        using var net = new TestNetwork(configure: c => c.Wasps = true);
+        var a = net.Join("Ondra");
+        Assert.True(net.Pump(() => a.WaspNests.Length > 0));
+        var nest = a.WaspNests[0];
+        var player = net.Server.FindPlayer("Ondra")!;
+        player.X = nest.X + 1;
+        player.Y = nest.Y;
+
+        Assert.True(net.Pump(() => player.Character.Toxin > 0 && a.WaspNests.Any(n => n.TileIndex == nest.TileIndex && n.Angry)));
+
+        a.SmokeOutNest(nest.TileIndex);
+        Assert.True(net.Pump(() => a.TakeEvents().Any(e => e.Kind == EventKind.Wasp && e.Code == (byte)WaspResult.NeedTorch)));
+
+        player.Character.TorchMinutes = 60;
+        a.SmokeOutNest(nest.TileIndex);
+        Assert.True(net.Pump(() => a.WaspNests.All(n => n.TileIndex != nest.TileIndex)));
+        Assert.Contains(net.Server.CaptureWorld().Island.Wasps, w => w.TileIndex == nest.TileIndex);
     }
 }

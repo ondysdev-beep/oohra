@@ -20,6 +20,7 @@ namespace Oohra.Client
         private const float StepMeters = 0.9f;
 
         private static AudioClip _crackle;
+        private static AudioClip _hiss;
         private static AudioClip _step;
         private static AudioClip _grunt;
         private static AudioClip _howl;
@@ -178,6 +179,19 @@ namespace Oohra.Client
                 return;
             }
 
+            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.WaspSting)
+            {
+                // Vosy bzučí hlasitěji než komár.
+                Play(Buzz(), _players.Self.position + Vector3.up, 0.9f);
+                return;
+            }
+
+            if (e.Kind == EventKind.Body && (BodyEvent)e.Code == BodyEvent.SnakeWarning)
+            {
+                Play(Hiss(), _players.Self.position, 0.7f);
+                return;
+            }
+
             if (e.Kind != EventKind.Wood)
             {
                 return;
@@ -290,6 +304,26 @@ namespace Oohra.Client
             }
 
             return _buzz = Clip("Komár", samples);
+        }
+
+        /// <summary>Had syčí: šum, který zesílí a pomalu odezní.</summary>
+        public static AudioClip Hiss()
+        {
+            if (_hiss != null) return _hiss;
+            var samples = new float[(int)(1.1f * SampleRate)];
+            var seed = 97;
+            var last = 0f;
+            for (var n = 0; n < samples.Length; n++)
+            {
+                var u = (float)n / samples.Length;
+                // Vysoký šum: rozdíl dvou po sobě jdoucích náhodných čísel zvýrazní vysoké tóny.
+                var noise = Noise(ref seed);
+                var high = noise - last;
+                last = noise;
+                samples[n] = high * 0.22f * Mathf.Min(1f, u * 8f) * Mathf.Pow(1f - u, 1.5f);
+            }
+
+            return _hiss = Clip("Had", samples);
         }
 
         /// <summary>Seknutí sekerou: tupý úder do dřeva s krátkým dozvukem.</summary>

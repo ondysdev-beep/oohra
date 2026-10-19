@@ -36,8 +36,8 @@ public class AnimalTests
 
         animals.Populate(_island, players);
 
-        // Ostrov 128 × 128: 16 divočáků, 28 králíků, 12 jelenů, 5 vlků.
-        Assert.Equal(61, animals.All.Count);
+        // Ostrov 128 × 128: 16 divočáků, 28 králíků, 12 jelenů, 5 vlků, 5 hadů.
+        Assert.Equal(66, animals.All.Count);
         foreach (var a in animals.All)
         {
             Assert.True(Movement.CanStand(_island, a.X, a.Y, 0.2));

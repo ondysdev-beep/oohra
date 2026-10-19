@@ -45,6 +45,8 @@ public sealed class CharacterSave
 
     public int Leeches { get; init; }
 
+    public List<double> Ticks { get; init; } = [];
+
     public double SmearedUntil { get; init; } = double.NegativeInfinity;
 
     public double LastMosquitoWarning { get; init; } = double.NegativeInfinity;
@@ -113,6 +115,9 @@ public sealed record PlantStateSave(int PlantId, double LeavesAt, double FruitAt
 
 public sealed record RockPileSave(int TileIndex, int Stones, double RegrowAt);
 
+/// <summary>Vykouřené vosí hnízdo: do kdy není.</summary>
+public sealed record WaspNestSave(int TileIndex, double GoneUntil);
+
 /// <summary>Značka hráče (staré rytiny u ruin se neukládají, vzniknou znovu ze seedu).</summary>
 public sealed record SignSave(int Id, double X, double Y, byte[] Bits, int AuthorId, double CreatedAt, bool Carved, Signature? Signature, bool ByAncient);
 
@@ -140,6 +145,8 @@ public sealed class IslandSave
     public List<BirthGuard> BirthGuards { get; init; } = [];
 
     public ForestrySave Forestry { get; init; } = new();
+
+    public List<WaspNestSave> Wasps { get; init; } = [];
 }
 
 /// <summary>Kácení: rozsekané stromy (počet seknutí), pařezy (kdy padly) a dřevo na zemi.</summary>

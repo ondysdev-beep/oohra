@@ -129,6 +129,9 @@ public sealed record DecorationTypeView(string Id, string Name, int Sticks, int 
 /// <summary>Hromada kamenů na skalní dlaždici: kolik kamenů zbývá (0 = zmizela) a kolik jich má plná.</summary>
 public readonly record struct RockPileView(int TileIndex, int Stones, int MaxStones);
 
+/// <summary>Vosí hnízdo ve stromě (TileIndex stromu), Angry = vosy jsou rozzuřené.</summary>
+public readonly record struct WaspNestView(int TileIndex, float X, float Y, bool Angry);
+
 /// <summary>
 /// Tělo mrtvého hráče: kde leží, kdo to byl (číslo hráče, generace, podpis), kdy zemřel a do kdy smí brát jen
 /// jeho kmen (herní minuty), a co u něj zůstalo. Prázdné jméno podpisu = bez podpisu.
@@ -428,6 +431,24 @@ public static class Messages
     public static void WriteRemoveLeeches(NetDataWriter w)
     {
         w.Put((byte)MessageType.RemoveLeeches);
+    }
+
+    /// <summary>Prohlédnout se (najít a vytáhnout klíšťata).</summary>
+    public static void WriteInspectBody(NetDataWriter w)
+    {
+        w.Put((byte)MessageType.InspectBody);
+    }
+
+    /// <summary>Vykouřit vosí hnízdo ve stromě tileIndex hořící pochodní.</summary>
+    public static void WriteSmokeOutNest(NetDataWriter w, int tileIndex)
+    {
+        w.Put((byte)MessageType.SmokeOutNest);
+        w.Put(tileIndex);
+    }
+
+    public static int ReadSmokeOutNest(NetDataReader r)
+    {
+        return r.GetInt();
     }
 
     /// <summary>Sundat batoh ze zad do rukou.</summary>
@@ -742,6 +763,25 @@ public static class Messages
     public static RockPileView[] ReadRockPiles(NetDataReader r)
     {
         return ReadList(r, () => new RockPileView(r.GetInt(), r.GetByte(), r.GetByte()));
+    }
+
+    /// <summary>Vosí hnízda na ostrově. Posílá se po přihlášení a pak při každé změně.</summary>
+    public static void WriteWaspNests(NetDataWriter w, IReadOnlyList<WaspNestView> nests)
+    {
+        w.Put((byte)MessageType.WaspNests);
+        w.Put(nests.Count);
+        foreach (var n in nests)
+        {
+            w.Put(n.TileIndex);
+            w.Put(n.X);
+            w.Put(n.Y);
+            w.Put(n.Angry);
+        }
+    }
+
+    public static WaspNestView[] ReadWaspNests(NetDataReader r)
+    {
+        return ReadList(r, () => new WaspNestView(r.GetInt(), r.GetFloat(), r.GetFloat(), r.GetBool()));
     }
 
     /// <summary>Hráč inviterId tě zve do svého kmene.</summary>

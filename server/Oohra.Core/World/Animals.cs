@@ -82,7 +82,7 @@ public sealed record AnimalTarget(int Id, double X, double Y, Character Characte
 /// Prototyp měl jednoho hráče, tady zvířata reagují na nejbližšího hráče.
 /// Pohyb běží v sekundách reálného času, smrt a doplňování v herních minutách. Náhoda z vlastního generátoru.
 /// </summary>
-public sealed class Animals
+public sealed partial class Animals
 {
     private const double HitDistance = 0.75;
 
@@ -118,6 +118,7 @@ public sealed class Animals
             AnimalKind.Boar => population.Boar,
             AnimalKind.Rabbit => population.Rabbit,
             AnimalKind.Deer => population.Deer,
+            AnimalKind.Snake => population.Snake,
             _ => population.Wolf,
         };
         return (int)Math.Round(count * island.Width * island.Height / population.ReferenceArea);
@@ -126,7 +127,7 @@ public sealed class Animals
     /// <summary>Zabydlí ostrov zvířaty (prototyp initAnimals). Jeleni začínají u jednoho stáda.</summary>
     public void Populate(Island island, IReadOnlyList<AnimalTarget> players)
     {
-        foreach (var kind in new[] { AnimalKind.Boar, AnimalKind.Rabbit, AnimalKind.Deer, AnimalKind.Wolf })
+        foreach (var kind in new[] { AnimalKind.Boar, AnimalKind.Rabbit, AnimalKind.Deer, AnimalKind.Wolf, AnimalKind.Snake })
         {
             for (var i = 0; i < TargetCount(island, kind); i++)
             {
@@ -159,6 +160,9 @@ public sealed class Animals
                     break;
                 case AnimalKind.Wolf:
                     UpdateWolf(island, fires, animal, clock, realSeconds, night, players);
+                    break;
+                case AnimalKind.Snake:
+                    UpdateSnake(island, animal, clock, realSeconds, players);
                     break;
                 default:
                     UpdatePrey(island, plants, animal, clock, realSeconds, night, players);
@@ -386,6 +390,7 @@ public sealed class Animals
             AnimalKind.Boar => rules.Boar.Meat,
             AnimalKind.Deer => rules.Deer.Meat,
             AnimalKind.Wolf => rules.Wolf.Meat,
+            AnimalKind.Snake => rules.Snake.Meat,
             _ => rules.Rabbit.Meat,
         };
     }
@@ -813,7 +818,7 @@ public sealed class Animals
         }
 
         _nextRespawnAt = now + GameData.Animals.RespawnMinutes;
-        foreach (var kind in new[] { AnimalKind.Boar, AnimalKind.Rabbit, AnimalKind.Deer, AnimalKind.Wolf })
+        foreach (var kind in new[] { AnimalKind.Boar, AnimalKind.Rabbit, AnimalKind.Deer, AnimalKind.Wolf, AnimalKind.Snake })
         {
             if (_animals.Count(a => a.Kind == kind && !a.IsDead) < TargetCount(island, kind))
             {
@@ -876,6 +881,7 @@ public sealed class Animals
         {
             AnimalKind.Boar => (rules.Boar.Hp, 0),
             AnimalKind.Wolf => (rules.Wolf.Hp, 0),
+            AnimalKind.Snake => (rules.Snake.Hp, 0),
             AnimalKind.Deer => (rules.Deer.Hp, rules.Deer.Stamina),
             _ => (rules.Rabbit.Hp, rules.Rabbit.Stamina),
         };
@@ -888,6 +894,7 @@ public sealed class Animals
         {
             AnimalKind.Boar => (rules.Boar.Hp, rules.Boar.Radius, rules.Boar.SpawnAvoid, 0.0),
             AnimalKind.Wolf => (rules.Wolf.Hp, rules.Wolf.Radius, rules.Wolf.SpawnAvoid, 0.0),
+            AnimalKind.Snake => (rules.Snake.Hp, rules.Snake.Radius, rules.Snake.SpawnAvoid, 0.0),
             AnimalKind.Deer => (rules.Deer.Hp, rules.Deer.Radius, rules.Deer.SpawnAvoid, rules.Deer.Stamina),
             _ => (rules.Rabbit.Hp, rules.Rabbit.Radius, rules.Rabbit.SpawnAvoid, rules.Rabbit.Stamina),
         };
@@ -932,6 +939,12 @@ public sealed class Animals
         }
 
         var tile = island.TileAt(tx, ty);
+        if (kind == AnimalKind.Snake)
+        {
+            // Had: skalnatá vrchovina, vrstvená skála a louky.
+            return tile is TileType.Highland or TileType.LayeredRock or TileType.Grass;
+        }
+
         var prey = kind is AnimalKind.Rabbit or AnimalKind.Deer;
         return tile is TileType.Grass or TileType.Forest or TileType.Highland || (prey && tile == TileType.Sand);
     }

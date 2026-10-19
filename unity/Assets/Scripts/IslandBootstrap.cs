@@ -207,6 +207,7 @@ namespace Oohra.Client
             gameObject.AddComponent<Ambience>().Init(_connection, _players, _session);
             new GameObject("Těla").AddComponent<CorpseViews>().Init(_connection);
             new GameObject("Značky").AddComponent<SignViews>().Init(_connection);
+            new GameObject("Vosí hnízda").AddComponent<WaspNestViews>().Init(_connection);
         }
 
         private void Disconnect()

@@ -9,7 +9,8 @@ namespace Oohra.Core.World;
 /// <summary>
 /// Nebezpečné okolí, první vlna (návrh 0.8, kap. 5, hazards.json): komáři v bažině a u vody (kousnutí,
 /// zimnice), pijavice při chůzi bažinou. Obrana: kouř z ohně, natřít se bahnem nebo popelem, pijavice sundat
-/// u ohně nebo popelem. Bahenní vodu (úplavice) řeší pití (Drinking).
+/// u ohně nebo popelem. Bahenní vodu (úplavice) řeší pití (Drinking). Druhá vlna: klíšťata v trávě a lese
+/// (přisají se potichu, prohlédnout se). Hady počítá Animals, vosí hnízda WaspNests.
 /// </summary>
 public static class Hazards
 {
@@ -24,6 +25,15 @@ public static class Hazards
         var now = clock.TotalMinutes;
         Mosquitoes(c, island, fires, x, y, clock, minutes, rng);
         Leeches(c, island, x, y, now, minutes, rng);
+        Ticks(c, island, x, y, clock, minutes, rng);
+    }
+
+    /// <summary>Prohlédnout se: najde a vytáhne všechna přisátá klíšťata. Vrací jejich počet.</summary>
+    public static int Inspect(Character c, double now)
+    {
+        var count = c.RemoveTicks();
+        c.Report(now, count > 0 ? BodyEvent.TicksFound : BodyEvent.NoTicks);
+        return count;
     }
 
     /// <summary>Jak moc tu teď štípou komáři (0 až 1), bez ohledu na ochranu.</summary>
@@ -112,6 +122,39 @@ public static class Hazards
         {
             c.Leeches++;
             c.Report(now, BodyEvent.Leech);
+        }
+    }
+
+    private static void Ticks(Character c, Island island, double x, double y, GameClock clock, double minutes, Mulberry32 rng)
+    {
+        var rules = GameData.Hazards.Ticks;
+        var now = clock.TotalMinutes;
+        for (var i = 0; i < c.Ticks.Count; i++)
+        {
+            if (now - c.Ticks[i] < rules.TransmitMinutes)
+            {
+                continue;
+            }
+
+            c.MarkTickChecked(i);
+            if (rng.NextDouble() < rules.InfectChance)
+            {
+                Diseases.Infect(c, DiseaseKind.TickFever, now);
+            }
+        }
+
+        var (tx, ty) = ((int)Math.Floor(x), (int)Math.Floor(y));
+        var season = rules.Seasons[(int)clock.Season];
+        if (season <= 0 || c.Ticks.Count >= rules.Max || !island.InBounds(tx, ty)
+            || island.TileAt(tx, ty) is not (TileType.Grass or TileType.Forest))
+        {
+            return;
+        }
+
+        // Potichu: žádná hláška, hráč na klíště přijde, až když se prohlédne.
+        if (rng.NextDouble() < season * rules.ChancePerMinute * minutes)
+        {
+            c.AddTick(now);
         }
     }
 

@@ -29,6 +29,8 @@ public sealed class TestNetwork : IDisposable
             WorldFile = string.Empty,
             // Cizinci by odpovídali na slova a gesta v testech jazyka. Testy cizinců si je zapnou.
             Strangers = false,
+            // Vosy by štípaly hráče narozené u hnízda. Test vos si je zapne.
+            Wasps = false,
             // Po odpojení postava hned zmizí (test zůstávání si čas nastaví sám).
             LogoutLingerSeconds = 0,
             // Nový hráč v testech nespí sen bez slov (test snu si ho zapne).

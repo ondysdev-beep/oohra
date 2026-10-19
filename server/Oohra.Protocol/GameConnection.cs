@@ -103,6 +103,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Hromady kamenů na skalách (i prázdné, Stones 0).</summary>
     public RockPileView[] RockPiles { get; private set; } = [];
 
+    /// <summary>Vosí hnízda ve stromech.</summary>
+    public WaspNestView[] WaspNests { get; private set; } = [];
+
     /// <summary>Těla mrtvých hráčů (i s věcmi).</summary>
     public CorpseView[] Corpses { get; private set; } = [];
 
@@ -300,6 +303,18 @@ public sealed class GameConnection : IDisposable
     public void RemoveLeeches()
     {
         Send(Messages.WriteRemoveLeeches);
+    }
+
+    /// <summary>Prohlédnout se: najít a vytáhnout klíšťata.</summary>
+    public void InspectBody()
+    {
+        Send(Messages.WriteInspectBody);
+    }
+
+    /// <summary>Vykouřit vosí hnízdo (strom tileIndex) hořící pochodní.</summary>
+    public void SmokeOutNest(int tileIndex)
+    {
+        Send(w => Messages.WriteSmokeOutNest(w, tileIndex));
     }
 
     /// <summary>Nasadit batoh z hromádky na záda.</summary>
@@ -628,6 +643,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.RockPiles:
                 RockPiles = Messages.ReadRockPiles(reader);
+                break;
+            case MessageType.WaspNests:
+                WaspNests = Messages.ReadWaspNests(reader);
                 break;
             case MessageType.Corpses:
                 Corpses = Messages.ReadCorpses(reader);
