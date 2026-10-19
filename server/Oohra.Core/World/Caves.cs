@@ -1,11 +1,19 @@
 using Oohra.Core.Characters;
 using Oohra.Core.Data;
 using Oohra.Core.Rng;
+using Oohra.Core.Social;
 
 namespace Oohra.Core.World;
 
 /// <summary>Jeskyně v podzemním pásu: velikost, obdélník na mapě a jestli v ní žije zvěř.</summary>
-public sealed record Cave(int Id, CaveSize Size, int Left, int Top, int Width, int Height, IReadOnlyList<Position> Rooms);
+public sealed record Cave(int Id, CaveSize Size, int Left, int Top, int Width, int Height, IReadOnlyList<Position> Rooms)
+{
+    /// <summary>Zvěř, která v jeskyni žije (doupě), nebo null (prázdná jeskyně).</summary>
+    public AnimalKind? Den { get; init; }
+
+    /// <summary>Kolik zvířat v doupěti žije.</summary>
+    public int DenCount { get; init; }
+}
 
 /// <summary>
 /// Vchod do jeskyně: venku na ostrově (X, Y, u skály, Facing = směr ke skále) a uvnitř (InsideX, InsideY).
@@ -22,6 +30,7 @@ public sealed record CaveEntrance(int Id, int CaveId, double X, double Y, double
 public static class Caves
 {
     private const int SeedSalt = 0xCA7E;
+    private const int DenSalt = 0xDE4D;
 
     /// <summary>Ostrov s podzemím: řádky ostrova zůstanou (čísla dlaždic se nemění), pod ně se přidá pás jeskyní.</summary>
     public static Island Dig(Island surface)
@@ -61,7 +70,7 @@ public static class Caves
         {
             var left = k % perRow * rules.CellSize;
             var top = h + rules.Gap + k / perRow * rules.CellSize;
-            var cave = DigCave(k + 1, PickSize(rng, rules), left, top, tiles, w, rng, rules);
+            var cave = WithDen(DigCave(k + 1, PickSize(rng, rules), left, top, tiles, w, rng, rules), surface.Seed, rules);
             caves.Add(cave);
             AddEntrance(entrances, cave, spots[k], cave.Rooms[0], rng, rules);
             if (cave.Rooms.Count > 1 && spare.Count > 0 && rng.NextDouble() < rules.SecondExitChance)
@@ -70,8 +79,49 @@ public static class Caves
             }
         }
 
+        EnsureDens(caves, rules);
         return new Island(surface.Seed, w, height, tiles, shore, surface.Camps, surface.RuinSpots, surface.Trees, surface.Plants,
             surface.Species, surface.SpeciesSecrets, regions, h, caves, entrances);
+    }
+
+    /// <summary>Jeskyně má druhý východ (táhne v ní, kouř nevadí).</summary>
+    public static bool Ventilated(Island island, Cave cave)
+    {
+        return island.CaveEntrances.Count(e => e.CaveId == cave.Id) >= 2;
+    }
+
+    /// <summary>
+    /// Kouř (caves.json smoke): v jeskyni bez druhého východu s hořícím ohněm se postava dusí (zdraví, síla).
+    /// </summary>
+    public static void Smoke(Island island, Fires fires, Character c, double x, double y, double minutes, double now)
+    {
+        var cave = At(island, x, y);
+        if (c.IsDead || cave is null || Ventilated(island, cave) || !fires.All.Any(f => f.Burning && At(island, f.X, f.Y) == cave))
+        {
+            return;
+        }
+
+        var rules = GameData.Caves.Smoke;
+        c.Energy = Math.Max(0, c.Energy - rules.EnergyPerMinute * minutes);
+        c.TakeDamage(rules.HealthPerMinute * minutes, DeathCause.Smoke);
+        if (now - c.LastSmokeWarning >= rules.WarnEveryMinutes)
+        {
+            c.LastSmokeWarning = now;
+            c.Report(now, BodyEvent.Smoke);
+        }
+    }
+
+    /// <summary>Zátaras u vchodu (venku), nebo null.</summary>
+    public static Structure? BarricadeAt(Island island, CaveEntrance entrance)
+    {
+        return island.Structures.All.FirstOrDefault(s => s.Kind == BuildKind.Barricade
+            && Distance(s.X, s.Y, entrance.X, entrance.Y) <= GameData.Building.Barricade.EntranceReach);
+    }
+
+    /// <summary>Kde zátaras stojí: na hraně skály u vchodu, natočený podle skály.</summary>
+    public static (double X, double Y, double Angle) BarricadeSpot(CaveEntrance entrance)
+    {
+        return (entrance.X + Math.Cos(entrance.Facing) * 0.45, entrance.Y + Math.Sin(entrance.Facing) * 0.45, entrance.Facing + Math.PI / 2);
     }
 
     /// <summary>Jeskyně, ve které je místo (x, y), nebo null (venku).</summary>
@@ -109,7 +159,7 @@ public static class Caves
     /// Projít vchodem: kdo stojí u vchodu venku, vejde dovnitř, kdo stojí u východu uvnitř, vyjde ven.
     /// Vrací kam (nová poloha), když to šlo.
     /// </summary>
-    public static (CaveResult Result, Position To) Pass(Island island, Character c, int entranceId, double x, double y)
+    public static (CaveResult Result, Position To) Pass(Island island, Character c, int entranceId, double x, double y, int playerId = -1, Tribes? tribes = null)
     {
         var entrance = island.CaveEntrances.FirstOrDefault(e => e.Id == entranceId);
         if (entrance is null || (entrance.Hidden && !c.KnowsCave(entrance.Id) && Distance(entrance.X, entrance.Y, x, y) > GameData.Caves.DiscoverRange))
@@ -120,6 +170,12 @@ public static class Caves
         var reach = GameData.Caves.UseReach;
         if (Distance(entrance.X, entrance.Y, x, y) <= reach)
         {
+            // Zátaras pustí dovnitř jen majitele a jeho kmen (ven smí každý, ať se nikdo nezavře).
+            if (BarricadeAt(island, entrance) is { } barricade && !Structures.MayTouch(barricade, playerId, tribes))
+            {
+                return (CaveResult.Barricaded, new Position(x, y));
+            }
+
             return (CaveResult.Entered, new Position(entrance.InsideX, entrance.InsideY));
         }
 
@@ -188,6 +244,30 @@ public static class Caves
         }
 
         return null;
+    }
+
+    /// <summary>Doupě: s šancí occupiedChance v jeskyni žije zvěř podle velikosti (vlastní náhoda, tvar jeskyně se nemění).</summary>
+    private static Cave WithDen(Cave cave, int seed, CaveRules rules)
+    {
+        var rng = new Mulberry32(unchecked(seed ^ DenSalt ^ (cave.Id * 7919)));
+        var den = rules.Dens.FirstOrDefault(d => d.Size == cave.Size);
+        if (den is null || rng.NextDouble() >= rules.OccupiedChance)
+        {
+            return cave;
+        }
+
+        return cave with { Den = den.Kind, DenCount = den.Min + rng.NextInt(den.Max - den.Min + 1) };
+    }
+
+    /// <summary>Když je doupat méně než minDens, dostanou zvěř největší prázdné jeskyně (nejmenší počet zvířat).</summary>
+    private static void EnsureDens(List<Cave> caves, CaveRules rules)
+    {
+        var missing = rules.MinDens - caves.Count(c => c.Den is not null);
+        foreach (var cave in caves.Where(c => c.Den is null).OrderByDescending(c => c.Size).ThenBy(c => c.Id).Take(Math.Max(0, missing)).ToList())
+        {
+            var den = rules.Dens.Single(d => d.Size == cave.Size);
+            caves[caves.IndexOf(cave)] = cave with { Den = den.Kind, DenCount = den.Min };
+        }
     }
 
     private static CaveSizeRules PickSize(Mulberry32 rng, CaveRules rules)

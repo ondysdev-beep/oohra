@@ -37,6 +37,13 @@
     "sticksBack": 2,
     "footprintRadius": 0.35
   },
+  "barricade": {
+    // Zátaras u vchodu do jeskyně (návrh 0.8, kap. 4): staví se jen do entranceReach metrů od vchodu, jeden na vchod.
+    // Dovnitř pak projde jen majitel a jeho kmen, ven každý.
+    "sticksCost": 6,
+    "sticksBack": 3,
+    "entranceReach": 2.5
+  },
   "stockpile": {
     // Zásoby kmene: koš z klacků. Ukládat a brát smí majitel a jeho kmen (návrh 14.1).
     "sticksCost": 4,

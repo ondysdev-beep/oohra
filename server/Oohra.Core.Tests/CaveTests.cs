@@ -153,7 +153,8 @@ public class CaveTests
         var animals = new Animals(3);
         animals.Populate(_world, []);
 
-        Assert.All(animals.All, a => Assert.False(_world.InCave(a.X, a.Y)));
+        // Zvířata z povrchu se v jeskyních nerodí (doupata mají svou zvěř, CaveLifeTests).
+        Assert.All(animals.All.Where(a => a.CaveId == 0), a => Assert.False(_world.InCave(a.X, a.Y)));
         Assert.Equal(Animals.TargetCount(WorldGenerator.Build(1, 128, 128), AnimalKind.Deer), Animals.TargetCount(_world, AnimalKind.Deer));
     }
 

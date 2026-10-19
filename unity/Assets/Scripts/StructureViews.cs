@@ -101,6 +101,20 @@ namespace Oohra.Client
                     var prop = Part(root.transform, "Vzpěra", new Vector3(0f, 0.2f, 0f), new Vector3(0.05f, 0.4f, 0.05f), WallColor);
                     prop.transform.localRotation = Quaternion.Euler(0f, 0f, 30f);
                     break;
+                case BuildKind.Barricade:
+                    // Zátaras: svislé klacky přes otvor a dva šikmé vzpěrné, vysoký asi 1,6 m.
+                    for (var i = 0; i < 6; i++)
+                    {
+                        Part(root.transform, "Klacek", new Vector3(-0.6f + i * 0.24f, 0.8f, 0f), new Vector3(0.07f, 1.6f, 0.07f), WallColor);
+                    }
+
+                    foreach (var side in new[] { -1f, 1f })
+                    {
+                        var brace = Part(root.transform, "Vzpěra", new Vector3(0f, 0.8f, 0.05f), new Vector3(1.5f, 0.07f, 0.07f), WallColor);
+                        brace.transform.localRotation = Quaternion.Euler(0f, 0f, side * 35f);
+                    }
+
+                    break;
                 case BuildKind.Stockpile:
                     // Koš z klacků: nízký válec a tmavé dno uvnitř.
                     Part(root.transform, "Koš", new Vector3(0f, 0.22f, 0f), new Vector3(0.6f, 0.22f, 0.6f), WallColor, PrimitiveType.Cylinder);
@@ -197,6 +211,7 @@ namespace Oohra.Client
                 case BuildKind.Campfire: return "Oheň";
                 case BuildKind.Trap: return "Past";
                 case BuildKind.Stockpile: return "Zásoby kmene";
+                case BuildKind.Barricade: return "Zátaras";
                 case BuildKind.Decoration: return "Dekorace";
                 default: return "Zeď";
             }

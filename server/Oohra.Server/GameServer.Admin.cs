@@ -17,7 +17,7 @@ public sealed partial class GameServer
 
     public const string CommandHelp =
         "Příkazy: hraci | ulozit | oznamit <text> | vyhodit <přezdívka> | vyloucit <přezdívka> | povolit <přezdívka> "
-        + "| odemknout <přezdívka> | pocasi <jasno|mlha|dest|bourka|auto> | konec";
+        + "| odemknout <přezdívka> | pocasi <jasno|mlha|dest|bourka|auto> | jeskyne <přezdívka> | konec";
 
     /// <summary>Provede příkaz správce a vrátí odpověď.</summary>
     public string RunCommand(string line)
@@ -40,6 +40,7 @@ public sealed partial class GameServer
             "povolit" or "unban" => Unban(argument),
             "odemknout" or "unlock" => Unlock(argument),
             "pocasi" or "weather" => ForceWeather(argument),
+            "jeskyne" or "cave" => ToCave(argument),
             "konec" or "quit" or "exit" => Stop(),
             _ => "Neznámý příkaz. " + CommandHelp,
         };
@@ -94,6 +95,26 @@ public sealed partial class GameServer
 
         peer.Disconnect();
         return $"{player.Nickname} vyhozen ze hry.";
+    }
+
+    /// <summary>Jen pro zkoušení: přenese hráče k nejbližšímu viditelnému vchodu do jeskyně (venku).</summary>
+    private string ToCave(string nickname)
+    {
+        if (FindPlayer(nickname) is not { } player)
+        {
+            return $"Hráč {nickname} není ve hře.";
+        }
+
+        var entrance = Island.CaveEntrances.Where(e => !e.Hidden)
+            .OrderBy(e => (e.X - player.X) * (e.X - player.X) + (e.Y - player.Y) * (e.Y - player.Y))
+            .FirstOrDefault();
+        if (entrance is null)
+        {
+            return "Na ostrově není žádný viditelný vchod do jeskyně.";
+        }
+
+        (player.X, player.Y) = (entrance.X, entrance.Y);
+        return $"{player.Nickname} stojí u vchodu do jeskyně {entrance.Id} ({entrance.X:0}, {entrance.Y:0}).";
     }
 
     private string Ban(string nickname)

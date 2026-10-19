@@ -163,7 +163,7 @@ public sealed partial class GameServer
                 var entrance = Messages.ReadUseCave(reader);
                 if (!player.Character.IsDead)
                 {
-                    var (passed, to) = Caves.Pass(Island, player.Character, entrance, player.X, player.Y);
+                    var (passed, to) = Caves.Pass(Island, player.Character, entrance, player.X, player.Y, player.Id, Tribes);
                     if (passed is CaveResult.Entered or CaveResult.Left)
                     {
                         (player.X, player.Y) = (to.X, to.Y);

@@ -88,6 +88,7 @@ namespace Oohra.Client
             new BuildOption(BuildKind.Campfire, "Oheň", "3 klacky a kámen", 3, 1),
             new BuildOption(BuildKind.Trap, "Past (chytí králíka nebo jelena)", "3 klacky", 3, 0),
             new BuildOption(BuildKind.Stockpile, "Zásoby kmene (koš)", "4 klacky", 4, 0),
+            new BuildOption(BuildKind.Barricade, "Zátaras u vchodu do jeskyně", "6 klacků", 6, 0),
         };
 
         private ClientSession _session;

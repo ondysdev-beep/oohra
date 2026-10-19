@@ -125,6 +125,9 @@ public sealed class Character
     /// <summary>Kolik pijavic na postavě visí.</summary>
     public int Leeches { get; set; }
 
+    /// <summary>Kdy naposledy hlásil kouř v jeskyni (herní minuty).</summary>
+    public double LastSmokeWarning { get; set; } = double.NegativeInfinity;
+
     private readonly HashSet<int> _knownCaves = [];
 
     /// <summary>Postava zná nenápadný vchod do jeskyně (objevila ho). Smrtí se zapomene.</summary>
