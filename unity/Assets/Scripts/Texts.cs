@@ -396,6 +396,7 @@ namespace Oohra.Client
                 case BuildResult.NotEmpty: return "V koši něco je. Napřed ho vyber.";
                 case BuildResult.BirthPlaceProtected: return "Tady se nedávno někdo narodil. Den po narození tu smí stavět jen on a jeho kmen.";
                 case BuildResult.NotInCave: return "V jeskyni stěny dává skála. Zeď ani dveře tu nepostavíš, ohniště, zásoby a ozdoby ano.";
+                case BuildResult.NoCaveEntrance: return "Zátaras patří k vchodu do jeskyně. Tady žádný není, nebo už zatarasený je.";
                 default: return result.ToString();
             }
         }
@@ -527,6 +528,7 @@ namespace Oohra.Client
                 case BodyEvent.WaspSting: return "Vosy! Štípou tě. Uteč od hnízda, kouř je odežene.";
                 case BodyEvent.NestSmokedOut: return "Vosy prchají před kouřem.";
                 case BodyEvent.FoundCave: return "Za převislou skálou je úzká puklina. Vede dovnitř.";
+                case BodyEvent.Smoke: return "Kouř se drží pod stropem a dusí tě. Tahle jeskyně nemá kudy větrat.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -594,6 +596,7 @@ namespace Oohra.Client
                 case DeathCause.Bleeding: return "Vykrvácel jsi po zranění od zvířete.";
                 case DeathCause.Wound: return "Zemřel jsi na následky zranění od zvířete.";
                 case DeathCause.FallingTree: return "Zabil tě padající strom.";
+                case DeathCause.Smoke: return "Udusil ses kouřem v jeskyni.";
                 default: return "Zemřel jsi.";
             }
         }
@@ -680,6 +683,7 @@ namespace Oohra.Client
                 case CaveResult.Entered: return "Vešel jsi do tmy. Bez ohně tu skoro nic neuvidíš.";
                 case CaveResult.Left: return "Vyšel jsi ven na světlo.";
                 case CaveResult.TooFar: return "Musíš blíž k otvoru.";
+                case CaveResult.Barricaded: return "Vchod je zatarasený. Za zátarasem je cizí kmen.";
                 default: return "Tudy cesta nevede.";
             }
         }

@@ -35,5 +35,21 @@
   // (pazourek) s šancí flintChance na síň. Stálá teplota okolí (jako teplota ve stupních pro body.json warmth).
   "poolChance": 0.5,
   "flintChance": 0.6,
-  "temperature": 11
+  "temperature": 11,
+
+  // Zvěř v jeskyních (rozhodnuto 19. 10. podle návrhu): occupiedChance jeskyní je obsazených. Podle velikosti
+  // vlčí doupě, divočáci, nebo vlčí smečka (min až max kusů). Zvěř zůstává uvnitř, je tu pořád tma (vlci loví
+  // kdykoli, odradí je oheň a pochodeň). Chybějící se doplní, jen když v jeskyni nikdo není.
+  "occupiedChance": 0.3,
+  // Aspoň tolik jeskyní je obsazených vždycky (když by náhoda žádnou neobsadila, dostane zvěř ta největší).
+  "minDens": 1,
+  "dens": [
+    { "size": "Small", "kind": "Wolf", "min": 1, "max": 2 },
+    { "size": "Medium", "kind": "Boar", "min": 2, "max": 3 },
+    { "size": "Large", "kind": "Wolf", "min": 3, "max": 4 }
+  ],
+
+  // Kouř: hořící oheň v jeskyni s jediným vchodem (bez odvětrání) dusí každého v ní. Ubírá zdraví a sílu
+  // za herní minutu, hláška nejvýš jednou za warnEveryMinutes. Kde je druhý východ, táhne a kouř nevadí.
+  "smoke": { "healthPerMinute": 0.04, "energyPerMinute": 0.12, "warnEveryMinutes": 20 }
 }

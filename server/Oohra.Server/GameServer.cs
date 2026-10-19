@@ -205,6 +205,7 @@ public sealed partial class GameServer : IDisposable
                 Physiology.Update(player.Character, Clock, minutes, Fires.WarmsAt(Island, player.X, player.Y), sheltered, weather, inCave ? GameData.Caves.Temperature : null);
                 Torch.Burn(player.Character, Clock.TotalMinutes, minutes, weather);
                 Caves.Discover(Island, player.Character, player.X, player.Y, Clock.TotalMinutes);
+                Caves.Smoke(Island, Fires, player.Character, player.X, player.Y, minutes, Clock.TotalMinutes);
                 Hazards.Update(player.Character, Island, Fires, player.X, player.Y, Clock, minutes, _rng);
             }
 

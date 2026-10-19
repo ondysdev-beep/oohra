@@ -222,6 +222,11 @@ public sealed class Structures
             return BuildResult.NotInCave;
         }
 
+        if (kind == BuildKind.Barricade)
+        {
+            return BuildBarricade(island, inventory, playerX, playerY, x, y, builder, ownerId);
+        }
+
         if (kind == BuildKind.Decoration)
         {
             return BuildDecoration(island, fires, inventory, playerX, playerY, x, y, angle, players, builder, ownerId, decorationId);
@@ -491,6 +496,7 @@ public sealed class Structures
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksCost;
             case BuildKind.Door: return rules.Door.SticksCost;
             case BuildKind.Trap: return rules.Trap.SticksCost;
+            case BuildKind.Barricade: return rules.Barricade.SticksCost;
             case BuildKind.Stockpile: return rules.Stockpile.SticksCost;
             case BuildKind.Decoration: return 0;
         }
@@ -515,6 +521,7 @@ public sealed class Structures
             case BuildKind.DoorFrame: return rules.DoorFrame.SticksBack;
             case BuildKind.Door: return rules.Door.SticksBack;
             case BuildKind.Trap: return rules.Trap.SticksBack;
+            case BuildKind.Barricade: return rules.Barricade.SticksBack;
             case BuildKind.Stockpile: return rules.Stockpile.SticksBack;
             case BuildKind.Decoration: return (GameData.Decoration(structure.DecorationId)?.Sticks ?? 0) / 2;
             default: return SticksCost(structure.Kind, structure.Length) / 2;
@@ -580,6 +587,39 @@ public sealed class Structures
             && !Blocks(x, y, footprint)
             && !fires.All.Any(f => Math.Sqrt((f.X - x) * (f.X - x) + (f.Y - y) * (f.Y - y)) < 2 * footprint)
             && !Near(x, y, footprint).Any(s => RadiusOf(s) > 0 && Math.Sqrt((s.X - x) * (s.X - x) + (s.Y - y) * (s.Y - y)) < footprint + RadiusOf(s));
+    }
+
+    /// <summary>
+    /// Zátaras: postaví se na hranu skály u nejbližšího vchodu do jeskyně (do entranceReach od místa, kam hráč
+    /// míří), jeden na vchod. Nepřekáží v chůzi, jen nepustí cizí dovnitř (Caves.Pass).
+    /// </summary>
+    private BuildResult BuildBarricade(Island island, Inventory inventory, double playerX, double playerY, double x, double y, Character? builder, int ownerId)
+    {
+        var rules = GameData.Building.Barricade;
+        if (inventory.Count(ItemKind.Stick) < rules.SticksCost)
+        {
+            return BuildResult.NeedMaterials;
+        }
+
+        if (!Placement.InReach(playerX, playerY, x, y))
+        {
+            return BuildResult.TooFar;
+        }
+
+        var entrance = island.CaveEntrances
+            .Where(e => Math.Sqrt((e.X - x) * (e.X - x) + (e.Y - y) * (e.Y - y)) <= rules.EntranceReach)
+            .OrderBy(e => (e.X - x) * (e.X - x) + (e.Y - y) * (e.Y - y))
+            .FirstOrDefault();
+        if (entrance is null || Caves.BarricadeAt(island, entrance) is not null)
+        {
+            return BuildResult.NoCaveEntrance;
+        }
+
+        inventory.TryRemove(ItemKind.Stick, rules.SticksCost);
+        var (bx, by, angle) = Caves.BarricadeSpot(entrance);
+        Place(BuildKind.Barricade, bx, by, angle, length: 1, ownerId: ownerId);
+        builder?.Practice(SkillKind.Build, GameData.Skills.Practice.Wall);
+        return BuildResult.Built;
     }
 
     /// <summary>Poloměr bodové stavby (past, zásoby, dekorace), u zdí a dveří 0.</summary>

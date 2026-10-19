@@ -65,6 +65,9 @@ namespace Oohra.Core.World
 
         /// <summary>Takový vchod postava nezná (nenápadný a ještě ho neobjevila).</summary>
         Unknown,
+
+        /// <summary>Vchod je zatarasený cizím kmenem.</summary>
+        Barricaded,
     }
 
     /// <summary>Kde maso visí: v kouři ohně (číslo ohně), nebo na sušáku (číslo stavby).</summary>
@@ -260,6 +263,9 @@ namespace Oohra.Core.World
 
         /// <summary>V jeskyni se nestaví zdi ani dveře (jen ohniště, zásoby, pasti a dekorace).</summary>
         NotInCave,
+
+        /// <summary>Zátaras patří k vchodu do jeskyně, tady žádný není (nebo už zatarasený je).</summary>
+        NoCaveEntrance,
     }
 
     /// <summary>Jak dopadlo rozdělání ohně, přiložení nebo pečení.</summary>

@@ -29,4 +29,29 @@ public class CaveServerTests
         Assert.True(net.Pump(() => !island.InCave(player.X, player.Y)));
         Assert.Equal((entrance.X, entrance.Y), (player.X, player.Y));
     }
+
+    /// <summary>Příkaz správce jeskyne přenese hráče k vchodu. Zátaras nepustí cizího dovnitř.</summary>
+    [Fact]
+    public void AdminMovesToCaveAndBarricadeStopsStrangers()
+    {
+        using var net = new TestNetwork(configure: c => c.StartSticks = 10);
+        var a = net.Join("Ondra");
+        var b = net.Join("Petr");
+        var ondra = net.Server.FindPlayer("Ondra")!;
+        var petr = net.Server.FindPlayer("Petr")!;
+
+        Assert.Contains("stojí u vchodu", net.Server.RunCommand("jeskyne Ondra"));
+        var entrance = net.Server.Island.CaveEntrances.Single(e => e.X == ondra.X && e.Y == ondra.Y);
+
+        a.Place(BuildKind.Barricade, (float)entrance.X, (float)entrance.Y, 0);
+        Assert.True(net.Pump(() => b.Structures.Any(s => s.Kind == BuildKind.Barricade && s.OwnerId == a.PlayerId)));
+
+        (petr.X, petr.Y) = (entrance.X, entrance.Y);
+        b.UseCave(entrance.Id);
+        Assert.True(net.Pump(() => b.TakeEvents().Any(e => e.Kind == EventKind.Cave && e.Code == (byte)CaveResult.Barricaded)));
+        Assert.False(net.Server.Island.InCave(petr.X, petr.Y));
+
+        a.UseCave(entrance.Id);
+        Assert.True(net.Pump(() => net.Server.Island.InCave(ondra.X, ondra.Y)));
+    }
 }

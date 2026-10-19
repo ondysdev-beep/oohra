@@ -142,6 +142,9 @@ public enum BodyEvent
 
     /// <summary>Všiml si nenápadného vchodu do jeskyně.</summary>
     FoundCave,
+
+    /// <summary>Dusí ho kouř v jeskyni bez odvětrání.</summary>
+    Smoke,
 }
 
 /// <summary>Nápověda při ochutnání (prototyp tasteText).</summary>
@@ -181,6 +184,9 @@ public enum DeathCause
 
     /// <summary>Zabil ho padající strom.</summary>
     FallingTree,
+
+    /// <summary>Udusil se kouřem v jeskyni.</summary>
+    Smoke,
 }
 
 /// <summary>Viditelný příznak ve stavu těla.</summary>

@@ -26,5 +26,8 @@ namespace Oohra.Core.World
 
         /// <summary>Dekorace ze seznamu v decorations.json (lavice, totem…). Která to je, říká DecorationId.</summary>
         Decoration = 6,
+
+        /// <summary>Zátaras u vchodu do jeskyně: dovnitř projde jen majitel a jeho kmen.</summary>
+        Barricade = 7,
     }
 }

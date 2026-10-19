@@ -16,7 +16,7 @@ public static class Placement
         return Math.Sqrt(dx * dx + dy * dy) <= GameData.Building.PlaceReach;
     }
 
-    /// <summary>Bod je na mapě a ne ve vodě (moře, jezírko).</summary>
+    /// <summary>Bod je na mapě, ne ve vodě (moře, jezírko) a ne ve skále kolem jeskyně.</summary>
     public static bool OnDryLand(Island island, double x, double y)
     {
         var tx = (int)Math.Floor(x);
@@ -27,7 +27,7 @@ public static class Placement
         }
 
         var tile = island.TileAt(tx, ty);
-        return tile != TileType.Sea && tile != TileType.Pond && tile != TileType.Ford;
+        return tile != TileType.Sea && tile != TileType.Pond && tile != TileType.Ford && tile != TileType.CaveWall;
     }
 
     /// <summary>Celá úsečka leží na suché zemi.</summary>

@@ -70,6 +70,9 @@ public sealed class Animal
 
     /// <summary>Chytilo se do pasti: zmizí ze světa (úlovek je v pasti).</summary>
     internal bool Trapped { get; set; }
+
+    /// <summary>Jeskyně, ve které má zvíře doupě (0 = žije venku na ostrově).</summary>
+    public int CaveId { get; internal set; }
 }
 
 /// <summary>Hráč, jak ho vidí zvířata: poloha a tělo (spánek, zranění).</summary>
@@ -138,6 +141,14 @@ public sealed partial class Animals
                 Spawn(island, kind, players);
             }
         }
+
+        foreach (var cave in island.Caves.Where(c => c.Den is not null))
+        {
+            for (var i = 0; i < cave.DenCount; i++)
+            {
+                SpawnInDen(cave);
+            }
+        }
     }
 
     /// <summary>Jeden krok: zvířata se hýbou a reagují na hráče, mrtvá mizí, chybějící se pomalu doplňují.</summary>
@@ -163,7 +174,8 @@ public sealed partial class Animals
                     UpdateBoar(island, animal, clock, realSeconds, players);
                     break;
                 case AnimalKind.Wolf:
-                    UpdateWolf(island, fires, animal, clock, realSeconds, WolvesHunt(clock), players);
+                    // V jeskyni je pořád tma: vlk v doupěti loví kdykoli.
+                    UpdateWolf(island, fires, animal, clock, realSeconds, WolvesHunt(clock) || animal.CaveId != 0, players);
                     break;
                 case AnimalKind.Snake:
                     UpdateSnake(island, animal, clock, realSeconds, players);
@@ -838,13 +850,37 @@ public sealed partial class Animals
         _nextRespawnAt = now + GameData.Animals.RespawnMinutes;
         foreach (var kind in new[] { AnimalKind.Boar, AnimalKind.Rabbit, AnimalKind.Deer, AnimalKind.Wolf, AnimalKind.Snake })
         {
-            if (_animals.Count(a => a.Kind == kind && !a.IsDead) < TargetCount(island, kind, clock.Season))
+            if (_animals.Count(a => a.Kind == kind && !a.IsDead && a.CaveId == 0) < TargetCount(island, kind, clock.Season))
             {
                 Spawn(island, kind, players);
             }
         }
 
+        // Doupata se doplní, jen když v jeskyni nikdo není (nikdo neuvidí zvíře vzniknout).
+        foreach (var cave in island.Caves.Where(c => c.Den is not null))
+        {
+            if (_animals.Count(a => a.CaveId == cave.Id && !a.IsDead) < cave.DenCount && players.All(p => Caves.At(island, p.X, p.Y) != cave))
+            {
+                SpawnInDen(cave);
+            }
+        }
+
         PlaceCarcass(island, now, players);
+    }
+
+    /// <summary>Zvíře v doupěti: v síni co nejdál od vchodu (poslední síň), kousek od jejího středu.</summary>
+    private Animal SpawnInDen(Cave cave)
+    {
+        var room = cave.Rooms[cave.Rooms.Count > 1 ? 1 + _rng.NextInt(cave.Rooms.Count - 1) : 0];
+        var (hp, stamina) = Vitals(cave.Den!.Value);
+        var animal = new Animal(_nextId++, cave.Den.Value, room.X + (_rng.NextDouble() - 0.5), room.Y + (_rng.NextDouble() - 0.5), hp, stamina)
+        {
+            CaveId = cave.Id,
+            Timer = _rng.NextDouble() * 3,
+            Dir = _rng.NextDouble() * Math.PI * 2,
+        };
+        _animals.Add(animal);
+        return animal;
     }
 
     /// <summary>

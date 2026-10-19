@@ -78,7 +78,7 @@ Rozhodnuto 18. 10.: jezero i řeka, dva tábory cizinců, asi 6 zřícenin, pod�
 ### Etapa 6: Jeskyně
 Rozhodnuto (19. 10.): zvěř podle návrhu (malá jeskyně vlčí doupě, střední divočáci, velká vlčí smečka) a zátaras u vchodu (projde jen majitel a kmen, zvěř neprojde).
 - [x] První vlna (19. 10.): jeskyně v podzemí pod ostrovem (stejná mapa za mořem, ze seedu), tři velikosti (skrýš, pár síní, síť chodeb), vchody ve skále na ostrově (některé nenápadné: najdou se zblízka, postava si je pamatuje, smrtí zapomene), u středních a velkých někdy druhý východ. Uvnitř tma (jen oheň, pochodeň a světlo u východu), stálá teplota (v zimě tepleji), neprší, kaluže kapající vody, pazourek. Stavět jde ohniště, zásoby, pasti a ozdoby, zdi a dveře ne. Katalog: CaveEntrance (`cave_entrance_a`), HiddenCaveEntrance (`cave_entrance_b`), CaveExit, barva stěn.
-- [ ] Druhá vlna: zvěř v jeskyních, zátaras u vchodu, kouř z ohně bez odvětrání dusí.
+- [x] Druhá vlna (19. 10.): **zvěř** v asi 30 % jeskyní (aspoň jedna vždy): malá vlčí doupě (1 až 2), střední divočáci (2 až 3), velká vlčí smečka (3 až 4), zůstává uvnitř, vlci loví kdykoli (je tma), odradí je oheň a pochodeň, doplní se jen bez lidí v jeskyni. **Zátaras** u vchodu (6 klacků, jeden na vchod): dovnitř jen majitel a kmen, ven každý. **Kouř** z ohně v jeskyni s jediným vchodem dusí (síla, zdraví), kde je druhý východ, táhne. Příkaz správce `jeskyne <přezdívka>`. Katalog **Barricade**. **Etapa 6 hotová.**
 
 ### Později (mimo další kolo)
 Patra, střechy a statika (7), mapa jako věc a vor (8).

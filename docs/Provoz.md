@@ -39,6 +39,7 @@ Napiš příkaz do okna serveru a stiskni Enter.
 | `vyloucit Petr` | vyhodí a už ho nepustí (uloží se se světem) |
 | `povolit Petr` | zruší vyloučení |
 | `odemknout Petr` | hráč přišel o klíč (jiný počítač): postavu dostane ten, kdo se s přezdívkou přihlásí první |
+| `jeskyne Petr` | přenese hráče k nejbližšímu viditelnému vchodu do jeskyně (jen pro zkoušení) |
 | `pocasi bourka` | vynutí počasí (`jasno`, `mlha`, `dest`, `bourka`), `pocasi auto` ho zase pustí samo, `pocasi` řekne, jaké je. Jen pro zkoušení, neukládá se. Od startu jde vynutit i v `server.json` (`forceWeather`) |
 | `konec` | uloží svět a vypne server |
 

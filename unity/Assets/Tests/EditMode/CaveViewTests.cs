@@ -56,5 +56,18 @@ namespace Oohra.Client.Tests
             Assert.AreNotEqual(BuildResult.NotInCave.ToString(), Texts.For(BuildResult.NotInCave));
             Assert.Less(InteractionTarget.ForCave(1, 10, 10).Reach, 2.5, "Klient se zastaví v dosahu serveru.");
         }
+
+        [Test]
+        public void BarricadeHasShapeAndIsInBuildMenu()
+        {
+            VisualCatalog.Current = ScriptableObject.CreateInstance<VisualCatalog>();
+            var barricade = StructureViews.CreateModel(BuildKind.Barricade, null);
+
+            Assert.Greater(barricade.transform.childCount, 3);
+            Assert.AreEqual("Zátaras", StructureViews.NameOf(BuildKind.Barricade));
+            Assert.IsTrue(System.Array.Exists(BuildMode.Catalog, o => o.Kind == BuildKind.Barricade));
+            UnityEngine.Object.DestroyImmediate(barricade);
+            VisualCatalog.Current = null;
+        }
     }
 }
