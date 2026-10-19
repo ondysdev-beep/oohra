@@ -225,4 +225,102 @@ public class CraftingTests
         Assert.Equal(GameData.Crafting.Carcass[AnimalKind.Boar].Hides, inventory.Count(ItemKind.Hide));
         Assert.Equal(GameData.Crafting.Carcass[AnimalKind.Boar].Bones, inventory.Count(ItemKind.Bone));
     }
+
+    /// <summary>Deník ušitý jehlou dostane číslo, kreslí se do něj po stránkách a obsah se uloží.</summary>
+    [Fact]
+    public void JournalIsSewnWithNeedleAndKeepsDrawings()
+    {
+        var c = new Character(1, new Mulberry32(1));
+        c.Learn("journal");
+        var journals = new Journals();
+        var inventory = new Inventory(10);
+        inventory.TryAdd(new Item(ItemKind.TannedHide));
+        inventory.TryAdd(Item.Bast);
+        var place = new CraftPlace(false, false, 0, journals);
+
+        Assert.Equal(CraftResult.NeedTool, Crafting.Make("journal", inventory, c, place));
+        inventory.TryAdd(new Item(ItemKind.Needle, Uses: 5));
+        Assert.Equal(CraftResult.Made, Crafting.Make("journal", inventory, c, place));
+        var journal = inventory.Stacks.Single(s => s.Item.Kind == ItemKind.Journal).Item;
+        Assert.True(journal.Ref > 0);
+        Assert.Equal(GameData.Crafting.JournalPages, journals.Pages(journal.Ref)!.Count);
+
+        var bits = SignBits.Empty();
+        SignBits.Set(bits, 3, 4, true);
+        Assert.True(journals.Draw(journal.Ref, 2, bits));
+        Assert.False(journals.Draw(journal.Ref, 99, bits));
+
+        var again = new Journals();
+        again.Restore(journals.Export(), journals.NextId);
+        Assert.True(SignBits.Get(again.Pages(journal.Ref)![2], 3, 4));
+        Assert.NotEqual(journal.Ref, again.Create().Ref);
+    }
+
+    [Fact]
+    public void BoneGivesNeedleAndHook()
+    {
+        var c = new Character(1, new Mulberry32(1));
+        c.Learn("needle");
+        c.Learn("hook");
+        var inventory = new Inventory(10);
+        inventory.TryAdd(new Item(ItemKind.Knife, Uses: 10));
+        inventory.TryAdd(Item.Bone);
+        inventory.TryAdd(Item.Bone);
+        inventory.TryAdd(Item.Bast);
+
+        Assert.Equal(CraftResult.Made, Crafting.Make("needle", inventory, c, Anywhere));
+        Assert.Equal(CraftResult.Made, Crafting.Make("hook", inventory, c, Anywhere));
+        Assert.Equal(1, inventory.Count(ItemKind.Needle));
+        Assert.Equal(1, inventory.Count(ItemKind.Hook));
+    }
+
+    /// <summary>Ukázat recept: ten druhý ho pak umí bez zkoušení. Jen kdo ho umí a jen zblízka.</summary>
+    [Fact]
+    public void RecipeCanBeTaughtToSomeoneNearby()
+    {
+        var ancient = new Character(0, new Mulberry32(1));
+        var newcomer = new Character(1, new Mulberry32(2));
+
+        Assert.Equal(CraftResult.TooFarToTeach, Crafting.Teach(ancient, newcomer, "axe", 10));
+        Assert.Equal(CraftResult.DontKnow, Crafting.Teach(newcomer, ancient, "smallBag", 1));
+        Assert.Equal(CraftResult.Taught, Crafting.Teach(ancient, newcomer, "axe", 1));
+        Assert.True(newcomer.Knows("axe"));
+        Assert.Equal(CraftResult.AlreadyKnows, Crafting.Teach(ancient, newcomer, "axe", 1));
+    }
+
+    /// <summary>Mršina se objeví v lese, daleko od hráčů, jako mrtvé zvíře (jde z ní stáhnout kůže).</summary>
+    [Fact]
+    public void CarcassAppearsInForestAwayFromPlayers()
+    {
+        var island = WorldGenerator.Build(1, 128, 128);
+        var animals = new Animals(1);
+        Animal? carcass = null;
+        for (var i = 0; i < 20 && carcass is null; i++)
+        {
+            carcass = animals.PlaceCarcass(island, 0, []);
+        }
+
+        Assert.NotNull(carcass);
+        Assert.True(carcass!.IsDead);
+        Assert.Equal(RegionKind.Forest, island.RegionAt((int)carcass.X, (int)carcass.Y));
+        Assert.Contains(carcass.Kind, GameData.Animals.Carcasses.Kinds);
+    }
+
+    /// <summary>S háčkem se rybaří i bez kopí, háček se opotřebuje.</summary>
+    [Fact]
+    public void HookFishesWithoutSpear()
+    {
+        var island = WorldGenerator.Build(1, 128, 128);
+        var pond = Enumerable.Range(0, island.Tiles.Length).First(i => island.Tiles[i] == TileType.Pond);
+        var (tx, ty) = (pond % island.Width, pond / island.Width);
+        var animals = new Animals(1);
+        var inventory = new Inventory(10);
+        inventory.TryAdd(new Item(ItemKind.Hook, Uses: 5));
+        var fisher = new AnimalTarget(1, tx + 0.5, ty + 1.2, new Character(1, new Mulberry32(1)));
+
+        var result = animals.Fish(island, tx, ty, fisher, inventory, 0);
+
+        Assert.Contains(result, new[] { HuntResult.FishCaught, HuntResult.FishEscaped });
+        Assert.Equal(4, inventory.Stacks.Single(s => s.Item.Kind == ItemKind.Hook).Item.Uses);
+    }
 }

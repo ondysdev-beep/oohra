@@ -380,6 +380,18 @@ namespace Oohra.Client
             if (Menu != null && Menu.Kind == TargetKind.Timber) Connection.StripBark(Menu.Id);
         }
 
+        /// <summary>Okno deníku (nastaví IslandBootstrap), otevírá se z batohu.</summary>
+        public JournalHud Journal { get; set; }
+
+        public void OpenJournal(int stackIndex)
+        {
+            if (Journal != null)
+            {
+                Journal.Show(stackIndex);
+                BackpackOpen = false;
+            }
+        }
+
         /// <summary>Nabrat popel z ohniště z nabídky.</summary>
         public void TakeAsh()
         {

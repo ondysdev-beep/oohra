@@ -48,6 +48,8 @@ public sealed partial class GameServer
                 BirthGuards = Island.BirthGuards.All.ToList(),
             },
             Tribes = Tribes.Export(),
+            Journals = Journals.Export(),
+            NextJournalId = Journals.NextId,
             Banned = _banned.OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList(),
         };
     }
@@ -78,6 +80,7 @@ public sealed partial class GameServer
         Island.Corpses.Restore(save.Island.Corpses, save.Island.NextCorpseId);
         Island.BirthGuards.Restore(save.Island.BirthGuards);
         Tribes.Restore(save.Tribes);
+        Journals.Restore(save.Journals, save.NextJournalId);
         _banned.UnionWith(save.Banned);
         foreach (var player in save.Players)
         {

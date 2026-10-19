@@ -28,6 +28,8 @@ namespace Oohra.Client
             { "torch", new[] { "První pochodeň", "Světlo, které neseš s sebou. Vlci se drží dál." } },
             { "craft", new[] { "Nový recept", "Co umíš vyrobit, si pamatuješ, dokud žiješ. Najdeš to v batohu (B)." } },
             { "bag", new[] { "První batoh", "Teď uneseš víc než dvě věci." } },
+            { "journal", new[] { "První deník", "Co si nakreslíš, přežije i tvou smrt. Kdo deník najde u těla, přečte ho." } },
+            { "taught", new[] { "Někdo tě něco naučil", "Co umíš, můžeš ukázat dalším (klikni na hráče)." } },
             { "axe", new[] { "První sekera", "Teď padne i strom. Ale padá na stranu od tebe, kdo stojí za ním, dostane ránu." } },
             { "tree", new[] { "První pokácený strom", "Kmen rozsekej na klady, klad rozštípej na dřevo. Dřevo hoří dlouho." } },
             { "spear", new[] { "První kopí", "Ostrý kámen na klacku mění lov." } },
@@ -151,6 +153,9 @@ namespace Oohra.Client
                 case EventKind.Craft when (CraftResult)e.Code is CraftResult.Learned:
                     Milestone("craft");
                     break;
+                case EventKind.Craft when (CraftResult)e.Code is CraftResult.LearnedFromOther:
+                    Milestone("taught");
+                    break;
                 case EventKind.Wood when (WoodResult)e.Code is WoodResult.TreeFalling:
                     Milestone("tree");
                     break;
@@ -200,6 +205,7 @@ namespace Oohra.Client
             var inventory = _session.Connection.Inventory;
             if (!inventory.Bag.HasValue && inventory.Stacks.Length >= inventory.Capacity) Tip("hands");
             if (inventory.Bag.HasValue) Milestone("bag");
+            if (_session.Count(ItemKind.Journal) > 0) Milestone("journal");
             if (_session.Count(ItemKind.Axe) > 0) Milestone("axe");
             if (self.Satiety < 45) Tip("hunger");
             if (self.Energy < 25) Tip("tired");

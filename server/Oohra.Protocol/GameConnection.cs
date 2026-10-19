@@ -73,6 +73,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Recepty, které postava umí.</summary>
     public RecipeView[] Recipes { get; private set; } = [];
 
+    /// <summary>Naposledy otevřený deník (obsah ze serveru), nebo null.</summary>
+    public JournalView? Journal { get; private set; }
+
     /// <summary>Stavby hráčů (zdi).</summary>
     public StructureView[] Structures { get; private set; } = [];
 
@@ -267,6 +270,24 @@ public sealed class GameConnection : IDisposable
     public void StripBark(int timberId)
     {
         Send(w => Messages.WriteTimberAction(w, MessageType.StripBark, timberId));
+    }
+
+    /// <summary>Ukázat jinému hráči, jak se dělá recept (ten ho pak umí).</summary>
+    public void TeachRecipe(int playerId, string recipeId)
+    {
+        Send(w => Messages.WriteTeachRecipe(w, playerId, recipeId));
+    }
+
+    /// <summary>Otevřít deník z batohu (server pošle obsah).</summary>
+    public void ReadJournal(int stackIndex)
+    {
+        Send(w => Messages.WriteStackAction(w, MessageType.ReadJournal, stackIndex));
+    }
+
+    /// <summary>Nakreslit stránku deníku.</summary>
+    public void DrawJournal(int stackIndex, int page, byte[] bits)
+    {
+        Send(w => Messages.WriteDrawJournal(w, stackIndex, page, bits));
     }
 
     /// <summary>Nasadit batoh z hromádky na záda.</summary>
@@ -553,6 +574,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Recipes:
                 Recipes = Messages.ReadRecipes(reader);
+                break;
+            case MessageType.Journal:
+                Journal = Messages.ReadJournal(reader);
                 break;
             case MessageType.Animals:
                 Animals = Messages.ReadAnimals(reader);

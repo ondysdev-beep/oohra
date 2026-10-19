@@ -101,6 +101,9 @@ public readonly record struct StackView(ItemKind Kind, int SpeciesId, PlantPart 
 /// </summary>
 public sealed record RecipeView(int Index, string Id, string Name, (ItemKind Kind, int Count)[] Inputs, ItemKind? Tool, bool NearWater, bool NearFire, bool Repair);
 
+/// <summary>Deník, který hráč otevřel: číslo hromádky v batohu a stránky (kresby 12 × 12 bodů).</summary>
+public sealed record JournalView(int StackIndex, byte[][] Pages);
+
 /// <summary>
 /// Strom, který není celý ze seedu: padá (úhel pádu), pařez, mladý strom (druh, výška, až doroste, růst 0 až 1),
 /// nebo dorostlý strom (druh a výška).
@@ -352,6 +355,61 @@ public static class Messages
             var tool = r.GetByte();
             return new RecipeView(index, id, name, inputs, tool == 255 ? null : (ItemKind)tool, r.GetBool(), r.GetBool(), r.GetBool());
         });
+    }
+
+    /// <summary>Ukázat hráči (číslo), jak se dělá recept.</summary>
+    public static void WriteTeachRecipe(NetDataWriter w, int playerId, string recipeId)
+    {
+        w.Put((byte)MessageType.TeachRecipe);
+        w.Put(playerId);
+        w.Put(recipeId);
+    }
+
+    public static (int PlayerId, string RecipeId) ReadTeachRecipe(NetDataReader r)
+    {
+        return (r.GetInt(), r.GetString(64));
+    }
+
+    /// <summary>Nakreslit stránku deníku z hromádky v batohu.</summary>
+    public static void WriteDrawJournal(NetDataWriter w, int stackIndex, int page, byte[] bits)
+    {
+        w.Put((byte)MessageType.DrawJournal);
+        w.Put((byte)stackIndex);
+        w.Put((byte)page);
+        w.Put(bits);
+    }
+
+    public static (int StackIndex, int Page, byte[] Bits) ReadDrawJournal(NetDataReader r)
+    {
+        var (stack, page) = (r.GetByte(), r.GetByte());
+        var bits = new byte[SignBits.ByteCount];
+        r.GetBytes(bits, SignBits.ByteCount);
+        return (stack, page, bits);
+    }
+
+    /// <summary>Obsah deníku pro hráče, který ho drží.</summary>
+    public static void WriteJournal(NetDataWriter w, JournalView journal)
+    {
+        w.Put((byte)MessageType.Journal);
+        w.Put((byte)journal.StackIndex);
+        w.Put((byte)journal.Pages.Length);
+        foreach (var page in journal.Pages)
+        {
+            w.Put(page);
+        }
+    }
+
+    public static JournalView ReadJournal(NetDataReader r)
+    {
+        var stack = r.GetByte();
+        var pages = new byte[r.GetByte()][];
+        for (var i = 0; i < pages.Length; i++)
+        {
+            pages[i] = new byte[SignBits.ByteCount];
+            r.GetBytes(pages[i], SignBits.ByteCount);
+        }
+
+        return new JournalView(stack, pages);
     }
 
     /// <summary>Sundat batoh ze zad do rukou.</summary>

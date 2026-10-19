@@ -36,6 +36,21 @@ namespace Oohra.Core.World
         Rotten,
 
         InventoryFull,
+
+        /// <summary>Ukázal jinému hráči, jak se recept dělá (ten ho teď umí).</summary>
+        Taught,
+
+        /// <summary>Ten druhý hráč to už umí.</summary>
+        AlreadyKnows,
+
+        /// <summary>Komu ukazovat, je moc daleko (nebo není).</summary>
+        TooFarToTeach,
+
+        /// <summary>Co neumíš, neukážeš.</summary>
+        DontKnow,
+
+        /// <summary>Jiný hráč ti ukázal, jak se recept dělá (Subject = recept).</summary>
+        LearnedFromOther,
     }
 
     /// <summary>Jak dopadlo kácení, sekání kmene, štípání, nošení kladu nebo výroba sekery.</summary>

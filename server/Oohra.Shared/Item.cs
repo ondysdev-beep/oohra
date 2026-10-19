@@ -57,15 +57,24 @@ namespace Oohra.Core.Items
 
         /// <summary>Pazourek z vrstvené skály: nejlepší nářadí.</summary>
         Flint = 18,
+
+        /// <summary>Kostěná jehla: šití (deník). Opotřebuje se.</summary>
+        Needle = 19,
+
+        /// <summary>Kostěný háček: rybaření bez kopí a s větší šancí.</summary>
+        Hook = 20,
+
+        /// <summary>Deník z kůže: stránky s kresbami a mapami (Ref = číslo deníku). Zůstane u těla.</summary>
+        Journal = 21,
     }
 
     /// <summary>
     /// Věc v batohu: část rostliny, maso nebo ryba, materiál (klacek, kámen, dřevo), nebo nástroj (kopí, sekera).
     /// Část rostliny nese i to, odkud je a jak je upravená. Maso a ryba nesou, jestli jsou upečené,
     /// a herní den, kdy byly získané (časem se zkazí). Nástroj nese, kolik použití mu zbývá (Uses),
-    /// klad, z jakého je stromu (Tree). Stejné věci se skládají na hromádku.
+    /// klad, z jakého je stromu (Tree). Věc s vlastním obsahem (deník) nese číslo (Ref). Stejné věci se skládají na hromádku.
     /// </summary>
-    public sealed record Item(ItemKind Kind, PlantItem? Plant = null, Cooking Cooking = Cooking.Raw, int Day = 0, int Uses = 0, TreeKind Tree = TreeKind.Oak)
+    public sealed record Item(ItemKind Kind, PlantItem? Plant = null, Cooking Cooking = Cooking.Raw, int Day = 0, int Uses = 0, TreeKind Tree = TreeKind.Oak, int Ref = 0)
     {
         public static readonly Item Stick = new Item(ItemKind.Stick);
 

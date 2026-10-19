@@ -55,6 +55,9 @@ public sealed class WorldSaveTests : IDisposable
             ondra.Character.Toxin = 12.5;
             ondra.Character.TorchMinutes = 9999;
             ondra.Character.Learn("smallBag");
+            var journal = net.Server.Journals.Create();
+            net.Server.Journals.Draw(journal.Ref, 0, Enumerable.Repeat((byte)255, SignBits.ByteCount).ToArray());
+            ondra.Inventory.TryAdd(journal);
             ondra.Inventory.TryAdd(new Oohra.Core.Items.Item(Oohra.Core.Items.ItemKind.LargeBag));
 
             // Kácení: rozsekaný strom (jedno seknutí) se uloží.
@@ -78,6 +81,8 @@ public sealed class WorldSaveTests : IDisposable
         Assert.Equal(12.5, restarted.Server.FindPlayer("Ondra")!.Character.Toxin);
         Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.TorchLit);
         Assert.True(restarted.Server.FindPlayer("Ondra")!.Character.Knows("smallBag"));
+        var savedJournal = restarted.Server.FindPlayer("Ondra")!.Inventory.Stacks.Single(s => s.Item.Kind == Oohra.Core.Items.ItemKind.Journal).Item;
+        Assert.True(SignBits.Get(restarted.Server.Journals.Pages(savedJournal.Ref)![0], 0, 0));
         Assert.Equal(Oohra.Core.Items.ItemKind.LargeBag, restarted.Server.FindPlayer("Ondra")!.Inventory.Bag!.Kind);
         Assert.Contains(restarted.Server.Island.Trees, t => restarted.Server.Island.Forestry.HitsOf(t.TileIndex) == 1);
         Assert.Single(restarted.Server.FindPlayer("Ondra")!.Character.Scheduled);

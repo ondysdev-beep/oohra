@@ -153,7 +153,7 @@ namespace Oohra.Client
                     || _deathRect.Contains(mouse) || _backpackButtonRect.Contains(mouse) || _buildButtonRect.Contains(mouse) || _buildPanelRect.Contains(mouse)
                     || _sleepButtonRect.Contains(mouse) || _skillsButtonRect.Contains(mouse) || _skillsRect.Contains(mouse) || _helpRect.Contains(mouse)
                     || SpeechHud.Covers(mouse) || SignHud.Covers(mouse) || TribeHud.Covers(mouse)
-                    || CorpseHud.Covers(mouse) || SignatureHud.Covers(mouse) || ReportHud.Covers(mouse);
+                    || CorpseHud.Covers(mouse) || SignatureHud.Covers(mouse) || ReportHud.Covers(mouse) || JournalHud.Covers(mouse);
             }
         }
 
@@ -382,7 +382,7 @@ namespace Oohra.Client
                     var tile = _session.Connection.World.TileAt(target.TileX, target.TileY);
                     GUI.Label(titleRect, Texts.WaterName(tile).ToUpper(), _title);
                     if (Button(ref buttonRect, "Napít se")) _session.Drink();
-                    if (tile != TileType.Bog && _session.Count(ItemKind.Spear) > 0 && Button(ref buttonRect, "Rybařit")) _session.Fish();
+                    if (tile != TileType.Bog && (_session.Count(ItemKind.Spear) > 0 || _session.Count(ItemKind.Hook) > 0) && Button(ref buttonRect, "Rybařit")) _session.Fish();
                     if (_session.Knows("tanHide") && _session.Count(ItemKind.Hide) > 0 && _session.Count(ItemKind.Ash) > 0 && Button(ref buttonRect, "Vyčinit kůži")) _session.Craft("tanHide");
                     break;
                 case TargetKind.Tree:
@@ -487,6 +487,21 @@ namespace Oohra.Client
 
             buttonRect.width = 120;
             if (Button(ref buttonRect, "Nahlásit")) _session.AskReport(ReportTarget.Player, target.Id, "hráče " + info.Nickname);
+
+            // Ukázat, jak se dělá recept, který postava umí (ten druhý ho pak umí bez zkoušení).
+            var recipes = _session.Connection.Recipes;
+            if (recipes.Length == 0)
+            {
+                return;
+            }
+
+            var row = new Rect(titleRect.x, buttonRect.y + 34, 220, 22);
+            GUI.Label(row, "Ukázat, jak se dělá:", _label);
+            for (var r = 0; r < recipes.Length; r++)
+            {
+                var rect = new Rect(titleRect.x + r % 3 * 168, row.y + 24 + r / 3 * 28, 162, 24);
+                if (GUI.Button(rect, recipes[r].Name)) _session.Connection.TeachRecipe(target.Id, recipes[r].Id);
+            }
         }
 
         /// <summary>
@@ -690,6 +705,7 @@ namespace Oohra.Client
                 if (canBake && Button(ref buttons, "Upéct")) _session.Bake(i);
                 if (stack.Kind == ItemKind.Wood && _session.Count(ItemKind.Axe) > 0 && Button(ref buttons, "Naštípat")) connection.SplitWood(i);
                 if ((stack.Kind == ItemKind.SmallBag || stack.Kind == ItemKind.LargeBag) && Button(ref buttons, "Nasadit")) connection.WearBag(i);
+                if (stack.Kind == ItemKind.Journal && Button(ref buttons, "Otevřít")) _session.OpenJournal(i);
                 buttons.x = x + 300 + 3 * (buttons.width + 8);
                 // Klad se nezahazuje, ale pokládá na zem.
                 if (Button(ref buttons, stack.Kind == ItemKind.LogPiece ? "Položit" : "Zahodit")) connection.Drop(i);
@@ -732,7 +748,7 @@ namespace Oohra.Client
         {
             "WASD nebo klik myší: chůze · klik na věc: jít k ní a otevřít nabídku",
             "Mezerník: rána (zvíře poblíž) · Esc: zavřít nabídku",
-            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit, zkusit spojit věci, vyrobit, co umíš) · N spát a vstát · K dovednosti",
+            "B batoh (jíst, ochutnat, upéct, ukázat, zahodit, zkusit spojit věci, vyrobit, co umíš, otevřít deník) · N spát a vstát · K dovednosti",
             "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
             "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
             "H nakreslit značku · P podpis (jméno ze slabik a znak)",

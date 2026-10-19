@@ -4,8 +4,11 @@ using Oohra.Core.World;
 
 namespace Oohra.Core.Items;
 
-/// <summary>Kde postava stojí (u vody na činění kůže, u ohně) a kdy (herní minuty, kvůli hnití kůže).</summary>
-public readonly record struct CraftPlace(bool NearWater, bool NearFire, double Now);
+/// <summary>
+/// Kde postava stojí (u vody na činění kůže, u ohně), kdy (herní minuty, kvůli hnití kůže) a kde se zakládají
+/// deníky (vyrobený deník dostane číslo, bez Journals má číslo 0).
+/// </summary>
+public readonly record struct CraftPlace(bool NearWater, bool NearFire, double Now, Journals? Journals = null);
 
 /// <summary>
 /// Výroba podle receptů (návrh 0.8, kap. 3, crafting.json). Co postava umí, se naučí zkoušením: spojí věci z batohu
@@ -81,7 +84,7 @@ public static class Crafting
             return CraftResult.Failed;
         }
 
-        var made = recipe.Repairs is null ? Produce(recipe, inventory, place.Now) : Repair(recipe, inventory);
+        var made = recipe.Repairs is null ? Produce(recipe, inventory, place) : Repair(recipe, inventory);
         if (made is not null)
         {
             return made.Value;
@@ -95,6 +98,31 @@ public static class Crafting
         maker.Practice(SkillKind.Craft, GameData.Skills.Practice.Craft);
         maker.Learn(recipe.Id);
         return known ? CraftResult.Made : CraftResult.Learned;
+    }
+
+    /// <summary>
+    /// Ukáže jinému hráči, jak se recept dělá (návrh 0.8, kap. 3): ten ho pak umí bez zkoušení. Ukazovat smí jen
+    /// ten, kdo recept umí, a jen blízko (teachReach v crafting.json).
+    /// </summary>
+    public static CraftResult Teach(Character teacher, Character learner, string recipeId, double distance)
+    {
+        if (!teacher.Knows(recipeId) || GameData.Crafting.Find(recipeId) is null)
+        {
+            return CraftResult.DontKnow;
+        }
+
+        if (learner.IsDead || distance > GameData.Crafting.TeachReach)
+        {
+            return CraftResult.TooFarToTeach;
+        }
+
+        if (learner.Knows(recipeId))
+        {
+            return CraftResult.AlreadyKnows;
+        }
+
+        learner.Learn(recipeId);
+        return CraftResult.Taught;
     }
 
     /// <summary>Jde to vyrobit tady a z toho, co má? Vrací důvod, proč ne, nebo null.</summary>
@@ -139,8 +167,9 @@ public static class Crafting
     }
 
     /// <summary>Spotřebuje materiál a přidá výrobek. Když se výrobek nevejde, materiál vrátí.</summary>
-    private static CraftResult? Produce(Recipe recipe, Inventory inventory, double now)
+    private static CraftResult? Produce(Recipe recipe, Inventory inventory, CraftPlace place)
     {
+        var now = place.Now;
         var taken = new List<Item>();
         foreach (var (kind, count) in recipe.Inputs)
         {
@@ -151,7 +180,10 @@ public static class Crafting
             }
         }
 
-        if (inventory.TryAdd(new Item(recipe.Output!.Value, Uses: recipe.Uses)))
+        var output = recipe.Output == ItemKind.Journal && place.Journals is not null
+            ? place.Journals.Create()
+            : new Item(recipe.Output!.Value, Uses: recipe.Uses);
+        if (inventory.TryAdd(output))
         {
             return null;
         }

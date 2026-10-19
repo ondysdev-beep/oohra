@@ -24,8 +24,15 @@
     { "id": "repairKnife", "name": "Naostřit nůž", "inputs": { "Stone": 1 }, "repairs": "Knife", "repairUses": 25, "maxUses": 100 },
     { "id": "smallBag", "name": "Malý batoh z lýka", "inputs": { "Bast": 4, "Stick": 2 }, "output": "SmallBag", "unique": true },
     { "id": "tanHide", "name": "Vyčinit kůži", "inputs": { "Hide": 1, "Ash": 1 }, "output": "TannedHide", "nearWater": true },
-    { "id": "largeBag", "name": "Velký batoh z kůže", "inputs": { "TannedHide": 2, "Bone": 2, "Bast": 1 }, "tool": "Knife", "output": "LargeBag", "unique": true }
+    { "id": "largeBag", "name": "Velký batoh z kůže", "inputs": { "TannedHide": 2, "Bone": 2, "Bast": 1 }, "tool": "Knife", "output": "LargeBag", "unique": true },
+    { "id": "needle", "name": "Kostěná jehla", "inputs": { "Bone": 1 }, "tool": "Knife", "output": "Needle", "uses": 20 },
+    { "id": "hook", "name": "Kostěný háček", "inputs": { "Bone": 1, "Bast": 1 }, "tool": "Knife", "output": "Hook", "uses": 30 },
+    { "id": "journal", "name": "Deník", "inputs": { "TannedHide": 1, "Bast": 1 }, "tool": "Needle", "output": "Journal" }
   ],
+  // Deník: kolik má stránek (každá kresba 12 × 12 bodů, jako značka).
+  "journalPages": 12,
+  // Ukázat jinému hráči, jak se recept dělá: musí stát nejvýš tak blízko (metry). Pak ho umí bez zkoušení.
+  "teachReach": 2.5,
 
   // Pazourek: z vrstvené skály je místo kamene pazourek s touto šancí.
   "flintChance": 0.35,

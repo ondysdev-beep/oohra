@@ -1,3 +1,5 @@
+using Oohra.Core.World;
+
 namespace Oohra.Core.Data;
 
 // Pravidla zvířat z Data/animals.json. Význam čísel je popsaný v komentářích v JSON.
@@ -6,6 +8,7 @@ public sealed record AnimalRules(
     PopulationRules Population,
     double RespawnMinutes,
     double CorpseMinutes,
+    CarcassSpawnRules Carcasses,
     double CampDistance,
     double NightDaylightBelow,
     BoarRules Boar,
@@ -66,4 +69,7 @@ public sealed record TrapCatchRules(
     double CatchRange, double RabbitChance, double DeerChance, double RateFactor, int DeerMeat, int OtherMeat, double PracticeBuild);
 
 public sealed record FishingRules(
-    double Reach, double CooldownSeconds, double BaseChance, double ChancePerLevel, double PracticeCatch, double PracticeMiss);
+    double Reach, double CooldownSeconds, double BaseChance, double ChancePerLevel, double PracticeCatch, double PracticeMiss, double HookBonus);
+
+/// <summary>Mršiny v lese: šance při doplňování zvířat, jaké druhy, jak daleko od hráčů a kolik nejvýš.</summary>
+public sealed record CarcassSpawnRules(double Chance, List<AnimalKind> Kinds, double MinPlayerDistance, double MaxPerArea);
