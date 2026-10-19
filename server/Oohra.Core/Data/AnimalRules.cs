@@ -69,7 +69,7 @@ public sealed record WoundRules(
     double InfectionAbove, double InfectionChance, double InfectionDelayMin, double InfectionDelayRange, double InfectionFactor,
     double LimpSymptomAbove);
 
-public sealed record MeatRules(double[] Raw, double[] Baked);
+public sealed record MeatRules(double[] Raw, double[] Baked, double[] Smoked, double[] Dried);
 
 public sealed record TrapCatchRules(
     double CatchRange, double RabbitChance, double DeerChance, double RateFactor, int DeerMeat, int OtherMeat, double PracticeBuild);

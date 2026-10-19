@@ -115,6 +115,11 @@ public sealed record PlantStateSave(int PlantId, double LeavesAt, double FruitAt
 
 public sealed record RockPileSave(int TileIndex, int Stones, double RegrowAt);
 
+/// <summary>Maso v kouři ohně nebo na sušáku.</summary>
+public sealed record RackSave(RackHolder Holder, int Id, List<RackPieceSave> Pieces);
+
+public sealed record RackPieceSave(Item Item, double Progress);
+
 /// <summary>Vykouřené vosí hnízdo: do kdy není.</summary>
 public sealed record WaspNestSave(int TileIndex, double GoneUntil);
 
@@ -147,6 +152,8 @@ public sealed class IslandSave
     public ForestrySave Forestry { get; init; } = new();
 
     public List<WaspNestSave> Wasps { get; init; } = [];
+
+    public List<RackSave> Racks { get; init; } = [];
 }
 
 /// <summary>Kácení: rozsekané stromy (počet seknutí), pařezy (kdy padly) a dřevo na zemi.</summary>

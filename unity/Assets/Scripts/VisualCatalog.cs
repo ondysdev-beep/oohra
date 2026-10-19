@@ -187,6 +187,10 @@ namespace Oohra.Client
         [Tooltip("Had (creature_snake): délka asi 1 m, leží na zemi, hlava ve směru osy Z. Animator parametr Stav (4 spí stočený, 6 varuje vztyčený, 0 leze, 9 mrtvý).")]
         public GameObject Snake;
 
+        [Header("Uzení a sušení")]
+        [Tooltip("Kus masa, který visí v kouři nad ohněm nebo na sušáku: asi 0,08 × 0,25 m, úchyt nahoře uprostřed. Hra ho obarví podle toho, jestli je syrový, uzený, nebo sušený.")]
+        public GameObject MeatStrip;
+
         [Header("Nebezpečí")]
         [Tooltip("Barva kalné vody jarní záplavy nad zatopenou souší (průhlednost v alfě).")]
         public Color FloodColor = new Color(0.30f, 0.29f, 0.20f, 0.55f);

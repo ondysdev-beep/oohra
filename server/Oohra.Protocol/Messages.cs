@@ -132,6 +132,12 @@ public readonly record struct RockPileView(int TileIndex, int Stones, int MaxSto
 /// <summary>Stopa v bahně: poloha, směr (0 až 255 = celý kruh), kdo ji udělal a jak je čerstvá (255 nová, 0 mizí).</summary>
 public readonly record struct TrackView(float X, float Y, byte Dir, TrackMaker Maker, byte Fresh);
 
+/// <summary>Kus masa v kouři nebo na sušáku: co to je (Cooking Smoked/Dried = hotové) a jak je hotový (0 až 255).</summary>
+public readonly record struct RackPieceView(ItemKind Kind, Cooking Cooking, byte Progress);
+
+/// <summary>Maso, které visí v kouři ohně (Id ohně) nebo na sušáku (Id stavby).</summary>
+public sealed record RackView(RackHolder Holder, int Id, RackPieceView[] Pieces);
+
 /// <summary>Vosí hnízdo ve stromě (TileIndex stromu), Angry = vosy jsou rozzuřené.</summary>
 public readonly record struct WaspNestView(int TileIndex, float X, float Y, bool Angry);
 
@@ -437,6 +443,59 @@ public static class Messages
     }
 
     /// <summary>Prohlédnout se (najít a vytáhnout klíšťata).</summary>
+    /// <summary>Pověsit syrové maso z hromádky do kouře ohně nebo na sušák.</summary>
+    public static void WriteHangMeat(NetDataWriter w, RackHolder holder, int id, int stackIndex)
+    {
+        w.Put((byte)MessageType.HangMeat);
+        w.Put((byte)holder);
+        w.Put(id);
+        w.Put(stackIndex);
+    }
+
+    public static (RackHolder Holder, int Id, int StackIndex) ReadHangMeat(NetDataReader r)
+    {
+        return ((RackHolder)r.GetByte(), r.GetInt(), r.GetInt());
+    }
+
+    /// <summary>Vzít maso z kouře nebo ze sušáku (piece -1 = nejdřív hotové).</summary>
+    public static void WriteTakeFromRack(NetDataWriter w, RackHolder holder, int id, int piece)
+    {
+        w.Put((byte)MessageType.TakeFromRack);
+        w.Put((byte)holder);
+        w.Put(id);
+        w.Put(piece);
+    }
+
+    public static (RackHolder Holder, int Id, int Piece) ReadTakeFromRack(NetDataReader r)
+    {
+        return ((RackHolder)r.GetByte(), r.GetInt(), r.GetInt());
+    }
+
+    /// <summary>Všechno maso v kouři a na sušácích. Posílá se po přihlášení a při změně.</summary>
+    public static void WriteRacks(NetDataWriter w, IReadOnlyList<RackView> racks)
+    {
+        w.Put((byte)MessageType.Racks);
+        w.Put(racks.Count);
+        foreach (var rack in racks)
+        {
+            w.Put((byte)rack.Holder);
+            w.Put(rack.Id);
+            w.Put(rack.Pieces.Length);
+            foreach (var p in rack.Pieces)
+            {
+                w.Put((byte)p.Kind);
+                w.Put((byte)p.Cooking);
+                w.Put(p.Progress);
+            }
+        }
+    }
+
+    public static RackView[] ReadRacks(NetDataReader r)
+    {
+        return ReadList(r, () => new RackView((RackHolder)r.GetByte(), r.GetInt(),
+            ReadList(r, () => new RackPieceView((ItemKind)r.GetByte(), (Cooking)r.GetByte(), r.GetByte()))));
+    }
+
     public static void WriteInspectBody(NetDataWriter w)
     {
         w.Put((byte)MessageType.InspectBody);

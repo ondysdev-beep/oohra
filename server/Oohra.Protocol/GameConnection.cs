@@ -103,6 +103,9 @@ public sealed class GameConnection : IDisposable
     /// <summary>Hromady kamenů na skalách (i prázdné, Stones 0).</summary>
     public RockPileView[] RockPiles { get; private set; } = [];
 
+    /// <summary>Maso v kouři ohňů a na sušácích.</summary>
+    public RackView[] Racks { get; private set; } = [];
+
     /// <summary>Na jaře zatopená souš (čísla dlaždic).</summary>
     public int[] FloodedTiles { get; private set; } = [];
 
@@ -309,6 +312,18 @@ public sealed class GameConnection : IDisposable
     public void RemoveLeeches()
     {
         Send(Messages.WriteRemoveLeeches);
+    }
+
+    /// <summary>Pověsit syrové maso z hromádky do kouře ohně (Fire) nebo na sušák (Structure).</summary>
+    public void HangMeat(RackHolder holder, int id, int stackIndex)
+    {
+        Send(w => Messages.WriteHangMeat(w, holder, id, stackIndex));
+    }
+
+    /// <summary>Vzít maso z kouře nebo ze sušáku (piece -1 = nejdřív hotové).</summary>
+    public void TakeFromRack(RackHolder holder, int id, int piece = -1)
+    {
+        Send(w => Messages.WriteTakeFromRack(w, holder, id, piece));
     }
 
     /// <summary>Prohlédnout se: najít a vytáhnout klíšťata.</summary>
@@ -658,6 +673,9 @@ public sealed class GameConnection : IDisposable
                 break;
             case MessageType.Tracks:
                 Tracks = Messages.ReadTracks(reader);
+                break;
+            case MessageType.Racks:
+                Racks = Messages.ReadRacks(reader);
                 break;
             case MessageType.Corpses:
                 Corpses = Messages.ReadCorpses(reader);

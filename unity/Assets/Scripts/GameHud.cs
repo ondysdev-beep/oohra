@@ -468,6 +468,16 @@ namespace Oohra.Client
             }
 
             if (caught && Button(ref buttonRect, "Vzít úlovek")) _session.TakeCatch();
+            if (ClientSession.IsDryingRack(structure.Value))
+            {
+                // Sušák: maso se suší ve dne, když neprší.
+                var drying = _session.RackOn(RackHolder.Structure, structure.Value.Id);
+                GUI.Label(titleRect, title + RackTitle(drying, "suší se"), _title);
+                var raw = _session.RawFleshStack();
+                if (raw >= 0 && Button(ref buttonRect, "Pověsit maso k sušení")) _session.Connection.HangMeat(RackHolder.Structure, structure.Value.Id, raw);
+                if (drying.Length > 0 && Button(ref buttonRect, "Vzít maso")) _session.Connection.TakeFromRack(RackHolder.Structure, structure.Value.Id);
+            }
+
             if (Button(ref buttonRect, trap ? "Zvednout past" : "Rozebrat")) _session.RemoveStructure();
         }
 
@@ -610,11 +620,29 @@ namespace Oohra.Client
                 return;
             }
 
-            GUI.Label(titleRect, fire.Value.Burning ? "OHEŇ" : "POPEL", _title);
+            var smoking = _session.RackOn(RackHolder.Fire, fire.Value.Id);
+            GUI.Label(titleRect, (fire.Value.Burning ? "OHEŇ" : "POPEL") + RackTitle(smoking, "v kouři"), _title);
             if (Button(ref buttonRect, fire.Value.Burning ? "Přiložit klacek" : "Zapálit znovu")) _session.FeedFire();
             if (fire.Value.Burning && Button(ref buttonRect, "Péct (batoh)")) _session.BackpackOpen = true;
+            // Uzení: syrové maso do kouře, dokud oheň hoří.
+            var raw = _session.RawFleshStack();
+            if (fire.Value.Burning && raw >= 0 && Button(ref buttonRect, "Zavěsit maso do kouře")) _session.Connection.HangMeat(RackHolder.Fire, fire.Value.Id, raw);
+            if (smoking.Length > 0 && Button(ref buttonRect, "Vzít maso")) _session.Connection.TakeFromRack(RackHolder.Fire, fire.Value.Id);
             if (Button(ref buttonRect, "Nabrat popel")) _session.TakeAsh();
             if (fire.Value.Burning && !_session.TorchLit && Button(ref buttonRect, "Zapálit pochodeň")) _session.LightTorch();
+        }
+
+        /// <summary>Kolik kusů masa visí a kolik je hotových, za název ohně nebo sušáku.</summary>
+        private static string RackTitle(RackPieceView[] pieces, string where)
+        {
+            if (pieces.Length == 0)
+            {
+                return string.Empty;
+            }
+
+            var done = pieces.Count(p => p.Cooking == Cooking.Smoked || p.Cooking == Cooking.Dried);
+            var progress = pieces.Where(p => p.Cooking == Cooking.Raw).Select(p => (int)p.Progress).DefaultIfEmpty(0).Max() * 100 / 255;
+            return " · " + where + " " + pieces.Length + (done > 0 ? " (hotovo " + done + ")" : " (" + progress + " %)");
         }
 
         private bool HasFruit(int plantId)

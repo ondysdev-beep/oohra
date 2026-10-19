@@ -80,6 +80,18 @@ namespace Oohra.Client.Tests
         }
 
         [Test]
+        public void EveryPreserveResultHasTextAndMeatShowsCooking()
+        {
+            foreach (PreserveResult result in Enum.GetValues(typeof(PreserveResult)))
+            {
+                Assert.AreNotEqual(result.ToString(), Texts.For(result));
+            }
+
+            Assert.AreEqual("Maso · uzené", Texts.FleshName(Oohra.Core.Items.ItemKind.Meat, Cooking.Smoked));
+            Assert.AreEqual("Ryba · sušená", Texts.FleshName(Oohra.Core.Items.ItemKind.Fish, Cooking.Dried));
+        }
+
+        [Test]
         public void EveryFireResultHasText()
         {
             foreach (FireResult result in Enum.GetValues(typeof(FireResult)))

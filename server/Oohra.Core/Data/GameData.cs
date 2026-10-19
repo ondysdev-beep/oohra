@@ -110,6 +110,11 @@ public static class GameData
 
     public static CraftingRules Crafting => _crafting.Value;
 
+    private static readonly Lazy<PreservingRules> _preserving =
+        new(() => Load<PreservingRules>("preserving.json"));
+
+    public static PreservingRules Preserving => _preserving.Value;
+
     private static readonly Lazy<SeasonRules> _seasons =
         new(() => Load<SeasonRules>("seasons.json"));
 

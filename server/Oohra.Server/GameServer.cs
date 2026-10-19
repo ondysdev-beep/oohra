@@ -49,6 +49,7 @@ public sealed partial class GameServer : IDisposable
     private int _sentWaspsVersion;
     private int _sentWaspsForestryVersion;
     private int _sentFloodVersion;
+    private int _sentRacksVersion = -1;
     private int _sentCorpsesVersion;
     private readonly IReadOnlyDictionary<Concept, byte[]> _commonWords;
     private double _seconds;
@@ -133,6 +134,9 @@ public sealed partial class GameServer : IDisposable
 
     internal Fires Fires { get; } = new();
 
+    /// <summary>Maso v kouři ohňů a na sušácích.</summary>
+    internal MeatRacks Racks { get; } = new();
+
     internal Materials Materials { get; } = new();
 
     internal Animals Animals { get; }
@@ -181,6 +185,7 @@ public sealed partial class GameServer : IDisposable
         Animals.Update(Island, Fires, Plants, Clock, realSeconds, AnimalTargets());
         Island.Forestry.Update(Island, Animals, AnimalTargets(), realSeconds, Clock);
         Island.Flood.Update(Clock);
+        Racks.Update(Fires, Island.Structures, Clock, CurrentWeather.Kind, minutes);
         Island.Tracks.Update(Island, AnimalTargets(), Animals.All, minutes, CurrentWeather.Kind);
         if (_config.Wasps)
         {
@@ -241,6 +246,12 @@ public sealed partial class GameServer : IDisposable
         {
             _sentCorpsesVersion = Island.Corpses.Version;
             Broadcast(w => Messages.WriteCorpses(w, CorpseViews()));
+        }
+
+        if (Racks.Version != _sentRacksVersion)
+        {
+            _sentRacksVersion = Racks.Version;
+            Broadcast(w => Messages.WriteRacks(w, RackViews()));
         }
 
         if (Island.Flood.Version != _sentFloodVersion)
@@ -412,6 +423,7 @@ public sealed partial class GameServer : IDisposable
         SendTo(peer, w => Messages.WriteRockPiles(w, RockPileViews()));
         SendTo(peer, w => Messages.WriteWaspNests(w, WaspNestViews()));
         SendTo(peer, w => Messages.WriteFloodedTiles(w, Island.Flood.FloodedTiles().ToList()));
+        SendTo(peer, w => Messages.WriteRacks(w, RackViews()));
         player.SentTracks = (-1, 0, 0);
         SendTo(peer, w => Messages.WriteCorpses(w, CorpseViews()));
         SendSignature(player);

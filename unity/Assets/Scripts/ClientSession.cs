@@ -688,6 +688,44 @@ namespace Oohra.Client
             }
         }
 
+        /// <summary>Maso v kouři ohně nebo na sušáku (prázdné, když nic nevisí).</summary>
+        public RackPieceView[] RackOn(RackHolder holder, int id)
+        {
+            foreach (var rack in Connection.Racks)
+            {
+                if (rack.Holder == holder && rack.Id == id)
+                {
+                    return rack.Pieces;
+                }
+            }
+
+            return new RackPieceView[0];
+        }
+
+        /// <summary>Hromádka syrového nezkaženého masa nebo ryby v batohu, nebo -1.</summary>
+        public int RawFleshStack()
+        {
+            var stacks = Connection.Inventory.Stacks;
+            for (var i = 0; i < stacks.Length; i++)
+            {
+                if ((stacks[i].Kind == ItemKind.Meat || stacks[i].Kind == ItemKind.Fish) && stacks[i].Cooking == Cooking.Raw && !stacks[i].Spoiled)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>Stavba je sušák na maso.</summary>
+        public static bool IsDryingRack(StructureView structure)
+        {
+            return structure.Kind == BuildKind.Decoration && structure.Decoration == DryingRackId;
+        }
+
+        /// <summary>Id dekorace sušáku (preserving.json rackDecoration).</summary>
+        public const string DryingRackId = "drying_rack";
+
         public FireView? MenuFire()
         {
             if (Menu == null || Menu.Kind != TargetKind.Fire)

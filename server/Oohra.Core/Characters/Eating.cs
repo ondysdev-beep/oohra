@@ -41,7 +41,13 @@ public static class Eating
     public static void EatMeat(Character c, Cooking cooking, GameClock clock, bool taste = false, bool spoiled = false)
     {
         var meat = GameData.Animals.Meat;
-        var v = Composition.FromArray(cooking == Cooking.Raw ? meat.Raw : meat.Baked);
+        var v = Composition.FromArray(cooking switch
+        {
+            Cooking.Raw => meat.Raw,
+            Cooking.Smoked => meat.Smoked,
+            Cooking.Dried => meat.Dried,
+            _ => meat.Baked,
+        });
         var rules = GameData.Body.Eating;
         Consume(c, v, clock, taste ? rules.TasteDose : rules.EatDose, taste, spoiled);
     }

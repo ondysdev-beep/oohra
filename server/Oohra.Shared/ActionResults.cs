@@ -53,6 +53,36 @@ namespace Oohra.Core.World
         LearnedFromOther,
     }
 
+    /// <summary>Kde maso visí: v kouři ohně (číslo ohně), nebo na sušáku (číslo stavby).</summary>
+    public enum RackHolder : byte
+    {
+        Fire = 0,
+        Structure = 1,
+    }
+
+    /// <summary>Jak dopadlo pověšení masa do kouře nebo na sušák a jeho vzetí.</summary>
+    public enum PreserveResult
+    {
+        Hung,
+        Taken,
+
+        /// <summary>Pověsit jde jen syrové maso nebo rybu.</summary>
+        NotMeat,
+
+        /// <summary>Zkažené maso už nezachrání ani kouř.</summary>
+        Spoiled,
+        RackFull,
+        NothingHere,
+        InventoryFull,
+        TooFar,
+
+        /// <summary>Uzení jde jen nad hořícím ohněm.</summary>
+        FireOut,
+
+        /// <summary>Cizí sušák (smí jen majitel a jeho kmen).</summary>
+        NotYours,
+    }
+
     /// <summary>Jak dopadlo vykuřování vosího hnízda.</summary>
     public enum WaspResult
     {

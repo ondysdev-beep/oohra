@@ -16,6 +16,12 @@ public enum Cooking
     Raw = 0,
     Baked = 1,
     Boiled = 2,
+
+    /// <summary>Uzené maso nebo ryba (v kouři ohně).</summary>
+    Smoked = 3,
+
+    /// <summary>Sušené maso nebo ryba (na sušáku).</summary>
+    Dried = 4,
 }
 
 /// <summary>
