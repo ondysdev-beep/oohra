@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25f02e720ace5fb49a765de9b9818142, type: 3}
+  m_Name: SoundCatalog
+  m_EditorClassIdentifier: Oohra.Client::Oohra.Client.SoundCatalog
+  FireLoop: {fileID: 8300000, guid: c655a97ee4ed8ad4d9e3604effa882a7, type: 3}
+  RainLoop: {fileID: 8300000, guid: 36c3514e757bd7547b045644d7f71b6c, type: 3}
+  StormLoop: {fileID: 8300000, guid: 1bfa2c521c47860438014b72cfcecd83, type: 3}
+  SeaLoop: {fileID: 8300000, guid: 847e95558007dd74aa67f630b5279f71, type: 3}
+  StepsGrass:
+  - {fileID: 8300000, guid: f543955d9f6a72b4884afd50b81d307d, type: 3}
+  StepsSand: []
+  StepsStone: []
+  StepsMud: []
+  StepsWood: []
+  Chop:
+  - {fileID: 8300000, guid: a7bad096296262e458aa20eea0ae3ec0, type: 3}
+  TreeFall:
+  - {fileID: 8300000, guid: 11bf77bd7b3248a4795a015014bcdad8, type: 3}
+  TakeStone:
+  - {fileID: 8300000, guid: 2d5db19a6f2073b4fa748b36e44ecd9a, type: 3}
+  StoneWork:
+  - {fileID: 8300000, guid: 48cd2a9595a7737469684a542eccb386, type: 3}
+  Build:
+  - {fileID: 8300000, guid: c52cadc01e5707547b9e2ae87c7089fe, type: 3}
+  Stomach:
+  - {fileID: 8300000, guid: 06bfaedf70416a1418cab0cb859c7e59, type: 3}
+  - {fileID: 8300000, guid: 8ac3360343a1bc940b02f70f9d835bdf, type: 3}
+  FireVolume: 0.6
+  RainVolume: 0.55
+  StormVolume: 0.65
+  SeaVolume: 0.45
+  StepsVolume: 0.35
+  ChopVolume: 0.8
+  TreeFallVolume: 1
+  TakeStoneVolume: 0.6
+  StoneWorkVolume: 0.6
+  BuildVolume: 0.7
+  StomachVolume: 0.6

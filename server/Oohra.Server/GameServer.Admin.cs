@@ -29,9 +29,15 @@ public sealed partial class GameServer
         }
 
         var argument = parts.Length > 1 ? parts[1].Trim() : string.Empty;
-        return parts[0].ToLowerInvariant() switch
+        var command = parts[0].ToLowerInvariant();
+        if (RunTestingCommand(command, argument) is { } tested)
         {
-            "pomoc" or "help" or "?" => CommandHelp,
+            return tested;
+        }
+
+        return command switch
+        {
+            "pomoc" or "help" or "?" => CommandHelp + "\n" + TestingHelp,
             "hraci" or "players" => PlayerList(),
             "ulozit" or "save" => SaveCommand(),
             "oznamit" or "say" => Announce(argument),
@@ -42,7 +48,7 @@ public sealed partial class GameServer
             "pocasi" or "weather" => ForceWeather(argument),
             "jeskyne" or "cave" => ToCave(argument),
             "konec" or "quit" or "exit" => Stop(),
-            _ => "Neznámý příkaz. " + CommandHelp,
+            _ => "Neznámý příkaz. " + CommandHelp + "\n" + TestingHelp,
         };
     }
 
