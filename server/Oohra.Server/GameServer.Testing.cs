@@ -14,7 +14,7 @@ public sealed partial class GameServer
 {
     public const string TestingHelp =
         "Zkoušení: dat <přezdívka> <věc> [počet] | cas <hodina 0-23> | mesic <1-12> | telo <přezdívka> <sytost|voda|energie|teplo|zdravi> <0-100> "
-        + "| uzdravit <přezdívka> | presun <přezdívka> <more|bazina|skala|vrchovina|les|louka|voda|tabor|ruiny|x y> | recepty <přezdívka> | ohen <přezdívka>";
+        + "| uzdravit <přezdívka> | presun <přezdívka> <more|melcina|bazina|mocal|skala|vrchovina|les|louka|voda|tabor|ruiny|x y> | recepty <přezdívka> | ohen <přezdívka>";
 
     /// <summary>Názvy věcí v příkazu dat (bez háčků a čárek).</summary>
     private static readonly Dictionary<string, ItemKind> ItemNames = new(StringComparer.OrdinalIgnoreCase)
@@ -186,7 +186,7 @@ public sealed partial class GameServer
     {
         if (args.Length < 2 || FindPlayer(args[0]) is not { } player)
         {
-            return "Použití: presun <přezdívka> <more|bazina|skala|vrchovina|les|louka|voda|tabor|ruiny|x y>";
+            return "Použití: presun <přezdívka> <more|melcina|bazina|mocal|skala|vrchovina|les|louka|voda|tabor|ruiny|x y>";
         }
 
         Position? spot;
@@ -200,7 +200,7 @@ public sealed partial class GameServer
             var place = PlaceTest(args[1].ToLowerInvariant());
             if (place is null)
             {
-                return "Neznám místo " + args[1] + ". Jde: more, bazina, skala, vrchovina, les, louka, voda, tabor, ruiny, nebo x y.";
+                return "Neznám místo " + args[1] + ". Jde: more, melcina, bazina, mocal, skala, vrchovina, les, louka, voda, tabor, ruiny, nebo x y.";
             }
 
             spot = Nearest(player, place);
@@ -226,6 +226,8 @@ public sealed partial class GameServer
         {
             "more" or "plaz" => (x, y) => Island.TileAt(x, y) == TileType.Sand && Near(x, y, 2, TileType.Sea),
             "bazina" => (x, y) => Island.TileAt(x, y) == TileType.Bog,
+            "mocal" => (x, y) => Island.TileAt(x, y) == TileType.Mire,
+            "melcina" => (x, y) => Island.TileAt(x, y) == TileType.Shallows,
             "skala" or "kameny" => (x, y) => rocks.Any(p => Math.Abs(p.X - x - 0.5) <= 1.5 && Math.Abs(p.Y - y - 0.5) <= 1.5),
             "vrchovina" => (x, y) => Island.TileAt(x, y) == TileType.Highland,
             "les" => (x, y) => Island.TileAt(x, y) == TileType.Forest,

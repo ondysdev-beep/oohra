@@ -26,6 +26,17 @@ public static class Hazards
         Mosquitoes(c, island, fires, x, y, clock, minutes, rng);
         Leeches(c, island, x, y, now, minutes, rng);
         Ticks(c, island, x, y, clock, minutes, rng);
+        Wading(c, island, x, y, minutes);
+    }
+
+    /// <summary>Kdo se brodí mělčinou nebo brodem, mokne a je mu zima (wading v hazards.json).</summary>
+    private static void Wading(Character c, Island island, double x, double y, double minutes)
+    {
+        var (tx, ty) = ((int)Math.Floor(x), (int)Math.Floor(y));
+        if (island.InBounds(tx, ty) && island.TileAt(tx, ty) is TileType.Shallows or TileType.Ford)
+        {
+            c.Warmth = Math.Max(0, c.Warmth - GameData.Hazards.Wading.WarmthPerMinute * minutes);
+        }
     }
 
     /// <summary>Prohlédnout se: najde a vytáhne všechna přisátá klíšťata. Vrací jejich počet.</summary>
@@ -119,7 +130,9 @@ public static class Hazards
             return;
         }
 
-        if (rng.NextDouble() < rules.ChancePerMinute * minutes)
+        // V močálu se pijavice chytají častěji.
+        var chance = rules.ChancePerMinute * (island.InBounds(tx, ty) && island.TileAt(tx, ty) == TileType.Mire ? rules.MireMultiplier : 1);
+        if (rng.NextDouble() < chance * minutes)
         {
             c.Leeches++;
             c.Report(now, BodyEvent.Leech);
@@ -173,7 +186,7 @@ public static class Hazards
         {
             for (var tx = cx - r; tx <= cx + r; tx++)
             {
-                if (island.InBounds(tx, ty) && island.TileAt(tx, ty) is TileType.Pond or TileType.Bog or TileType.Ford
+                if (island.InBounds(tx, ty) && island.TileAt(tx, ty) is TileType.Pond or TileType.Bog or TileType.Ford or TileType.Mire
                     && Math.Sqrt((tx + 0.5 - x) * (tx + 0.5 - x) + (ty + 0.5 - y) * (ty + 0.5 - y)) <= distance)
                 {
                     return true;

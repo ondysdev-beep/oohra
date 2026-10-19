@@ -32,6 +32,9 @@
   "camps": { "count": 2, "minDistance": 110, "waterWithin": 14 },
   // Zříceniny Pradávných se starými rytinami.
   "ruins": { "count": 6, "minDistance": 45, "campDistance": 30 },
+  // Zóny u vody: pruh moře u břehu širokých seaWidth dlaždic je mělčina (brodí se), u jezera lakeWidth dlaždic mělká
+  // sladká voda (jako brod). Bažina dál než mireDepth dlaždic od svého okraje je močál.
+  "shallows": { "seaWidth": 2, "lakeWidth": 1, "mireDepth": 3 },
   // Šance na strom na dlaždici. Stromy stojí kdekoli v dlaždici a ne blíž než spacing (trees.json), takže les je
   // hustý jen tak, jak koruny dovolí.
   "treeChance": { "Forest": 0.2, "Grass": 0.01, "Bog": 0.04, "Highland": 0.04 },

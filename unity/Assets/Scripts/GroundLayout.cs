@@ -59,6 +59,7 @@ namespace Oohra.Client
                 case TileType.Sand:
                 case TileType.Sea:
                 case TileType.Ford:
+                case TileType.Shallows:
                     return Sand;
                 case TileType.Forest: return Forest;
                 case TileType.Rock:
@@ -68,6 +69,7 @@ namespace Oohra.Client
                     return Rock;
                 case TileType.Highland: return Highland;
                 case TileType.Bog:
+                case TileType.Mire:
                 case TileType.Pond:
                     return Bog;
                 default: return Grass;
@@ -82,13 +84,16 @@ namespace Oohra.Client
                 case TileType.Sea: return shore ? 0.55f : Depth;
                 case TileType.Pond: return 0.6f;
                 case TileType.Ford: return 0.15f;
+                case TileType.Shallows: return 0.3f;
+                // Močál: stojatá voda kousek nad bahnem.
+                case TileType.Mire: return 0.12f;
                 default: return 0f;
             }
         }
 
         public static bool IsWater(TileType tile)
         {
-            return tile == TileType.Sea || tile == TileType.Pond || tile == TileType.Ford;
+            return tile == TileType.Sea || tile == TileType.Pond || tile == TileType.Ford || tile == TileType.Mire || tile == TileType.Shallows;
         }
 
         /// <summary>Počet bodů výšek na stranu: 2^n + 1, asi čtyři na metr (jak chce Terrain).</summary>

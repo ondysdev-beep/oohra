@@ -78,7 +78,7 @@ public sealed class Flooding
         var queue = new Queue<int>();
         for (var i = 0; i < distance.Length; i++)
         {
-            var water = island.Tiles[i] is TileType.Bog || (island.Tiles[i] == TileType.Pond && island.Regions[i] == RegionKind.Marsh);
+            var water = island.Tiles[i] is TileType.Bog or TileType.Mire || (island.Tiles[i] == TileType.Pond && island.Regions[i] == RegionKind.Marsh);
             distance[i] = water ? (byte)0 : Never;
             if (water)
             {

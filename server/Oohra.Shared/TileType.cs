@@ -30,4 +30,10 @@ public enum TileType : byte
 
     /// <summary>Skála kolem jeskyně: nedá se na ni vstoupit.</summary>
     CaveWall = 11,
+
+    /// <summary>Močál: hluboké nitro bažiny se stojatou vodou. Velmi pomalá chůze, víc pijavic, nedá se stavět.</summary>
+    Mire = 12,
+
+    /// <summary>Mělčina u mořského břehu: dá se brodit (pomalu, studí), voda je slaná.</summary>
+    Shallows = 13,
 }

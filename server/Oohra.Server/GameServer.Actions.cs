@@ -529,7 +529,7 @@ public sealed partial class GameServer
         {
             for (var x = cx - 2; x <= cx + 2; x++)
             {
-                if (Island.InBounds(x, y) && Island.TileAt(x, y) is TileType.Pond or TileType.Ford or TileType.Bog
+                if (Island.InBounds(x, y) && Island.TileAt(x, y) is TileType.Pond or TileType.Ford or TileType.Bog or TileType.Mire or TileType.Shallows
                     && Math.Sqrt((x + 0.5 - player.X) * (x + 0.5 - player.X) + (y + 0.5 - player.Y) * (y + 0.5 - player.Y)) <= reach)
                 {
                     nearWater = true;

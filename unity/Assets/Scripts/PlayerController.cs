@@ -427,7 +427,7 @@ namespace Oohra.Client
 
         private static bool IsWater(TileType tile)
         {
-            return tile == TileType.Pond || tile == TileType.Ford || tile == TileType.Bog || tile == TileType.Sea;
+            return tile == TileType.Pond || tile == TileType.Ford || tile == TileType.Bog || tile == TileType.Sea || tile == TileType.Mire || tile == TileType.Shallows;
         }
 
         private static double Distance(double ax, double ay, double bx, double by)

@@ -51,7 +51,9 @@
 
   // Pijavice: při chůzi bažinou se s šancí chancePerMinute přisaje pijavice (nejvýš max). Každá ubírá zdraví.
   // Sundají se u ohně nebo popelem.
-  "leeches": { "chancePerMinute": 0.04, "max": 4, "healthPerLeechPerMinute": 0.02 },
+  "leeches": { "chancePerMinute": 0.04, "max": 4, "healthPerLeechPerMinute": 0.02, "mireMultiplier": 2.5 },
+  // Brodění mělčinou a brodem: postava mokne, teplo klesá o warmthPerMinute za herní minutu.
+  "wading": { "warmthPerMinute": 0.12 },
 
   // Klíšťata: v trávě a lese (dlaždice Grass a Forest) se podle ročního období (jaro, léto, podzim, zima) přisají
   // potichu, hra to neohlásí. Hráč se musí prohlédnout. Klíště přisáté déle než transmitMinutes přenese horečku

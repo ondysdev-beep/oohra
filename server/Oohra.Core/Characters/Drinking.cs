@@ -32,8 +32,10 @@ public static class Drinking
                 c.Hydration = Math.Min(100, c.Hydration + rules.CleanHydration);
                 return DrinkResult.Clean;
             case TileType.Bog:
+            case TileType.Mire:
                 return DrinkMuddy(c, clock.TotalMinutes, rules);
             case TileType.Sea:
+            case TileType.Shallows:
                 c.Hydration = Math.Max(0, c.Hydration + rules.SaltyHydration);
                 return DrinkResult.Salty;
             default:
@@ -43,7 +45,7 @@ public static class Drinking
 
     public static bool IsWater(TileType tile)
     {
-        return tile is TileType.Pond or TileType.Ford or TileType.Bog or TileType.Sea;
+        return tile is TileType.Pond or TileType.Ford or TileType.Bog or TileType.Sea or TileType.Mire or TileType.Shallows;
     }
 
     private static DrinkResult DrinkMuddy(Character c, double now, WaterRules rules)
