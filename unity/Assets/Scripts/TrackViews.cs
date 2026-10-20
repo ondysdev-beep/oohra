@@ -76,7 +76,8 @@ namespace Oohra.Client
             {
                 var t = tracks[i];
                 var angle = t.Dir / 256f * Mathf.PI * 2f;
-                var forward = WorldCoords.ToUnity(Mathf.Cos(angle), Mathf.Sin(angle));
+                // Směr na mapě (y dolů) v Unity (z nahoru), vodorovně.
+                var forward = new Vector3(Mathf.Cos(angle), 0f, -Mathf.Sin(angle));
                 var side = new Vector3(-forward.z, 0f, forward.x);
                 var center = WorldCoords.ToUnity(t.X, t.Y, Height);
                 var color = new Color(Mud.r, Mud.g, Mud.b, Mud.a * t.Fresh / 255f);
@@ -104,7 +105,11 @@ namespace Oohra.Client
             mesh.SetVertices(vertices);
             mesh.SetColors(colors);
             mesh.SetTriangles(triangles, 0);
-            mesh.RecalculateNormals();
+            // Otisky leží na zemi: normála nahoru. (Výpočet z oboustranné sítě by dal nulovou normálu a světlo
+            // by pak vracelo neplatné hodnoty, záře z nich udělala velké bílé skvrny.)
+            var normals = new Vector3[vertices.Count];
+            for (var n = 0; n < normals.Length; n++) normals[n] = Vector3.up;
+            mesh.normals = normals;
             mesh.RecalculateBounds();
             return mesh;
         }
@@ -123,9 +128,8 @@ namespace Oohra.Client
                 colors.Add(color);
             }
 
-            // Obě strany: na pořadí vrcholů pak nezáleží.
+            // Materiál stop (jako pěna) kreslí obě strany, stačí jedna sada trojúhelníků.
             triangles.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
-            triangles.AddRange(new[] { start, start + 2, start + 1, start, start + 3, start + 2 });
         }
     }
 }

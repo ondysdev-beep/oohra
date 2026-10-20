@@ -40,6 +40,8 @@ namespace Oohra.Client.Tests
             var first = new Bounds(mesh.vertices[0], Vector3.zero);
             for (var i = 1; i < 4; i++) first.Encapsulate(mesh.vertices[i]);
             Assert.Greater(first.size.x, first.size.z);
+            // Normály míří nahoru (nulová normála dala neplatné světlo a záře z něj bílé skvrny).
+            foreach (var normal in mesh.normals) Assert.AreEqual(1f, normal.y, 1e-5f);
             Object.DestroyImmediate(mesh);
         }
 
