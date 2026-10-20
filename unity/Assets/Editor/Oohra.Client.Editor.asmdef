@@ -2,7 +2,9 @@
   "name": "Oohra.Client.Editor",
   "rootNamespace": "Oohra.Client.Editor",
   "references": [
-    "Oohra.Client"
+    "Oohra.Client",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime"
   ],
   "includePlatforms": [
     "Editor"

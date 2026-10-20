@@ -878,7 +878,7 @@ namespace Oohra.Client
             "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
             "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
             "H nakreslit značku · P podpis (jméno ze slabik a znak)",
-            "Q a E nebo pravé tlačítko myši: otočit kamerou (při stavění Q a E otáčí stavbou) · kolečko přiblížit · F1 tento přehled",
+            "Q a E nebo pravé tlačítko myši: otočit kamerou (při stavění Q a E otáčí stavbou) · kolečko přiblížit · F1 tento přehled · F2 kvalita grafiky",
             "Nahlásit (tlačítko nahoře): problém nebo chyba ve hře",
         };
 

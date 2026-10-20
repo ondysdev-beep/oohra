@@ -2,7 +2,9 @@
   "name": "Oohra.Client",
   "rootNamespace": "Oohra.Client",
   "references": [
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

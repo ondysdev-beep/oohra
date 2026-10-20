@@ -18,6 +18,7 @@ namespace Oohra.Client
             GroundView.Build(world, root.transform);
             FoamView.Build(world, root.transform);
             GrassView.Build(world, root.transform);
+            ScatterView.Build(world, root.transform);
             CaveView.Build(world, root.transform);
 
             var rocks = new GameObject("Skály");

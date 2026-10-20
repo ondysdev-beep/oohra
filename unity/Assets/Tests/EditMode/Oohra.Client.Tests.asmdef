@@ -4,7 +4,9 @@
   "references": [
     "UnityEngine.TestRunner",
     "UnityEditor.TestRunner",
-    "Oohra.Client"
+    "Oohra.Client",
+    "Unity.RenderPipelines.Core.Runtime",
+    "Unity.RenderPipelines.Universal.Runtime"
   ],
   "includePlatforms": [
     "Editor"

@@ -232,6 +232,12 @@ Nejsou to rostliny ze hry, nedá se na ně kliknout a server o nich neví.
 - **GrassPerTile**: kolik trsů průměrně připadá na 1 m² trávy. Trsů jsou tisíce, kreslí se úsporně
   (stovky naráz), ale na slabém počítači můžeš číslo snížit.
 
+## Okolí (jen ozdoba)
+Keře, kapradí, rákos, květiny, houby, kamínky, naplavené dřevo, ležící kmeny a obří skály rozhází hra sama ze seedu (`ScatterView`), všichni vidí totéž a nedá se na ně kliknout. Modely patří do políček **Bushes, Ferns, Reeds, Flowers, Mushrooms, Pebbles, Driftwood, FallenLogs, BigRocks** v katalogu vzhledu (víc variant = pestřejší). Hra je srovná na výšku (keř 1,2 m, kapradí 0,7 m, rákos 1,4 m, květina 0,35 m, houba 0,15 m, kamínky 0,2 m, dřevo 0,3 m, kmen 0,6 m, obří skála 5 m). Prázdné políčko = jednoduchý tvar z kódu. Obří skály bez vlastních modelů použijí kameny z políčka Rocks, hodně zvětšené. Modely mají být lehké (300 až 1 500 trojúhelníků, jeden materiál), kreslí se jich tisíce. Prompty jsou v `Oohra_Meshy_Prompty.md`, oddíl 10.
+
+## Kvalita a úpravy obrazu
+F2 přepíná kvalitu: Nízká (bez úprav obrazu, řidší okolí), Střední, Vysoká (hustší okolí, vyhlazení hran). Úpravy obrazu jsou v profilu `Assets/Resources/OohraPost.asset` (tónování, barvy, záře, ztmavení okrajů): dá se upravit v Inspectoru. Mlhu u země, světlušky a listí dělá `AmbientParticles`.
+
 ## Voda
 
 Moře i jezírka mají jednu společnou hladinu kousek pod souší. Je průhledná a lesklá (odráží oblohu)

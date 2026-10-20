@@ -3,6 +3,8 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using Debug = UnityEngine.Debug;
 
 namespace Oohra.Client.Editor
@@ -69,6 +71,45 @@ namespace Oohra.Client.Editor
             EnsureMaterial(Palette.WaterResource, "Universal Render Pipeline/Lit", transparent: true, water: true);
             EnsureMaterial(Palette.FoamResource, "Universal Render Pipeline/Particles/Simple Lit", transparent: true, foam: true);
             EnsureCatalog();
+            EnsurePostProfile();
+        }
+
+        /// <summary>
+        /// Profil úprav obrazu (GraphicsQuality): tónování ACES, barvy do temné nálady, záře světel, ztmavení okrajů.
+        /// Musí být soubor v projektu, jinak sestavení vyhodí shadery efektů, které žádný profil nepoužívá.
+        /// </summary>
+        public static void EnsurePostProfile()
+        {
+            var path = "Assets/Resources/" + GraphicsQuality.PostResource + ".asset";
+            if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(path) != null)
+            {
+                return;
+            }
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+            profile.Add<Tonemapping>(true).mode.Override(TonemappingMode.ACES);
+            var color = profile.Add<ColorAdjustments>(true);
+            color.postExposure.Override(0.25f);
+            color.contrast.Override(12f);
+            color.saturation.Override(-12f);
+            color.colorFilter.Override(new Color(0.93f, 0.96f, 1f));
+            var bloom = profile.Add<Bloom>(true);
+            bloom.threshold.Override(0.9f);
+            bloom.intensity.Override(0.6f);
+            bloom.scatter.Override(0.65f);
+            var vignette = profile.Add<Vignette>(true);
+            vignette.intensity.Override(0.3f);
+            vignette.smoothness.Override(0.45f);
+            profile.Add<WhiteBalance>(true).temperature.Override(-6f);
+            foreach (var component in profile.components)
+            {
+                AssetDatabase.AddObjectToAsset(component, profile);
+            }
+
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Oohra: profil úprav obrazu uložen do " + path);
         }
 
         /// <summary>Otevře katalog vzhledu v Inspectoru (a vytvoří ho, když chybí). Návod: docs/Grafika.md.</summary>
