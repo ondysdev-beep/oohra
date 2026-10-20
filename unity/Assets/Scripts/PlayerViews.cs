@@ -73,7 +73,9 @@ namespace Oohra.Client
                 var dead = player.Dead && !AnimatorTools.Has(animator, DeadParameter, AnimatorControllerParameterType.Bool);
                 var asleep = player.Sleeping && !AnimatorTools.Has(animator, SleepParameter, AnimatorControllerParameterType.Bool);
                 // V patře stojí postava na podlaze patra (o podlaží výš).
-                var target = WorldCoords.ToUnity(player.X, player.Y, player.Level * StructureViews.LevelHeight + (dead || asleep ? BodyRadius : BodyHeight / 2));
+                var lift = player.Level * StructureViews.LevelHeight + (dead || asleep ? BodyRadius : BodyHeight / 2);
+                var ground = StructureViews.FloorGround(_connection.Structures, player.X, player.Y, player.Level);
+                var target = WorldCoords.ToUnityAt(player.X, player.Y, ground + lift);
                 var before = view.transform.position;
                 // Průchod vchodem do jeskyně je skok daleko: postava se přenese hned, neklouže přes mapu.
                 view.transform.position = (target - before).sqrMagnitude > TeleportDistance * TeleportDistance
