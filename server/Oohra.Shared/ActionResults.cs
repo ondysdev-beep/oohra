@@ -284,6 +284,9 @@ namespace Oohra.Core.World
 
         /// <summary>Svah je tu na stavbu moc strmý (maxRise v building.json).</summary>
         TooSteep,
+
+        /// <summary>Na místo stavby není vidět (stojí mezi ním a postavou zeď nebo skála).</summary>
+        NotVisible,
     }
 
     /// <summary>Jak dopadlo lezení po žebříku.</summary>

@@ -24,6 +24,9 @@ namespace Oohra.Client
         private const string Key = "oohra.quality";
 
         private static Level? _current;
+
+        /// <summary>Kvalita se změnila (F2): ozdoby okolí se rozhází znovu.</summary>
+        public static event System.Action Changed;
         private Camera _camera;
         private Volume _volume;
 
@@ -99,6 +102,7 @@ namespace Oohra.Client
             {
                 Current = (Level)(((int)Current + 1) % 3);
                 Apply();
+                Changed?.Invoke();
             }
         }
 

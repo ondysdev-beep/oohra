@@ -44,6 +44,7 @@ namespace Oohra.Client
         private readonly List<Part> _parts = new List<Part>();
         private readonly Dictionary<string, int> _counts = new Dictionary<string, int>();
         private float _maxHeight = 1f;
+        private WorldView _world;
 
         /// <summary>Kolik kusů daného druhu leží na ostrově (pro testy).</summary>
         public int CountOf(string kind)
@@ -59,8 +60,34 @@ namespace Oohra.Client
             var go = new GameObject("Okolí");
             go.transform.SetParent(parent);
             var view = go.AddComponent<ScatterView>();
+            view._world = world;
             view.Scatter(world, Kinds(), GraphicsQuality.ScatterDensity);
+            GraphicsQuality.Changed += view.Rescatter;
             return view;
+        }
+
+        /// <summary>Po změně kvality (F2) rozhází ozdoby znovu s novou hustotou.</summary>
+        private void Rescatter()
+        {
+            Clear();
+            Scatter(_world, Kinds(), GraphicsQuality.ScatterDensity);
+        }
+
+        private void Clear()
+        {
+            foreach (var part in _parts)
+            {
+                if (part.Material != null) Destroy(part.Material);
+            }
+
+            _parts.Clear();
+            _counts.Clear();
+            Total = 0;
+        }
+
+        private void OnDestroy()
+        {
+            GraphicsQuality.Changed -= Rescatter;
         }
 
         /// <summary>Druhy ozdob: šance na dlaždici (podle druhu země a jestli jsou všude kolem skály).</summary>

@@ -4,6 +4,9 @@
 {
   // Jak daleko od sebe smí postava stavět (střed stavby od středu postavy). Dál, ať je na stavbu vidět.
   "placeReach": 10,
+  // Dál než sightFreeReach metrů musí být místo stavby vidět (ne přes zeď, kmen ani skálu), ať se nedá stavět do
+  // cizího domu přes stěnu. Blíž se staví jako dřív (střecha nad zdmi, stavba těsně u zdi).
+  "sightFreeReach": 3.5,
   // Stavět jde jen na rovnějším místě: mezi nejvyšším a nejnižším bodem pod stavbou (konce zdi, rohy podlahy, místo
   // ohně a dekorace) smí být nejvýš maxRise metrů.
   "maxRise": 0.8,

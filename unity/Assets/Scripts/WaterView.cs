@@ -17,8 +17,9 @@ namespace Oohra.Client
         private const float Extent = 6f;
         private const float GridStep = 2f;
 
-        // O kolik hladina přesahuje okraj vodní dlaždice (končí pod souší, zespodu není vidět).
-        private const float ShoreMargin = 0.5f;
+        // O kolik hladina přesahuje okraj vodní dlaždice (končí pod souší: břeh má nad vodou val, takže okraj sítě
+        // po 2 m není vidět ani tam, kde dno u břehu klesá pod hladinu).
+        private const float ShoreMargin = 2.5f;
         private const int NormalSize = 64;
 
         private Material _material;

@@ -1,7 +1,7 @@
 namespace Oohra.Core.Data;
 
 /// <summary>Pravidla staveb z Data/building.json.</summary>
-public sealed record BuildingRules(double PlaceReach, double MaxRise, WallRules Wall, DoorFrameRules DoorFrame, DoorRules Door, TrapRules Trap, PostRules Post, FloorRules Floor, RoofRules Roof, LadderRules Ladder, StoreyRules Storey, List<RoofMaterialRules> RoofMaterials, double RepairShare, BuildingFireRules BuildingFire, LoadRules Load, BarricadeRules Barricade, StockpileRules Stockpile, ShelterRules Shelter, BirthGuardRules BirthGuard);
+public sealed record BuildingRules(double PlaceReach, double SightFreeReach, double MaxRise, WallRules Wall, DoorFrameRules DoorFrame, DoorRules Door, TrapRules Trap, PostRules Post, FloorRules Floor, RoofRules Roof, LadderRules Ladder, StoreyRules Storey, List<RoofMaterialRules> RoofMaterials, double RepairShare, BuildingFireRules BuildingFire, LoadRules Load, BarricadeRules Barricade, StockpileRules Stockpile, ShelterRules Shelter, BirthGuardRules BirthGuard);
 
 public sealed record PostRules(int SticksCost, int SticksBack, double Radius);
 

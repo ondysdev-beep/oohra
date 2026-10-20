@@ -41,6 +41,35 @@ namespace Oohra.Client
         }
 
         /// <summary>Kde je spodek modelu stavby v podlaží level (podlaha patra leží o svou tloušťku níž).</summary>
+        /// <summary>
+        /// Výška terénu, od které se počítá podlaží v místě (x, y): v patře terén pod středem podlahy patra, na které
+        /// místo leží (podlaha je rovná, i když terén pod ní klesá), jinak terén v tom místě.
+        /// </summary>
+        public static float FloorGround(StructureView[] structures, double x, double y, int level)
+        {
+            if (level > 0 && structures != null)
+            {
+                foreach (var s in structures)
+                {
+                    if (s.Kind == BuildKind.Floor && s.Level == level && OnSquare(s, x, y))
+                    {
+                        return WorldCoords.Ground(s.X, s.Y);
+                    }
+                }
+            }
+
+            return WorldCoords.Ground(x, y);
+        }
+
+        /// <summary>Bod leží na čtverci podlahy (strana Length, natočení Angle).</summary>
+        private static bool OnSquare(StructureView square, double x, double y)
+        {
+            var (dx, dy) = (x - square.X, y - square.Y);
+            var (c, s) = (System.Math.Cos(square.Angle), System.Math.Sin(square.Angle));
+            var half = square.Length / 2 + 0.05;
+            return System.Math.Abs(dx * c + dy * s) <= half && System.Math.Abs(-dx * s + dy * c) <= half;
+        }
+
         public static float BaseHeight(BuildKind kind, int level)
         {
             return level * LevelHeight - (kind == BuildKind.Floor && level > 0 ? FloorThickness : 0f);
@@ -432,6 +461,9 @@ namespace Oohra.Client
             var root = CreateModel(structure.Kind, transform, structure.Length, structure.Decoration, decoration != null ? decoration.Radius : 0.3f);
             root.name = NameOf(structure.Kind) + " " + structure.Id;
             PlaceModel(root.transform, structure.X, structure.Y, structure.Angle, BaseHeight(structure.Kind, structure.Level));
+            // V patře stojí stavba na podlaze patra: ta je rovná ve výšce terénu pod svým středem.
+            var ground = FloorGround(_connection.Structures, structure.X, structure.Y, structure.Level);
+            root.transform.position = WorldCoords.ToUnityAt(structure.X, structure.Y, ground + BaseHeight(structure.Kind, structure.Level));
 
             if (structure.Kind == BuildKind.Door)
             {

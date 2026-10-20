@@ -227,7 +227,7 @@ namespace Oohra.Client
             if (SelfLevel > 0 && self.HasValue)
             {
                 float distance;
-                var floor = WorldCoords.Ground(self.Value.X, self.Value.Y) + SelfHeight;
+                var floor = StructureViews.FloorGround(Connection.Structures, self.Value.X, self.Value.Y, SelfLevel) + SelfHeight;
                 var hit = new Plane(Vector3.up, Vector3.up * floor).Raycast(ray, out distance);
                 point = hit ? ray.GetPoint(distance) : Vector3.zero;
                 return hit;

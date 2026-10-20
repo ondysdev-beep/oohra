@@ -1,4 +1,5 @@
 using Oohra.Core.Characters;
+using Oohra.Core.Data;
 using Oohra.Core.Items;
 using Oohra.Core.Rng;
 using Oohra.Core.World;
@@ -51,6 +52,18 @@ public class SightTests
 
         var other = animals.Place(AnimalKind.Boar, x - 1.3, y);
         Assert.Equal(HuntResult.HitFist, animals.Attack(other.Id, hunter, new Inventory(10), 0, island));
+    }
+
+    /// <summary>Daleko za zdí se nestaví (do cizího domu přes stěnu), blízko u zdi ano.</summary>
+    [Fact]
+    public void NoBuildingFarBehindWall()
+    {
+        var (island, x, y) = WithWallBetween();
+        var far = GameData.Building.SightFreeReach + 1;
+
+        Assert.False(Placement.CanSee(island, x, y, x + far, y));
+        Assert.True(Placement.CanSee(island, x, y, x - far, y));
+        Assert.True(Placement.CanSee(island, x, y, x + 1.3, y), "Těsně za zdí (třeba střecha) se stavět dá.");
     }
 
     [Fact]

@@ -17,6 +17,16 @@ public static class Placement
     }
 
     /// <summary>
+    /// Na místo stavby je vidět: do sightFreeReach vždy, dál jen když mezi postavou a místem není zeď, kmen ani skála
+    /// (Sight). Ať se s dosahem placeReach nedá stavět do cizího domu přes stěnu.
+    /// </summary>
+    public static bool CanSee(Island island, double playerX, double playerY, double x, double y)
+    {
+        var distance = Math.Sqrt((x - playerX) * (x - playerX) + (y - playerY) * (y - playerY));
+        return distance <= GameData.Building.SightFreeReach || Sight.Clear(island, playerX, playerY, x, y);
+    }
+
+    /// <summary>
     /// Místo je dost rovné na stavbu: mezi body pod stavbou (třeba konce zdi nebo rohy podlahy) je výškový rozdíl nejvýš
     /// maxRise (building.json). Jeden bod: kolem něj v kruhu o poloměru radius.
     /// </summary>

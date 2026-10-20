@@ -107,6 +107,12 @@ public sealed class Fires
             return FireResult.TooFar;
         }
 
+        // Přes zeď se oheň nezakládá (dál než sightFreeReach musí být místo vidět).
+        if (!Placement.CanSee(island, playerX, playerY, x, y))
+        {
+            return FireResult.CannotBuildHere;
+        }
+
         var footprint = rules.FootprintRadius;
         if (!Placement.OnDryLand(island, x, y)
             || !Placement.LevelEnough(island, [new Position(x, y)])

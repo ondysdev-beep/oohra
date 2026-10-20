@@ -373,6 +373,13 @@ public sealed partial class GameServer
                 return;
             }
 
+            // Střecha leží na zdech (staví se přes ně), ostatní díly jen tam, kam je vidět.
+            if (level == 0 && place.Kind != BuildKind.Roof && !Placement.CanSee(Island, player.X, player.Y, snap.X, snap.Y))
+            {
+                BuildAction(player, () => BuildResult.NotVisible);
+                return;
+            }
+
             BuildAction(player, () => Island.Structures.BuildOnGrid(
                 Island, Fires, player.Inventory, player.X, player.Y, place.Kind, snap, PlayerPositions(level), player.Character, player.Id, place.Decoration, level));
             return;
@@ -395,6 +402,12 @@ public sealed partial class GameServer
         if (place.Kind != BuildKind.Door && GuardedBirthPlace(player, place.Kind, place.X, place.Y, place.Angle, place.Length))
         {
             BuildAction(player, () => BuildResult.BirthPlaceProtected);
+            return;
+        }
+
+        if (place.Kind != BuildKind.Door && !Placement.CanSee(Island, player.X, player.Y, place.X, place.Y))
+        {
+            BuildAction(player, () => BuildResult.NotVisible);
             return;
         }
 
