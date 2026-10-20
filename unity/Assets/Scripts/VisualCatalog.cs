@@ -86,6 +86,34 @@ namespace Oohra.Client
         [Tooltip("Kolik trsů průměrně připadá na jednu travnatou dlaždici (1 m²).")]
         public float GrassPerTile = 1.5f;
 
+        [Header("Okolí jen pro ozdobu (rozházené ze seedu, nedá se na ně kliknout; prázdné = jednoduchý tvar z kódu)")]
+        [Tooltip("Keře v lese a na louce, asi 1,2 m vysoké.")]
+        public GameObject[] Bushes = new GameObject[0];
+
+        [Tooltip("Kapradí v lese, asi 0,7 m.")]
+        public GameObject[] Ferns = new GameObject[0];
+
+        [Tooltip("Rákos v bažině a močálu, asi 1,4 m.")]
+        public GameObject[] Reeds = new GameObject[0];
+
+        [Tooltip("Květiny na louce, asi 0,35 m.")]
+        public GameObject[] Flowers = new GameObject[0];
+
+        [Tooltip("Houby v lese, asi 0,15 m.")]
+        public GameObject[] Mushrooms = new GameObject[0];
+
+        [Tooltip("Kamínky na pláži a ve vrchovině, asi 0,2 m.")]
+        public GameObject[] Pebbles = new GameObject[0];
+
+        [Tooltip("Naplavené dřevo na pláži, leží (výška asi 0,3 m).")]
+        public GameObject[] Driftwood = new GameObject[0];
+
+        [Tooltip("Ležící mrtvé kmeny v lese (výška asi 0,6 m).")]
+        public GameObject[] FallenLogs = new GameObject[0];
+
+        [Tooltip("Obří skály na skalních hřbetech (3 až 7 m). Prázdné = kameny z políčka Rocks, hodně zvětšené.")]
+        public GameObject[] BigRocks = new GameObject[0];
+
         [Header("Stavby (střed dole v počátku, délka podél osy X)")]
         [Tooltip("Zeď z klacků dlouhá přesně 2 m (hrana políčka stavební mřížky). Kratší zeď se zmenší podél osy X.")]
         public GameObject Wall;

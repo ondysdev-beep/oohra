@@ -189,6 +189,8 @@ namespace Oohra.Client
             var weather = gameObject.AddComponent<WeatherView>();
             weather.Init(_connection, _session.Clock, _players, camera);
             gameObject.AddComponent<DayNightLight>().Init(_session.Clock, FindSun(), weather);
+            gameObject.AddComponent<GraphicsQuality>().Init(camera);
+            new GameObject("Částice okolí").AddComponent<AmbientParticles>().Init(_connection, _players, weather, _session.Clock);
             gameObject.AddComponent<BuildMode>().Init(_session, camera);
             new GameObject("Kruh výběru").AddComponent<SelectionRing>().Init(_session);
             gameObject.AddComponent<GameHud>().Init(_session, _players, camera);
