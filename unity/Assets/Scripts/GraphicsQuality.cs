@@ -119,6 +119,8 @@ namespace Oohra.Client
             {
                 var data = _camera.GetUniversalAdditionalCameraData();
                 data.renderPostProcessing = post;
+                // Neplatný bod (NaN) z jakéhokoli shaderu by záře rozmazala do velké bílé skvrny.
+                data.stopNaN = true;
                 data.antialiasing = Current == Level.High ? AntialiasingMode.SubpixelMorphologicalAntiAliasing : AntialiasingMode.None;
             }
 
