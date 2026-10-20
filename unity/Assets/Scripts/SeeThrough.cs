@@ -46,6 +46,10 @@ namespace Oohra.Client
             public float Alpha = 1f;
             public bool Near;
 
+            // Kmen stromu pod korunou (poloměr, 0 = bez kmene) a kde začíná (zem).
+            public float TrunkRadius;
+            public float Base;
+
             // Kamera je v koruně: schová se úplně, ne jen zprůhlední.
             public bool AroundCamera;
         }
@@ -55,11 +59,13 @@ namespace Oohra.Client
         /// radius polovina šířky, bottom a top výška spodku a vršku v metrech. color: barva tvaru z kódu,
         /// null = vlastní model z katalogu vzhledu (zachová své materiály).
         /// </summary>
-        public void Add(int key, GameObject go, Color? color, double x, double y, float radius, float bottom, float top)
+        public void Add(int key, GameObject go, Color? color, double x, double y, float radius, float bottom, float top, float trunkRadius = 0f, float trunkBase = 0f)
         {
             Remove(key);
             var entry = new Entry
             {
+                TrunkRadius = trunkRadius,
+                Base = trunkBase,
                 Target = new FadeTarget(go, color),
                 Position = new Vector2((float)x, (float)y),
                 Cell = new Vector2Int(Mathf.FloorToInt((float)x), Mathf.FloorToInt((float)y)),
@@ -161,7 +167,9 @@ namespace Oohra.Client
                     foreach (var entry in cell)
                     {
                         var around = AroundCamera(entry.Position, entry.Radius, entry.Bottom - floor, entry.Top - floor, player + toCamera * horizontal, toCameraUnity.y);
-                        if (!around && !Covers(entry.Position, entry.Radius, entry.Bottom - floor, entry.Top - floor, player, toCamera, rise))
+                        // Koruna, nebo kmen pod ní (kamera za postavou se dívá kolem kmenů, ne přes koruny).
+                        var trunk = entry.TrunkRadius > 0f && Covers(entry.Position, entry.TrunkRadius, entry.Base - floor, entry.Bottom - floor, player, toCamera, rise);
+                        if (!around && !trunk && !Covers(entry.Position, entry.Radius, entry.Bottom - floor, entry.Top - floor, player, toCamera, rise))
                         {
                             continue;
                         }

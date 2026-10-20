@@ -198,7 +198,7 @@ namespace Oohra.Client
             text += $"\nKlacky {_session.Count(ItemKind.Stick)} · kameny {_session.Count(ItemKind.Stone)}" + (self.NearFire ? " · hřeje tě oheň" : string.Empty) + (self.Sheltered ? " · jsi v úkrytu" : string.Empty);
             GUI.Box(new Rect(12, 12, 420, 68), text, _label);
             GUI.Label(new Rect(12, 84, 980, 20),
-                "WASD / klik = chůze · F1 = všechny klávesy", _label);
+                "W a S chůze · A a D otočit · klik = jít · F1 = všechny klávesy", _label);
         }
 
         /// <summary>Vpravo nahoře: batoh a režim stavby.</summary>
@@ -872,13 +872,13 @@ namespace Oohra.Client
         /// <summary>Přehled kláves (F1).</summary>
         public static readonly string[] Keys =
         {
-            "WASD nebo klik myší: chůze · klik na věc: jít k ní a otevřít nabídku",
+            "W a S: dopředu a dozadu · A a D: otočit se · Q a E: úkrok · klik myší: jít tam · klik na věc: jít k ní a otevřít nabídku",
             "Mezerník: rána (zvíře poblíž) · Esc: zavřít nabídku",
             "B batoh (jíst, ochutnat, upéct, ukázat, položit na zem, zkusit spojit věci i ze země, vyrobit, co umíš, otevřít deník) · N spát a vstát · K dovednosti",
             "G stavět (oheň, zdi, dveře, past, koš, dekorace) · R volné nebo modulární stavění",
             "T mluvit (Shift + 1 až 0 slabiky, Enter říct, Tab nálada) · V gesta · J zápisník slov",
             "H nakreslit značku · P podpis (jméno ze slabik a znak)",
-            "Q a E nebo pravé tlačítko myši: otočit kamerou (při stavění Q a E otáčí stavbou) · kolečko přiblížit · F1 tento přehled · F2 kvalita grafiky",
+            "Držet pravé tlačítko myši: rozhlížet se · kolečko: přiblížit · při stavění Q a E otáčí stavbou · F1 tento přehled · F2 kvalita grafiky",
             "Nahlásit (tlačítko nahoře): problém nebo chyba ve hře",
         };
 

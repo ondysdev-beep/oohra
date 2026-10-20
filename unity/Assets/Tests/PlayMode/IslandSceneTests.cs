@@ -79,7 +79,10 @@ namespace Oohra.Client.Tests
             Assert.IsFalse(session.Sleeping);
         }
 
-        /// <summary>Postava dojde ke stromu a jeho koruna zprůhlední, aby postava byla vidět.</summary>
+        /// <summary>
+        /// Strom mezi kamerou a postavou (kamera za stromem, dívá se na postavu) zprůhlední, aby postava byla vidět.
+        /// Kamera z třetí osoby je nízko, postavu tak zakrývá hlavně kmen.
+        /// </summary>
         [UnityTest]
         public IEnumerator CrownsFadeNearPlayer()
         {
@@ -88,24 +91,22 @@ namespace Oohra.Client.Tests
             yield return WaitFor(() => bootstrap.Session != null, 15f, "Unity se nepřipojilo k serveru.");
             var connection = bootstrap.Session.Connection;
             var crowns = Object.FindAnyObjectByType<SeeThrough>();
-            yield return WaitFor(() => connection.SelfSnapshot() != null, 5f, "Chybí poloha postavy.");
+            yield return WaitFor(() => connection.SelfSnapshot() != null && Object.FindAnyObjectByType<CameraRig>() != null, 5f, "Chybí poloha postavy nebo kamera.");
 
-            // Stromy stojí s rozestupy, k nejbližšímu může být kus cesty.
-            var until = Time.realtimeSinceStartup + 30f;
-            while (crowns.FadedCount == 0 && Time.realtimeSinceStartup < until)
-            {
-                var self = connection.SelfSnapshot().Value;
-                var tree = connection.World.Trees
-                    .Select(t => new Vector2(t.X, t.Y))
-                    .OrderBy(t => Vector2.Distance(t, new Vector2(self.X, self.Y)))
-                    .First();
-                var direction = (tree - new Vector2(self.X, self.Y)).normalized;
-                connection.SendInput(direction.x, direction.y);
-                yield return null;
-            }
+            Object.FindAnyObjectByType<CameraRig>().enabled = false;
+            var self = connection.SelfSnapshot().Value;
+            var player = new Vector2(self.X, self.Y);
+            var tree = connection.World.Trees
+                .Select(t => new Vector2(t.X, t.Y))
+                .Where(t => Vector2.Distance(t, player) > 3f)
+                .OrderBy(t => Vector2.Distance(t, player))
+                .First();
+            var away = (tree - player).normalized;
+            var camera = tree + away * 4f;
+            Camera.main.transform.position = WorldCoords.ToUnity(camera.x, camera.y, 2f);
+            Camera.main.transform.LookAt(WorldCoords.ToUnity(player.x, player.y, 1f));
+            yield return WaitFor(() => crowns.FadedCount > 0, 3f, "Strom mezi kamerou a postavou se nezprůhlednil.");
 
-            connection.SendInput(0, 0);
-            Assert.Greater(crowns.FadedCount, 0, "U stromu se žádná koruna nezprůhlednila.");
             yield return new WaitForSecondsRealtime(0.5f);
             yield return SaveScreenshot("koruny.png");
         }
