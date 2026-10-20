@@ -338,7 +338,8 @@ namespace Oohra.Client
             }
 
             var radius = Mathf.Max(bounds.extents.x, bounds.extents.z);
-            _crowns.Add(tree.TileIndex, model, null, x, y, radius, bounds.max.y * 0.4f, bounds.max.y);
+            // Koruna od 40 % výšky, pod ní kmen (zprůhlední se celý strom, když postavu zakrývá koruna nebo kmen).
+            _crowns.Add(tree.TileIndex, model, null, x, y, radius, bounds.min.y + bounds.size.y * 0.4f, bounds.max.y, TrunkWidth, bounds.min.y);
             Pickable.Attach(model, Target(tree));
             return model;
         }
@@ -372,7 +373,8 @@ namespace Oohra.Client
             var center = look.CrownCenter * h;
             crown.transform.localPosition = new Vector3(0f, center, 0f);
             crown.transform.localScale = scale;
-            _crowns.Add(tree.TileIndex, crown, look.Leaves, x, y, size.x / 2, center - size.y / 2, center + size.y / 2);
+            var ground = WorldCoords.Ground(x, y);
+            _crowns.Add(tree.TileIndex, crown, look.Leaves, x, y, size.x / 2, ground + center - size.y / 2, ground + center + size.y / 2);
             Pickable.Attach(crown, Target(tree));
             return root;
         }

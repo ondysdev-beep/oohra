@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 namespace Oohra.Client
 {
     /// <summary>
-    /// Ovládání postavy: WASD (vzhledem ke kameře), kliknutí na zem (jdi tam),
+    /// Ovládání postavy: W a S dopředu a dozadu, Q a E úkrok (A a D otáčí kamerou, CameraRig), kliknutí na zem (jdi tam),
     /// kliknutí na rostlinu, vodu, strom, skálu nebo oheň (dojdi k nim a otevři nabídku).
     /// Klient posílá serveru jen směr chůze. Kam se smí jít, rozhoduje server (Movement v Core).
     /// </summary>
@@ -330,7 +330,10 @@ namespace Oohra.Client
             return found >= 0 ? InteractionTarget.ForPlant(found, world.Plants[found].X, world.Plants[found].Y) : null;
         }
 
-        /// <summary>WASD a šipky. „Nahoru“ je směr, kam se dívá kamera. Výsledek je směr na mapě (y dolů).</summary>
+        /// <summary>
+        /// W a S (šipky nahoru a dolů) jde dopředu a dozadu ve směru kamery, Q a E úkrok do strany (v režimu stavby
+        /// Q a E otáčí stavbou). A a D otáčí kamerou i postavou (CameraRig). Výsledek je směr na mapě (y dolů).
+        /// </summary>
         private Vector2 KeyboardDirection()
         {
             var keyboard = Keyboard.current;
@@ -342,8 +345,8 @@ namespace Oohra.Client
             var input = Vector2.zero;
             if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) input.y += 1;
             if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) input.y -= 1;
-            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) input.x += 1;
-            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) input.x -= 1;
+            if (CameraRig.KeysTurnCamera && keyboard.eKey.isPressed) input.x += 1;
+            if (CameraRig.KeysTurnCamera && keyboard.qKey.isPressed) input.x -= 1;
             if (input == Vector2.zero)
             {
                 return Vector2.zero;
