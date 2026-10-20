@@ -18,6 +18,27 @@
 - **Návrh 0.8 Svět a logika** (18. 10.): ostrov 384 × 384 s oblastmi, nový generátor (přesný přepis z prototypu a golden testy ostrova končí), stromy a kácení, nářadí, ruce a batoh, deník, nebezpečí. Jeskyně, patra a mapa později. Alfa až po etapě 3.
 - **Ukládání světa do souboru JSON** místo SQLite (pro 20 hráčů stačí, dá se přečíst, přejít na databázi jde později).
 
+### Rozhodnutí z 20. 10. 2026
+- **Kamera z třetí osoby** (hotovo): kamera je pořád za postavou a dívá se přes rameno. A a D otáčí, W a S chůze, Q a E úkrok, pravé tlačítko myši rozhlížení, kolečko přiblížení.
+- **Stavební mřížka 2 × 2 m, skutečné výšky stromů 15 až 25 m, kopce se svahy v pravidlech, zóny (močál, mělčina), nový svět bez zálohy** (hotovo 19. a 20. 10.).
+- **Grafika low-poly:** jednotný styl, hezčí a čitelnější než realismus. Prompty pro Meshy jsou přepsané (`Oohra_Meshy_Prompty.md`).
+- **Doporučení:** na chvíli zastavit nové funkce a udělat alfu se známými. Jádro hry (skryté složení rostlin, otravy, jazyk, generace, ztráta znalostí smrtí) má být hlavní a systémy kolem ho nemají přehlušit.
+
+### Návrh: stavba podle vzoru a kladivem (čeká na schválení)
+Jak to chápu:
+1. V režimu stavby hráč **položí vzor**: průsvitný obrys zdi, podlahy, střechy… v mřížce. Nic nestojí, jen ukazuje, co se tam postaví a kolik materiálu chybí (třeba „klacky 0 / 4“).
+2. **Materiál se do vzoru donese:** hráč ho vloží z batohu (nebo ho vzor vezme z věcí na zemi u sebe, jako pracovní místo).
+3. Hráč přijde s **kladivem** (nový nástroj, vyrobí se třeba z klacku, kamene a lýka, opotřebovává se) a **buší do vzoru**. Každá rána přidá kus stavby, zeď roste viditelně zespodu nahoru a ozve se úder.
+4. Až má stavba všechny rány, je **hotová**: teprve pak blokuje, hřeje, chrání před deštěm a nese váhu (statika).
+5. **Víc lidí jde stavět spolu** (kmen staví rychleji). Rozebrat jde zase kladivem a část materiálu se vrátí.
+
+K rozhodnutí:
+- Kolik ran má co mít (návrh: sloupek 3, zeď 8, podlaha 6, střecha 10)?
+- Materiál napřed celý, nebo po kusech (každá rána spotřebuje kus)?
+- Jde stavět i bez kladiva (rukama, pomaleji), nebo vůbec?
+- Jak dlouho vydrží nedodělaný vzor (návrh: zmizí po 2 herních dnech bez práce) a kdo do něj smí bušit (návrh: majitel a jeho kmen)?
+- Oheň, past, koš a dekorace dál hned (bez kladiva), nebo taky jako vzor?
+
 ### Další kroky (pořadí)
 Rozhodnuto 18. 10. 2026: další kolo je **návrh 0.8 Svět a logika** (`docs/Oohra_0.8_Svet_a_logika.md`). Alfa se známými až **po etapě 3** (nováček bez ničeho hru úplně změní). Server na internetu se dá připravit kdykoli mezi etapami, je to krátká práce.
 1. **Krok 0 (hotovo 18. 10.):** návrh 0.8 v `docs/`, pravidla v `CLAUDE.md`, tento plán, starý `stats.json` po robotech přesunutý do `stary-svet/`.
